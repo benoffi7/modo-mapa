@@ -87,7 +87,7 @@ export default function TrendsPanel() {
     getDocs(
       query(
         collection(db, 'dailyMetrics').withConverter(dailyMetricsConverter),
-        orderBy('__name__', 'asc'),
+        orderBy('date', 'asc'),
       ),
     )
       .then((snap) => {
