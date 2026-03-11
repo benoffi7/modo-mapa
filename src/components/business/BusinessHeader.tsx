@@ -1,16 +1,17 @@
+import type { ReactNode } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
 import type { Business } from '../../types';
 import { CATEGORY_LABELS } from '../../types';
-import FavoriteButton from './FavoriteButton';
 import DirectionsButton from './DirectionsButton';
 
 interface Props {
   business: Business;
+  favoriteButton: ReactNode;
 }
 
-export default function BusinessHeader({ business }: Props) {
+export default function BusinessHeader({ business, favoriteButton }: Props) {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -24,7 +25,7 @@ export default function BusinessHeader({ business }: Props) {
             sx={{ mt: 0.5, fontSize: '0.75rem', height: 24 }}
           />
         </Box>
-        <FavoriteButton businessId={business.id} />
+        {favoriteButton}
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, color: 'text.secondary' }}>
