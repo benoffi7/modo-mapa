@@ -47,8 +47,9 @@ export default function DashboardOverview() {
 
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (ignore) return;
+        console.error('DashboardOverview fetch error:', err);
         setError(true);
         setLoading(false);
       });
@@ -64,8 +65,12 @@ export default function DashboardOverview() {
     );
   }
 
-  if (error || metricsError) {
-    return <Alert severity="error">Error cargando métricas del dashboard.</Alert>;
+  if (error) {
+    return <Alert severity="error">Error cargando datos del dashboard. Revisá la consola para más detalles.</Alert>;
+  }
+
+  if (metricsError) {
+    return <Alert severity="error">Error cargando métricas públicas. Revisá la consola para más detalles.</Alert>;
   }
 
   const ratingPieData = metrics
