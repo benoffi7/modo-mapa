@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, memo } from 'react';
 import {
   Box,
   Typography,
@@ -17,46 +17,25 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
-import { commentConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
+import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
 import type { Comment } from '../../types';
 
 interface Props {
   businessId: string;
+  comments: Comment[];
+  isLoading: boolean;
+  onCommentsChange: () => void;
 }
 
-export default memo(function BusinessComments({ businessId }: Props) {
+export default memo(function BusinessComments({ businessId, comments, isLoading, onCommentsChange }: Props) {
   const { user, displayName } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-    const q = query(
-      collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
-      where('businessId', '==', businessId)
-    );
-    getDocs(q).then((snapshot) => {
-      if (ignore) return;
-      const loaded: Comment[] = snapshot.docs.map((d) => d.data()).filter((c) => !c.flagged);
-      loaded.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      setError(false);
-      setComments(loaded);
-    }).catch((err) => {
-      if (ignore) return;
-      console.error('Error loading comments:', err);
-      setError(true);
-      setComments([]);
-    });
-    return () => { ignore = true; };
-  }, [businessId, refreshKey]);
 
   const MAX_COMMENTS_PER_DAY = 20;
 
@@ -73,19 +52,16 @@ export default memo(function BusinessComments({ businessId }: Props) {
     const text = newComment.trim();
     const userName = displayName || 'Anónimo';
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.COMMENTS), {
+      await addDoc(collection(db, COLLECTIONS.COMMENTS), {
         userId: user.uid,
         userName,
         businessId,
         text,
         createdAt: serverTimestamp(),
       });
-      // Optimistic update: add to local state immediately
-      setComments((prev) => [
-        { id: docRef.id, userId: user.uid, userName, businessId, text, createdAt: new Date() },
-        ...prev,
-      ]);
       setNewComment('');
+      invalidateQueryCache(COLLECTIONS.COMMENTS, user.uid);
+      onCommentsChange();
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -93,10 +69,11 @@ export default memo(function BusinessComments({ businessId }: Props) {
   };
 
   const handleDeleteComment = async () => {
-    if (!confirmDeleteId) return;
+    if (!confirmDeleteId || !user) return;
     await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
-    setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
     setConfirmDeleteId(null);
+    invalidateQueryCache(COLLECTIONS.COMMENTS, user.uid);
+    onCommentsChange();
   };
 
   const formatDate = (date: Date) => {
@@ -110,7 +87,7 @@ export default memo(function BusinessComments({ businessId }: Props) {
   return (
     <Box sx={{ py: 1 }}>
       <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-        Comentarios ({comments.length})
+        Comentarios ({isLoading ? '...' : comments.length})
       </Typography>
 
       {user && (
@@ -141,15 +118,6 @@ export default memo(function BusinessComments({ businessId }: Props) {
           >
             <SendIcon fontSize="small" />
           </Button>
-        </Box>
-      )}
-
-      {error && (
-        <Box sx={{ py: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-            Error al cargar comentarios
-          </Typography>
-          <Button size="small" onClick={() => setRefreshKey((k) => k + 1)}>Reintentar</Button>
         </Box>
       )}
 
@@ -195,7 +163,7 @@ export default memo(function BusinessComments({ businessId }: Props) {
             {index < comments.length - 1 && <Divider />}
           </Box>
         ))}
-        {comments.length === 0 && (
+        {!isLoading && comments.length === 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
             Sé el primero en comentar
           </Typography>

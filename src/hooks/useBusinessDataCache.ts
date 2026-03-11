@@ -1,0 +1,32 @@
+import type { Rating, Comment, UserTag, CustomTag } from '../types';
+
+export interface BusinessCacheEntry {
+  isFavorite: boolean;
+  ratings: Rating[];
+  comments: Comment[];
+  userTags: UserTag[];
+  customTags: CustomTag[];
+  timestamp: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const cache = new Map<string, BusinessCacheEntry>();
+
+export function getBusinessCache(businessId: string): BusinessCacheEntry | null {
+  const entry = cache.get(businessId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    cache.delete(businessId);
+    return null;
+  }
+  return entry;
+}
+
+export function setBusinessCache(businessId: string, data: Omit<BusinessCacheEntry, 'timestamp'>): void {
+  cache.set(businessId, { ...data, timestamp: Date.now() });
+}
+
+export function invalidateBusinessCache(businessId: string): void {
+  cache.delete(businessId);
+}
