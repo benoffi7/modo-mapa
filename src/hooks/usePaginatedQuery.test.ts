@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { usePaginatedQuery } from './usePaginatedQuery';
+import { usePaginatedQuery, invalidateQueryCache } from './usePaginatedQuery';
 
 const mockGetDocs = vi.fn();
 
@@ -23,11 +23,13 @@ function makeSnapshot(docs: ReturnType<typeof makeDoc>[]) {
 describe('usePaginatedQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Clear query cache between tests to avoid interference
+    invalidateQueryCache('testCollection', 'user-1');
   });
 
   it('returns loading state initially', () => {
     mockGetDocs.mockResolvedValue(makeSnapshot([]));
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -40,7 +42,7 @@ describe('usePaginatedQuery', () => {
   it('loads first page of items', async () => {
     const docs = [makeDoc({ name: 'A' }), makeDoc({ name: 'B' })];
     mockGetDocs.mockResolvedValue(makeSnapshot(docs));
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -61,7 +63,7 @@ describe('usePaginatedQuery', () => {
       makeDoc({ name: 'C' }),
     ];
     mockGetDocs.mockResolvedValue(makeSnapshot(docs));
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -86,7 +88,7 @@ describe('usePaginatedQuery', () => {
       .mockResolvedValueOnce(makeSnapshot(firstPage))
       .mockResolvedValueOnce(makeSnapshot(secondPage));
 
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -119,7 +121,7 @@ describe('usePaginatedQuery', () => {
       .mockResolvedValueOnce(makeSnapshot(firstLoad))
       .mockResolvedValueOnce(makeSnapshot(reloadData));
 
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -140,7 +142,7 @@ describe('usePaginatedQuery', () => {
 
   it('sets error on failure', async () => {
     mockGetDocs.mockRejectedValue(new Error('Network error'));
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
 
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
@@ -165,12 +167,75 @@ describe('usePaginatedQuery', () => {
   });
 
   it('skips query when userId is undefined', async () => {
-    const mockRef = {} as never;
+    const mockRef = { path: 'testCollection' } as never;
     const { result } = renderHook(() =>
       usePaginatedQuery(mockRef, undefined, 'createdAt', 2),
     );
 
     expect(result.current.isLoading).toBe(true);
     expect(mockGetDocs).not.toHaveBeenCalled();
+  });
+
+  it('serves first page from cache on second render', async () => {
+    const docs = [makeDoc({ name: 'A' }), makeDoc({ name: 'B' })];
+    mockGetDocs.mockResolvedValue(makeSnapshot(docs));
+    const mockRef = { path: 'testCollection' } as never;
+
+    // First render — fetches from Firestore and populates cache
+    const { result, unmount } = renderHook(() =>
+      usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    expect(mockGetDocs).toHaveBeenCalledTimes(1);
+    unmount();
+
+    // Second render — should serve from cache without calling getDocs again
+    mockGetDocs.mockClear();
+    const { result: result2 } = renderHook(() =>
+      usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
+    );
+
+    await waitFor(() => {
+      expect(result2.current.isLoading).toBe(false);
+    });
+    expect(result2.current.items).toEqual([{ name: 'A' }, { name: 'B' }]);
+    expect(mockGetDocs).not.toHaveBeenCalled();
+  });
+
+  it('invalidateQueryCache forces fresh fetch', async () => {
+    const docs = [makeDoc({ name: 'A' })];
+    mockGetDocs.mockResolvedValue(makeSnapshot(docs));
+    const mockRef = { path: 'testCollection' } as never;
+
+    // First render — populates cache
+    const { result, unmount } = renderHook(() =>
+      usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    unmount();
+
+    // Invalidate cache
+    invalidateQueryCache('testCollection', 'user-1');
+
+    // Second render — should fetch again
+    mockGetDocs.mockClear();
+    const freshDocs = [makeDoc({ name: 'B' })];
+    mockGetDocs.mockResolvedValue(makeSnapshot(freshDocs));
+
+    const { result: result2 } = renderHook(() =>
+      usePaginatedQuery(mockRef, 'user-1', 'createdAt', 2),
+    );
+
+    await waitFor(() => {
+      expect(result2.current.isLoading).toBe(false);
+    });
+    expect(result2.current.items).toEqual([{ name: 'B' }]);
+    expect(mockGetDocs).toHaveBeenCalledTimes(1);
   });
 });

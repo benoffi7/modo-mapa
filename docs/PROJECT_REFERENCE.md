@@ -62,9 +62,12 @@ main.tsx
 ### Flujo de datos
 
 1. **Datos estáticos**: `businesses.json` (40 comercios) se carga como import estático. No hay fetch.
-2. **Datos dinámicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). Cada componente hace su propia query.
+2. **Datos dinámicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). El hook `useBusinessData` orquesta las 5 queries en paralelo con `Promise.all` y caché client-side.
 3. **Estado global**: `AuthContext` (user, displayName) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
 4. **Estado local**: Cada sección del menú carga sus datos al montarse y los filtra client-side con `useListFilters`.
+5. **Caché de datos**: Dos capas de caché client-side reducen lecturas Firestore:
+   - `useBusinessDataCache`: caché de vista de negocio (5 min TTL) para las 5 queries del bottom sheet.
+   - `usePaginatedQuery`: caché de primera página (2 min TTL) para listas del menú lateral.
 
 ---
 
@@ -76,7 +79,7 @@ src/
 ├── main.tsx                         # Entry point (StrictMode)
 ├── index.css                        # Estilos globales mínimos
 ├── config/
-│   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod)
+│   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados
 │   └── converters.ts                # FirestoreDataConverter<T> tipados por colección
 ├── context/
@@ -90,8 +93,10 @@ src/
 │   └── businesses.json              # 40 comercios con id, name, address, category, lat, lng, tags, phone
 ├── hooks/
 │   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
+│   ├── useBusinessData.ts           # Orquesta 5 queries del business view con Promise.all + caché
+│   ├── useBusinessDataCache.ts      # Caché client-side para datos del business view (5 min TTL)
 │   ├── useListFilters.ts            # Filtrado genérico: búsqueda (debounced), categoría, estrellas, ordenamiento
-│   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore ("Cargar más")
+│   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore + caché primera página (2 min TTL)
 │   └── useUserLocation.ts           # Geolocalización del navegador
 ├── components/
 │   ├── auth/
@@ -108,12 +113,12 @@ src/
 │   │   ├── SearchBar.tsx            # Barra de búsqueda fija arriba
 │   │   └── FilterChips.tsx          # Chips de tags predefinidos scrollables
 │   ├── business/
-│   │   ├── BusinessSheet.tsx        # Bottom sheet (SwipeableDrawer)
-│   │   ├── BusinessHeader.tsx       # Nombre, categoría, dirección, teléfono, favorito, direcciones
-│   │   ├── BusinessRating.tsx       # Rating promedio + estrellas del usuario
-│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (CRUD)
-│   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios
-│   │   ├── FavoriteButton.tsx       # Corazón toggle
+│   │   ├── BusinessSheet.tsx        # Bottom sheet (SwipeableDrawer) — orquesta useBusinessData + pasa props
+│   │   ├── BusinessHeader.tsx       # Nombre, categoría, dirección, teléfono, favorito (prop), direcciones
+│   │   ├── BusinessRating.tsx       # Rating promedio + estrellas del usuario (props-driven)
+│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (CRUD) (props-driven)
+│   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios (props-driven)
+│   │   ├── FavoriteButton.tsx       # Corazón toggle (props-driven)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
 │   └── menu/
 │       ├── FavoritesList.tsx        # Lista de favoritos con filtros
@@ -271,6 +276,11 @@ En CI/CD se inyectan como GitHub Secrets.
 | **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
 | **Hook genérico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
+| **Firestore persistent cache (prod)** | En producción se usa `initializeFirestore` con `persistentLocalCache` + `persistentMultipleTabManager` para cachear datos en IndexedDB. No se usa en DEV (emuladores no lo soportan). |
+| **Business data cache** | `useBusinessDataCache.ts` — caché module-level (`Map`) con TTL de 5 min para las 5 queries del business view. Se invalida en cada write. |
+| **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Caché module-level (`Map`) con TTL de 2 min para la primera página de listas paginadas. |
+| **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags y FavoriteButton reciben datos como props desde BusinessSheet (vía `useBusinessData`). No hacen queries internas. |
+| **Parallel query batching** | `useBusinessData` ejecuta las 5 queries de Firestore del business view en un solo `Promise.all` para reducir latencia y facilitar cache. |
 | **App Check (prod)** | Firebase App Check con reCAPTCHA Enterprise, solo en producción. Opcional: se activa si `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY` está presente. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados en `src/config/converters.ts`. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
@@ -300,6 +310,8 @@ En CI/CD se inyectan como GitHub Secrets.
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 | — | chore | Resolver mejoras técnicas: debounce, tests, paginación, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
 | [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
+| [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Firebase quota mitigations: offline persistence, business view cache, paginated query cache | — | In Progress | `docs/feat-firebase-quota-offline/` |
+| [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | — |
 
 ---
 
@@ -336,6 +348,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - Tags predefinidos: vote count + toggle del usuario
 - Tags custom: crear, editar, eliminar (privados por usuario)
 - Comentarios: lista + formulario + eliminar propios
+- Datos cargados en paralelo (`Promise.all`) con caché client-side (5 min TTL)
 
 ### Menú lateral (SideMenu)
 

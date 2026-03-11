@@ -1,13 +1,17 @@
 import { SwipeableDrawer, Box, Divider } from '@mui/material';
 import { useMapContext } from '../../context/MapContext';
+import { useBusinessData } from '../../hooks/useBusinessData';
 import BusinessHeader from './BusinessHeader';
 import BusinessRating from './BusinessRating';
 import BusinessTags from './BusinessTags';
 import BusinessComments from './BusinessComments';
+import FavoriteButton from './FavoriteButton';
 
 export default function BusinessSheet() {
   const { selectedBusiness, setSelectedBusiness } = useMapContext();
   const isOpen = selectedBusiness !== null;
+  const businessId = selectedBusiness?.id ?? null;
+  const data = useBusinessData(businessId);
 
   const handleClose = () => setSelectedBusiness(null);
   const handleOpen = () => {};
@@ -45,13 +49,40 @@ export default function BusinessSheet() {
           </Box>
 
           <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
-            <BusinessHeader business={selectedBusiness} />
+            <BusinessHeader
+              business={selectedBusiness}
+              favoriteButton={
+                <FavoriteButton
+                  businessId={selectedBusiness.id}
+                  isFavorite={data.isFavorite}
+                  isLoading={data.isLoading}
+                  onToggle={() => data.refetch('favorites')}
+                />
+              }
+            />
             <Divider sx={{ my: 1.5 }} />
-            <BusinessRating businessId={selectedBusiness.id} />
+            <BusinessRating
+              businessId={selectedBusiness.id}
+              ratings={data.ratings}
+              isLoading={data.isLoading}
+              onRatingChange={() => data.refetch('ratings')}
+            />
             <Divider sx={{ my: 1.5 }} />
-            <BusinessTags businessId={selectedBusiness.id} seedTags={selectedBusiness.tags} />
+            <BusinessTags
+              businessId={selectedBusiness.id}
+              seedTags={selectedBusiness.tags}
+              userTags={data.userTags}
+              customTags={data.customTags}
+              isLoading={data.isLoading}
+              onTagsChange={() => data.refetch('userTags')}
+            />
             <Divider sx={{ my: 1.5 }} />
-            <BusinessComments businessId={selectedBusiness.id} />
+            <BusinessComments
+              businessId={selectedBusiness.id}
+              comments={data.comments}
+              isLoading={data.isLoading}
+              onCommentsChange={() => data.refetch('comments')}
+            />
           </Box>
         </Box>
       )}
