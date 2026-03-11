@@ -4,6 +4,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
 
 interface Props {
@@ -19,7 +20,7 @@ export default function FavoriteButton({ businessId }: Props) {
 
   useEffect(() => {
     if (!docId) return;
-    getDoc(doc(db, 'favorites', docId)).then((snap) => {
+    getDoc(doc(db, COLLECTIONS.FAVORITES, docId)).then((snap) => {
       setIsFavorite(snap.exists());
       setIsLoading(false);
     });
@@ -30,10 +31,10 @@ export default function FavoriteButton({ businessId }: Props) {
     setIsLoading(true);
     try {
       if (isFavorite) {
-        await deleteDoc(doc(db, 'favorites', docId));
+        await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
         setIsFavorite(false);
       } else {
-        await setDoc(doc(db, 'favorites', docId), {
+        await setDoc(doc(db, COLLECTIONS.FAVORITES, docId), {
           userId: user.uid,
           businessId,
           createdAt: serverTimestamp(),
@@ -48,6 +49,7 @@ export default function FavoriteButton({ businessId }: Props) {
 
   return (
     <IconButton
+      aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
       disabled={isLoading || !user}
       sx={{ color: isFavorite ? '#ea4335' : '#5f6368' }}

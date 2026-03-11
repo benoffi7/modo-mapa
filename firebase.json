@@ -5,6 +5,18 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self)" },
+          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' *.googleapis.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data: blob: *.gstatic.com *.googleapis.com *.ggpht.com; connect-src 'self' *.firebaseio.com *.googleapis.com *.google.com *.firebaseapp.com; frame-src 'self' *.firebaseapp.com https://www.google.com;" }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "**",

@@ -7,6 +7,8 @@ export default function FilterChips() {
 
   return (
     <Box
+      role="group"
+      aria-label="Filtros de etiquetas"
       sx={{
         position: 'absolute',
         top: 72,

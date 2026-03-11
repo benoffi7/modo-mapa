@@ -23,6 +23,7 @@ export default function DirectionsButton({ business }: Props) {
   return (
     <Button
       variant="contained"
+      aria-label="Cómo llegar"
       startIcon={<DirectionsIcon />}
       onClick={handleClick}
       sx={{

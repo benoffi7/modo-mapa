@@ -44,7 +44,7 @@ export default function BusinessSheet() {
             />
           </Box>
 
-          <Box sx={{ px: 2, pb: 3 }}>
+          <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
             <BusinessHeader business={selectedBusiness} />
             <Divider sx={{ my: 1.5 }} />
             <BusinessRating businessId={selectedBusiness.id} />

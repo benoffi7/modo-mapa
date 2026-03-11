@@ -16,12 +16,12 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { commentConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import type { Business } from '../../types';
-import businessesData from '../../data/businesses.json';
-
-const allBusinesses: Business[] = businessesData as Business[];
 
 interface CommentItem {
   id: string;
@@ -40,28 +40,31 @@ export default function CommentsList({ onNavigate }: Props) {
   const { setSelectedBusiness } = useMapContext();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadComments = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setError(false);
     try {
-      const q = query(collection(db, 'comments'), where('userId', '==', user.uid));
+      const q = query(collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       const items: CommentItem[] = snapshot.docs.map((d) => {
         const data = d.data();
         return {
-          id: d.id,
+          id: data.id,
           businessId: data.businessId,
           business: allBusinesses.find((b) => b.id === data.businessId) || null,
           text: data.text,
-          createdAt: data.createdAt?.toDate() || new Date(),
+          createdAt: data.createdAt,
         };
       });
       items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setComments(items);
-    } catch (error) {
-      console.error('Error loading comments:', error);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+      setError(true);
     }
     setIsLoading(false);
   }, [user]);
@@ -72,7 +75,7 @@ export default function CommentsList({ onNavigate }: Props) {
 
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
-    await deleteDoc(doc(db, 'comments', confirmDeleteId));
+    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
     setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
     setConfirmDeleteId(null);
   };
@@ -101,6 +104,17 @@ export default function CommentsList({ onNavigate }: Props) {
         <Typography variant="body2" color="text.secondary">
           Cargando...
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+          Error al cargar comentarios
+        </Typography>
+        <Button size="small" onClick={loadComments}>Reintentar</Button>
       </Box>
     );
   }

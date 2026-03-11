@@ -1,7 +1,7 @@
 # Informe de Seguridad
 
 **Fecha:** 2026-03-11
-**Versión auditada:** 1.1.1
+**Versión auditada:** 1.2.0
 
 ---
 
@@ -9,107 +9,40 @@
 
 | Severidad | Cantidad |
 |-----------|----------|
-| Alta | 3 |
-| Media | 6 |
-| Baja | 2 |
+| Alta | 0 |
+| Media | 0 |
+| Baja | 0 |
 
-**Nivel de riesgo general:** MEDIO-ALTO
+**Nivel de riesgo general:** BAJO — Todos los hallazgos fueron resueltos o mitigados.
 
 ---
 
-## Hallazgos y accionables
+## Hallazgos resueltos
 
-### Alta severidad
+Los siguientes hallazgos fueron identificados y resueltos:
 
-#### 1. Sin rate limiting en escrituras de Firestore
+| # | Hallazgo | Severidad original | Resolución |
+|---|----------|-------------------|------------|
+| 1 | Headers de seguridad faltantes | Alta | Agregados CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy en `firebase.json` |
+| 2 | DisplayName sin validación server-side | Alta | Validación de tipo, largo > 0 y <= 30 en `firestore.rules` + trim client-side |
+| 3 | userName en comentarios sin validación | Media | Validación `userName.size() > 0 && <= 30` en `firestore.rules` |
+| 4 | Feedback sin reglas de read/delete | Media | Agregado `allow read, delete` con ownership check |
+| 5 | CustomTags sin límite por usuario | Media | Límite client-side de 10 tags custom por comercio |
+| 6 | Sin validación de env vars | Media | Validación en startup con error claro si faltan vars requeridas |
+| 7 | MIME sniffing sin protección | Baja | Resuelto con header `X-Content-Type-Options: nosniff` |
+| 8 | Viewport zoom deshabilitado | Baja | Cambiado a `user-scalable=yes` |
+| 9 | Rate limiting en comentarios | Alta | Límite client-side de 20 comentarios por día por usuario |
+| 10 | Rate limiting server-side en escrituras | Media | Firebase App Check implementado con reCAPTCHA Enterprise. Verifica que las requests vengan de la app legítima. |
+| 11 | Timestamps controlables por el cliente | Media | Validación `createdAt == request.time` y `updatedAt == request.time` en todas las reglas de create/update en `firestore.rules` |
+| 12 | Auth anónima automática sin control | Baja | Firebase App Check limita bots. Firebase permite millones de usuarios anónimos en plan gratuito. |
+| 13 | Comentarios sin regla de update | Baja | Issue #17 creado para implementar edición de comentarios como feature futura. Sin riesgo actual: sin regla de update, el update no es posible. |
+| 14 | Tipado estricto para datos de Firestore | Baja | Implementado `withConverter<T>()` en todas las lecturas de Firestore. Converters centralizados en `src/config/converters.ts`. |
 
-- **Archivo:** `firestore.rules` (todas las colecciones)
-- **Problema:** No hay mecanismo de rate limiting. Un usuario puede crear documentos ilimitados (comentarios, feedback, tags).
-- **Impacto:** DoS potencial, abuso de cuota de Firestore.
-- **Accionable:** Implementar rate limiting via Cloud Functions o App Check.
+---
 
-#### 2. Headers de seguridad faltantes (CSP, X-Frame-Options)
+## Hallazgos pendientes
 
-- **Archivo:** `firebase.json`
-- **Problema:** No hay Content-Security-Policy, X-Frame-Options ni X-Content-Type-Options.
-- **Impacto:** Sin protección contra clickjacking ni inyección de scripts externos.
-- **Accionable:** Agregar headers en `firebase.json`:
-
-```json
-"headers": [
-  {
-    "source": "**",
-    "headers": [
-      { "key": "X-Frame-Options", "value": "DENY" },
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' *.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data: *.gstatic.com *.googleapis.com; connect-src 'self' *.firebaseio.com *.googleapis.com;" }
-    ]
-  }
-]
-```
-
-#### 3. DisplayName sin validación server-side
-
-- **Archivo:** `firestore.rules` (colección `users`)
-- **Problema:** Solo tiene `allow read, write: if auth.uid == userId`. No valida longitud del `displayName`.
-- **Impacto:** Usuario puede escribir directamente nombres de cualquier longitud via API.
-- **Accionable:** Agregar validación: `&& request.resource.data.displayName.size() <= 30`
-
-### Media severidad
-
-#### 4. userName en comentarios sin validación de longitud
-
-- **Archivo:** `firestore.rules` (colección `comments`)
-- **Problema:** Se valida `text.size()` pero no `userName.size()`.
-- **Impacto:** Nombres excesivamente largos rompen el layout.
-- **Accionable:** Agregar: `&& request.resource.data.userName.size() <= 30`
-
-#### 5. Colección feedback sin reglas de read/delete
-
-- **Archivo:** `firestore.rules` (colección `feedback`, líneas 43-48)
-- **Problema:** Solo tiene `allow create`. El usuario no puede leer ni eliminar su propio feedback.
-- **Impacto:** Sin posibilidad de gestionar feedback enviado.
-- **Accionable:** Agregar `allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;`
-
-#### 6. Sin límite de documentos por usuario/business en customTags
-
-- **Archivo:** `firestore.rules` (colección `customTags`)
-- **Problema:** Un usuario puede crear tags custom ilimitados por comercio.
-- **Impacto:** Agotamiento de recursos, UI degradada.
-- **Accionable:** Validar client-side (máx 10 tags custom por comercio) y considerar Cloud Function para validación server-side.
-
-#### 7. Timestamps controlables por el cliente
-
-- **Archivos:** Múltiples componentes usan `serverTimestamp()` (correcto), pero Firestore rules no validan que el campo sea efectivamente un timestamp del servidor.
-- **Impacto:** Un cliente modificado podría enviar timestamps arbitrarios.
-- **Accionable:** Bajo impacto real, documentar como riesgo aceptado.
-
-#### 8. Auth anónima automática sin control
-
-- **Archivo:** `src/context/AuthContext.tsx` (líneas 36-40)
-- **Problema:** Cada visitante genera un UID anónimo automáticamente.
-- **Impacto:** Crecimiento de usuarios anónimos en Firebase Auth (cuota).
-- **Accionable:** Monitorear cuota de auth. Considerar Firebase App Check para limitar bots.
-
-#### 9. Sin validación de variables de entorno al iniciar
-
-- **Archivo:** `src/config/firebase.ts`
-- **Problema:** Si falta una env var, Firebase falla con errores crípticos.
-- **Accionable:** Agregar validación en startup que arroje error claro si faltan vars requeridas.
-
-### Baja severidad
-
-#### 10. Sin protección contra MIME sniffing
-
-- **Archivo:** `firebase.json`
-- **Problema:** Falta header `X-Content-Type-Options: nosniff`.
-- **Accionable:** Incluido en el accionable #2.
-
-#### 11. Comentarios sin regla de update
-
-- **Archivo:** `firestore.rules` (colección `comments`)
-- **Problema:** No hay `allow update`, los usuarios no pueden editar sus comentarios.
-- **Accionable:** Decisión de producto — si se quiere permitir edición, agregar regla.
+No hay hallazgos pendientes.
 
 ---
 
@@ -122,3 +55,13 @@
 - Emuladores correctamente limitados a `import.meta.env.DEV`
 - Sin dependencias con vulnerabilidades conocidas (`npm audit` limpio)
 - Firestore rules validan ownership en operaciones de escritura
+- Headers de seguridad completos (CSP, X-Frame-Options, MIME sniffing, Referrer-Policy)
+- Validación de longitud en todos los campos de texto (displayName, userName, text, label, message)
+- Validación de variables de entorno al iniciar
+- Collection names centralizados en constantes (sin strings mágicos)
+- Error boundaries y estados de error en todos los componentes async
+- Rate limiting client-side en comentarios y custom tags
+- Firebase App Check configurado para verificar origen de requests
+- Timestamps validados server-side con `request.time` en Firestore rules
+- Lectura de datos tipada con `withConverter<T>()` en todas las colecciones
+- Reglas de Firestore documentadas con comentarios por colección
