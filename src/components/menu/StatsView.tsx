@@ -2,17 +2,8 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
-import { allBusinesses } from '../../hooks/useBusinesses';
-import { PREDEFINED_TAGS } from '../../types';
+import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
 import { PieChartCard, TopList } from '../stats';
-
-function getBusinessName(id: string): string {
-  return allBusinesses.find((b) => b.id === id)?.name ?? id;
-}
-
-function getTagLabel(tagId: string): string {
-  return PREDEFINED_TAGS.find((t) => t.id === tagId)?.label ?? tagId;
-}
 
 export default function StatsView() {
   const { metrics, loading, error } = usePublicMetrics();

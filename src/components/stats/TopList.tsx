@@ -25,7 +25,7 @@ export default function TopList({ title, items }: TopListProps) {
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        {items.length === 0 && (
+        {sorted.length === 0 && (
           <Typography variant="body2" color="text.secondary">
             Sin datos
           </Typography>

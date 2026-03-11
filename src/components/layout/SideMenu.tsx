@@ -138,7 +138,7 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Calificaciones" />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => { setFeedbackKey((k: number) => k + 1); setActiveSection('feedback'); }}>
+                <ListItemButton onClick={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}>
                   <ListItemIcon>
                     <FeedbackOutlinedIcon sx={{ color: '#34a853' }} />
                   </ListItemIcon>

@@ -10,18 +10,10 @@ import { countersConverter } from '../../config/adminConverters';
 import { customTagConverter } from '../../config/converters';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
-import { PREDEFINED_TAGS } from '../../types';
+import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
 import type { AdminCounters } from '../../types/admin';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
-
-function getBusinessName(id: string): string {
-  return allBusinesses.find((b) => b.id === id)?.name ?? id;
-}
-
-function getTagLabel(tagId: string): string {
-  return PREDEFINED_TAGS.find((t) => t.id === tagId)?.label ?? tagId;
-}
 
 export default function DashboardOverview() {
   const [counters, setCounters] = useState<AdminCounters | null>(null);
@@ -35,7 +27,7 @@ export default function DashboardOverview() {
     let ignore = false;
 
     Promise.all([
-      getDoc(doc(db, 'config', 'counters').withConverter(countersConverter)),
+      getDoc(doc(db, COLLECTIONS.CONFIG, 'counters').withConverter(countersConverter)),
       getDocs(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter)),
     ])
       .then(([countersSnap, customTagsSnap]) => {
