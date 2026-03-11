@@ -12,7 +12,7 @@ import { db } from '../../config/firebase';
 import { dailyMetricsConverter } from '../../config/adminConverters';
 import type { DailyMetrics } from '../../types/admin';
 import LineChartCard from './charts/LineChartCard';
-import PieChartCard from './charts/PieChartCard';
+import { PieChartCard } from '../stats';
 
 // Spark plan free tier (monthly)
 const FREE_TIER_READS = 50_000;
