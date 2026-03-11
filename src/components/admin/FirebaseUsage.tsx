@@ -29,7 +29,7 @@ export default function FirebaseUsage() {
     getDocs(
       query(
         collection(db, 'dailyMetrics').withConverter(dailyMetricsConverter),
-        orderBy('__name__', 'desc'),
+        orderBy('date', 'desc'),
         limit(30),
       ),
     )
