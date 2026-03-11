@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Versión:** 1.2.0
+**Versión:** 1.2.1
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
@@ -90,7 +90,8 @@ src/
 │   └── businesses.json              # 40 comercios con id, name, address, category, lat, lng, tags, phone
 ├── hooks/
 │   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
-│   ├── useListFilters.ts            # Filtrado genérico: búsqueda, categoría, estrellas, ordenamiento
+│   ├── useListFilters.ts            # Filtrado genérico: búsqueda (debounced), categoría, estrellas, ordenamiento
+│   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore ("Cargar más")
 │   └── useUserLocation.ts           # Geolocalización del navegador
 ├── components/
 │   ├── auth/
@@ -133,7 +134,7 @@ src/
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy a Firebase en push a main |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD → specs → plan → implementar) |
 | `.env.example` | Template de variables de entorno |
-| `package.json` | Dependencias y scripts (v1.2.0) |
+| `package.json` | Dependencias y scripts (v1.2.1) |
 | `docs/SECURITY_GUIDELINES.md` | Guía de seguridad: App Check, timestamps, converters, patrones |
 | `docs/INFORME_SEGURIDAD.md` | Informe de auditoría de seguridad |
 | `docs/INFORME_MEJORAS.md` | Informe de mejoras pendientes y resueltas |
@@ -224,6 +225,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | `npm run preview` | Preview del build de producción |
 | `npm run test` | Vitest watch mode |
 | `npm run test:run` | Vitest single run |
+| `npm run analyze` | Build + genera `dist/stats.html` con análisis del bundle |
 
 ---
 
@@ -274,6 +276,10 @@ En CI/CD se inyectan como GitHub Secrets.
 | **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings mágicos. |
 | **ErrorBoundary** | `ErrorBoundary` genérico envuelve `AppShell` en `App.tsx`. Muestra fallback UI con opción de recargar. |
+| **usePaginatedQuery** | Hook genérico para paginación con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Botón "Cargar más". |
+| **Debounce con useDeferredValue** | `useBusinesses` y `useListFilters` usan `useDeferredValue` de React 19 para debounce de búsqueda. |
+| **Pre-commit hooks** | `husky` + `lint-staged` ejecuta ESLint en archivos `.ts/.tsx` staged antes de cada commit. |
+| **exactOptionalPropertyTypes** | Habilitado en tsconfig. Propiedades opcionales requieren `\| undefined` explícito para asignar `undefined`. |
 
 ---
 
@@ -291,6 +297,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#15](https://github.com/benoffi7/modo-mapa/issues/15) | security | Auditoría de seguridad — hallazgos iniciales | [#16](https://github.com/benoffi7/modo-mapa/pull/16) | Merged | — |
 | [#17](https://github.com/benoffi7/modo-mapa/issues/17) | feat | Agregar edición de comentarios | — | Open | — |
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
+| — | chore | Resolver mejoras técnicas: debounce, tests, paginación, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
 
 ---
 
