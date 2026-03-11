@@ -23,14 +23,24 @@ function makeItem(overrides: {
   updatedAt?: Date;
   business?: Business | null;
 } = {}) {
-  return {
+  const businessOverrides: Partial<Business> = {};
+  if (overrides.name !== undefined) businessOverrides.name = overrides.name;
+  if (overrides.category !== undefined) businessOverrides.category = overrides.category;
+
+  const item: {
+    business: Business | null;
+    score: number;
+    createdAt: Date;
+    updatedAt?: Date | undefined;
+  } = {
     business: overrides.business !== undefined
       ? overrides.business
-      : makeBusiness({ name: overrides.name, category: overrides.category }),
+      : makeBusiness(businessOverrides),
     score: overrides.score ?? 3,
     createdAt: overrides.createdAt ?? new Date('2025-01-01'),
-    updatedAt: overrides.updatedAt,
   };
+  if (overrides.updatedAt !== undefined) item.updatedAt = overrides.updatedAt;
+  return item;
 }
 
 describe('useListFilters', () => {

@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import type { Business, BusinessCategory } from '../types';
 
 export type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'score-desc' | 'score-asc';
 
 interface FilterableItem {
   business: Business | null;
-  score?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  score?: number | undefined;
+  createdAt?: Date | undefined;
+  updatedAt?: Date | undefined;
 }
 
 interface UseListFiltersOptions {
@@ -32,6 +32,7 @@ export function useListFilters<T extends FilterableItem>(
   options: UseListFiltersOptions = {},
 ): UseListFiltersReturn<T> {
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredQuery = useDeferredValue(searchQuery);
   const [categoryFilter, setCategoryFilter] = useState<BusinessCategory | null>(null);
   const [minScore, setMinScore] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
@@ -39,8 +40,8 @@ export function useListFilters<T extends FilterableItem>(
   const filtered = useMemo(() => {
     let result = items.filter((item) => item.business !== null);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
+    if (deferredQuery.trim()) {
+      const q = deferredQuery.trim().toLowerCase();
       result = result.filter((item) => item.business!.name.toLowerCase().includes(q));
     }
 
@@ -78,7 +79,7 @@ export function useListFilters<T extends FilterableItem>(
     });
 
     return result;
-  }, [items, searchQuery, categoryFilter, minScore, sortBy, options.enableScoreFilter]);
+  }, [items, deferredQuery, categoryFilter, minScore, sortBy, options.enableScoreFilter]);
 
   return {
     filtered,
