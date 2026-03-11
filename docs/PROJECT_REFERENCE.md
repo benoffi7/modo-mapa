@@ -271,6 +271,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#7](https://github.com/benoffi7/modo-mapa/issues/7) | feat | Menú lateral con sección Favoritos | [#8](https://github.com/benoffi7/modo-mapa/pull/8) | Merged | `docs/feat-menu-favoritos/` |
 | [#9](https://github.com/benoffi7/modo-mapa/issues/9) | feat | Sección Comentarios en menú lateral | [#10](https://github.com/benoffi7/modo-mapa/pull/10) | Merged | `docs/feat-menu-comentarios/` |
 | [#11](https://github.com/benoffi7/modo-mapa/issues/11) | feat | Feedback, Ratings, Agregar comercio, Versión, Filtros | [#12](https://github.com/benoffi7/modo-mapa/pull/12) | Merged | `docs/feat-menu-feedback-ratings-version/` |
+| [#13](https://github.com/benoffi7/modo-mapa/issues/13) | fix | customTags read rule demasiado restrictiva | [#14](https://github.com/benoffi7/modo-mapa/pull/14) | Merged | — |
 
 ---
 
