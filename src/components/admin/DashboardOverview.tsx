@@ -138,8 +138,8 @@ export default function DashboardOverview() {
           title="Top 10 — Mejor calificados"
           items={(metrics?.topRated ?? []).map((t) => ({
             label: getBusinessName(t.businessId),
-            value: t.count,
-            secondary: `★ ${t.avgScore}`,
+            value: t.avgScore,
+            secondary: `${t.count} votos`,
           }))}
         />
       </Grid>
