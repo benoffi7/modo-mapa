@@ -29,19 +29,16 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 if (import.meta.env.DEV) {
-  // Debug token para App Check en desarrollo con emuladores
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
-}
-
-// App Check: verifica que las requests vengan de la app legítima.
-// Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
-const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
-if (recaptchaKey) {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
-    isTokenAutoRefreshEnabled: true,
-  });
+} else {
+  // App Check solo en producción — los emuladores no lo necesitan.
+  // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
+  const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
+  if (recaptchaKey) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
 }
