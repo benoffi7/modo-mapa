@@ -3,9 +3,17 @@
 ## Desarrollo local
 
 ```bash
-npm install       # instalar dependencias
-npm run dev       # correr en http://localhost:5173
+npm install          # instalar dependencias (primera vez)
+npm run emulators    # en una terminal: levanta Firebase Auth + Firestore local
+npm run dev          # en otra terminal: levanta Vite en http://localhost:5173
 ```
+
+En desarrollo (`npm run dev`), la app usa **emuladores de Firebase** automáticamente:
+- Auth emulator: http://localhost:9099
+- Firestore emulator: http://localhost:8080
+- Emulator UI: http://localhost:4000 (para ver datos, usuarios, etc.)
+
+Los datos del emulador son **efímeros** — se borran al parar el emulador. Producción nunca se toca en local.
 
 Requiere `.env` con las API keys (copiar de `.env.example` y completar).
 

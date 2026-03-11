@@ -11,7 +11,7 @@ import {
   Divider,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import type { Comment } from '../../types';
@@ -29,8 +29,7 @@ export default function BusinessComments({ businessId }: Props) {
   const loadComments = useCallback(async () => {
     const q = query(
       collection(db, 'comments'),
-      where('businessId', '==', businessId),
-      orderBy('createdAt', 'desc')
+      where('businessId', '==', businessId)
     );
     try {
       const snapshot = await getDocs(q);
@@ -39,9 +38,10 @@ export default function BusinessComments({ businessId }: Props) {
         ...d.data(),
         createdAt: d.data().createdAt?.toDate() || new Date(),
       })) as Comment[];
+      loaded.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setComments(loaded);
-    } catch {
-      // Index might not exist yet — show empty
+    } catch (error) {
+      console.error('Error loading comments:', error);
       setComments([]);
     }
   }, [businessId]);
@@ -53,16 +53,22 @@ export default function BusinessComments({ businessId }: Props) {
   const handleSubmit = async () => {
     if (!user || !newComment.trim()) return;
     setIsSubmitting(true);
+    const text = newComment.trim();
+    const userName = displayName || 'Anónimo';
     try {
-      await addDoc(collection(db, 'comments'), {
+      const docRef = await addDoc(collection(db, 'comments'), {
         userId: user.uid,
-        userName: displayName || 'Anónimo',
+        userName,
         businessId,
-        text: newComment.trim(),
+        text,
         createdAt: serverTimestamp(),
       });
+      // Optimistic update: add to local state immediately
+      setComments((prev) => [
+        { id: docRef.id, userId: user.uid, userName, businessId, text, createdAt: new Date() },
+        ...prev,
+      ]);
       setNewComment('');
-      loadComments();
     } catch (error) {
       console.error('Error adding comment:', error);
     }
