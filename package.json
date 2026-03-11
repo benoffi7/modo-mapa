@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "firebase emulators:exec --only auth,firestore 'npm run dev'",
+    "emulators": "firebase emulators:start --only auth,firestore",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
