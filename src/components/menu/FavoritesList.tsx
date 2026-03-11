@@ -110,16 +110,17 @@ export default function FavoritesList({ onNavigate }: Props) {
           <ListItemText
             primary={fav.business.name}
             secondary={
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+              <>
                 <Chip
                   label={CATEGORY_LABELS[fav.business.category]}
                   size="small"
-                  sx={{ alignSelf: 'flex-start', fontSize: '0.7rem', height: 20 }}
+                  component="span"
+                  sx={{ alignSelf: 'flex-start', fontSize: '0.7rem', height: 20, display: 'inline-flex', mt: 0.5 }}
                 />
-                <Typography variant="caption" color="text.secondary">
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                   {fav.business.address}
                 </Typography>
-              </Box>
+              </>
             }
             primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
           />

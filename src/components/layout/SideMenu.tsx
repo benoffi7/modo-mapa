@@ -25,13 +25,14 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import { useAuth } from '../../context/AuthContext';
 import FavoritesList from '../menu/FavoritesList';
+import CommentsList from '../menu/CommentsList';
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites';
+type Section = 'nav' | 'favorites' | 'comments';
 
 export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName } = useAuth();
@@ -101,11 +102,11 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Favoritos" />
                 </ListItemButton>
 
-                <ListItemButton disabled>
+                <ListItemButton onClick={() => setActiveSection('comments')}>
                   <ListItemIcon>
-                    <ChatBubbleOutlineIcon />
+                    <ChatBubbleOutlineIcon sx={{ color: '#1a73e8' }} />
                   </ListItemIcon>
-                  <ListItemText primary="Comentarios" secondary="Próximamente" />
+                  <ListItemText primary="Comentarios" />
                 </ListItemButton>
 
                 <ListItemButton disabled>
@@ -124,14 +125,15 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ArrowBackIcon />
                 </IconButton>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  Favoritos
+                  {activeSection === 'favorites' ? 'Favoritos' : 'Comentarios'}
                 </Typography>
               </Toolbar>
               <Divider />
 
               {/* Section content */}
               <Box sx={{ flex: 1, overflow: 'auto' }}>
-                <FavoritesList onNavigate={handleClose} />
+                {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
+                {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
               </Box>
             </>
           )}

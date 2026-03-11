@@ -28,6 +28,8 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
     match /userTags/{docId} {
