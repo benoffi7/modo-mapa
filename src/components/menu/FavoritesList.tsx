@@ -15,6 +15,8 @@ import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { CATEGORY_LABELS } from '../../types';
+import { useListFilters } from '../../hooks/useListFilters';
+import ListFilters from './ListFilters';
 import type { Business } from '../../types';
 import businessesData from '../../data/businesses.json';
 
@@ -36,6 +38,17 @@ export default function FavoritesList({ onNavigate }: Props) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const {
+    filtered,
+    total,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    sortBy,
+    setSortBy,
+  } = useListFilters(favorites);
+
   const loadFavorites = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
@@ -54,7 +67,6 @@ export default function FavoritesList({ onNavigate }: Props) {
           });
         }
       });
-      items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setFavorites(items);
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -100,42 +112,54 @@ export default function FavoritesList({ onNavigate }: Props) {
   }
 
   return (
-    <List disablePadding>
-      {favorites.map((fav) => (
-        <ListItemButton
-          key={fav.businessId}
-          onClick={() => handleSelectBusiness(fav.business)}
-          sx={{ pr: 1 }}
-        >
-          <ListItemText
-            primary={fav.business.name}
-            secondary={
-              <>
-                <Chip
-                  label={CATEGORY_LABELS[fav.business.category]}
-                  size="small"
-                  component="span"
-                  sx={{ alignSelf: 'flex-start', fontSize: '0.7rem', height: 20, display: 'inline-flex', mt: 0.5 }}
-                />
-                <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  {fav.business.address}
-                </Typography>
-              </>
-            }
-            primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-          />
-          <IconButton
-            edge="end"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRemoveFavorite(fav.businessId);
-            }}
-            sx={{ color: '#ea4335' }}
+    <Box>
+      <ListFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        categoryFilter={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        resultCount={filtered.length}
+        totalCount={total}
+      />
+      <List disablePadding>
+        {filtered.map((fav) => (
+          <ListItemButton
+            key={fav.businessId}
+            onClick={() => handleSelectBusiness(fav.business)}
+            sx={{ pr: 1 }}
           >
-            <FavoriteIcon />
-          </IconButton>
-        </ListItemButton>
-      ))}
-    </List>
+            <ListItemText
+              primary={fav.business.name}
+              secondary={
+                <>
+                  <Chip
+                    label={CATEGORY_LABELS[fav.business.category]}
+                    size="small"
+                    component="span"
+                    sx={{ alignSelf: 'flex-start', fontSize: '0.7rem', height: 20, display: 'inline-flex', mt: 0.5 }}
+                  />
+                  <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {fav.business.address}
+                  </Typography>
+                </>
+              }
+              primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+            />
+            <IconButton
+              edge="end"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveFavorite(fav.businessId);
+              }}
+              sx={{ color: '#ea4335' }}
+            >
+              <FavoriteIcon />
+            </IconButton>
+          </ListItemButton>
+        ))}
+      </List>
+    </Box>
   );
 }
