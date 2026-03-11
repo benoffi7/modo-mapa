@@ -1,0 +1,152 @@
+[
+  {
+    "id": "biz_001",
+    "name": "La Parrilla de Juan",
+    "address": "Av. Corrientes 1234, CABA",
+    "category": "restaurant",
+    "lat": -34.6037,
+    "lng": -58.3816,
+    "tags": ["barato", "buena_atencion"],
+    "phone": "+5411-4444-5555"
+  },
+  {
+    "id": "biz_002",
+    "name": "Café Tortoni",
+    "address": "Av. de Mayo 825, CABA",
+    "category": "cafe",
+    "lat": -34.6095,
+    "lng": -58.3806,
+    "tags": ["buena_atencion"],
+    "phone": "+5411-4342-4328"
+  },
+  {
+    "id": "biz_003",
+    "name": "Pizzería Güerrín",
+    "address": "Av. Corrientes 1368, CABA",
+    "category": "pizza",
+    "lat": -34.6040,
+    "lng": -58.3858,
+    "tags": ["barato", "rapido"],
+    "phone": "+5411-4371-8141"
+  },
+  {
+    "id": "biz_004",
+    "name": "Sarkis",
+    "address": "Thames 1101, CABA",
+    "category": "restaurant",
+    "lat": -34.5930,
+    "lng": -58.4260,
+    "tags": ["apto_celiacos", "buena_atencion"],
+    "phone": "+5411-4772-4911"
+  },
+  {
+    "id": "biz_005",
+    "name": "Artemisia",
+    "address": "Costa Rica 5893, CABA",
+    "category": "restaurant",
+    "lat": -34.5805,
+    "lng": -58.4320,
+    "tags": ["apto_veganos", "apto_celiacos"],
+    "phone": "+5411-4774-4442"
+  },
+  {
+    "id": "biz_006",
+    "name": "Freddo",
+    "address": "Av. Callao 1591, CABA",
+    "category": "icecream",
+    "lat": -34.5960,
+    "lng": -58.3925,
+    "tags": ["apto_celiacos"],
+    "phone": null
+  },
+  {
+    "id": "biz_007",
+    "name": "Kentucky",
+    "address": "Av. Cabildo 1700, CABA",
+    "category": "fastfood",
+    "lat": -34.5620,
+    "lng": -58.4575,
+    "tags": ["barato", "rapido"],
+    "phone": null
+  },
+  {
+    "id": "biz_008",
+    "name": "Panadería La Unión",
+    "address": "Av. Rivadavia 5102, CABA",
+    "category": "bakery",
+    "lat": -34.6180,
+    "lng": -58.4320,
+    "tags": ["barato", "delivery"],
+    "phone": "+5411-4901-2233"
+  },
+  {
+    "id": "biz_009",
+    "name": "La Birra Bar",
+    "address": "Humboldt 1386, CABA",
+    "category": "bar",
+    "lat": -34.5890,
+    "lng": -58.4290,
+    "tags": ["buena_atencion"],
+    "phone": "+5411-4833-6690"
+  },
+  {
+    "id": "biz_010",
+    "name": "Buenos Aires Verde",
+    "address": "Gorriti 5657, CABA",
+    "category": "restaurant",
+    "lat": -34.5835,
+    "lng": -58.4305,
+    "tags": ["apto_veganos", "apto_celiacos", "buena_atencion"],
+    "phone": "+5411-4775-9594"
+  },
+  {
+    "id": "biz_011",
+    "name": "El Cuartito",
+    "address": "Talcahuano 937, CABA",
+    "category": "pizza",
+    "lat": -34.6010,
+    "lng": -58.3845,
+    "tags": ["barato", "rapido"],
+    "phone": "+5411-4816-1758"
+  },
+  {
+    "id": "biz_012",
+    "name": "Oui Oui",
+    "address": "Nicaragua 6068, CABA",
+    "category": "cafe",
+    "lat": -34.5790,
+    "lng": -58.4350,
+    "tags": ["buena_atencion", "delivery"],
+    "phone": null
+  },
+  {
+    "id": "biz_013",
+    "name": "McDonald's Obelisco",
+    "address": "Av. 9 de Julio 1100, CABA",
+    "category": "fastfood",
+    "lat": -34.6035,
+    "lng": -58.3815,
+    "tags": ["barato", "rapido", "delivery"],
+    "phone": null
+  },
+  {
+    "id": "biz_014",
+    "name": "Proper",
+    "address": "Av. de Mayo 722, CABA",
+    "category": "bar",
+    "lat": -34.6088,
+    "lng": -58.3790,
+    "tags": ["buena_atencion"],
+    "phone": "+5411-5199-1101"
+  },
+  {
+    "id": "biz_015",
+    "name": "Hausbrot",
+    "address": "Av. Scalabrini Ortiz 1399, CABA",
+    "category": "bakery",
+    "lat": -34.5925,
+    "lng": -58.4210,
+    "tags": ["apto_celiacos", "delivery"],
+    "phone": "+5411-4831-0048"
+  }
+]
