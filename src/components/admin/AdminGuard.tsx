@@ -37,7 +37,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (accessDenied || (!user?.isAnonymous && user?.email && user.email !== ADMIN_EMAIL)) {
+  if (accessDenied) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 2 }}>
         <Alert severity="error" sx={{ maxWidth: 400 }}>
@@ -78,10 +78,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         )}
       </Box>
     );
-  }
-
-  if (user.email !== ADMIN_EMAIL) {
-    return null;
   }
 
   return <>{children}</>;
