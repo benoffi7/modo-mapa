@@ -83,10 +83,21 @@ Cada iteración se empieza desde cero actualizando los archivos existentes (no s
 6. **Push + crear PR** hacia `main` con resumen y test plan
 7. **Merge** del PR → deploy automático
 
+### Post-merge
+
+Después de mergear un PR a `main`:
+
+1. **Bump de versión** — Incrementar en `package.json` y `docs/PROJECT_REFERENCE.md`:
+   - PATCH (1.1.x) para fixes
+   - MINOR (1.x.0) para features
+   - MAJOR (x.0.0) cada 10 iteraciones
+2. **Actualizar `docs/PROJECT_REFERENCE.md`** — Agregar el issue y PR a la tabla de issues resueltos
+
 ### Convenciones de naming
 
 - Ramas fix: `fix/<issue>-<descripcion>`
 - Ramas feature: `feat/<issue>-<descripcion>`
+- Ramas chore: `chore/<issue>-<descripcion>`
 - Commits: mensaje descriptivo + `Fix #N` o `Closes #N`
 
 ### Checklist pre-commit
