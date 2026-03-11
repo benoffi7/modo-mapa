@@ -22,21 +22,38 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useAuth } from '../../context/AuthContext';
 import FavoritesList from '../menu/FavoritesList';
 import CommentsList from '../menu/CommentsList';
+import RatingsList from '../menu/RatingsList';
+import FeedbackForm from '../menu/FeedbackForm';
+
+declare const __APP_VERSION__: string;
+
+const ADD_BUSINESS_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSdCclz8fH1OQj-McD_xEsXAwP6umIcNVsudS3ZiYBXqBqoaRg/viewform';
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'comments';
+type Section = 'nav' | 'favorites' | 'comments' | 'ratings' | 'feedback';
+
+const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
+  favorites: 'Favoritos',
+  comments: 'Comentarios',
+  ratings: 'Calificaciones',
+  feedback: 'Feedback',
+};
 
 export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('nav');
+  const [feedbackKey, setFeedbackKey] = useState(0);
 
   // Edit name dialog
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
@@ -62,6 +79,8 @@ export default function SideMenu({ open, onClose }: Props) {
     setIsSaving(false);
     setNameDialogOpen(false);
   };
+
+  const handleBackToNav = () => setActiveSection('nav');
 
   const userName = displayName || 'Anónimo';
 
@@ -109,23 +128,49 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Comentarios" />
                 </ListItemButton>
 
-                <ListItemButton disabled>
+                <ListItemButton onClick={() => setActiveSection('ratings')}>
                   <ListItemIcon>
-                    <FeedbackOutlinedIcon />
+                    <StarOutlineIcon sx={{ color: '#fbbc04' }} />
                   </ListItemIcon>
-                  <ListItemText primary="Feedback" secondary="Próximamente" />
+                  <ListItemText primary="Calificaciones" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}>
+                  <ListItemIcon>
+                    <FeedbackOutlinedIcon sx={{ color: '#34a853' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Feedback" />
                 </ListItemButton>
               </List>
+
+              <Divider />
+
+              <List>
+                <ListItemButton onClick={() => window.open(ADD_BUSINESS_URL, '_blank')}>
+                  <ListItemIcon>
+                    <AddBusinessIcon sx={{ color: '#5f6368' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Agregar comercio" />
+                </ListItemButton>
+              </List>
+
+              {/* Version footer */}
+              <Box sx={{ mt: 'auto' }}>
+                <Divider />
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', py: 1.5 }}>
+                  Versión {__APP_VERSION__}
+                </Typography>
+              </Box>
             </>
           ) : (
             <>
               {/* Section header with back button */}
               <Toolbar variant="dense" sx={{ gap: 1 }}>
-                <IconButton edge="start" onClick={() => setActiveSection('nav')}>
+                <IconButton edge="start" onClick={handleBackToNav}>
                   <ArrowBackIcon />
                 </IconButton>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {activeSection === 'favorites' ? 'Favoritos' : 'Comentarios'}
+                  {SECTION_TITLES[activeSection]}
                 </Typography>
               </Toolbar>
               <Divider />
@@ -134,6 +179,8 @@ export default function SideMenu({ open, onClose }: Props) {
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
                 {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
+                {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
+                {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
               </Box>
             </>
           )}
