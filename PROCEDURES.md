@@ -36,9 +36,10 @@ En GitHub repo Settings > Secrets and variables > Actions, agregar:
 1. **Crear issue en GitHub** con descripción del error o mejora
 2. **Crear rama** desde `main`: `fix/<issue>-<descripcion>` o `feat/<issue>-<descripcion>`
 3. **Implementar la solución** en la rama
-4. **Commit** con referencia al issue (ej: `Fix #1: descripción`)
-5. **Crear PR** hacia `main` con resumen y test plan
-6. **Merge** del PR → deploy automático
+4. **Probar en local** con `npm run dev` — validar que el fix funciona
+5. **Commit** con referencia al issue (ej: `Fix #1: descripción`)
+6. **Push + crear PR** hacia `main` con resumen y test plan
+7. **Merge** del PR → deploy automático
 
 ### Convenciones de naming
 - Ramas fix: `fix/<issue>-<descripcion>`
