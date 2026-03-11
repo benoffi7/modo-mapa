@@ -280,6 +280,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | **Debounce con useDeferredValue** | `useBusinesses` y `useListFilters` usan `useDeferredValue` de React 19 para debounce de búsqueda. |
 | **Pre-commit hooks** | `husky` + `lint-staged` ejecuta ESLint en archivos `.ts/.tsx` staged antes de cada commit. |
 | **exactOptionalPropertyTypes** | Habilitado en tsconfig. Propiedades opcionales requieren `\| undefined` explícito para asignar `undefined`. |
+| **Markdown lint** | Archivos `.md` deben cumplir markdownlint (`.markdownlint.json`). Reglas clave: blank lines around headings/lists/fences, language en code blocks (`text`, `typescript`, etc.), no duplicate headings. |
 
 ---
 

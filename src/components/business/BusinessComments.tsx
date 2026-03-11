@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   Box,
   Typography,
@@ -35,28 +35,28 @@ export default memo(function BusinessComments({ businessId }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadComments = useCallback(async () => {
+  useEffect(() => {
+    let ignore = false;
     const q = query(
       collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
       where('businessId', '==', businessId)
     );
-    try {
-      setError(false);
-      const snapshot = await getDocs(q);
+    getDocs(q).then((snapshot) => {
+      if (ignore) return;
       const loaded: Comment[] = snapshot.docs.map((d) => d.data());
       loaded.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      setError(false);
       setComments(loaded);
-    } catch (err) {
+    }).catch((err) => {
+      if (ignore) return;
       console.error('Error loading comments:', err);
       setError(true);
       setComments([]);
-    }
-  }, [businessId]);
-
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
+    });
+    return () => { ignore = true; };
+  }, [businessId, refreshKey]);
 
   const MAX_COMMENTS_PER_DAY = 20;
 
@@ -149,7 +149,7 @@ export default memo(function BusinessComments({ businessId }: Props) {
           <Typography variant="body2" color="error" sx={{ mb: 1 }}>
             Error al cargar comentarios
           </Typography>
-          <Button size="small" onClick={loadComments}>Reintentar</Button>
+          <Button size="small" onClick={() => setRefreshKey((k) => k + 1)}>Reintentar</Button>
         </Box>
       )}
 

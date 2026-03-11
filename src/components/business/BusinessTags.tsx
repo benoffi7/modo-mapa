@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   Box,
   Chip,
@@ -64,31 +64,44 @@ export default memo(function BusinessTags({ businessId, seedTags }: Props) {
   // Delete confirmation
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [error, setError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadTags = useCallback(async () => {
-    const q = query(collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter), where('businessId', '==', businessId));
-    try {
-      setError(false);
-      const snapshot = await getDocs(q);
+  useEffect(() => {
+    let ignore = false;
 
+    if (!user) {
+      Promise.resolve().then(() => {
+        if (ignore) return;
+        setTagCounts(
+          seedTags.map((tagId) => ({ tagId, count: 0, userAdded: false }))
+        );
+        setCustomTags([]);
+      });
+      return () => { ignore = true; };
+    }
+
+    // Load tags
+    const tagsQuery = query(
+      collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
+      where('businessId', '==', businessId)
+    );
+    getDocs(tagsQuery).then((snapshot) => {
+      if (ignore) return;
       const counts: Record<string, { count: number; userAdded: boolean }> = {};
-
-      // Init with seed tags
       seedTags.forEach((tagId) => {
         counts[tagId] = { count: 0, userAdded: false };
       });
-
       snapshot.forEach((d) => {
         const data = d.data();
         if (!counts[data.tagId]) {
           counts[data.tagId] = { count: 0, userAdded: false };
         }
         counts[data.tagId].count++;
-        if (user && data.userId === user.uid) {
+        if (data.userId === user.uid) {
           counts[data.tagId].userAdded = true;
         }
       });
-
+      setError(false);
       setTagCounts(
         Object.entries(counts).map(([tagId, { count, userAdded }]) => ({
           tagId,
@@ -96,37 +109,31 @@ export default memo(function BusinessTags({ businessId, seedTags }: Props) {
           userAdded,
         }))
       );
-    } catch (err) {
+    }).catch((err) => {
+      if (ignore) return;
       console.error('Error loading tags:', err);
       setError(true);
-    }
-  }, [businessId, seedTags, user]);
+    });
 
-  const loadCustomTags = useCallback(async () => {
-    if (!user) {
-      setCustomTags([]);
-      return;
-    }
-    const q = query(
+    // Load custom tags
+    const customQuery = query(
       collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
       where('userId', '==', user.uid),
       where('businessId', '==', businessId)
     );
-    try {
-      const snapshot = await getDocs(q);
+    getDocs(customQuery).then((snapshot) => {
+      if (ignore) return;
       const loaded: CustomTag[] = snapshot.docs.map((d) => d.data());
       loaded.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       setCustomTags(loaded);
-    } catch (err) {
+    }).catch((err) => {
+      if (ignore) return;
       console.error('Error loading custom tags:', err);
       setCustomTags([]);
-    }
-  }, [businessId, user]);
+    });
 
-  useEffect(() => {
-    loadTags();
-    loadCustomTags();
-  }, [loadTags, loadCustomTags]);
+    return () => { ignore = true; };
+  }, [businessId, seedTags, user, refreshKey]);
 
   const [pendingTagId, setPendingTagId] = useState<string | null>(null);
 
@@ -140,6 +147,11 @@ export default memo(function BusinessTags({ businessId, seedTags }: Props) {
     try {
       if (existing?.userAdded) {
         await deleteDoc(tagRef);
+        setTagCounts((prev) =>
+          prev.map((t) =>
+            t.tagId === tagId ? { ...t, count: Math.max(0, t.count - 1), userAdded: false } : t
+          )
+        );
       } else {
         await setDoc(tagRef, {
           userId: user.uid,
@@ -147,8 +159,12 @@ export default memo(function BusinessTags({ businessId, seedTags }: Props) {
           tagId,
           createdAt: serverTimestamp(),
         });
+        setTagCounts((prev) =>
+          prev.map((t) =>
+            t.tagId === tagId ? { ...t, count: t.count + 1, userAdded: true } : t
+          )
+        );
       }
-      await loadTags();
     } catch (err) {
       console.error('Error toggling tag:', err);
     }
@@ -229,7 +245,7 @@ export default memo(function BusinessTags({ businessId, seedTags }: Props) {
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
           Error al cargar etiquetas
         </Typography>
-        <Button size="small" onClick={() => { loadTags(); loadCustomTags(); }}>Reintentar</Button>
+        <Button size="small" onClick={() => setRefreshKey((k) => k + 1)}>Reintentar</Button>
       </Box>
     );
   }
