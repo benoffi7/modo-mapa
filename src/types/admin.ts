@@ -1,3 +1,5 @@
+import type { PublicMetrics } from './metrics';
+
 export interface AdminCounters {
   comments: number;
   ratings: number;
@@ -11,13 +13,7 @@ export interface AdminCounters {
   dailyDeletes: number;
 }
 
-export interface DailyMetrics {
-  date: string;
-  ratingDistribution: Record<string, number>;
-  topFavorited: Array<{ businessId: string; count: number }>;
-  topCommented: Array<{ businessId: string; count: number }>;
-  topRated: Array<{ businessId: string; avgScore: number; count: number }>;
-  topTags: Array<{ tagId: string; count: number }>;
+export interface DailyMetrics extends PublicMetrics {
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;

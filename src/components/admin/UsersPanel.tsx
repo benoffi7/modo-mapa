@@ -15,7 +15,7 @@ import {
   feedbackConverter,
 } from '../../config/converters';
 import { userProfileConverter } from '../../config/converters';
-import TopList from './TopList';
+import { TopList } from '../stats';
 import StatCard from './StatCard';
 
 interface UserStats {
