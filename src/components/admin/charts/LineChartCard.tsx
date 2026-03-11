@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import type { LegendPayload } from 'recharts/types/component/DefaultLegendContent';
 
 interface LineConfig {
   dataKey: string;
@@ -29,8 +30,8 @@ interface LineChartCardProps {
 export default function LineChartCard({ title, data, lines, xAxisKey = 'date' }: LineChartCardProps) {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
 
-  const handleLegendClick = useCallback((entry: { dataKey?: string | number }) => {
-    const key = String(entry.dataKey ?? '');
+  const handleLegendClick = useCallback((entry: LegendPayload) => {
+    const key = typeof entry.dataKey === 'string' ? entry.dataKey : String(entry.dataKey ?? '');
     if (!key) return;
     setHidden((prev) => {
       const next = new Set(prev);

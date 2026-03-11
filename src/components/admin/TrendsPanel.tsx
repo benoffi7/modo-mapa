@@ -14,6 +14,7 @@ import LineChartCard from './charts/LineChartCard';
 type Granularity = 'day' | 'week' | 'month' | 'year';
 
 interface AggregatedPoint {
+  [key: string]: string | number;
   label: string;
   comments: number;
   ratings: number;
