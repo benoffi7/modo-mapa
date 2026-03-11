@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Versión:** 1.3.0
+**Versión:** 1.4.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
@@ -119,13 +119,15 @@ src/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados
 │   ├── converters.ts                # FirestoreDataConverter<T> tipados por colección (incl. feedback)
-│   └── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
+│   ├── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
+│   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos públicos)
 ├── context/
 │   ├── AuthContext.tsx               # Auth anónima + Google Sign-In + displayName
 │   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite, Feedback
-│   └── admin.ts                     # AdminCounters, DailyMetrics, AbuseLog
+│   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
+│   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
 │   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
 ├── data/
@@ -136,7 +138,8 @@ src/
 │   ├── useBusinessDataCache.ts      # Caché client-side para datos del business view (5 min TTL)
 │   ├── useListFilters.ts            # Filtrado genérico: búsqueda (debounced), categoría, estrellas, ordenamiento
 │   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore + caché primera página (2 min TTL)
-│   └── useUserLocation.ts           # Geolocalización del navegador
+│   ├── useUserLocation.ts           # Geolocalización del navegador
+│   └── usePublicMetrics.ts          # Hook para métricas públicas de dailyMetrics
 ├── pages/
 │   └── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
 ├── components/
@@ -151,11 +154,13 @@ src/
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
 │   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
 │   │   ├── StatCard.tsx             # Card con número grande
-│   │   ├── TopList.tsx              # Tabla con barras de progreso
 │   │   ├── ActivityTable.tsx        # Tabla genérica
 │   │   └── charts/
-│   │       ├── PieChartCard.tsx     # Wrapper recharts pie
 │   │       └── LineChartCard.tsx    # Wrapper recharts line (click legend toggle)
+│   ├── stats/                       # Componentes compartidos de estadísticas
+│   │   ├── PieChartCard.tsx         # Wrapper recharts pie (compartido admin + público)
+│   │   ├── TopList.tsx              # Tabla con barras de progreso, auto-sort descendente
+│   │   └── index.ts                 # Barrel export
 │   ├── auth/
 │   │   └── NameDialog.tsx
 │   ├── layout/
@@ -182,7 +187,10 @@ src/
 │       ├── CommentsList.tsx
 │       ├── RatingsList.tsx
 │       ├── FeedbackForm.tsx
+│       ├── StatsView.tsx            # Vista pública de estadísticas (usePublicMetrics)
 │       └── ListFilters.tsx
+├── utils/
+│   └── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 ```
 
 ### Otros archivos clave
@@ -383,6 +391,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
 | — | feat | Security hardening: Cloud Functions, admin dashboard, rate limiting, moderation | [#27](https://github.com/benoffi7/modo-mapa/pull/27) | Merged | `docs/feat-security-hardening/` |
 | [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Firebase quota mitigations: offline persistence, business view cache, paginated query cache | [#26](https://github.com/benoffi7/modo-mapa/pull/26) | Merged | `docs/feat-firebase-quota-offline/` |
+| [#28](https://github.com/benoffi7/modo-mapa/issues/28) | feat | Modularizar componentes de estadísticas + sección pública | [#32](https://github.com/benoffi7/modo-mapa/pull/32) | Merged | `docs/feat-modularizar-stats/` |
 | [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | — |
 
 ---
@@ -430,6 +439,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
   - **Comentarios**: lista con texto truncado. Eliminar con confirmación. Click navega al comercio.
   - **Calificaciones**: lista con estrellas y filtros (búsqueda, categoría, estrellas mínimas, orden). Click navega al comercio.
   - **Feedback**: formulario con categoría (bug/sugerencia/otro) + mensaje (max 1000). Estado de éxito.
+  - **Estadísticas**: distribución de ratings (pie), tags más usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`.
   - **Agregar comercio**: link externo a Google Forms.
 - Footer con versión de la app
 
