@@ -62,6 +62,15 @@ export interface Favorite {
   createdAt: Date;
 }
 
+export interface Feedback {
+  id: string;
+  userId: string;
+  message: string;
+  category: string;
+  createdAt: Date;
+  flagged?: boolean;
+}
+
 export const PREDEFINED_TAGS = [
   { id: 'barato', label: 'Barato', icon: 'AttachMoney' },
   { id: 'apto_celiacos', label: 'Apto celíacos', icon: 'NoFood' },
