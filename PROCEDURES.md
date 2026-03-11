@@ -73,6 +73,24 @@ Toda la documentación se guarda en `docs/<tipo>-<descripcion>/`:
 
 Cada iteración se empieza desde cero actualizando los archivos existentes (no se crean versiones).
 
+## Trabajo en paralelo (múltiples agentes)
+
+Cuando hay más de un agente trabajando en el repo al mismo tiempo, **cada agente debe usar su propio worktree** para evitar conflictos en el working directory:
+
+```bash
+# Crear worktree para una rama nueva
+git worktree add ../modo-mapa-<feature> -b feat/<descripcion>
+
+# Trabajar en el worktree (directorio independiente)
+cd ../modo-mapa-<feature>
+npm install
+
+# Al terminar, limpiar el worktree
+git worktree remove ../modo-mapa-<feature>
+```
+
+Esto permite que cada agente tenga su propio directorio con su propia rama, sin pisar archivos del otro. Los commits de cada agente van a ramas separadas y se resuelven conflictos al mergear PRs.
+
 ## Flujo para corrección de errores / mejoras
 
 1. **Crear issue en GitHub** con descripción del error o mejora

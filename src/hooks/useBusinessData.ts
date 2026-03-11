@@ -53,7 +53,7 @@ async function fetchBusinessData(bId: string, uid: string) {
     )),
   ]);
 
-  const commentsResult = commentsSnap.docs.map((d) => d.data());
+  const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
   commentsResult.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   const customTagsResult = customTagsSnap.docs.map((d) => d.data());
   customTagsResult.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
