@@ -47,6 +47,14 @@ export interface UserTag {
   createdAt: Date;
 }
 
+export interface CustomTag {
+  id: string;
+  userId: string;
+  businessId: string;
+  label: string;
+  createdAt: Date;
+}
+
 export const PREDEFINED_TAGS = [
   { id: 'barato', label: 'Barato', icon: 'AttachMoney' },
   { id: 'apto_celiacos', label: 'Apto celíacos', icon: 'NoFood' },

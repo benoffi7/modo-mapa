@@ -37,5 +37,20 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
+
+    match /customTags/{docId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 30;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 30;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
   }
 }
