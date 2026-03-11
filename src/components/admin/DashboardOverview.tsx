@@ -3,9 +3,11 @@ import Grid from '@mui/material/Grid';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { countersConverter, dailyMetricsConverter } from '../../config/adminConverters';
+import { customTagConverter } from '../../config/converters';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { PREDEFINED_TAGS } from '../../types';
 import type { AdminCounters, DailyMetrics } from '../../types/admin';
@@ -24,6 +26,7 @@ function getTagLabel(tagId: string): string {
 export default function DashboardOverview() {
   const [counters, setCounters] = useState<AdminCounters | null>(null);
   const [metrics, setMetrics] = useState<DailyMetrics | null>(null);
+  const [customTagCounts, setCustomTagCounts] = useState<Array<{ label: string; value: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -34,11 +37,24 @@ export default function DashboardOverview() {
     Promise.all([
       getDoc(doc(db, 'config', 'counters').withConverter(countersConverter)),
       getDoc(doc(db, 'dailyMetrics', today).withConverter(dailyMetricsConverter)),
+      getDocs(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter)),
     ])
-      .then(([countersSnap, metricsSnap]) => {
+      .then(([countersSnap, metricsSnap, customTagsSnap]) => {
         if (ignore) return;
         setCounters(countersSnap.exists() ? countersSnap.data() : null);
         setMetrics(metricsSnap.exists() ? metricsSnap.data() : null);
+
+        const labelMap = new Map<string, number>();
+        for (const d of customTagsSnap.docs) {
+          const label = d.data().label;
+          labelMap.set(label, (labelMap.get(label) ?? 0) + 1);
+        }
+        setCustomTagCounts(
+          [...labelMap.entries()]
+            .map(([label, value]) => ({ label, value }))
+            .sort((a, b) => b.value - a.value),
+        );
+
         setLoading(false);
       })
       .catch(() => {
@@ -127,6 +143,13 @@ export default function DashboardOverview() {
             value: t.count,
             secondary: `★ ${t.avgScore}`,
           }))}
+        />
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TopList
+          title="Custom Tags — Candidatas a promover"
+          items={customTagCounts}
         />
       </Grid>
     </Grid>
