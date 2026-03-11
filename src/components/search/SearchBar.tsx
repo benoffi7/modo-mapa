@@ -5,7 +5,11 @@ import ClearIcon from '@mui/icons-material/Clear';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useMapContext } from '../../context/MapContext';
 
-export default function SearchBar() {
+interface Props {
+  onMenuClick: () => void;
+}
+
+export default function SearchBar({ onMenuClick }: Props) {
   const { searchQuery, setSearchQuery } = useMapContext();
   const [focused, setFocused] = useState(false);
 
@@ -30,7 +34,7 @@ export default function SearchBar() {
         transition: 'box-shadow 0.2s',
       }}
     >
-      <IconButton size="small" sx={{ p: 1, color: '#5f6368' }}>
+      <IconButton size="small" onClick={onMenuClick} sx={{ p: 1, color: '#5f6368' }}>
         <MenuIcon />
       </IconButton>
       <InputBase
