@@ -10,6 +10,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
 
 type FeedbackCategory = 'bug' | 'sugerencia' | 'otro';
@@ -25,7 +26,7 @@ export default function FeedbackForm() {
     if (!user || !message.trim()) return;
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'feedback'), {
+      await addDoc(collection(db, COLLECTIONS.FEEDBACK), {
         userId: user.uid,
         message: message.trim(),
         category,

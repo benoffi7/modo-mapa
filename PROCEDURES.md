@@ -57,7 +57,7 @@ Toda funcionalidad nueva sigue estas etapas con aprobación del usuario en cada 
    - Modelos de datos / interfaces
    - Componentes a crear o modificar
    - Interacciones con Firebase
-   - Consideraciones de seguridad
+   - Consideraciones de seguridad (ver `docs/SECURITY_GUIDELINES.md`)
 4. **Aprobación del usuario** — No avanzar sin OK
 5. **Plan técnico** — Pasos ordenados de implementación
 6. **Implementación** — Siguiendo el flujo de ramas/PR habitual
@@ -108,6 +108,12 @@ Después de mergear un PR a `main`:
 - [ ] Testeado en local con `npm run dev`
 - [ ] Testeado en mobile (Chrome DevTools responsive)
 - [ ] Sin secretos en el código
+- [ ] **Verificación de seguridad** — Evaluar según `docs/SECURITY_GUIDELINES.md`:
+  - Firestore rules validan auth, ownership y longitud de campos
+  - Collection names usan constantes de `src/config/collections.ts`
+  - Operaciones async tienen error handling visible al usuario
+  - Inputs del usuario se validan client-side y server-side
+  - No hay `dangerouslySetInnerHTML`, `eval`, ni secretos hardcodeados
 
 ## Testing
 

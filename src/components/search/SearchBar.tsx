@@ -34,11 +34,12 @@ export default function SearchBar({ onMenuClick }: Props) {
         transition: 'box-shadow 0.2s',
       }}
     >
-      <IconButton size="small" onClick={onMenuClick} sx={{ p: 1, color: '#5f6368' }}>
+      <IconButton size="small" aria-label="Menú" onClick={onMenuClick} sx={{ p: 1, color: '#5f6368' }}>
         <MenuIcon />
       </IconButton>
       <InputBase
         placeholder="Buscar comercios..."
+        inputProps={{ 'aria-label': 'Buscar comercios' }}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setFocused(true)}
@@ -51,11 +52,11 @@ export default function SearchBar({ onMenuClick }: Props) {
         }}
       />
       {searchQuery ? (
-        <IconButton size="small" onClick={handleClear} sx={{ p: 1, color: '#5f6368' }}>
+        <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ p: 1, color: '#5f6368' }}>
           <ClearIcon />
         </IconButton>
       ) : (
-        <IconButton size="small" sx={{ p: 1, color: '#5f6368' }}>
+        <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: '#5f6368' }}>
           <SearchIcon />
         </IconButton>
       )}

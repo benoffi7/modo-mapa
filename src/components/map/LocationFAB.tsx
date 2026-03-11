@@ -8,6 +8,7 @@ export default function LocationFAB() {
   return (
     <Fab
       size="medium"
+      aria-label="Mi ubicación"
       onClick={requestLocation}
       disabled={isLocating}
       sx={{

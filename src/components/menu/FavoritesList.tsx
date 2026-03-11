@@ -7,20 +7,21 @@ import {
   Chip,
   IconButton,
   Typography,
+  Button,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { favoriteConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import ListFilters from './ListFilters';
 import type { Business } from '../../types';
-import businessesData from '../../data/businesses.json';
-
-const allBusinesses: Business[] = businessesData as Business[];
 
 interface FavoriteItem {
   businessId: string;
@@ -37,6 +38,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   const { setSelectedBusiness } = useMapContext();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const {
     filtered,
@@ -52,8 +54,9 @@ export default function FavoritesList({ onNavigate }: Props) {
   const loadFavorites = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setError(false);
     try {
-      const q = query(collection(db, 'favorites'), where('userId', '==', user.uid));
+      const q = query(collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       const items: FavoriteItem[] = [];
       snapshot.forEach((d) => {
@@ -63,13 +66,14 @@ export default function FavoritesList({ onNavigate }: Props) {
           items.push({
             businessId: data.businessId,
             business,
-            createdAt: data.createdAt?.toDate() || new Date(),
+            createdAt: data.createdAt,
           });
         }
       });
       setFavorites(items);
-    } catch (error) {
-      console.error('Error loading favorites:', error);
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+      setError(true);
     }
     setIsLoading(false);
   }, [user]);
@@ -81,7 +85,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   const handleRemoveFavorite = async (businessId: string) => {
     if (!user) return;
     const docId = `${user.uid}__${businessId}`;
-    await deleteDoc(doc(db, 'favorites', docId));
+    await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
     setFavorites((prev) => prev.filter((f) => f.businessId !== businessId));
   };
 
@@ -96,6 +100,17 @@ export default function FavoritesList({ onNavigate }: Props) {
         <Typography variant="body2" color="text.secondary">
           Cargando...
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+          Error al cargar favoritos
+        </Typography>
+        <Button size="small" onClick={loadFavorites}>Reintentar</Button>
       </Box>
     );
   }
