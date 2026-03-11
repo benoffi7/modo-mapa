@@ -1,0 +1,32 @@
+import { Fab, CircularProgress } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import { useUserLocation } from '../../hooks/useUserLocation';
+
+export default function LocationFAB() {
+  const { requestLocation, isLocating } = useUserLocation();
+
+  return (
+    <Fab
+      size="medium"
+      onClick={requestLocation}
+      disabled={isLocating}
+      sx={{
+        position: 'absolute',
+        bottom: 24,
+        right: 16,
+        backgroundColor: '#fff',
+        color: '#666',
+        '&:hover': {
+          backgroundColor: '#f5f5f5',
+        },
+        zIndex: 1000,
+      }}
+    >
+      {isLocating ? (
+        <CircularProgress size={24} color="primary" />
+      ) : (
+        <MyLocationIcon />
+      )}
+    </Fab>
+  );
+}
