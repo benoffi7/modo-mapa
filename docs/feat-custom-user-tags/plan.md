@@ -6,12 +6,14 @@
 ## Pasos de implementación
 
 ### Paso 1: Reglas de Firestore
+
 - Agregar regla para colección `customTags` en `firestore.rules`
 - Read restringido al dueño (`resource.data.userId == request.auth.uid`)
 - Create/Update validan userId y label (1-30 chars)
 - Delete solo por el dueño
 
 ### Paso 2: Modificar `BusinessTags.tsx`
+
 Este es el cambio principal. En orden:
 
 1. **Imports**: agregar `updateDoc`, `addDoc` de Firestore + iconos MUI (`LabelOutlined`) + componentes MUI (`Dialog`, `TextField`, `Menu`, `MenuItem`, `IconButton`)
@@ -36,6 +38,7 @@ Este es el cambio principal. En orden:
 10. **Menu contextual**: MenuItem "Editar" y "Eliminar"
 
 ### Paso 3: Build & test local
+
 - `npm run build` para verificar que compila sin errores
 - Test manual con emuladores: crear, editar, eliminar tags personalizados
 

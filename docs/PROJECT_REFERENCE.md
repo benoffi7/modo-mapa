@@ -1,8 +1,8 @@
 # Modo Mapa — Referencia completa del proyecto
 
 **Versión:** 1.1.0
-**Repo:** https://github.com/benoffi7/modo-mapa
-**Producción:** https://modo-mapa-app.web.app
+**Repo:** <https://github.com/benoffi7/modo-mapa>
+**Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
 
 ---
@@ -31,7 +31,7 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronóm
 
 ## Arquitectura
 
-```
+```text
 main.tsx
   └─ App.tsx
        ├─ ThemeProvider (MUI theme)
@@ -70,7 +70,7 @@ main.tsx
 
 ## Estructura de archivos
 
-```
+```text
 src/
 ├── App.tsx                          # Providers + AppShell
 ├── main.tsx                         # Entry point (StrictMode)
@@ -177,7 +177,7 @@ CATEGORY_LABELS: restaurant→Restaurante, cafe→Café, bakery→Panadería, ba
 
 ## Variables de entorno
 
-```env
+```bash
 VITE_GOOGLE_MAPS_API_KEY=       # API key de Google Maps
 VITE_GOOGLE_MAPS_MAP_ID=        # Map ID para estilos
 VITE_FIREBASE_API_KEY=           # Firebase web API key
@@ -219,12 +219,14 @@ En CI/CD se inyectan como GitHub Secrets.
 ## CI/CD
 
 **GitHub Actions** (`.github/workflows/deploy.yml`):
+
 1. Trigger: push a `main`
 2. Setup: Node 20 + npm cache
 3. Build: `npm run build` con secrets como env vars
 4. Deploy: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
 
 **Flujo de feature:**
+
 1. Crear issue en GitHub
 2. Branch: `feat/<N>-<descripcion>` o `fix/<N>-<descripcion>`
 3. PRD → specs → plan → implementar (ver `PROCEDURES.md`)
@@ -288,6 +290,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 ## Funcionalidades actuales
 
 ### Mapa
+
 - Google Maps centrado en Buenos Aires (-34.6037, -58.3816)
 - 40 marcadores con color por categoría
 - Click en marker abre bottom sheet con detalle
@@ -296,6 +299,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - Filtro por tags predefinidos (chips)
 
 ### Comercio (BusinessSheet)
+
 - Nombre, categoría, dirección, teléfono (link tel:)
 - Botón favorito (toggle corazón)
 - Botón direcciones (abre Google Maps)
@@ -305,6 +309,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - Comentarios: lista + formulario + eliminar propios
 
 ### Menú lateral (SideMenu)
+
 - Header con avatar, nombre, botón editar nombre
 - Secciones:
   - **Favoritos**: lista con filtros (búsqueda, categoría, orden). Quitar favorito inline. Click navega al comercio.
@@ -315,6 +320,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - Footer con versión de la app
 
 ### Filtros reutilizables
+
 - Hook `useListFilters<T>`: filtrado por nombre, categoría, score + ordenamiento
 - Componente `ListFilters`: TextField búsqueda, chips categoría, chips estrellas (opcional), Select orden, contador "N de M"
 - Usado en FavoritesList y RatingsList
