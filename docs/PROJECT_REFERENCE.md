@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Versión:** 1.1.1
+**Versión:** 1.2.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
@@ -72,16 +72,18 @@ main.tsx
 
 ```text
 src/
-├── App.tsx                          # Providers + AppShell
+├── App.tsx                          # Providers + ErrorBoundary + AppShell
 ├── main.tsx                         # Entry point (StrictMode)
 ├── index.css                        # Estilos globales mínimos
 ├── config/
-│   └── firebase.ts                  # Init Firebase + emuladores en DEV
+│   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod)
+│   ├── collections.ts               # Nombres de colecciones Firestore centralizados
+│   └── converters.ts                # FirestoreDataConverter<T> tipados por colección
 ├── context/
 │   ├── AuthContext.tsx               # Auth anónima + displayName
 │   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
 ├── types/
-│   └── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, categorías, tags
+│   └── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite, categorías, tags
 ├── theme/
 │   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
 ├── data/
@@ -95,6 +97,7 @@ src/
 │   │   └── NameDialog.tsx           # Dialog para pedir nombre (primera vez)
 │   ├── layout/
 │   │   ├── AppShell.tsx             # Layout principal, orquesta menú + mapa + sheet
+│   │   ├── ErrorBoundary.tsx        # Error boundary genérico con fallback UI
 │   │   └── SideMenu.tsx             # Drawer lateral con navegación entre secciones
 │   ├── map/
 │   │   ├── MapView.tsx              # Google Map con markers
@@ -130,7 +133,10 @@ src/
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy a Firebase en push a main |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD → specs → plan → implementar) |
 | `.env.example` | Template de variables de entorno |
-| `package.json` | Dependencias y scripts (v1.1.0) |
+| `package.json` | Dependencias y scripts (v1.2.0) |
+| `docs/SECURITY_GUIDELINES.md` | Guía de seguridad: App Check, timestamps, converters, patrones |
+| `docs/INFORME_SEGURIDAD.md` | Informe de auditoría de seguridad |
+| `docs/INFORME_MEJORAS.md` | Informe de mejoras pendientes y resueltas |
 
 ---
 
@@ -143,8 +149,8 @@ src/
 | `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
 | `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt | Read auth; create owner; delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
-| `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read solo owner; CRUD owner |
-| `feedback` | auto-generated | userId, message (1-1000), category, createdAt | Solo create con auth |
+| `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
+| `feedback` | auto-generated | userId, message (1-1000), category, createdAt | Create auth+owner; read/delete owner |
 
 ---
 
@@ -186,6 +192,9 @@ VITE_FIREBASE_PROJECT_ID=        # modo-mapa-app
 VITE_FIREBASE_STORAGE_BUCKET=    # *.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
+
+# Opcional: App Check con reCAPTCHA Enterprise (ver docs/SECURITY_GUIDELINES.md)
+VITE_RECAPTCHA_ENTERPRISE_SITE_KEY=
 ```
 
 En CI/CD se inyectan como GitHub Secrets.
@@ -213,6 +222,8 @@ En CI/CD se inyectan como GitHub Secrets.
 | `npm run build` | tsc + vite build → `dist/` |
 | `npm run lint` | ESLint check |
 | `npm run preview` | Preview del build de producción |
+| `npm run test` | Vitest watch mode |
+| `npm run test:run` | Vitest single run |
 
 ---
 
@@ -258,6 +269,11 @@ En CI/CD se inyectan como GitHub Secrets.
 | **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
 | **Hook genérico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
+| **App Check (prod)** | Firebase App Check con reCAPTCHA Enterprise, solo en producción. Opcional: se activa si `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY` está presente. |
+| **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados en `src/config/converters.ts`. Escrituras usan refs sin converter (por `serverTimestamp()`). |
+| **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
+| **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings mágicos. |
+| **ErrorBoundary** | `ErrorBoundary` genérico envuelve `AppShell` en `App.tsx`. Muestra fallback UI con opción de recargar. |
 
 ---
 
@@ -272,6 +288,9 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#9](https://github.com/benoffi7/modo-mapa/issues/9) | feat | Sección Comentarios en menú lateral | [#10](https://github.com/benoffi7/modo-mapa/pull/10) | Merged | `docs/feat-menu-comentarios/` |
 | [#11](https://github.com/benoffi7/modo-mapa/issues/11) | feat | Feedback, Ratings, Agregar comercio, Versión, Filtros | [#12](https://github.com/benoffi7/modo-mapa/pull/12) | Merged | `docs/feat-menu-feedback-ratings-version/` |
 | [#13](https://github.com/benoffi7/modo-mapa/issues/13) | fix | customTags read rule demasiado restrictiva | [#14](https://github.com/benoffi7/modo-mapa/pull/14) | Merged | — |
+| [#15](https://github.com/benoffi7/modo-mapa/issues/15) | security | Auditoría de seguridad — hallazgos iniciales | [#16](https://github.com/benoffi7/modo-mapa/pull/16) | Merged | — |
+| [#17](https://github.com/benoffi7/modo-mapa/issues/17) | feat | Agregar edición de comentarios | — | Open | — |
+| — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 
 ---
 
