@@ -47,8 +47,9 @@ export default function DashboardOverview() {
 
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (ignore) return;
+        console.error('DashboardOverview fetch error:', err);
         setError(true);
         setLoading(false);
       });
