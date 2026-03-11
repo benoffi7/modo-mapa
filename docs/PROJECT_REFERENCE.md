@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Versión:** 1.2.2
+**Versión:** 1.3.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
@@ -40,9 +40,12 @@ main.tsx
        ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
        ├─ [/admin] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
-       │    └─ AdminLayout (tabs: Overview, Actividad, Firebase Usage, Alertas)
-       │         ├─ DashboardOverview (StatCards + PieCharts + TopLists)
+       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas)
+       │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
        │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
+       │         ├─ FeedbackList (tabla de feedback con categoría y estado)
+       │         ├─ TrendsPanel (gráficos evolución + selector día/semana/mes/año)
+       │         ├─ UsersPanel (rankings por usuario + stats)
        │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
        │         └─ AbuseAlerts (tabla de logs de abuso)
        └─ [/*] MapProvider + APIProvider
@@ -112,13 +115,13 @@ src/
 ├── config/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados
-│   ├── converters.ts                # FirestoreDataConverter<T> tipados por colección
+│   ├── converters.ts                # FirestoreDataConverter<T> tipados por colección (incl. feedback)
 │   └── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
 ├── context/
 │   ├── AuthContext.tsx               # Auth anónima + Google Sign-In + displayName
 │   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite
+│   ├── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite, Feedback
 │   └── admin.ts                     # AdminCounters, DailyMetrics, AbuseLog
 ├── theme/
 │   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
@@ -134,9 +137,12 @@ src/
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificación email
-│   │   ├── AdminLayout.tsx          # AppBar + Tabs (4 secciones)
-│   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists
+│   │   ├── AdminLayout.tsx          # AppBar + Tabs (7 secciones)
+│   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists + Custom Tags ranking
 │   │   ├── ActivityFeed.tsx         # Tabs por colección (últimos 20 items)
+│   │   ├── FeedbackList.tsx         # Tabla de feedback con categoría y flagged
+│   │   ├── TrendsPanel.tsx          # Gráficos evolución + selector día/semana/mes/año
+│   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback)
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
 │   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
 │   │   ├── StatCard.tsx             # Card con número grande
@@ -144,7 +150,7 @@ src/
 │   │   ├── ActivityTable.tsx        # Tabla genérica
 │   │   └── charts/
 │   │       ├── PieChartCard.tsx     # Wrapper recharts pie
-│   │       └── LineChartCard.tsx    # Wrapper recharts line
+│   │       └── LineChartCard.tsx    # Wrapper recharts line (click legend toggle)
 │   ├── auth/
 │   │   └── NameDialog.tsx
 │   ├── layout/
@@ -201,7 +207,7 @@ src/
 | `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, flagged? | Read auth; create owner; delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
-| `feedback` | auto-generated | userId, message (1-1000), category, createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
+| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/otro), createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
 | `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Admin read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
@@ -283,6 +289,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | `npm run preview` | Preview del build de producción |
 | `npm run test` | Vitest watch mode |
 | `npm run test:run` | Vitest single run |
+| `npm run seed` | Poblar emulador Firestore con datos de prueba (requiere emuladores corriendo) |
 | `npm run analyze` | Build + genera `dist/stats.html` con análisis del bundle |
 
 ---
@@ -364,6 +371,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 | — | chore | Resolver mejoras técnicas: debounce, tests, paginación, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
 | [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
+| — | feat | Security hardening: Cloud Functions, admin dashboard, rate limiting, moderation | — | In PR | `docs/feat-security-hardening/` |
 | [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Mitigaciones cuota Firebase + modo offline | — | Open | `docs/feat-firebase-quota-offline/` |
 
 ---
@@ -417,8 +425,11 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificación en frontend (AdminGuard) y server-side (Firestore rules)
-- **Overview**: totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribución de ratings (pie), tags más usados (pie), top 10 comercios
+- **Overview**: totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribución de ratings (pie), tags más usados (pie), top 10 comercios, custom tags candidatas a promover
 - **Actividad**: feed por sección (comentarios, ratings, favoritos, tags) con últimos 20 items, indicador de flagged
+- **Feedback**: tabla de feedback recibido con categoría (bug/sugerencia/otro), mensaje, estado flagged
+- **Tendencias**: gráficos de evolución temporal con selector día/semana/mes/año — actividad por tipo, usuarios activos, total escrituras. Click en leyenda para mostrar/ocultar series
+- **Usuarios**: rankings top 10 por métrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones)
 - **Firebase Usage**: gráficos lineales de reads/writes/deletes y usuarios activos (últimos 30 días), pie charts por colección, barras de cuota vs free tier
 - **Alertas**: logs de abuso (rate limit excedido, contenido flaggeado, top writers)
 
