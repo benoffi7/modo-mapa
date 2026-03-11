@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Versión:** 1.2.1
+**Versión:** 1.2.2
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
 **Última actualización:** 2026-03-11
@@ -299,6 +299,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#17](https://github.com/benoffi7/modo-mapa/issues/17) | feat | Agregar edición de comentarios | — | Open | — |
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 | — | chore | Resolver mejoras técnicas: debounce, tests, paginación, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
+| [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
 
 ---
 
