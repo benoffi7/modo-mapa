@@ -11,6 +11,7 @@ import DashboardOverview from './DashboardOverview';
 import ActivityFeed from './ActivityFeed';
 import FirebaseUsage from './FirebaseUsage';
 import AbuseAlerts from './AbuseAlerts';
+import FeedbackList from './FeedbackList';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -31,14 +32,16 @@ export default function AdminLayout() {
       <Tabs value={tab} onChange={(_, v: number) => setTab(v)} variant="scrollable" scrollButtons="auto">
         <Tab label="Overview" />
         <Tab label="Actividad" />
+        <Tab label="Feedback" />
         <Tab label="Firebase Usage" />
         <Tab label="Alertas" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {tab === 0 && <DashboardOverview />}
         {tab === 1 && <ActivityFeed />}
-        {tab === 2 && <FirebaseUsage />}
-        {tab === 3 && <AbuseAlerts />}
+        {tab === 2 && <FeedbackList />}
+        {tab === 3 && <FirebaseUsage />}
+        {tab === 4 && <AbuseAlerts />}
       </Box>
     </Box>
   );
