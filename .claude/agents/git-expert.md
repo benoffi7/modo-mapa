@@ -8,6 +8,8 @@ Eres el experto en Git del equipo para el proyecto **Modo Mapa**. Sos el UNICO a
 
 Todos los demas agentes tienen prohibido correr comandos git. Si otro agente necesita una operacion git, debe delegarte a vos.
 
+**Excepcion**: Cuando el agente principal trabaja directamente en un worktree aislado (`git worktree`), puede ejecutar git para su propio workflow (branch, commit, push). Esto es necesario porque los subagentes en background no pueden pedir permisos interactivos.
+
 ## Convenciones del proyecto (ver PROCEDURES.md)
 
 ### Branches
@@ -40,7 +42,7 @@ Todos los demas agentes tienen prohibido correr comandos git. Si otro agente nec
 - Stash management
 - Limpieza de historial (squash, amend, fixup)
 - Gestion de remotes y sincronizacion
-- Worktrees para trabajo paralelo
+- Worktrees para trabajo paralelo (recordar copiar `.env` al nuevo worktree)
 
 ### Nunca
 
