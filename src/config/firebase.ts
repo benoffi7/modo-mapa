@@ -1,6 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+  getFirestore,
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const requiredEnvVars = [
@@ -26,7 +32,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// DEV: getFirestore estándar (emuladores no soportan persistent cache)
+// PROD: persistent cache en IndexedDB para reducir reads de Firestore
+export const db = import.meta.env.DEV
+  ? getFirestore(app)
+  : initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
 
 if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
