@@ -12,6 +12,7 @@ import ActivityFeed from './ActivityFeed';
 import FirebaseUsage from './FirebaseUsage';
 import AbuseAlerts from './AbuseAlerts';
 import FeedbackList from './FeedbackList';
+import TrendsPanel from './TrendsPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -33,6 +34,7 @@ export default function AdminLayout() {
         <Tab label="Overview" />
         <Tab label="Actividad" />
         <Tab label="Feedback" />
+        <Tab label="Tendencias" />
         <Tab label="Firebase Usage" />
         <Tab label="Alertas" />
       </Tabs>
@@ -40,8 +42,9 @@ export default function AdminLayout() {
         {tab === 0 && <DashboardOverview />}
         {tab === 1 && <ActivityFeed />}
         {tab === 2 && <FeedbackList />}
-        {tab === 3 && <FirebaseUsage />}
-        {tab === 4 && <AbuseAlerts />}
+        {tab === 3 && <TrendsPanel />}
+        {tab === 4 && <FirebaseUsage />}
+        {tab === 5 && <AbuseAlerts />}
       </Box>
     </Box>
   );
