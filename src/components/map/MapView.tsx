@@ -47,7 +47,7 @@ export default function MapView() {
     <Map
       defaultCenter={BUENOS_AIRES_CENTER}
       defaultZoom={13}
-      mapId={import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined}
+      mapId={import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID'}
       gestureHandling="greedy"
       disableDefaultUI
       clickableIcons={false}
