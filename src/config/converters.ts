@@ -63,6 +63,7 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       businessId: d.businessId,
       text: d.text,
       createdAt: toDate(d.createdAt),
+      ...(d.flagged === true ? { flagged: true } : {}),
     };
   },
 };

@@ -38,6 +38,7 @@ export interface Comment {
   businessId: string;
   text: string;
   createdAt: Date;
+  flagged?: boolean;
 }
 
 export interface UserTag {

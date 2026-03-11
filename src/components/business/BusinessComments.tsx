@@ -45,7 +45,7 @@ export default memo(function BusinessComments({ businessId }: Props) {
     );
     getDocs(q).then((snapshot) => {
       if (ignore) return;
-      const loaded: Comment[] = snapshot.docs.map((d) => d.data());
+      const loaded: Comment[] = snapshot.docs.map((d) => d.data()).filter((c) => !c.flagged);
       loaded.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setError(false);
       setComments(loaded);

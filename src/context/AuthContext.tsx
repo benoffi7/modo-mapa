@@ -1,6 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import {
+  signInAnonymously,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -12,6 +18,8 @@ interface AuthContextType {
   displayName: string | null;
   setDisplayName: (name: string) => Promise<void>;
   isLoading: boolean;
+  signInWithGoogle: () => Promise<User | null>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
   displayName: null,
   setDisplayName: async () => {},
   isLoading: true,
+  signInWithGoogle: async () => null,
+  signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -57,8 +67,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDisplayNameState(trimmed);
   };
 
+  const signInWithGoogle = async (): Promise<User | null> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      return null;
+    }
+  };
+
+  const signOut = async (): Promise<void> => {
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading }}>
+    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

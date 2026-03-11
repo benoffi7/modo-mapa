@@ -6,4 +6,7 @@ export const COLLECTIONS = {
   USER_TAGS: 'userTags',
   FEEDBACK: 'feedback',
   CUSTOM_TAGS: 'customTags',
+  CONFIG: 'config',
+  DAILY_METRICS: 'dailyMetrics',
+  ABUSE_LOGS: 'abuseLogs',
 } as const;

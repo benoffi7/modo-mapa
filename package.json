@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "firebase emulators:exec --only auth,firestore 'npm run dev'",
-    "emulators": "firebase emulators:start --only auth,firestore",
+    "dev:full": "firebase emulators:exec --only auth,firestore,functions 'npm run dev'",
+    "emulators": "firebase emulators:start --only auth,firestore,functions",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -28,7 +28,8 @@
     "@vis.gl/react-google-maps": "^1.7.1",
     "firebase": "^12.10.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
