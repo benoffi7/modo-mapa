@@ -10,6 +10,7 @@
 Formulario para enviar feedback sobre la app.
 
 **Props:**
+
 ```typescript
 interface Props {
   onDone: () => void; // vuelve a nav después de enviar
@@ -17,16 +18,19 @@ interface Props {
 ```
 
 **Estado:**
+
 - `message: string` — texto del feedback
 - `category: 'bug' | 'sugerencia' | 'otro'` — categoría seleccionada
 - `isSubmitting: boolean`
 - `sent: boolean` — true después de enviar (muestra agradecimiento)
 
 **Lógica:**
+
 - `addDoc(collection(db, 'feedback'), { userId, message, category, createdAt: serverTimestamp() })`
 - Después de enviar: `sent = true`, mostrar mensaje de agradecimiento 2.5s, luego `onDone()`
 
 **Render:**
+
 - Selector de categoría: 3 chips (Bug, Sugerencia, Otro)
 - TextField multiline (4 rows, max 1000 chars) con contador
 - Botón "Enviar" (disabled si mensaje vacío)
@@ -37,6 +41,7 @@ interface Props {
 Lista de calificaciones del usuario.
 
 **Props:**
+
 ```typescript
 interface Props {
   onNavigate: () => void;
@@ -44,11 +49,13 @@ interface Props {
 ```
 
 **Lógica:**
+
 - Query: `getDocs(query(collection(db, 'ratings'), where('userId', '==', user.uid)))`
 - Cruzar businessId con JSON local
 - Ordenar por `updatedAt` o `createdAt` descendente
 
 **Render por item:**
+
 - `ListItemButton` con click → `setSelectedBusiness` + `onNavigate()`
 - Primary: nombre del comercio
 - Secondary: `Rating` component (readOnly) con el score + fecha
@@ -61,6 +68,7 @@ interface Props {
 ### 3. `src/components/layout/SideMenu.tsx`
 
 **Cambios:**
+
 - Ampliar `Section`: `'nav' | 'favorites' | 'comments' | 'ratings' | 'feedback'`
 - Agregar imports: `RatingsList`, `FeedbackForm`, `StarOutlineIcon`, `AddBusinessIcon`/`StorefrontOutlinedIcon`
 - Habilitar Feedback (quitar disabled, agregar onClick)
@@ -71,6 +79,7 @@ interface Props {
 - Agregar render de `RatingsList` y `FeedbackForm` en sección de contenido
 
 **Footer de versión (solo en vista nav):**
+
 ```tsx
 <Box sx={{ mt: 'auto' }}>
   <Divider />
@@ -79,16 +88,19 @@ interface Props {
   </Typography>
 </Box>
 ```
+
 La versión se lee de `package.json` via la constante de Vite: `__APP_VERSION__` (definida en `vite.config.ts`).
 
 ### 4. `vite.config.ts`
 
 **Agregar define** para exponer la versión de package.json:
+
 ```typescript
 define: {
   __APP_VERSION__: JSON.stringify(require('./package.json').version),
 }
 ```
+
 (O con import si es ESM)
 
 ### 5. `package.json`
@@ -98,7 +110,8 @@ define: {
 ### 6. `firestore.rules`
 
 **Agregar regla para `feedback`:**
-```
+
+```text
 match /feedback/{docId} {
   allow create: if request.auth != null
     && request.resource.data.userId == request.auth.uid
@@ -106,6 +119,7 @@ match /feedback/{docId} {
     && request.resource.data.message.size() <= 1000;
 }
 ```
+
 Solo create — el usuario no puede leer, editar ni borrar feedback.
 
 ## Interacciones con Firebase
@@ -122,6 +136,6 @@ Solo create — el usuario no puede leer, editar ni borrar feedback.
 
 ## URL Agregar comercio
 
-```
+```text
 https://docs.google.com/forms/d/e/1FAIpQLSdCclz8fH1OQj-McD_xEsXAwP6umIcNVsudS3ZiYBXqBqoaRg/viewform
 ```

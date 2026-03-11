@@ -5,14 +5,14 @@
 ```bash
 npm install          # instalar dependencias (primera vez)
 npm run emulators    # en una terminal: levanta Firebase Auth + Firestore local
-npm run dev          # en otra terminal: levanta Vite en http://localhost:5173
+npm run dev          # en otra terminal: levanta Vite en localhost:5173
 ```
 
 En desarrollo (`npm run dev`), la app usa **emuladores de Firebase** automáticamente:
 
-- Auth emulator: http://localhost:9099
-- Firestore emulator: http://localhost:8080
-- Emulator UI: http://localhost:4000 (para ver datos, usuarios, etc.)
+- Auth emulator: <http://localhost:9099>
+- Firestore emulator: <http://localhost:8080>
+- Emulator UI: <http://localhost:4000> (para ver datos, usuarios, etc.)
 
 Los datos del emulador son **efímeros** — se borran al parar el emulador. Producción nunca se toca en local.
 
@@ -27,7 +27,7 @@ El deploy a Firebase Hosting es **automático** al mergear un PR a `main` via Gi
 1. Trabajar en una rama
 2. Crear PR hacia `main`
 3. Mergear el PR
-4. GitHub Actions buildea y deploya a https://modo-mapa-app.web.app
+4. GitHub Actions buildea y deploya a <https://modo-mapa-app.web.app>
 
 ### Configuración requerida (una sola vez)
 
@@ -89,9 +89,52 @@ Cada iteración se empieza desde cero actualizando los archivos existentes (no s
 - Ramas feature: `feat/<issue>-<descripcion>`
 - Commits: mensaje descriptivo + `Fix #N` o `Closes #N`
 
-### Checklist pre-PR
+### Checklist pre-commit
 
+- [ ] `npm run test:run` — todos los tests pasan
 - [ ] `npm run build` pasa sin errores
+- [ ] Archivos `.md` nuevos o modificados pasan `npx markdownlint-cli2`
 - [ ] Testeado en local con `npm run dev`
 - [ ] Testeado en mobile (Chrome DevTools responsive)
 - [ ] Sin secretos en el código
+
+## Testing
+
+Tests con **Vitest** + **@testing-library/react**.
+
+```bash
+npm run test        # watch mode (desarrollo)
+npm run test:run    # ejecución única (CI / pre-commit)
+```
+
+### Convenciones
+
+- Archivos de test colocados junto al código fuente: `useHook.test.ts` junto a `useHook.ts`
+- Al agregar lógica nueva (hooks, utilidades, funciones puras), evaluar si necesita tests
+- Priorizar tests de lógica (hooks, filtros, ordenamiento) sobre tests de UI
+- Fixtures y helpers dentro del mismo test file, salvo que se compartan
+
+### Cuándo agregar tests
+
+- Hook nuevo con lógica de filtrado/ordenamiento/transformación → test obligatorio
+- Función utilitaria pura → test obligatorio
+- Corrección de bug → agregar test que reproduzca el escenario
+- Componente UI simple (render + estilos) → no requiere test
+
+## Markdown lint
+
+Los archivos `.md` deben pasar markdownlint antes de commitear.
+
+```bash
+npx markdownlint-cli2 "**/*.md" --no-globs "#node_modules"
+```
+
+Configuración en `.markdownlint.json` (deshabilitados: MD013 line-length, MD060 table-column-style).
+
+Reglas más comunes a respetar:
+
+- Línea en blanco antes y después de headings (MD022)
+- Línea en blanco antes y después de listas (MD032)
+- Línea en blanco antes y después de bloques de código (MD031)
+- Especificar lenguaje en bloques de código (MD040)
+- No usar URLs desnudas, usar `<url>` (MD034)

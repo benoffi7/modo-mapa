@@ -35,6 +35,7 @@ type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'score-d
 ```
 
 **Lógica:**
+
 - Filtra por `business.name` conteniendo `searchQuery` (case-insensitive)
 - Filtra por `business.category === categoryFilter` (si activo)
 - Filtra por `score >= minScore` (si activo y enableScoreFilter)
@@ -46,6 +47,7 @@ type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'score-d
 Componente visual de filtros, reutilizable.
 
 **Props:**
+
 ```typescript
 interface Props {
   searchQuery: string;
@@ -64,6 +66,7 @@ interface Props {
 ```
 
 **Render:**
+
 - **Búsqueda**: `TextField` compacto (size small, placeholder "Buscar...", ícono Search)
 - **Categorías**: fila de chips scrollable horizontal con CATEGORY_LABELS. Chip activo = filled/primary. Click en el activo lo desactiva (null).
 - **Estrellas** (si `showScoreFilter`): fila de chips "1+", "2+", "3+", "4+", "5". Click activa/desactiva.
@@ -96,10 +99,12 @@ Layout vertical compacto con `gap: 1`, padding `px: 2, py: 1`.
 ## Opciones de ordenamiento por lista
 
 **Favoritos:**
+
 - Fecha (reciente/antiguo) — default: date-desc
 - Nombre (A-Z / Z-A)
 
 **Calificaciones:**
+
 - Fecha (reciente/antiguo) — default: date-desc
 - Nombre (A-Z / Z-A)
 - Estrellas (mayor/menor)

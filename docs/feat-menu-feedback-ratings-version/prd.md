@@ -6,6 +6,7 @@
 ## Descripción
 
 Completar el menú lateral con las secciones restantes y mejoras:
+
 1. **Feedback**: formulario para enviar feedback sobre la app
 2. **Ratings**: historial de calificaciones del usuario
 3. **Agregar comercio**: link a Google Form externo
@@ -21,6 +22,7 @@ Completar el menú lateral con las secciones restantes y mejoras:
 ## Requisitos funcionales
 
 ### 1. Feedback
+
 - Click en "Feedback" en la navegación → muestra formulario inline en el drawer.
 - TextField multiline para escribir mensaje libre.
 - Opcionalmente: selector de categoría (Bug, Sugerencia, Otro).
@@ -29,6 +31,7 @@ Completar el menú lateral con las secciones restantes y mejoras:
 - Es unidireccional: el usuario no ve feedback previo.
 
 ### 2. Ratings
+
 - Click en "Ratings" en la navegación → muestra lista de comercios calificados por el usuario.
 - Cada item: nombre del comercio, estrellas (score), fecha.
 - Click en un rating → cierra drawer, centra mapa, abre BusinessSheet.
@@ -36,32 +39,38 @@ Completar el menú lateral con las secciones restantes y mejoras:
 - Estado vacío: "No calificaste comercios todavía".
 
 ### 3. Agregar comercio
+
 - Item en la navegación del drawer con ícono `AddBusiness` o `StorefrontOutlined`.
 - Click → abre link externo: `https://docs.google.com/forms/d/e/1FAIpQLSdCclz8fH1OQj-McD_xEsXAwP6umIcNVsudS3ZiYBXqBqoaRg/viewform`
 - Se abre en nueva pestaña (`window.open` con `_blank`).
 
 ### 4. Versión
+
 - En la parte inferior del drawer (footer), una línea divisoria y debajo texto: "Versión 1.1.0".
 - Color gris claro, centrado, tipografía caption.
 - La versión se toma de `package.json` o se define como constante.
 
 ## Requisitos no funcionales
+
 - Feedback: máximo 1000 caracteres.
 - Ratings: cruzar con JSON local para resolver comercio.
 - El formulario de feedback se resetea después de enviar.
 
 ## Consideraciones UX
+
 - Feedback: después de enviar, mostrar mensaje de agradecimiento por 2-3 segundos y volver a la nav.
 - Ratings: misma estructura visual que FavoritesList/CommentsList.
 - "Agregar comercio" no abre sección inline, abre link externo directo.
 - Versión siempre visible en el footer de la vista de navegación.
 
 ## Buenas prácticas
+
 - Nueva colección Firestore `feedback` con reglas de solo create (no read/update/delete por el usuario).
 - Agregar regla en `firestore.rules` para `feedback`.
 - Versión como constante en `package.json` (ya existe campo `version`).
 
 ## Versionado
+
 - Versión actual: 1.1.0
 - Cada 10 iteraciones (PRs mergeados) se incrementa el segundo número.
 - Cada 10 incrementos del segundo número se incrementa el primero y se reinicia.

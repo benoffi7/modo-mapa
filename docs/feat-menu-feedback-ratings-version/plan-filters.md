@@ -58,7 +58,7 @@
 
 ## Dependencias entre pasos
 
-```
+```text
 Paso 1 (hook) ──┬──→ Paso 3 (RatingsList)
                  │
 Paso 2 (UI)   ──┼──→ Paso 4 (FavoritesList)

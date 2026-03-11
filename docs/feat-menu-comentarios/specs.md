@@ -10,6 +10,7 @@
 Lista de comentarios del usuario en todos los comercios.
 
 **Props:**
+
 ```typescript
 interface Props {
   onNavigate: () => void;
@@ -17,22 +18,26 @@ interface Props {
 ```
 
 **Lógica:**
+
 - Query Firestore: `getDocs(query(collection(db, 'comments'), where('userId', '==', user.uid)))`
 - Importa JSON directo para resolver businessId → Business (mismo patrón que FavoritesList)
 - Ordena por `createdAt` descendente
 - Estado: `comments`, `isLoading`, `confirmDeleteId` (para dialog de confirmación)
 
 **Render por item:**
+
 - `ListItemButton` con click → `setSelectedBusiness(business)` + `onNavigate()`
 - Primary: nombre del comercio
 - Secondary: texto truncado (max 80 chars) + fecha formateada
 - `IconButton` con `DeleteOutlineIcon` → abre dialog de confirmación
 
 **Eliminar:**
+
 - `deleteDoc(doc(db, 'comments', commentId))`
 - Remove optimista del estado local
 
 **Estado vacío:**
+
 - `ChatBubbleOutlineIcon` grande + "No dejaste comentarios todavía"
 
 ## Componentes a modificar
@@ -40,6 +45,7 @@ interface Props {
 ### 2. `src/components/layout/SideMenu.tsx`
 
 **Cambios:**
+
 - Ampliar tipo `Section`: `'nav' | 'favorites' | 'comments'`
 - Habilitar el `ListItemButton` de Comentarios (quitar `disabled`, agregar `onClick`)
 - Agregar caso `'comments'` en el render condicional (toolbar con back + CommentsList)
@@ -48,6 +54,7 @@ interface Props {
 ### 3. `src/components/business/BusinessComments.tsx`
 
 **Cambios:**
+
 - Agregar `IconButton` con `DeleteOutlineIcon` en cada comentario propio (`comment.userId === user?.uid`)
 - Agregar estado `confirmDeleteId: string | null` para dialog de confirmación
 - Agregar `handleDeleteComment(id)`: `deleteDoc` + remove del estado local
@@ -57,7 +64,8 @@ interface Props {
 ### 4. `firestore.rules`
 
 **Cambio en regla `comments`:**
-```
+
+```text
 match /comments/{docId} {
   allow read: if request.auth != null;
   allow create: if request.auth != null

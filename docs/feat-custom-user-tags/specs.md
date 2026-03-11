@@ -9,7 +9,7 @@
 
 Nueva colección separada de `userTags` (que es para votos en tags predefinidos).
 
-```
+```text
 customTags/{autoId}
 {
   userId: string,       // uid del usuario
@@ -38,6 +38,7 @@ export interface CustomTag {
 ### 1. `src/components/business/BusinessTags.tsx`
 
 **Cambios:**
+
 - Agregar estado `customTags: CustomTag[]` para los tags personalizados del usuario actual.
 - Agregar `loadCustomTags()` que consulta `customTags` filtrando por `userId` y `businessId`.
 - Renderizar un chip "+" (solo si `user` existe) al final de los tags predefinidos.
@@ -52,7 +53,8 @@ export interface CustomTag {
 ### 3. `firestore.rules`
 
 **Agregar regla** para la colección `customTags`:
-```
+
+```text
 match /customTags/{docId} {
   allow read: if request.auth != null
     && resource.data.userId == request.auth.uid;
@@ -83,21 +85,25 @@ match /customTags/{docId} {
 ## UX / UI
 
 ### Chip "+"
+
 - Chip outlined con ícono `Add`, texto "Agregar"
 - Solo visible si `user !== null`
 - Al hacer click: abre un `Dialog` simple con un `TextField` para escribir el label
 
 ### Tags personalizados
+
 - Chips con `variant="outlined"`, `color="secondary"` para diferenciarlos de los predefinidos
 - Ícono: `Label` (de MUI icons) para distinguirlos visualmente
 - Al hacer click: abre un `Menu` (popover) con opciones "Editar" y "Eliminar"
 
 ### Dialog de creación/edición
+
 - `Dialog` de MUI con `TextField` (max 30 chars)
 - Botón "Guardar" deshabilitado si el input está vacío
 - Título: "Agregar etiqueta" / "Editar etiqueta"
 
 ### Eliminación
+
 - `Dialog` de confirmación: "¿Eliminar etiqueta '{label}'?"
 - Botones: "Cancelar" / "Eliminar"
 
