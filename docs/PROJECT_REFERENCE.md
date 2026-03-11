@@ -1,0 +1,320 @@
+# Modo Mapa — Referencia completa del proyecto
+
+**Versión:** 1.1.0
+**Repo:** https://github.com/benoffi7/modo-mapa
+**Producción:** https://modo-mapa-app.web.app
+**Última actualización:** 2026-03-11
+
+---
+
+## Descripción
+
+App web mobile-first para empleados que necesitan encontrar comercios gastronómicos cercanos en un mapa interactivo. Los usuarios pueden buscar, filtrar, calificar, comentar, marcar favoritos y etiquetar comercios. Localizada en español (es-AR), orientada a Buenos Aires.
+
+---
+
+## Stack tecnológico
+
+| Capa | Tecnología | Versión |
+|------|-----------|---------|
+| Framework | React | 19.2 |
+| Bundler | Vite | 7.3 |
+| Lenguaje | TypeScript | 5.9 (strict) |
+| UI | Material UI (MUI) | 7.3 |
+| Mapa | @vis.gl/react-google-maps | 1.7 |
+| Auth | Firebase Anonymous Auth | 12.10 |
+| Base de datos | Cloud Firestore | 12.10 |
+| Hosting | Firebase Hosting | — |
+| CI/CD | GitHub Actions | — |
+
+---
+
+## Arquitectura
+
+```
+main.tsx
+  └─ App.tsx
+       ├─ ThemeProvider (MUI theme)
+       ├─ AuthProvider (Firebase Auth + displayName)
+       ├─ MapProvider (estado central del mapa)
+       └─ APIProvider (Google Maps)
+            └─ AppShell.tsx
+                 ├─ SearchBar (búsqueda + menú hamburguesa)
+                 ├─ FilterChips (tags predefinidos)
+                 ├─ MapView (Google Maps + markers)
+                 ├─ LocationFAB (geolocalización)
+                 ├─ BusinessSheet (bottom sheet con detalle)
+                 │    ├─ BusinessHeader (nombre, dirección, favorito, direcciones)
+                 │    ├─ BusinessRating (estrellas promedio + calificar)
+                 │    ├─ BusinessTags (tags predefinidos + custom)
+                 │    └─ BusinessComments (lista + formulario + eliminar)
+                 ├─ NameDialog (nombre de usuario, primera visita)
+                 └─ SideMenu (drawer lateral)
+                      ├─ Header (avatar + nombre + editar)
+                      ├─ Nav (Favoritos, Comentarios, Calificaciones, Feedback, Agregar comercio)
+                      ├─ FavoritesList + ListFilters
+                      ├─ CommentsList
+                      ├─ RatingsList + ListFilters
+                      ├─ FeedbackForm
+                      └─ Footer (versión)
+```
+
+### Flujo de datos
+
+1. **Datos estáticos**: `businesses.json` (40 comercios) se carga como import estático. No hay fetch.
+2. **Datos dinámicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). Cada componente hace su propia query.
+3. **Estado global**: `AuthContext` (user, displayName) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
+4. **Estado local**: Cada sección del menú carga sus datos al montarse y los filtra client-side con `useListFilters`.
+
+---
+
+## Estructura de archivos
+
+```
+src/
+├── App.tsx                          # Providers + AppShell
+├── main.tsx                         # Entry point (StrictMode)
+├── index.css                        # Estilos globales mínimos
+├── config/
+│   └── firebase.ts                  # Init Firebase + emuladores en DEV
+├── context/
+│   ├── AuthContext.tsx               # Auth anónima + displayName
+│   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
+├── types/
+│   └── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, categorías, tags
+├── theme/
+│   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
+├── data/
+│   └── businesses.json              # 40 comercios con id, name, address, category, lat, lng, tags, phone
+├── hooks/
+│   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
+│   ├── useListFilters.ts            # Filtrado genérico: búsqueda, categoría, estrellas, ordenamiento
+│   └── useUserLocation.ts           # Geolocalización del navegador
+├── components/
+│   ├── auth/
+│   │   └── NameDialog.tsx           # Dialog para pedir nombre (primera vez)
+│   ├── layout/
+│   │   ├── AppShell.tsx             # Layout principal, orquesta menú + mapa + sheet
+│   │   └── SideMenu.tsx             # Drawer lateral con navegación entre secciones
+│   ├── map/
+│   │   ├── MapView.tsx              # Google Map con markers
+│   │   ├── BusinessMarker.tsx       # Marker individual con color por categoría
+│   │   └── LocationFAB.tsx          # FAB de geolocalización
+│   ├── search/
+│   │   ├── SearchBar.tsx            # Barra de búsqueda fija arriba
+│   │   └── FilterChips.tsx          # Chips de tags predefinidos scrollables
+│   ├── business/
+│   │   ├── BusinessSheet.tsx        # Bottom sheet (SwipeableDrawer)
+│   │   ├── BusinessHeader.tsx       # Nombre, categoría, dirección, teléfono, favorito, direcciones
+│   │   ├── BusinessRating.tsx       # Rating promedio + estrellas del usuario
+│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (CRUD)
+│   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios
+│   │   ├── FavoriteButton.tsx       # Corazón toggle
+│   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
+│   └── menu/
+│       ├── FavoritesList.tsx        # Lista de favoritos con filtros
+│       ├── CommentsList.tsx         # Lista de comentarios del usuario
+│       ├── RatingsList.tsx          # Lista de calificaciones con filtros
+│       ├── FeedbackForm.tsx         # Formulario de feedback (bug/sugerencia/otro)
+│       └── ListFilters.tsx          # Componente visual de filtros reutilizable
+```
+
+### Otros archivos clave
+
+| Archivo | Descripción |
+|---------|-------------|
+| `firestore.rules` | Reglas de seguridad para todas las colecciones |
+| `firebase.json` | Config de hosting, emuladores, reglas |
+| `.firebaserc` | Proyecto: `modo-mapa-app` |
+| `vite.config.ts` | Plugin React + `__APP_VERSION__` desde package.json |
+| `.github/workflows/deploy.yml` | CI/CD: build + deploy a Firebase en push a main |
+| `PROCEDURES.md` | Flujo de desarrollo (PRD → specs → plan → implementar) |
+| `.env.example` | Template de variables de entorno |
+| `package.json` | Dependencias y scripts (v1.1.0) |
+
+---
+
+## Colecciones Firestore
+
+| Colección | Doc ID | Campos | Reglas |
+|-----------|--------|--------|--------|
+| `users` | `{userId}` | displayName, createdAt | R/W solo el owner |
+| `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
+| `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt | Read auth; create owner; delete owner |
+| `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
+| `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read solo owner; CRUD owner |
+| `feedback` | auto-generated | userId, message (1-1000), category, createdAt | Solo create con auth |
+
+---
+
+## Tipos principales
+
+```typescript
+// Business (datos estáticos del JSON)
+interface Business {
+  id: string;             // "biz_001"
+  name: string;           // "La Parrilla de Juan"
+  address: string;        // "Av. Corrientes 1234, CABA"
+  category: BusinessCategory;
+  lat: number;
+  lng: number;
+  tags: string[];         // ["barato", "buena_atencion"]
+  phone: string | null;
+}
+
+type BusinessCategory = 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'fastfood' | 'icecream' | 'pizza';
+
+// Tags predefinidos (6)
+PREDEFINED_TAGS: barato, apto_celiacos, apto_veganos, rapido, delivery, buena_atencion
+
+// Categorías con labels en español (7)
+CATEGORY_LABELS: restaurant→Restaurante, cafe→Café, bakery→Panadería, bar→Bar,
+                 fastfood→Comida rápida, icecream→Heladería, pizza→Pizzería
+```
+
+---
+
+## Variables de entorno
+
+```env
+VITE_GOOGLE_MAPS_API_KEY=       # API key de Google Maps
+VITE_GOOGLE_MAPS_MAP_ID=        # Map ID para estilos
+VITE_FIREBASE_API_KEY=           # Firebase web API key
+VITE_FIREBASE_AUTH_DOMAIN=       # *.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=        # modo-mapa-app
+VITE_FIREBASE_STORAGE_BUCKET=    # *.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+En CI/CD se inyectan como GitHub Secrets.
+
+---
+
+## Tema visual
+
+- **Primary:** #1a73e8 (Google Blue)
+- **Secondary:** #ea4335 (Google Red)
+- **Texto:** #202124 (primary), #5f6368 (secondary)
+- **Fuente:** Roboto
+- **Border radius:** 8px (general), 16px (chips)
+- **Estilo:** inspirado en Google Maps
+
+---
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Vite dev server (sin emuladores) |
+| `npm run dev:full` | Dev + emuladores Firebase |
+| `npm run emulators` | Solo emuladores (Auth :9099, Firestore :8080, UI :4000) |
+| `npm run build` | tsc + vite build → `dist/` |
+| `npm run lint` | ESLint check |
+| `npm run preview` | Preview del build de producción |
+
+---
+
+## CI/CD
+
+**GitHub Actions** (`.github/workflows/deploy.yml`):
+1. Trigger: push a `main`
+2. Setup: Node 20 + npm cache
+3. Build: `npm run build` con secrets como env vars
+4. Deploy: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+
+**Flujo de feature:**
+1. Crear issue en GitHub
+2. Branch: `feat/<N>-<descripcion>` o `fix/<N>-<descripcion>`
+3. PRD → specs → plan → implementar (ver `PROCEDURES.md`)
+4. Test local con `npm run dev`
+5. Commit con referencia al issue
+6. PR con resumen y test plan
+7. Merge a main → deploy automático
+
+---
+
+## Versionado
+
+- Versión en `package.json` → expuesta via `__APP_VERSION__` (Vite define) → mostrada en footer del menú lateral.
+- Cada 10 issues se incrementa el número mayor (1.x → 2.0).
+- Formato: `MAJOR.MINOR.PATCH` donde MINOR se incrementa por feature/fix.
+
+---
+
+## Patrones y convenciones
+
+| Patrón | Descripción |
+|--------|-------------|
+| **Auth anónima** | Todos los usuarios se autentican automáticamente (Firebase Anonymous). El `displayName` se pide opcionalmente. |
+| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. Garantiza unicidad sin queries extra. |
+| **Datos estáticos + dinámicos** | Comercios en JSON local, interacciones en Firestore. Se cruzan por `businessId` client-side. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. |
+| **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm al re-entrar a la sección. |
+| **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
+| **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
+| **Hook genérico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
+| **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
+
+---
+
+## Issues resueltos
+
+| Issue | Tipo | Título | PR | Estado | Docs |
+|-------|------|--------|----|--------|------|
+| [#1](https://github.com/benoffi7/modo-mapa/issues/1) | fix | Google Maps: error de carga y warning de Map ID faltante | [#2](https://github.com/benoffi7/modo-mapa/pull/2) | Merged | — |
+| [#3](https://github.com/benoffi7/modo-mapa/issues/3) | fix | Comentarios no aparecen después de enviar | [#4](https://github.com/benoffi7/modo-mapa/pull/4) | Merged | — |
+| [#5](https://github.com/benoffi7/modo-mapa/issues/5) | feat | Etiquetas personalizadas por usuario | [#6](https://github.com/benoffi7/modo-mapa/pull/6) | Merged | `docs/feat-custom-user-tags/` |
+| [#7](https://github.com/benoffi7/modo-mapa/issues/7) | feat | Menú lateral con sección Favoritos | [#8](https://github.com/benoffi7/modo-mapa/pull/8) | Merged | `docs/feat-menu-favoritos/` |
+| [#9](https://github.com/benoffi7/modo-mapa/issues/9) | feat | Sección Comentarios en menú lateral | [#10](https://github.com/benoffi7/modo-mapa/pull/10) | Merged | `docs/feat-menu-comentarios/` |
+| [#11](https://github.com/benoffi7/modo-mapa/issues/11) | feat | Feedback, Ratings, Agregar comercio, Versión, Filtros | [#12](https://github.com/benoffi7/modo-mapa/pull/12) | Merged | `docs/feat-menu-feedback-ratings-version/` |
+
+---
+
+## Documentación por feature
+
+Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `prd.md` | Requisitos del producto |
+| `specs.md` | Especificaciones técnicas (interfaces, props, lógica) |
+| `plan.md` | Plan de implementación paso a paso |
+| `changelog.md` | Archivos creados y modificados |
+
+---
+
+## Funcionalidades actuales
+
+### Mapa
+- Google Maps centrado en Buenos Aires (-34.6037, -58.3816)
+- 40 marcadores con color por categoría
+- Click en marker abre bottom sheet con detalle
+- Geolocalización del usuario (FAB)
+- Búsqueda por nombre/dirección/categoría
+- Filtro por tags predefinidos (chips)
+
+### Comercio (BusinessSheet)
+- Nombre, categoría, dirección, teléfono (link tel:)
+- Botón favorito (toggle corazón)
+- Botón direcciones (abre Google Maps)
+- Rating: promedio + estrellas del usuario (1-5)
+- Tags predefinidos: vote count + toggle del usuario
+- Tags custom: crear, editar, eliminar (privados por usuario)
+- Comentarios: lista + formulario + eliminar propios
+
+### Menú lateral (SideMenu)
+- Header con avatar, nombre, botón editar nombre
+- Secciones:
+  - **Favoritos**: lista con filtros (búsqueda, categoría, orden). Quitar favorito inline. Click navega al comercio.
+  - **Comentarios**: lista con texto truncado. Eliminar con confirmación. Click navega al comercio.
+  - **Calificaciones**: lista con estrellas y filtros (búsqueda, categoría, estrellas mínimas, orden). Click navega al comercio.
+  - **Feedback**: formulario con categoría (bug/sugerencia/otro) + mensaje (max 1000). Estado de éxito.
+  - **Agregar comercio**: link externo a Google Forms.
+- Footer con versión de la app
+
+### Filtros reutilizables
+- Hook `useListFilters<T>`: filtrado por nombre, categoría, score + ordenamiento
+- Componente `ListFilters`: TextField búsqueda, chips categoría, chips estrellas (opcional), Select orden, contador "N de M"
+- Usado en FavoritesList y RatingsList

@@ -54,4 +54,5 @@ export function MapProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export { MapContext };
 export const useMapContext = () => useContext(MapContext);
