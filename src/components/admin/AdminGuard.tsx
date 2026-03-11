@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -13,7 +14,20 @@ interface AdminGuardProps {
 }
 
 export default function AdminGuard({ children }: AdminGuardProps) {
-  const { user, isLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, isLoading, authError, signInWithGoogle, signOut } = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  const handleLogin = async () => {
+    setSigningIn(true);
+    setAccessDenied(false);
+    const result = await signInWithGoogle();
+    if (result && result.email !== ADMIN_EMAIL) {
+      setAccessDenied(true);
+      await signOut();
+    }
+    setSigningIn(false);
+  };
 
   if (isLoading) {
     return (
@@ -23,7 +37,25 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // No session or anonymous → show login
+  if (accessDenied || (!user?.isAnonymous && user?.email && user.email !== ADMIN_EMAIL)) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 2 }}>
+        <Alert severity="error" sx={{ maxWidth: 400 }}>
+          Acceso denegado. Solo {ADMIN_EMAIL} puede acceder al panel de administración.
+        </Alert>
+        <Button
+          onClick={() => {
+            setAccessDenied(false);
+          }}
+          variant="outlined"
+          size="large"
+        >
+          Reintentar con otra cuenta
+        </Button>
+      </Box>
+    );
+  }
+
   if (!user || user.isAnonymous) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 3 }}>
@@ -31,23 +63,25 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         <Typography variant="body1" color="text.secondary">
           Inicia sesión con tu cuenta de Google para acceder.
         </Typography>
-        <Button onClick={signInWithGoogle} variant="contained" size="large">
-          Iniciar sesión con Google
+        <Button
+          onClick={handleLogin}
+          variant="contained"
+          size="large"
+          disabled={signingIn}
+        >
+          {signingIn ? <CircularProgress size={24} /> : 'Iniciar sesión con Google'}
         </Button>
+        {authError && (
+          <Alert severity="error" sx={{ maxWidth: 400 }}>
+            {authError}
+          </Alert>
+        )}
       </Box>
     );
   }
 
-  // Google session but wrong email → deny
   if (user.email !== ADMIN_EMAIL) {
-    void signOut();
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 2 }}>
-        <Alert severity="error" sx={{ maxWidth: 400 }}>
-          Acceso denegado. Solo {ADMIN_EMAIL} puede acceder al panel de administración.
-        </Alert>
-      </Box>
-    );
+    return null;
   }
 
   return <>{children}</>;
