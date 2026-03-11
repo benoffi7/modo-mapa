@@ -22,8 +22,10 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronóm
 | Lenguaje | TypeScript | 5.9 (strict) |
 | UI | Material UI (MUI) | 7.3 |
 | Mapa | @vis.gl/react-google-maps | 1.7 |
-| Auth | Firebase Anonymous Auth | 12.10 |
+| Gráficos | recharts | 3.8 |
+| Auth | Firebase Anonymous Auth + Google Sign-In | 12.10 |
 | Base de datos | Cloud Firestore | 12.10 |
+| Cloud Functions | Firebase Functions v2 | 6.3 |
 | Hosting | Firebase Hosting | — |
 | CI/CD | GitHub Actions | — |
 
@@ -35,9 +37,15 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronóm
 main.tsx
   └─ App.tsx
        ├─ ThemeProvider (MUI theme)
-       ├─ AuthProvider (Firebase Auth + displayName)
-       ├─ MapProvider (estado central del mapa)
-       └─ APIProvider (Google Maps)
+       ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
+       ├─ [/admin] AdminDashboard (lazy loaded)
+       │    ├─ AdminGuard (Google Sign-In + email verification)
+       │    └─ AdminLayout (tabs: Overview, Actividad, Firebase Usage, Alertas)
+       │         ├─ DashboardOverview (StatCards + PieCharts + TopLists)
+       │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
+       │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
+       │         └─ AbuseAlerts (tabla de logs de abuso)
+       └─ [/*] MapProvider + APIProvider
             └─ AppShell.tsx
                  ├─ SearchBar (búsqueda + menú hamburguesa)
                  ├─ FilterChips (tags predefinidos)
@@ -59,12 +67,38 @@ main.tsx
                       └─ Footer (versión)
 ```
 
+### Cloud Functions
+
+```text
+functions/
+├── src/
+│   ├── index.ts              → exports de todas las functions
+│   ├── triggers/
+│   │   ├── comments.ts       → rate limit + moderación + counters
+│   │   ├── customTags.ts     → rate limit + moderación + counters
+│   │   ├── feedback.ts       → rate limit + moderación + counters
+│   │   ├── ratings.ts        → counters (create/update/delete)
+│   │   ├── favorites.ts      → counters (create/delete)
+│   │   └── users.ts          → counters (create)
+│   ├── scheduled/
+│   │   └── dailyMetrics.ts   → cron diario: distribución, tops, active users
+│   └── utils/
+│       ├── rateLimiter.ts    → rate limiting (daily/per-entity)
+│       ├── moderator.ts      → filtro de palabras prohibidas (caché 5 min)
+│       ├── counters.ts       → helpers increment/trackWrite/trackDelete
+│       └── abuseLogger.ts    → logger a colección abuseLogs
+├── package.json              → Node 22, firebase-admin, firebase-functions
+├── tsconfig.json             → CommonJS, strict
+└── vitest.config.ts
+```
+
 ### Flujo de datos
 
 1. **Datos estáticos**: `businesses.json` (40 comercios) se carga como import estático. No hay fetch.
 2. **Datos dinámicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). Cada componente hace su propia query.
-3. **Estado global**: `AuthContext` (user, displayName) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
+3. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
 4. **Estado local**: Cada sección del menú carga sus datos al montarse y los filtra client-side con `useListFilters`.
+5. **Server-side**: Cloud Functions triggers validan rate limits, moderan contenido y actualizan counters/métricas.
 
 ---
 
@@ -72,69 +106,85 @@ main.tsx
 
 ```text
 src/
-├── App.tsx                          # Providers + ErrorBoundary + AppShell
+├── App.tsx                          # Routing: /admin (lazy) vs /* (mapa)
 ├── main.tsx                         # Entry point (StrictMode)
 ├── index.css                        # Estilos globales mínimos
 ├── config/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados
-│   └── converters.ts                # FirestoreDataConverter<T> tipados por colección
+│   ├── converters.ts                # FirestoreDataConverter<T> tipados por colección
+│   └── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
 ├── context/
-│   ├── AuthContext.tsx               # Auth anónima + displayName
+│   ├── AuthContext.tsx               # Auth anónima + Google Sign-In + displayName
 │   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
 ├── types/
-│   └── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite, categorías, tags
+│   ├── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite
+│   └── admin.ts                     # AdminCounters, DailyMetrics, AbuseLog
 ├── theme/
 │   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
 ├── data/
-│   └── businesses.json              # 40 comercios con id, name, address, category, lat, lng, tags, phone
+│   └── businesses.json              # 40 comercios
 ├── hooks/
 │   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
-│   ├── useListFilters.ts            # Filtrado genérico: búsqueda (debounced), categoría, estrellas, ordenamiento
-│   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore ("Cargar más")
+│   ├── useListFilters.ts            # Filtrado genérico: búsqueda (debounced), categoría, estrellas
+│   ├── usePaginatedQuery.ts         # Paginación genérica con cursores Firestore
 │   └── useUserLocation.ts           # Geolocalización del navegador
+├── pages/
+│   └── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
 ├── components/
+│   ├── admin/
+│   │   ├── AdminGuard.tsx           # Google Sign-In + verificación email
+│   │   ├── AdminLayout.tsx          # AppBar + Tabs (4 secciones)
+│   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists
+│   │   ├── ActivityFeed.tsx         # Tabs por colección (últimos 20 items)
+│   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
+│   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
+│   │   ├── StatCard.tsx             # Card con número grande
+│   │   ├── TopList.tsx              # Tabla con barras de progreso
+│   │   ├── ActivityTable.tsx        # Tabla genérica
+│   │   └── charts/
+│   │       ├── PieChartCard.tsx     # Wrapper recharts pie
+│   │       └── LineChartCard.tsx    # Wrapper recharts line
 │   ├── auth/
-│   │   └── NameDialog.tsx           # Dialog para pedir nombre (primera vez)
+│   │   └── NameDialog.tsx
 │   ├── layout/
-│   │   ├── AppShell.tsx             # Layout principal, orquesta menú + mapa + sheet
-│   │   ├── ErrorBoundary.tsx        # Error boundary genérico con fallback UI
-│   │   └── SideMenu.tsx             # Drawer lateral con navegación entre secciones
+│   │   ├── AppShell.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   └── SideMenu.tsx
 │   ├── map/
-│   │   ├── MapView.tsx              # Google Map con markers
-│   │   ├── BusinessMarker.tsx       # Marker individual con color por categoría
-│   │   └── LocationFAB.tsx          # FAB de geolocalización
+│   │   ├── MapView.tsx
+│   │   ├── BusinessMarker.tsx
+│   │   └── LocationFAB.tsx
 │   ├── search/
-│   │   ├── SearchBar.tsx            # Barra de búsqueda fija arriba
-│   │   └── FilterChips.tsx          # Chips de tags predefinidos scrollables
+│   │   ├── SearchBar.tsx
+│   │   └── FilterChips.tsx
 │   ├── business/
-│   │   ├── BusinessSheet.tsx        # Bottom sheet (SwipeableDrawer)
-│   │   ├── BusinessHeader.tsx       # Nombre, categoría, dirección, teléfono, favorito, direcciones
-│   │   ├── BusinessRating.tsx       # Rating promedio + estrellas del usuario
-│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (CRUD)
-│   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios
-│   │   ├── FavoriteButton.tsx       # Corazón toggle
-│   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
+│   │   ├── BusinessSheet.tsx
+│   │   ├── BusinessHeader.tsx
+│   │   ├── BusinessRating.tsx
+│   │   ├── BusinessTags.tsx
+│   │   ├── BusinessComments.tsx     # Filtra comments flaggeados client-side
+│   │   ├── FavoriteButton.tsx
+│   │   └── DirectionsButton.tsx
 │   └── menu/
-│       ├── FavoritesList.tsx        # Lista de favoritos con filtros
-│       ├── CommentsList.tsx         # Lista de comentarios del usuario
-│       ├── RatingsList.tsx          # Lista de calificaciones con filtros
-│       ├── FeedbackForm.tsx         # Formulario de feedback (bug/sugerencia/otro)
-│       └── ListFilters.tsx          # Componente visual de filtros reutilizable
+│       ├── FavoritesList.tsx
+│       ├── CommentsList.tsx
+│       ├── RatingsList.tsx
+│       ├── FeedbackForm.tsx
+│       └── ListFilters.tsx
 ```
 
 ### Otros archivos clave
 
 | Archivo | Descripción |
 |---------|-------------|
-| `firestore.rules` | Reglas de seguridad para todas las colecciones |
-| `firebase.json` | Config de hosting, emuladores, reglas |
+| `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check), config/metrics |
+| `firebase.json` | Config de hosting, functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
 | `vite.config.ts` | Plugin React + `__APP_VERSION__` desde package.json |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy a Firebase en push a main |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD → specs → plan → implementar) |
 | `.env.example` | Template de variables de entorno |
-| `package.json` | Dependencias y scripts (v1.2.1) |
 | `docs/SECURITY_GUIDELINES.md` | Guía de seguridad: App Check, timestamps, converters, patrones |
 | `docs/INFORME_SEGURIDAD.md` | Informe de auditoría de seguridad |
 | `docs/INFORME_MEJORAS.md` | Informe de mejoras pendientes y resueltas |
@@ -145,13 +195,16 @@ src/
 
 | Colección | Doc ID | Campos | Reglas |
 |-----------|--------|--------|--------|
-| `users` | `{userId}` | displayName, createdAt | R/W solo el owner |
+| `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
 | `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
 | `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
-| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt | Read auth; create owner; delete owner |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, flagged? | Read auth; create owner; delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
-| `feedback` | auto-generated | userId, message (1-1000), category, createdAt | Create auth+owner; read/delete owner |
+| `feedback` | auto-generated | userId, message (1-1000), category, createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
+| `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
+| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Admin read; Functions write |
+| `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 
 ---
 
@@ -178,6 +231,11 @@ PREDEFINED_TAGS: barato, apto_celiacos, apto_veganos, rapido, delivery, buena_at
 // Categorías con labels en español (7)
 CATEGORY_LABELS: restaurant→Restaurante, cafe→Café, bakery→Panadería, bar→Bar,
                  fastfood→Comida rápida, icecream→Heladería, pizza→Pizzería
+
+// Admin types
+interface AdminCounters { comments, ratings, favorites, feedback, users, customTags, userTags, dailyReads, dailyWrites, dailyDeletes }
+interface DailyMetrics { date, ratingDistribution, topFavorited, topCommented, topRated, topTags, dailyReads/Writes/Deletes, byCollection, activeUsers }
+interface AbuseLog { id, userId, type, collection, detail, timestamp }
 ```
 
 ---
@@ -218,8 +276,8 @@ En CI/CD se inyectan como GitHub Secrets.
 | Comando | Descripción |
 |---------|-------------|
 | `npm run dev` | Vite dev server (sin emuladores) |
-| `npm run dev:full` | Dev + emuladores Firebase |
-| `npm run emulators` | Solo emuladores (Auth :9099, Firestore :8080, UI :4000) |
+| `npm run dev:full` | Dev + emuladores Firebase (auth, firestore, functions) |
+| `npm run emulators` | Solo emuladores (Auth :9099, Firestore :8080, Functions :5001, UI :4000) |
 | `npm run build` | tsc + vite build → `dist/` |
 | `npm run lint` | ESLint check |
 | `npm run preview` | Preview del build de producción |
@@ -262,25 +320,31 @@ En CI/CD se inyectan como GitHub Secrets.
 
 | Patrón | Descripción |
 |--------|-------------|
-| **Auth anónima** | Todos los usuarios se autentican automáticamente (Firebase Anonymous). El `displayName` se pide opcionalmente. |
+| **Auth anónima + Google Sign-In** | Usuarios normales se autentican anónimamente. Admin usa Google Sign-In solo en `/admin`. |
+| **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. Garantiza unicidad sin queries extra. |
 | **Datos estáticos + dinámicos** | Comercios en JSON local, interacciones en Firestore. Se cruzan por `businessId` client-side. |
 | **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. |
+| **Rate limiting (2 capas)** | Client-side (UI) + server-side (Cloud Functions triggers). Functions eliminan docs que exceden límites. |
+| **Moderación de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). |
+| **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atómicamente con `FieldValue.increment`. |
+| **Métricas diarias** | Scheduled function calcula distribución, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
 | **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm al re-entrar a la sección. |
 | **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
 | **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
 | **Hook genérico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
-| **App Check (prod)** | Firebase App Check con reCAPTCHA Enterprise, solo en producción. Opcional: se activa si `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY` está presente. |
-| **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados en `src/config/converters.ts`. Escrituras usan refs sin converter (por `serverTimestamp()`). |
-| **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
-| **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings mágicos. |
-| **ErrorBoundary** | `ErrorBoundary` genérico envuelve `AppShell` en `App.tsx`. Muestra fallback UI con opción de recargar. |
-| **usePaginatedQuery** | Hook genérico para paginación con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Botón "Cargar más". |
-| **Debounce con useDeferredValue** | `useBusinesses` y `useListFilters` usan `useDeferredValue` de React 19 para debounce de búsqueda. |
-| **Pre-commit hooks** | `husky` + `lint-staged` ejecuta ESLint en archivos `.ts/.tsx` staged antes de cada commit. |
-| **exactOptionalPropertyTypes** | Habilitado en tsconfig. Propiedades opcionales requieren `\| undefined` explícito para asignar `undefined`. |
-| **Markdown lint** | Archivos `.md` deben cumplir markdownlint (`.markdownlint.json`). Reglas clave: blank lines around headings/lists/fences, language en code blocks (`text`, `typescript`, etc.), no duplicate headings. |
+| **App Check (prod)** | Firebase App Check con reCAPTCHA Enterprise, solo en producción. |
+| **withConverter\<T\>()** | Todas las lecturas usan converters tipados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
+| **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. |
+| **Collection names** | Centralizados en `src/config/collections.ts`. Sin strings mágicos. |
+| **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opción de recargar. |
+| **usePaginatedQuery** | Hook genérico para paginación con cursores Firestore. Botón "Cargar más". |
+| **Debounce con useDeferredValue** | React 19 `useDeferredValue` para debounce de búsqueda. |
+| **Pre-commit hooks** | `husky` + `lint-staged` ejecuta ESLint en `.ts/.tsx` staged. |
+| **exactOptionalPropertyTypes** | Habilitado en tsconfig. |
+| **Markdown lint** | Archivos `.md` deben cumplir markdownlint. |
+| **Lazy loading admin** | `/admin` usa `lazy()` + `Suspense`. No carga MapProvider/APIProvider. |
 
 ---
 
@@ -300,6 +364,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 | — | chore | Resolver mejoras técnicas: debounce, tests, paginación, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
 | [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
+| [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Mitigaciones cuota Firebase + modo offline | — | Open | `docs/feat-firebase-quota-offline/` |
 
 ---
 
@@ -335,7 +400,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - Rating: promedio + estrellas del usuario (1-5)
 - Tags predefinidos: vote count + toggle del usuario
 - Tags custom: crear, editar, eliminar (privados por usuario)
-- Comentarios: lista + formulario + eliminar propios
+- Comentarios: lista + formulario + eliminar propios (flaggeados ocultos)
 
 ### Menú lateral (SideMenu)
 
@@ -347,6 +412,22 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
   - **Feedback**: formulario con categoría (bug/sugerencia/otro) + mensaje (max 1000). Estado de éxito.
   - **Agregar comercio**: link externo a Google Forms.
 - Footer con versión de la app
+
+### Dashboard Admin (/admin)
+
+- Login con Google Sign-In (solo `benoffi11@gmail.com`)
+- Verificación en frontend (AdminGuard) y server-side (Firestore rules)
+- **Overview**: totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribución de ratings (pie), tags más usados (pie), top 10 comercios
+- **Actividad**: feed por sección (comentarios, ratings, favoritos, tags) con últimos 20 items, indicador de flagged
+- **Firebase Usage**: gráficos lineales de reads/writes/deletes y usuarios activos (últimos 30 días), pie charts por colección, barras de cuota vs free tier
+- **Alertas**: logs de abuso (rate limit excedido, contenido flaggeado, top writers)
+
+### Cloud Functions (server-side)
+
+- **Rate limiting server-side**: comments (20/día), customTags (10/business), feedback (5/día)
+- **Moderación de contenido**: banned words con normalización de acentos, word boundary matching
+- **Counters atómicos**: totales por colección + operaciones diarias
+- **Métricas diarias**: cron a las 3AM — distribución, tops, active users, reset counters
 
 ### Filtros reutilizables
 
