@@ -4,6 +4,8 @@ import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
+import { COLLECTIONS } from '../config/collections';
+import { userProfileConverter } from '../config/converters';
 
 interface AuthContextType {
   user: User | null;
@@ -28,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
         if (userDoc.exists()) {
           setDisplayNameState(userDoc.data().displayName || null);
         }
@@ -46,11 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setDisplayName = async (name: string) => {
     if (!user) return;
-    await setDoc(doc(db, 'users', user.uid), {
-      displayName: name,
+    const trimmed = name.trim().slice(0, 30);
+    if (!trimmed) return;
+    await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
+      displayName: trimmed,
       createdAt: serverTimestamp(),
     }, { merge: true });
-    setDisplayNameState(name);
+    setDisplayNameState(trimmed);
   };
 
   return (

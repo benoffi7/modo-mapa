@@ -1,6 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_APP_ID',
+] as const;
+
+const missing = requiredEnvVars.filter((key) => !import.meta.env[key]);
+if (missing.length > 0) {
+  throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+}
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,4 +31,14 @@ export const db = getFirestore(app);
 if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
+} else {
+  // App Check solo en producción — los emuladores no lo necesitan.
+  // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
+  const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
+  if (recaptchaKey) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
 }

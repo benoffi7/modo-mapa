@@ -1,18 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useDeferredValue } from 'react';
 import { useMapContext } from '../context/MapContext';
 import type { Business } from '../types';
 import businessesData from '../data/businesses.json';
 
-const allBusinesses: Business[] = businessesData as Business[];
+export const allBusinesses: Business[] = businessesData as Business[];
 
 export function useBusinesses() {
   const { searchQuery, activeFilters } = useMapContext();
+  const deferredQuery = useDeferredValue(searchQuery);
 
   const filteredBusinesses = useMemo(() => {
     let result = allBusinesses;
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+    if (deferredQuery.trim()) {
+      const q = deferredQuery.toLowerCase().trim();
       result = result.filter(
         (b) =>
           b.name.toLowerCase().includes(q) ||
@@ -28,7 +29,7 @@ export function useBusinesses() {
     }
 
     return result;
-  }, [searchQuery, activeFilters]);
+  }, [deferredQuery, activeFilters]);
 
   return { businesses: filteredBusinesses, allBusinesses };
 }

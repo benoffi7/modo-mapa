@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import {
   Box,
   Chip,
@@ -30,6 +30,8 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { userTagConverter, customTagConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { PREDEFINED_TAGS } from '../../types';
 import type { CustomTag } from '../../types';
@@ -45,7 +47,7 @@ interface TagCount {
   userAdded: boolean;
 }
 
-export default function BusinessTags({ businessId, seedTags }: Props) {
+export default memo(function BusinessTags({ businessId, seedTags }: Props) {
   const { user } = useAuth();
   const [tagCounts, setTagCounts] = useState<TagCount[]>([]);
   const [customTags, setCustomTags] = useState<CustomTag[]>([]);
@@ -61,36 +63,43 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
 
   // Delete confirmation
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [error, setError] = useState(false);
 
   const loadTags = useCallback(async () => {
-    const q = query(collection(db, 'userTags'), where('businessId', '==', businessId));
-    const snapshot = await getDocs(q);
+    const q = query(collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter), where('businessId', '==', businessId));
+    try {
+      setError(false);
+      const snapshot = await getDocs(q);
 
-    const counts: Record<string, { count: number; userAdded: boolean }> = {};
+      const counts: Record<string, { count: number; userAdded: boolean }> = {};
 
-    // Init with seed tags
-    seedTags.forEach((tagId) => {
-      counts[tagId] = { count: 0, userAdded: false };
-    });
+      // Init with seed tags
+      seedTags.forEach((tagId) => {
+        counts[tagId] = { count: 0, userAdded: false };
+      });
 
-    snapshot.forEach((d) => {
-      const data = d.data();
-      if (!counts[data.tagId]) {
-        counts[data.tagId] = { count: 0, userAdded: false };
-      }
-      counts[data.tagId].count++;
-      if (user && data.userId === user.uid) {
-        counts[data.tagId].userAdded = true;
-      }
-    });
+      snapshot.forEach((d) => {
+        const data = d.data();
+        if (!counts[data.tagId]) {
+          counts[data.tagId] = { count: 0, userAdded: false };
+        }
+        counts[data.tagId].count++;
+        if (user && data.userId === user.uid) {
+          counts[data.tagId].userAdded = true;
+        }
+      });
 
-    setTagCounts(
-      Object.entries(counts).map(([tagId, { count, userAdded }]) => ({
-        tagId,
-        count,
-        userAdded,
-      }))
-    );
+      setTagCounts(
+        Object.entries(counts).map(([tagId, { count, userAdded }]) => ({
+          tagId,
+          count,
+          userAdded,
+        }))
+      );
+    } catch (err) {
+      console.error('Error loading tags:', err);
+      setError(true);
+    }
   }, [businessId, seedTags, user]);
 
   const loadCustomTags = useCallback(async () => {
@@ -99,21 +108,17 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
       return;
     }
     const q = query(
-      collection(db, 'customTags'),
+      collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
       where('userId', '==', user.uid),
       where('businessId', '==', businessId)
     );
     try {
       const snapshot = await getDocs(q);
-      const loaded: CustomTag[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate() || new Date(),
-      })) as CustomTag[];
+      const loaded: CustomTag[] = snapshot.docs.map((d) => d.data());
       loaded.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       setCustomTags(loaded);
-    } catch (error) {
-      console.error('Error loading custom tags:', error);
+    } catch (err) {
+      console.error('Error loading custom tags:', err);
       setCustomTags([]);
     }
   }, [businessId, user]);
@@ -123,23 +128,31 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
     loadCustomTags();
   }, [loadTags, loadCustomTags]);
 
+  const [pendingTagId, setPendingTagId] = useState<string | null>(null);
+
   const handleToggleTag = async (tagId: string) => {
     if (!user) return;
+    setPendingTagId(tagId);
     const docId = `${user.uid}__${businessId}__${tagId}`;
-    const tagRef = doc(db, 'userTags', docId);
+    const tagRef = doc(db, COLLECTIONS.USER_TAGS, docId);
 
     const existing = tagCounts.find((t) => t.tagId === tagId);
-    if (existing?.userAdded) {
-      await deleteDoc(tagRef);
-    } else {
-      await setDoc(tagRef, {
-        userId: user.uid,
-        businessId,
-        tagId,
-        createdAt: serverTimestamp(),
-      });
+    try {
+      if (existing?.userAdded) {
+        await deleteDoc(tagRef);
+      } else {
+        await setDoc(tagRef, {
+          userId: user.uid,
+          businessId,
+          tagId,
+          createdAt: serverTimestamp(),
+        });
+      }
+      await loadTags();
+    } catch (err) {
+      console.error('Error toggling tag:', err);
     }
-    loadTags();
+    setPendingTagId(null);
   };
 
   // Custom tag handlers
@@ -164,18 +177,21 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
     setDialogValue('');
   };
 
+  const MAX_CUSTOM_TAGS = 10;
+
   const handleSaveCustomTag = async () => {
     if (!user) return;
     const label = dialogValue.trim();
     if (!label || label.length > 30) return;
+    if (!editingTag && customTags.length >= MAX_CUSTOM_TAGS) return;
 
     if (editingTag) {
-      await updateDoc(doc(db, 'customTags', editingTag.id), { label });
+      await updateDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, editingTag.id), { label });
       setCustomTags((prev) =>
         prev.map((t) => (t.id === editingTag.id ? { ...t, label } : t))
       );
     } else {
-      const docRef = await addDoc(collection(db, 'customTags'), {
+      const docRef = await addDoc(collection(db, COLLECTIONS.CUSTOM_TAGS), {
         userId: user.uid,
         businessId,
         label,
@@ -196,7 +212,7 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
 
   const handleDelete = async () => {
     if (!menuTag) return;
-    await deleteDoc(doc(db, 'customTags', menuTag.id));
+    await deleteDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, menuTag.id));
     setCustomTags((prev) => prev.filter((t) => t.id !== menuTag.id));
     setConfirmDeleteOpen(false);
     setMenuTag(null);
@@ -206,6 +222,17 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
     setMenuAnchor(event.currentTarget);
     setMenuTag(tag);
   };
+
+  if (error) {
+    return (
+      <Box sx={{ py: 1, textAlign: 'center' }}>
+        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+          Error al cargar etiquetas
+        </Typography>
+        <Button size="small" onClick={() => { loadTags(); loadCustomTags(); }}>Reintentar</Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ py: 1 }}>
@@ -230,6 +257,7 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
               size="small"
               icon={userAdded ? <CheckIcon fontSize="small" /> : <AddIcon fontSize="small" />}
               onClick={() => handleToggleTag(tag.id)}
+              disabled={pendingTagId === tag.id}
               variant={isSeed || userAdded ? 'filled' : 'outlined'}
               color={userAdded ? 'primary' : 'default'}
               sx={{
@@ -253,7 +281,7 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
         ))}
 
         {/* Add custom tag button */}
-        {user && (
+        {user && customTags.length < MAX_CUSTOM_TAGS && (
           <Chip
             label="Agregar"
             size="small"
@@ -336,4 +364,4 @@ export default function BusinessTags({ businessId, seedTags }: Props) {
       </Dialog>
     </Box>
   );
-}
+});
