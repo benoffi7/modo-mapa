@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite } from '../types';
+import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite, Feedback } from '../types';
 
 function toDate(field: unknown): Date {
   if (field && typeof field === 'object' && 'toDate' in field) {
@@ -105,6 +105,28 @@ export const customTagConverter: FirestoreDataConverter<CustomTag> = {
       businessId: d.businessId,
       label: d.label,
       createdAt: toDate(d.createdAt),
+    };
+  },
+};
+
+export const feedbackConverter: FirestoreDataConverter<Feedback> = {
+  toFirestore(fb: Feedback) {
+    return {
+      userId: fb.userId,
+      message: fb.message,
+      category: fb.category,
+      createdAt: fb.createdAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): Feedback {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      userId: d.userId,
+      message: d.message ?? '',
+      category: d.category ?? 'otro',
+      createdAt: toDate(d.createdAt),
+      ...(d.flagged === true ? { flagged: true } : {}),
     };
   },
 };

@@ -14,9 +14,10 @@ import {
   favoriteConverter,
   userTagConverter,
   customTagConverter,
+  feedbackConverter,
 } from '../../config/converters';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import type { Comment, Rating, Favorite, UserTag, CustomTag } from '../../types';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback } from '../../types';
 import ActivityTable from './ActivityTable';
 
 const PAGE_SIZE = 20;
@@ -43,6 +44,7 @@ export default function ActivityFeed() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [userTags, setUserTags] = useState<UserTag[]>([]);
   const [customTags, setCustomTags] = useState<CustomTag[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -53,16 +55,18 @@ export default function ActivityFeed() {
       getDocs(query(collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))),
       getDocs(query(collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))),
       getDocs(query(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))),
+      getDocs(query(collection(db, COLLECTIONS.FEEDBACK).withConverter(feedbackConverter), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))),
     ] as const;
 
     Promise.all(queries)
-      .then(([commentsSnap, ratingsSnap, favoritesSnap, userTagsSnap, customTagsSnap]) => {
+      .then(([commentsSnap, ratingsSnap, favoritesSnap, userTagsSnap, customTagsSnap, feedbackSnap]) => {
         if (ignore) return;
         setComments(commentsSnap.docs.map((d) => d.data()));
         setRatings(ratingsSnap.docs.map((d) => d.data()));
         setFavorites(favoritesSnap.docs.map((d) => d.data()));
         setUserTags(userTagsSnap.docs.map((d) => d.data()));
         setCustomTags(customTagsSnap.docs.map((d) => d.data()));
+        setFeedback(feedbackSnap.docs.map((d) => d.data()));
         setLoading(false);
       })
       .catch(() => {
@@ -93,6 +97,7 @@ export default function ActivityFeed() {
         <Tab label={`Ratings (${ratings.length})`} />
         <Tab label={`Favoritos (${favorites.length})`} />
         <Tab label={`Tags (${userTags.length + customTags.length})`} />
+        <Tab label={`Feedback (${feedback.length})`} />
       </Tabs>
 
       {tab === 0 && (
@@ -132,6 +137,19 @@ export default function ActivityFeed() {
       )}
 
       {tab === 3 && (
+        <ActivityTable
+          items={feedback}
+          columns={[
+            { label: 'Usuario', render: (f) => f.userId.slice(0, 8) },
+            { label: 'Categoría', render: (f) => <Chip label={f.category} size="small" color={f.category === 'bug' ? 'error' : f.category === 'sugerencia' ? 'primary' : 'default'} /> },
+            { label: 'Mensaje', render: (f) => f.message.length > 60 ? `${f.message.slice(0, 60)}...` : f.message },
+            { label: 'Fecha', render: (f) => formatDate(f.createdAt) },
+            { label: 'Estado', render: (f) => f.flagged ? <FlaggedChip /> : null },
+          ]}
+        />
+      )}
+
+      {tab === 4 && (
         <ActivityTable
           items={[
             ...userTags.map((t) => ({ ...t, type: 'predefinido' as const, label: t.tagId })),
