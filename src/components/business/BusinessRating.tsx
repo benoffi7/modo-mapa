@@ -1,50 +1,37 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Box, Typography, Rating, Button } from '@mui/material';
-import { collection, query, where, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useMemo, memo } from 'react';
+import { Box, Typography, Rating } from '@mui/material';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
-import { ratingConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
+import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
+import type { Rating as RatingType } from '../../types';
 
 interface Props {
   businessId: string;
+  ratings: RatingType[];
+  isLoading: boolean;
+  onRatingChange: () => void;
 }
 
-export default memo(function BusinessRating({ businessId }: Props) {
+export default memo(function BusinessRating({ businessId, ratings, isLoading, onRatingChange }: Props) {
   const { user } = useAuth();
-  const [averageRating, setAverageRating] = useState<number>(0);
-  const [totalRatings, setTotalRatings] = useState(0);
-  const [myRating, setMyRating] = useState<number | null>(null);
-  const [error, setError] = useState(false);
 
-  const loadRatings = useCallback(async () => {
-    const q = query(collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter), where('businessId', '==', businessId));
-    try {
-      setError(false);
-      const snapshot = await getDocs(q);
-
-      let sum = 0;
-      let count = 0;
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        sum += data.score;
-        count++;
-        if (user && data.userId === user.uid) {
-          setMyRating(data.score);
-        }
-      });
-
-      setTotalRatings(count);
-      setAverageRating(count > 0 ? sum / count : 0);
-    } catch (err) {
-      console.error('Error loading ratings:', err);
-      setError(true);
+  const { averageRating, totalRatings, myRating } = useMemo(() => {
+    let sum = 0;
+    let myScore: number | null = null;
+    for (const r of ratings) {
+      sum += r.score;
+      if (user && r.userId === user.uid) {
+        myScore = r.score;
+      }
     }
-  }, [businessId, user]);
-
-  useEffect(() => {
-    loadRatings();
-  }, [loadRatings]);
+    return {
+      averageRating: ratings.length > 0 ? sum / ratings.length : 0,
+      totalRatings: ratings.length,
+      myRating: myScore,
+    };
+  }, [ratings, user]);
 
   const handleRate = async (_: unknown, value: number | null) => {
     if (!user || !value) return;
@@ -56,17 +43,14 @@ export default memo(function BusinessRating({ businessId }: Props) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }, { merge: true });
-    setMyRating(value);
-    loadRatings();
+    invalidateQueryCache(COLLECTIONS.RATINGS, user.uid);
+    onRatingChange();
   };
 
-  if (error) {
+  if (!isLoading && ratings.length === 0 && !user) {
     return (
-      <Box sx={{ py: 1, textAlign: 'center' }}>
-        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-          Error al cargar calificaciones
-        </Typography>
-        <Button size="small" onClick={loadRatings}>Reintentar</Button>
+      <Box sx={{ py: 1 }}>
+        <Typography variant="body2" color="text.secondary">Sin calificaciones aún</Typography>
       </Box>
     );
   }
