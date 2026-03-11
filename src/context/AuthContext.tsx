@@ -18,6 +18,7 @@ interface AuthContextType {
   displayName: string | null;
   setDisplayName: (name: string) => Promise<void>;
   isLoading: boolean;
+  authError: string | null;
   signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
 }
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   displayName: null,
   setDisplayName: async () => {},
   isLoading: true,
+  authError: null,
   signInWithGoogle: async () => null,
   signOut: async () => {},
 });
@@ -35,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayNameState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -45,10 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setDisplayNameState(userDoc.data().displayName || null);
         }
       } else {
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error('Error signing in anonymously:', error);
+        const isAdminRoute = window.location.pathname.startsWith('/admin');
+        if (isAdminRoute) {
+          setUser(null);
+        } else {
+          try {
+            await signInAnonymously(auth);
+          } catch (error) {
+            console.error('Error signing in anonymously:', error);
+          }
         }
       }
       setIsLoading(false);
@@ -68,11 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async (): Promise<User | null> => {
+    setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
+      setAuthError(message);
       console.error('Error signing in with Google:', error);
       return null;
     }
@@ -87,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
