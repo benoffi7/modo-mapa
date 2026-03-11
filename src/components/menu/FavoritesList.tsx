@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
   Box,
   List,
@@ -8,10 +8,11 @@ import {
   IconButton,
   Typography,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { favoriteConverter } from '../../config/converters';
@@ -19,9 +20,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
+import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import ListFilters from './ListFilters';
-import type { Business } from '../../types';
+import type { Business, Favorite } from '../../types';
 
 interface FavoriteItem {
   businessId: string;
@@ -36,9 +38,25 @@ interface Props {
 export default function FavoritesList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useMapContext();
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+
+  const collectionRef = useMemo(
+    () => collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter),
+    [],
+  );
+
+  const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
+    usePaginatedQuery<Favorite>(collectionRef, user?.uid, 'createdAt');
+
+  const favorites = useMemo(() => {
+    const result: FavoriteItem[] = [];
+    for (const data of rawItems) {
+      const business = allBusinesses.find((b) => b.id === data.businessId);
+      if (business) {
+        result.push({ businessId: data.businessId, business, createdAt: data.createdAt });
+      }
+    }
+    return result;
+  }, [rawItems]);
 
   const {
     filtered,
@@ -51,42 +69,11 @@ export default function FavoritesList({ onNavigate }: Props) {
     setSortBy,
   } = useListFilters(favorites);
 
-  const loadFavorites = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(false);
-    try {
-      const q = query(collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      const items: FavoriteItem[] = [];
-      snapshot.forEach((d) => {
-        const data = d.data();
-        const business = allBusinesses.find((b) => b.id === data.businessId);
-        if (business) {
-          items.push({
-            businessId: data.businessId,
-            business,
-            createdAt: data.createdAt,
-          });
-        }
-      });
-      setFavorites(items);
-    } catch (err) {
-      console.error('Error loading favorites:', err);
-      setError(true);
-    }
-    setIsLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
-
   const handleRemoveFavorite = async (businessId: string) => {
     if (!user) return;
     const docId = `${user.uid}__${businessId}`;
     await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
-    setFavorites((prev) => prev.filter((f) => f.businessId !== businessId));
+    reload();
   };
 
   const handleSelectBusiness = (business: Business) => {
@@ -110,7 +97,7 @@ export default function FavoritesList({ onNavigate }: Props) {
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
           Error al cargar favoritos
         </Typography>
-        <Button size="small" onClick={loadFavorites}>Reintentar</Button>
+        <Button size="small" onClick={reload}>Reintentar</Button>
       </Box>
     );
   }
@@ -175,6 +162,14 @@ export default function FavoritesList({ onNavigate }: Props) {
           </ListItemButton>
         ))}
       </List>
+      {hasMore && (
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Button size="small" onClick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+            Cargar más
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }

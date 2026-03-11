@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
   Box,
   List,
@@ -11,25 +11,20 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { commentConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
+import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import type { Business } from '../../types';
-
-interface CommentItem {
-  id: string;
-  businessId: string;
-  business: Business | null;
-  text: string;
-  createdAt: Date;
-}
+import type { Business, Comment } from '../../types';
 
 interface Props {
   onNavigate: () => void;
@@ -38,46 +33,31 @@ interface Props {
 export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useMapContext();
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const loadComments = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(false);
-    try {
-      const q = query(collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      const items: CommentItem[] = snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: data.id,
-          businessId: data.businessId,
-          business: allBusinesses.find((b) => b.id === data.businessId) || null,
-          text: data.text,
-          createdAt: data.createdAt,
-        };
-      });
-      items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      setComments(items);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-      setError(true);
-    }
-    setIsLoading(false);
-  }, [user]);
+  const collectionRef = useMemo(
+    () => collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
+    [],
+  );
 
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
+  const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
+    usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
+
+  const comments = useMemo(() => {
+    return rawItems.map((data) => ({
+      id: data.id,
+      businessId: data.businessId,
+      business: allBusinesses.find((b) => b.id === data.businessId) || null,
+      text: data.text,
+      createdAt: data.createdAt,
+    }));
+  }, [rawItems]);
 
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
     await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
-    setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
     setConfirmDeleteId(null);
+    reload();
   };
 
   const handleSelectBusiness = (business: Business | null) => {
@@ -114,7 +94,7 @@ export default function CommentsList({ onNavigate }: Props) {
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
           Error al cargar comentarios
         </Typography>
-        <Button size="small" onClick={loadComments}>Reintentar</Button>
+        <Button size="small" onClick={reload}>Reintentar</Button>
       </Box>
     );
   }
@@ -167,6 +147,15 @@ export default function CommentsList({ onNavigate }: Props) {
           </ListItemButton>
         ))}
       </List>
+
+      {hasMore && (
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Button size="small" onClick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+            Cargar más
+          </Button>
+        </Box>
+      )}
 
       <Dialog open={Boolean(confirmDeleteId)} onClose={() => setConfirmDeleteId(null)}>
         <DialogTitle>Eliminar comentario</DialogTitle>

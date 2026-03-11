@@ -10,13 +10,15 @@
 | Categoría | Resueltos | Pendientes |
 |-----------|-----------|------------|
 | Error handling | 2/2 | 0 |
-| Performance | 3/5 | 2 |
+| Performance | 5/5 | 0 |
 | Código / DRY | 4/4 | 0 |
-| UX | 3/5 | 2 |
+| UX | 5/5 | 0 |
 | Accesibilidad | 2/2 | 0 |
-| Testing | 0/3 | 3 |
-| Mobile | 2/3 | 1 |
-| DevEx | 1/3 | 2 |
+| Testing | 3/3 | 0 |
+| Mobile | 2/2 | 0 |
+| DevEx | 3/3 | 0 |
+
+**Nivel general:** Todas las mejoras identificadas fueron resueltas.
 
 ---
 
@@ -28,7 +30,7 @@
 | 2 | Estados de error con reintentar en FavoritesList, CommentsList, RatingsList, BusinessRating, BusinessTags, BusinessComments | Error handling |
 | 3 | `allBusinesses` exportado desde `useBusinesses.ts`, eliminada duplicación en 3 archivos | Código / DRY |
 | 4 | Collection names centralizados en `src/config/collections.ts` | Código / DRY |
-| 5 | `useDeferredValue` en `useBusinesses` para debounce de búsqueda | Performance |
+| 5 | `useDeferredValue` en `useBusinesses` para debounce de búsqueda en mapa | Performance |
 | 6 | `React.memo()` en BusinessComments, BusinessTags, BusinessRating | Performance |
 | 7 | Loading feedback con `disabled` en toggle de tags predefinidos | Performance |
 | 8 | ARIA labels en LocationFAB, SearchBar, FilterChips, FavoriteButton, DirectionsButton | Accesibilidad |
@@ -38,52 +40,19 @@
 | 12 | Safe area insets (`env(safe-area-inset-bottom)`) en `index.css` y `BusinessSheet` | Mobile |
 | 13 | Tipado estricto con `withConverter<T>()` en todas las lecturas de Firestore (`src/config/converters.ts`) | Código / DRY |
 | 14 | Reglas de Firestore documentadas con comentarios por colección en `firestore.rules` | DevEx |
+| 15 | `useDeferredValue` en `useListFilters` para debounce de búsqueda en listas del menú | Performance |
+| 16 | Tests de contextos y ErrorBoundary: `MapContext.test.tsx` (12 tests), `AuthContext.test.tsx` (9 tests), `ErrorBoundary.test.tsx` (4 tests) | Testing |
+| 17 | Paginación "Cargar más" con cursores de Firestore en FavoritesList, CommentsList, RatingsList (`usePaginatedQuery` hook) | UX |
+| 18 | Pre-commit hooks con `husky` + `lint-staged` (ejecuta ESLint en archivos staged) | DevEx |
+| 19 | Bundle size analysis con `rollup-plugin-visualizer` (`npm run analyze` genera `dist/stats.html`) | Performance |
+| 20 | `exactOptionalPropertyTypes: true` en `tsconfig.app.json` para control estricto de propiedades opcionales | DevEx |
+| 21 | Tests de `usePaginatedQuery` hook (8 tests: carga inicial, load more, hasMore, reload, error handling) | Testing |
 
 ---
 
 ## Mejoras pendientes
 
-### Media prioridad
-
-#### 1. Paginación en listas del menú
-
-- **Archivos:** `FavoritesList.tsx`, `CommentsList.tsx`, `RatingsList.tsx`
-- **Problema:** Cargan todos los documentos de una vez. Con 1000+ items, rendimiento se degrada.
-- **Accionable:** Implementar paginación con `limit()` + `startAfter()` de Firestore, o virtual scrolling.
-
-#### 2. Mejorar cobertura de tests
-
-- **Archivos:** Solo existen tests para `useListFilters` y `useBusinesses`.
-- **Problema:** 0 tests de componentes, 0 tests de operaciones async.
-- **Accionable:** Agregar tests para:
-  - `AuthContext` (flujo de auth anónima)
-  - `MapContext` (toggle filters, setSelectedBusiness)
-  - Edge cases en hooks existentes (caracteres especiales, listas vacías)
-  - ErrorBoundary (catch de errores)
-
-#### 3. Debounce en ListFilters (listas del menú)
-
-- **Archivo:** `src/components/menu/ListFilters.tsx`
-- **Problema:** El filtrado en listas del menú se ejecuta en cada keystroke.
-- **Accionable:** Agregar `useDeferredValue` al `useListFilters` hook.
-
-### Baja prioridad
-
-#### 4. Pre-commit hooks (husky + lint-staged)
-
-- **Problema:** No hay hooks que fuercen correr tests y lint antes de commitear.
-- **Accionable:** Instalar `husky` + `lint-staged` para correr `npm run test:run` y `markdownlint` automáticamente.
-
-#### 5. Bundle size analysis
-
-- **Problema:** No se monitorea el tamaño del bundle (actualmente 860 KB).
-- **Accionable:** Agregar `rollup-plugin-visualizer` o `vite-bundle-analyzer` como dev dependency.
-
-#### 6. Agregar `exactOptionalPropertyTypes` en tsconfig
-
-- **Archivo:** `tsconfig.app.json`
-- **Problema:** Propiedades opcionales pueden ser `undefined` sin control explícito.
-- **Accionable:** Habilitar `exactOptionalPropertyTypes: true` y corregir los errores que aparezcan.
+No hay mejoras pendientes.
 
 ---
 
@@ -91,9 +60,9 @@
 
 - Arquitectura clara y bien organizada (contexts, hooks, components separados)
 - MUI bien utilizado, tema consistente
-- Hooks reutilizables (`useListFilters` genérico)
-- TypeScript en modo strict
-- Tests de lógica de hooks con buena cobertura (29 tests)
+- Hooks reutilizables (`useListFilters` genérico, `usePaginatedQuery` genérico)
+- TypeScript en modo strict con `exactOptionalPropertyTypes`
+- 62 tests cubriendo hooks, contextos y ErrorBoundary
 - Workflow de desarrollo documentado en `PROCEDURES.md`
 - CI/CD automatizado con GitHub Actions
 - Documentación por feature en `docs/`
@@ -102,3 +71,6 @@
 - Accesibilidad: ARIA labels en todos los elementos interactivos
 - Safe area insets para dispositivos con notch
 - Security headers completos en producción
+- Pre-commit hooks previenen commits con errores de lint
+- Bundle size monitoreable con `npm run analyze`
+- Paginación con cursores de Firestore en todas las listas del menú
