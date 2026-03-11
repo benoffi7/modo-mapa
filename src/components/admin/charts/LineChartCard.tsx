@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -26,6 +27,22 @@ interface LineChartCardProps {
 }
 
 export default function LineChartCard({ title, data, lines, xAxisKey = 'date' }: LineChartCardProps) {
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
+  const handleLegendClick = useCallback((entry: { dataKey?: string | number }) => {
+    const key = String(entry.dataKey ?? '');
+    if (!key) return;
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <Card variant="outlined">
       <CardContent>
@@ -43,7 +60,15 @@ export default function LineChartCard({ title, data, lines, xAxisKey = 'date' }:
               <XAxis dataKey={xAxisKey} fontSize={12} />
               <YAxis fontSize={12} />
               <Tooltip />
-              <Legend />
+              <Legend
+                onClick={handleLegendClick}
+                wrapperStyle={{ cursor: 'pointer' }}
+                formatter={(value: string, entry) => (
+                  <span style={{ color: hidden.has(String(entry.dataKey ?? '')) ? '#ccc' : entry.color }}>
+                    {value}
+                  </span>
+                )}
+              />
               {lines.map((line) => (
                 <Line
                   key={line.dataKey}
@@ -53,6 +78,7 @@ export default function LineChartCard({ title, data, lines, xAxisKey = 'date' }:
                   stroke={line.color}
                   strokeWidth={2}
                   dot={false}
+                  hide={hidden.has(line.dataKey)}
                 />
               ))}
             </LineChart>
