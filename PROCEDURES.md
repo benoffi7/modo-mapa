@@ -9,6 +9,7 @@ npm run dev          # en otra terminal: levanta Vite en http://localhost:5173
 ```
 
 En desarrollo (`npm run dev`), la app usa **emuladores de Firebase** automáticamente:
+
 - Auth emulator: http://localhost:9099
 - Firestore emulator: http://localhost:8080
 - Emulator UI: http://localhost:4000 (para ver datos, usuarios, etc.)
@@ -22,13 +23,16 @@ Requiere `.env` con las API keys (copiar de `.env.example` y completar).
 El deploy a Firebase Hosting es **automático** al mergear un PR a `main` via GitHub Actions (`.github/workflows/deploy.yml`).
 
 **No se hace deploy manual.** El flujo es:
+
 1. Trabajar en una rama
 2. Crear PR hacia `main`
 3. Mergear el PR
 4. GitHub Actions buildea y deploya a https://modo-mapa-app.web.app
 
 ### Configuración requerida (una sola vez)
+
 En GitHub repo Settings > Secrets and variables > Actions, agregar:
+
 - `VITE_GOOGLE_MAPS_API_KEY`
 - `VITE_GOOGLE_MAPS_MAP_ID` (opcional)
 - `VITE_FIREBASE_API_KEY`
@@ -59,7 +63,9 @@ Toda funcionalidad nueva sigue estas etapas con aprobación del usuario en cada 
 6. **Implementación** — Siguiendo el flujo de ramas/PR habitual
 
 ### Documentación de features/fixes
+
 Toda la documentación se guarda en `docs/<tipo>-<descripcion>/`:
+
 - `prd.md` — Product Requirements Document
 - `specs.md` — Especificaciones técnicas
 - `plan.md` — Plan técnico de implementación
@@ -78,11 +84,13 @@ Cada iteración se empieza desde cero actualizando los archivos existentes (no s
 7. **Merge** del PR → deploy automático
 
 ### Convenciones de naming
+
 - Ramas fix: `fix/<issue>-<descripcion>`
 - Ramas feature: `feat/<issue>-<descripcion>`
 - Commits: mensaje descriptivo + `Fix #N` o `Closes #N`
 
 ### Checklist pre-PR
+
 - [ ] `npm run build` pasa sin errores
 - [ ] Testeado en local con `npm run dev`
 - [ ] Testeado en mobile (Chrome DevTools responsive)
