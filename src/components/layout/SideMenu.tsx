@@ -25,11 +25,13 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { useAuth } from '../../context/AuthContext';
 import FavoritesList from '../menu/FavoritesList';
 import CommentsList from '../menu/CommentsList';
 import RatingsList from '../menu/RatingsList';
 import FeedbackForm from '../menu/FeedbackForm';
+import StatsView from '../menu/StatsView';
 
 declare const __APP_VERSION__: string;
 
@@ -41,13 +43,14 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'comments' | 'ratings' | 'feedback';
+type Section = 'nav' | 'favorites' | 'comments' | 'ratings' | 'feedback' | 'stats';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
+  stats: 'Estadísticas',
 };
 
 export default function SideMenu({ open, onClose }: Props) {
@@ -141,6 +144,13 @@ export default function SideMenu({ open, onClose }: Props) {
                   </ListItemIcon>
                   <ListItemText primary="Feedback" />
                 </ListItemButton>
+
+                <ListItemButton onClick={() => setActiveSection('stats')}>
+                  <ListItemIcon>
+                    <BarChartIcon sx={{ color: '#7b1fa2' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Estadísticas" />
+                </ListItemButton>
               </List>
 
               <Divider />
@@ -181,6 +191,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                 {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
                 {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
+                {activeSection === 'stats' && <StatsView />}
               </Box>
             </>
           )}

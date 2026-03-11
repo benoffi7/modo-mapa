@@ -16,7 +16,8 @@ interface TopListProps {
 }
 
 export default function TopList({ title, items }: TopListProps) {
-  const maxValue = items.length > 0 ? Math.max(...items.map((i) => i.value)) : 1;
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const maxValue = sorted.length > 0 ? sorted[0].value : 1;
 
   return (
     <Card variant="outlined">
@@ -24,12 +25,12 @@ export default function TopList({ title, items }: TopListProps) {
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        {items.length === 0 && (
+        {sorted.length === 0 && (
           <Typography variant="body2" color="text.secondary">
             Sin datos
           </Typography>
         )}
-        {items.map((item, idx) => (
+        {sorted.map((item, idx) => (
           <Box key={idx} sx={{ mb: 1.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }}>

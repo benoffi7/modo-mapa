@@ -119,10 +119,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Métricas diarias — solo admin puede leer.
+    // Métricas diarias — cualquier usuario autenticado puede leer (estadísticas públicas).
     // Cloud Functions escribe con admin SDK.
     match /dailyMetrics/{docId} {
-      allow read: if isAdmin();
+      allow read: if request.auth != null;
       allow write: if false;
     }
 

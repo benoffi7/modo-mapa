@@ -6,43 +6,33 @@ import Box from '@mui/material/Box';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
-import { countersConverter, dailyMetricsConverter } from '../../config/adminConverters';
+import { countersConverter } from '../../config/adminConverters';
 import { customTagConverter } from '../../config/converters';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { PREDEFINED_TAGS } from '../../types';
-import type { AdminCounters, DailyMetrics } from '../../types/admin';
+import { usePublicMetrics } from '../../hooks/usePublicMetrics';
+import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
+import type { AdminCounters } from '../../types/admin';
 import StatCard from './StatCard';
-import TopList from './TopList';
-import PieChartCard from './charts/PieChartCard';
-
-function getBusinessName(id: string): string {
-  return allBusinesses.find((b) => b.id === id)?.name ?? id;
-}
-
-function getTagLabel(tagId: string): string {
-  return PREDEFINED_TAGS.find((t) => t.id === tagId)?.label ?? tagId;
-}
+import { TopList, PieChartCard } from '../stats';
 
 export default function DashboardOverview() {
   const [counters, setCounters] = useState<AdminCounters | null>(null);
-  const [metrics, setMetrics] = useState<DailyMetrics | null>(null);
   const [customTagCounts, setCustomTagCounts] = useState<Array<{ label: string; value: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const { metrics, loading: metricsLoading, error: metricsError } = usePublicMetrics();
+
   useEffect(() => {
     let ignore = false;
-    const today = new Date().toISOString().slice(0, 10);
 
     Promise.all([
-      getDoc(doc(db, 'config', 'counters').withConverter(countersConverter)),
-      getDoc(doc(db, 'dailyMetrics', today).withConverter(dailyMetricsConverter)),
+      getDoc(doc(db, COLLECTIONS.CONFIG, 'counters').withConverter(countersConverter)),
       getDocs(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter)),
     ])
-      .then(([countersSnap, metricsSnap, customTagsSnap]) => {
+      .then(([countersSnap, customTagsSnap]) => {
         if (ignore) return;
         setCounters(countersSnap.exists() ? countersSnap.data() : null);
-        setMetrics(metricsSnap.exists() ? metricsSnap.data() : null);
 
         const labelMap = new Map<string, number>();
         for (const d of customTagsSnap.docs) {
@@ -66,7 +56,7 @@ export default function DashboardOverview() {
     return () => { ignore = true; };
   }, []);
 
-  if (loading) {
+  if (loading || metricsLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
@@ -74,7 +64,7 @@ export default function DashboardOverview() {
     );
   }
 
-  if (error) {
+  if (error || metricsError) {
     return <Alert severity="error">Error cargando métricas del dashboard.</Alert>;
   }
 
@@ -140,8 +130,8 @@ export default function DashboardOverview() {
           title="Top 10 — Mejor calificados"
           items={(metrics?.topRated ?? []).map((t) => ({
             label: getBusinessName(t.businessId),
-            value: t.count,
-            secondary: `★ ${t.avgScore}`,
+            value: t.avgScore,
+            secondary: `${t.count} votos`,
           }))}
         />
       </Grid>
