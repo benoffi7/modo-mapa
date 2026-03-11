@@ -9,9 +9,15 @@ import {
   ListItemText,
   Avatar,
   Divider,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import type { Comment } from '../../types';
@@ -25,6 +31,7 @@ export default function BusinessComments({ businessId }: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadComments = useCallback(async () => {
     const q = query(
@@ -73,6 +80,13 @@ export default function BusinessComments({ businessId }: Props) {
       console.error('Error adding comment:', error);
     }
     setIsSubmitting(false);
+  };
+
+  const handleDeleteComment = async () => {
+    if (!confirmDeleteId) return;
+    await deleteDoc(doc(db, 'comments', confirmDeleteId));
+    setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
+    setConfirmDeleteId(null);
   };
 
   const formatDate = (date: Date) => {
@@ -149,6 +163,15 @@ export default function BusinessComments({ businessId }: Props) {
                 }
                 secondary={comment.text}
               />
+              {user && comment.userId === user.uid && (
+                <IconButton
+                  size="small"
+                  onClick={() => setConfirmDeleteId(comment.id)}
+                  sx={{ color: '#5f6368', mt: 0.5 }}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              )}
             </ListItem>
             {index < comments.length - 1 && <Divider />}
           </Box>
@@ -159,6 +182,19 @@ export default function BusinessComments({ businessId }: Props) {
           </Typography>
         )}
       </List>
+
+      <Dialog open={Boolean(confirmDeleteId)} onClose={() => setConfirmDeleteId(null)}>
+        <DialogTitle>Eliminar comentario</DialogTitle>
+        <DialogContent>
+          <Typography>¿Eliminar este comentario?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteId(null)}>Cancelar</Button>
+          <Button onClick={handleDeleteComment} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
