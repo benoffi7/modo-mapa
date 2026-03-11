@@ -22,6 +22,27 @@ interface UsePaginatedQueryReturn<T> {
   reload: () => Promise<void>;
 }
 
+// --- First-page cache with TTL ---
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+interface CacheEntry {
+  items: unknown[];
+  lastDoc: unknown;
+  hasMore: boolean;
+  timestamp: number;
+}
+
+const queryCache = new Map<string, CacheEntry>();
+
+function getCacheKey(collectionPath: string, userId: string): string {
+  return `${collectionPath}__${userId}`;
+}
+
+/** Invalidate the first-page cache for a given collection + user. */
+export function invalidateQueryCache(collectionPath: string, userId: string): void {
+  queryCache.delete(getCacheKey(collectionPath, userId));
+}
+
 /**
  * Paginated Firestore query hook with "Load more" pattern.
  *
@@ -45,10 +66,25 @@ export function usePaginatedQuery<T>(
 
   const stableRef = useMemo(() => collectionRef, [collectionRef]);
 
-  const loadPage = useCallback(async (cursor: QueryDocumentSnapshot<T> | null) => {
+  const loadPage = useCallback(async (cursor: QueryDocumentSnapshot<T> | null, skipCache = false) => {
     if (!stableRef || !userId) return;
 
     const isFirstPage = cursor === null;
+
+    // Check cache for first page only
+    if (isFirstPage && !skipCache) {
+      const cacheKey = getCacheKey(stableRef.path, userId);
+      const cached = queryCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        setItems(cached.items as T[]);
+        setHasMore(cached.hasMore);
+        lastDocRef.current = cached.lastDoc as QueryDocumentSnapshot<T> | null;
+        setIsLoading(false);
+        setError(false);
+        return;
+      }
+    }
+
     if (isFirstPage) {
       setIsLoading(true);
     } else {
@@ -75,6 +111,15 @@ export function usePaginatedQuery<T>(
       const pageItems = pageDocs.map((d) => d.data());
       if (isFirstPage) {
         setItems(pageItems);
+
+        // Cache first page
+        const cacheKey = getCacheKey(stableRef.path, userId);
+        queryCache.set(cacheKey, {
+          items: pageItems,
+          lastDoc: lastDocRef.current,
+          hasMore: hasMoreResults,
+          timestamp: Date.now(),
+        });
       } else {
         setItems((prev) => [...prev, ...pageItems]);
       }
@@ -102,9 +147,12 @@ export function usePaginatedQuery<T>(
   }, [hasMore, isLoadingMore, loadPage]);
 
   const reload = useCallback(async () => {
+    if (stableRef && userId) {
+      invalidateQueryCache(stableRef.path, userId);
+    }
     lastDocRef.current = null;
-    await loadPage(null);
-  }, [loadPage]);
+    await loadPage(null, true);
+  }, [loadPage, stableRef, userId]);
 
   return { items, isLoading, isLoadingMore, error, hasMore, loadMore, reload };
 }

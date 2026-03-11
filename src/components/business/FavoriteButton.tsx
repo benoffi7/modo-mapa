@@ -1,57 +1,51 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { IconButton } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
+import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
 
 interface Props {
   businessId: string;
+  isFavorite: boolean;
+  isLoading: boolean;
+  onToggle: () => void;
 }
 
-export default function FavoriteButton({ businessId }: Props) {
+export default function FavoriteButton({ businessId, isFavorite, isLoading, onToggle }: Props) {
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const docId = user ? `${user.uid}__${businessId}` : null;
-
-  useEffect(() => {
-    if (!docId) return;
-    getDoc(doc(db, COLLECTIONS.FAVORITES, docId)).then((snap) => {
-      setIsFavorite(snap.exists());
-      setIsLoading(false);
-    });
-  }, [docId]);
+  const [isToggling, setIsToggling] = useState(false);
 
   const toggleFavorite = useCallback(async () => {
-    if (!user || !docId) return;
-    setIsLoading(true);
+    if (!user) return;
+    const docId = `${user.uid}__${businessId}`;
+    setIsToggling(true);
     try {
       if (isFavorite) {
         await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
-        setIsFavorite(false);
       } else {
         await setDoc(doc(db, COLLECTIONS.FAVORITES, docId), {
           userId: user.uid,
           businessId,
           createdAt: serverTimestamp(),
         });
-        setIsFavorite(true);
       }
+      invalidateQueryCache(COLLECTIONS.FAVORITES, user.uid);
+      onToggle();
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
-    setIsLoading(false);
-  }, [user, docId, isFavorite, businessId]);
+    setIsToggling(false);
+  }, [user, businessId, isFavorite, onToggle]);
 
   return (
     <IconButton
       aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
-      disabled={isLoading || !user}
+      disabled={isLoading || isToggling || !user}
       sx={{ color: isFavorite ? '#ea4335' : '#5f6368' }}
     >
       {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
