@@ -2,59 +2,100 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Perfiles de usuario — solo el owner puede leer/escribir su propio documento.
+    // displayName: string, 1-30 chars. createdAt debe ser timestamp del servidor.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 30
+        && request.resource.data.createdAt == request.time;
     }
 
+    // Favoritos — cualquier usuario autenticado puede leer.
+    // Solo el owner puede crear (con timestamp validado) o eliminar.
     match /favorites/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt == request.time;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
 
+    // Calificaciones — cualquier usuario autenticado puede leer.
+    // Owner puede crear/actualizar con score 1-5.
+    // create valida createdAt y updatedAt; update solo valida updatedAt.
     match /ratings/{docId} {
       allow read: if request.auth != null;
-      allow create, update: if request.auth != null
+      allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.score is int
         && request.resource.data.score >= 1
-        && request.resource.data.score <= 5;
+        && request.resource.data.score <= 5
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.score is int
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 5
+        && request.resource.data.updatedAt == request.time;
     }
 
+    // Comentarios — cualquier usuario autenticado puede leer.
+    // Owner puede crear con userName (1-30), text (1-500) y timestamp validado.
+    // Owner puede eliminar sus propios comentarios.
     match /comments/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.userName.size() > 0
+        && request.resource.data.userName.size() <= 30
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 500;
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.createdAt == request.time;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
 
+    // Votos en etiquetas predefinidas — cualquier usuario autenticado puede leer.
+    // Owner puede crear (con timestamp validado) o eliminar su voto.
     match /userTags/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt == request.time;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
 
+    // Feedback de la app — owner puede crear con mensaje (1-1000) y timestamp validado.
+    // Owner puede leer y eliminar su propio feedback.
     match /feedback/{docId} {
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 1000;
+        && request.resource.data.message.size() <= 1000
+        && request.resource.data.createdAt == request.time;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
+    // Etiquetas custom por usuario/comercio — cualquier usuario autenticado puede leer.
+    // Owner puede crear (con label 1-30 y timestamp validado), editar label, o eliminar.
     match /customTags/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.label is string
         && request.resource.data.label.size() > 0
-        && request.resource.data.label.size() <= 30;
+        && request.resource.data.label.size() <= 30
+        && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
+        && request.resource.data.label is string
         && request.resource.data.label.size() > 0
         && request.resource.data.label.size() <= 30;
       allow delete: if request.auth != null

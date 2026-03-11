@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { commentConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import type { Comment } from '../../types';
 
@@ -26,29 +28,28 @@ interface Props {
   businessId: string;
 }
 
-export default function BusinessComments({ businessId }: Props) {
+export default memo(function BusinessComments({ businessId }: Props) {
   const { user, displayName } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   const loadComments = useCallback(async () => {
     const q = query(
-      collection(db, 'comments'),
+      collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
       where('businessId', '==', businessId)
     );
     try {
+      setError(false);
       const snapshot = await getDocs(q);
-      const loaded: Comment[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate() || new Date(),
-      })) as Comment[];
+      const loaded: Comment[] = snapshot.docs.map((d) => d.data());
       loaded.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setComments(loaded);
-    } catch (error) {
-      console.error('Error loading comments:', error);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+      setError(true);
       setComments([]);
     }
   }, [businessId]);
@@ -57,13 +58,22 @@ export default function BusinessComments({ businessId }: Props) {
     loadComments();
   }, [loadComments]);
 
+  const MAX_COMMENTS_PER_DAY = 20;
+
+  const userCommentsToday = comments.filter((c) => {
+    if (c.userId !== user?.uid) return false;
+    const today = new Date();
+    return c.createdAt.toDateString() === today.toDateString();
+  }).length;
+
   const handleSubmit = async () => {
     if (!user || !newComment.trim()) return;
+    if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     const text = newComment.trim();
     const userName = displayName || 'Anónimo';
     try {
-      const docRef = await addDoc(collection(db, 'comments'), {
+      const docRef = await addDoc(collection(db, COLLECTIONS.COMMENTS), {
         userId: user.uid,
         userName,
         businessId,
@@ -84,7 +94,7 @@ export default function BusinessComments({ businessId }: Props) {
 
   const handleDeleteComment = async () => {
     if (!confirmDeleteId) return;
-    await deleteDoc(doc(db, 'comments', confirmDeleteId));
+    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
     setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
     setConfirmDeleteId(null);
   };
@@ -131,6 +141,15 @@ export default function BusinessComments({ businessId }: Props) {
           >
             <SendIcon fontSize="small" />
           </Button>
+        </Box>
+      )}
+
+      {error && (
+        <Box sx={{ py: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+            Error al cargar comentarios
+          </Typography>
+          <Button size="small" onClick={loadComments}>Reintentar</Button>
         </Box>
       )}
 
@@ -197,4 +216,4 @@ export default function BusinessComments({ businessId }: Props) {
       </Dialog>
     </Box>
   );
-}
+});

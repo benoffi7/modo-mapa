@@ -6,18 +6,19 @@ import {
   ListItemText,
   Typography,
   Rating,
+  Button,
 } from '@mui/material';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { ratingConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { useListFilters } from '../../hooks/useListFilters';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import ListFilters from './ListFilters';
 import type { Business } from '../../types';
-import businessesData from '../../data/businesses.json';
-
-const allBusinesses: Business[] = businessesData as Business[];
 
 interface RatingItem {
   businessId: string;
@@ -35,6 +36,7 @@ export default function RatingsList({ onNavigate }: Props) {
   const { setSelectedBusiness } = useMapContext();
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const {
     filtered,
@@ -52,8 +54,9 @@ export default function RatingsList({ onNavigate }: Props) {
   const loadRatings = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setError(false);
     try {
-      const q = query(collection(db, 'ratings'), where('userId', '==', user.uid));
+      const q = query(collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       const items: RatingItem[] = snapshot.docs.map((d) => {
         const data = d.data();
@@ -61,12 +64,13 @@ export default function RatingsList({ onNavigate }: Props) {
           businessId: data.businessId,
           business: allBusinesses.find((b) => b.id === data.businessId) || null,
           score: data.score,
-          updatedAt: data.updatedAt?.toDate() || data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt || data.createdAt,
         };
       });
       setRatings(items);
-    } catch (error) {
-      console.error('Error loading ratings:', error);
+    } catch (err) {
+      console.error('Error loading ratings:', err);
+      setError(true);
     }
     setIsLoading(false);
   }, [user]);
@@ -95,6 +99,17 @@ export default function RatingsList({ onNavigate }: Props) {
         <Typography variant="body2" color="text.secondary">
           Cargando...
         </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+          Error al cargar calificaciones
+        </Typography>
+        <Button size="small" onClick={loadRatings}>Reintentar</Button>
       </Box>
     );
   }
