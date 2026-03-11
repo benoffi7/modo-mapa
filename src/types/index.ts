@@ -38,6 +38,7 @@ export interface Comment {
   businessId: string;
   text: string;
   createdAt: Date;
+  flagged?: boolean;
 }
 
 export interface UserTag {
@@ -59,6 +60,15 @@ export interface Favorite {
   userId: string;
   businessId: string;
   createdAt: Date;
+}
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  message: string;
+  category: string;
+  createdAt: Date;
+  flagged?: boolean;
 }
 
 export const PREDEFINED_TAGS = [
