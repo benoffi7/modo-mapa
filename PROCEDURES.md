@@ -39,6 +39,34 @@ En GitHub repo Settings > Secrets and variables > Actions, agregar:
 - `VITE_FIREBASE_APP_ID`
 - `FIREBASE_SERVICE_ACCOUNT` (JSON de service account de Firebase)
 
+## Flujo para nuevas funcionalidades
+
+Toda funcionalidad nueva sigue estas etapas con aprobación del usuario en cada paso:
+
+1. **PRD (Product Requirements Document)** — Claude lo crea incluyendo:
+   - Descripción de la funcionalidad
+   - Contexto del proyecto y estructura actual
+   - Requisitos funcionales y no funcionales
+   - Buenas prácticas y consideraciones UX
+2. **Aprobación del usuario** — No avanzar sin OK
+3. **Especificaciones técnicas** — Detalle de implementación:
+   - Modelos de datos / interfaces
+   - Componentes a crear o modificar
+   - Interacciones con Firebase
+   - Consideraciones de seguridad
+4. **Aprobación del usuario** — No avanzar sin OK
+5. **Plan técnico** — Pasos ordenados de implementación
+6. **Implementación** — Siguiendo el flujo de ramas/PR habitual
+
+### Documentación de features/fixes
+Toda la documentación se guarda en `docs/<tipo>-<descripcion>/`:
+- `prd.md` — Product Requirements Document
+- `specs.md` — Especificaciones técnicas
+- `plan.md` — Plan técnico de implementación
+- `changelog.md` — Archivos modificados/creados durante la implementación
+
+Cada iteración se empieza desde cero actualizando los archivos existentes (no se crean versiones).
+
 ## Flujo para corrección de errores / mejoras
 
 1. **Crear issue en GitHub** con descripción del error o mejora
