@@ -1,5 +1,19 @@
 # PRD: Mitigaciones de Cuota Firebase y Modo Offline
 
+## Estado actual
+
+> **Mitigaciones 1-3: COMPLETADAS** (PR #26, mergeado a main)
+>
+> Las mitigaciones de cache y persistence se implementaron en el branch
+> `feat/24-firebase-quota-offline` y se mergearon en PR #26. Estas redujeron
+> los reads de Firestore en ~54%, permitiendo soportar ~200 usuarios dentro
+> de la cuota gratuita.
+>
+> **Pendiente: Mitigacion 4 — Modo offline completo (PWA + Service Worker)**
+> Este es el trabajo restante, cubierto en issue #25.
+
+---
+
 ## Contexto
 
 La app usa Firestore sin persistencia offline configurada. Cada read/write requiere conexión y consume cuota. Con 100 usuarios estimados, los reads superan ligeramente la cuota gratuita (54K vs 50K/mes).
@@ -39,7 +53,7 @@ Reducir el consumo de reads de Firestore y habilitar navegación offline, implem
 
 ---
 
-## Mitigación 1: Firestore Offline Persistence
+## Mitigación 1: Firestore Offline Persistence — COMPLETADA
 
 ### Descripcion
 
@@ -65,21 +79,13 @@ firebase.ts
 - Firestore sincroniza automáticamente cuando hay conexión
 - Sin cambio en la lógica de los componentes
 
-### Riesgos
-
-| Riesgo | Mitigacion |
-|--------|-----------|
-| Datos desactualizados en cache | Firestore listener sync automatico al reconectar; datos de esta app cambian poco |
-| Aumento de storage en dispositivo | IndexedDB se autogestiona; datos de esta app son pequenos (<1MB) |
-| Conflicto con emuladores | Deshabilitar persistence en modo DEV (ya se detecta `import.meta.env.DEV`) |
-
 ### Complejidad: Baja
 
 Cambio solo en `firebase.ts`. No afecta ningun componente.
 
 ---
 
-## Mitigacion 2: Cache client-side con TTL para Business View
+## Mitigacion 2: Cache client-side con TTL para Business View — COMPLETADA
 
 ### Descripcion
 
@@ -87,7 +93,7 @@ Implementar cache en memoria para los datos del business view. Cuando el usuario
 
 ### Implementacion
 
-Crear un hook `useBusinessDataCache` que:
+Hook `useBusinessDataCache` que:
 
 1. Mantiene un `Map<businessId, { data, timestamp }>` en memoria (via Context o module-level)
 2. Al abrir un comercio, verifica si hay datos en cache con TTL valido (5 minutos)
@@ -95,29 +101,11 @@ Crear un hook `useBusinessDataCache` que:
 4. Si no hay cache o expiro: hace las 5 queries normales y guarda en cache
 5. Al hacer un write (comentar, votar tag, etc.): invalida el cache de ese comercio
 
-### Componentes afectados
-
-| Componente | Cambio |
-|-----------|--------|
-| `BusinessSheet` | Nuevo: pasa datos cacheados a hijos |
-| `FavoriteButton` | Recibe `isFavorite` como prop en vez de hacer getDoc |
-| `BusinessRating` | Recibe `ratings` como prop en vez de hacer getDocs |
-| `BusinessComments` | Recibe `comments` como prop en vez de hacer getDocs |
-| `BusinessTags` | Recibe `userTags` + `customTags` como props en vez de hacer getDocs |
-
 ### Impacto estimado
 
 - **-60% reads por business view** en sesiones donde el usuario reabre comercios
 - En una sesion tipica de 3 comercios, si el usuario abre cada uno 2 veces: de 30 reads a 15 reads
 - Escrituras invalidan cache, garantizando consistencia
-
-### Riesgos
-
-| Riesgo | Mitigacion |
-|--------|-----------|
-| Cache desactualizado por otro usuario | TTL de 5 min limita la ventana; datos de interaccion social toleran delay |
-| Memoria | Map en memoria se limpia al cerrar tab; con 40 comercios max ~200KB |
-| Complejidad extra | Un solo hook centralizado, patron bien conocido |
 
 ### Complejidad: Media
 
@@ -125,7 +113,7 @@ Requiere refactor de como los componentes del business view obtienen datos. Los 
 
 ---
 
-## Mitigacion 3: Cache de listas del menu lateral
+## Mitigacion 3: Cache de listas del menu lateral — COMPLETADA
 
 ### Descripcion
 
@@ -140,26 +128,10 @@ Modificar `usePaginatedQuery` para:
 3. Al hacer write en la coleccion (agregar/eliminar favorito, comentario, etc.): invalidar cache de esa coleccion
 4. Mantener la funcionalidad de "Cargar mas" (paginacion)
 
-### Componentes afectados
-
-| Componente | Cambio |
-|-----------|--------|
-| `usePaginatedQuery` | Agregar capa de cache con TTL |
-| `FavoriteButton` | Al toggle, invalidar cache de favorites |
-| `BusinessComments` | Al crear/eliminar, invalidar cache de comments |
-| `BusinessRating` | Al calificar, invalidar cache de ratings |
-
 ### Impacto estimado
 
 - **-30% reads en sesiones largas** donde el usuario navega entre secciones del menu repetidamente
 - No afecta la primera carga de cada seccion
-
-### Riesgos
-
-| Riesgo | Mitigacion |
-|--------|-----------|
-| Paginacion + cache es compleja | Solo cachear la primera pagina; "Cargar mas" siempre va a Firestore |
-| Inconsistencia tras write | Invalidar cache de la coleccion entera al escribir |
 
 ### Complejidad: Media
 
@@ -167,7 +139,7 @@ Cambio contenido en `usePaginatedQuery`. Los componentes solo necesitan llamar u
 
 ---
 
-## Mitigacion 4: Modo offline completo
+## Mitigacion 4: Modo offline completo (PENDIENTE — Issue #25)
 
 ### Descripcion
 
@@ -188,6 +160,10 @@ Permitir navegar el mapa y ver datos cacheados cuando no hay conexion. Los datos
    - Firestore con persistence ya encola writes automaticamente
    - Mostrar indicador "pendiente de sincronizacion" en items no confirmados
 
+4. **PWA manifest** (`manifest.json`):
+   - Nombre, iconos, theme color para instalabilidad
+   - `display: standalone` para experiencia app-like
+
 ### Dependencias nuevas
 
 | Paquete | Uso |
@@ -200,6 +176,7 @@ Permitir navegar el mapa y ver datos cacheados cuando no hay conexion. Los datos
 |-----------|--------|
 | `vite.config.ts` | Agregar VitePWA plugin |
 | `AppShell` | Indicador de estado offline |
+| `public/manifest.json` | Manifiesto PWA para instalabilidad |
 | Componentes de write | Indicador "pendiente de sync" (opcional) |
 
 ### Impacto estimado
@@ -223,18 +200,20 @@ Service worker + PWA config. No cambia logica de negocio pero agrega infraestruc
 
 ---
 
-## Evaluacion y recomendacion
+## Evaluacion y resultados
 
 ### Matriz de costo/beneficio
 
-| Mitigacion | Reduccion reads | Complejidad | Archivos afectados | Recomendacion |
-|-----------|----------------|-------------|-------------------|--------------|
-| 1. Offline Persistence | -40% recurrentes | Baja | 1 (firebase.ts) | **Implementar primero** |
-| 2. Cache Business View | -60% business view | Media | 6 | **Implementar segundo** |
-| 3. Cache listas menu | -30% sesiones largas | Media | 4 | **Implementar tercero** |
-| 4. Modo offline completo | N/A (UX) | Media-Alta | 3+ config | **Evaluar post-mitigaciones** |
+| Mitigacion | Reduccion reads | Complejidad | Estado |
+|-----------|----------------|-------------|--------|
+| 1. Offline Persistence | -40% recurrentes | Baja | COMPLETADA (PR #26) |
+| 2. Cache Business View | -60% business view | Media | COMPLETADA (PR #26) |
+| 3. Cache listas menu | -30% sesiones largas | Media | COMPLETADA (PR #26) |
+| 4. Modo offline completo | N/A (UX) | Media-Alta | PENDIENTE (Issue #25) |
 
-### Impacto combinado estimado (mitigaciones 1-3)
+### Resultados de mitigaciones 1-3
+
+Las mitigaciones 1-3 lograron una reduccion de ~54% en reads:
 
 | Escenario | Sin mitigacion | Con mitigaciones | Reduccion |
 |-----------|---------------|-----------------|-----------|
@@ -242,29 +221,6 @@ Service worker + PWA config. No cambia logica de negocio pero agrega infraestruc
 | 200 usuarios, 3 comercios/sesion | 108,000 reads/mes | ~50,000 reads/mes | -54% |
 
 Con las mitigaciones 1-3, la app soporta ~200 usuarios dentro de la cuota gratuita.
-
-### Plan de implementacion priorizado
-
-**Fase 1** — Offline Persistence (mitigacion 1)
-
-- 1 archivo modificado
-- Impacto inmediato sin cambiar logica
-
-**Fase 2** — Cache Business View (mitigacion 2)
-
-- Refactor de data fetching en business view
-- Mayor impacto en reads
-
-**Fase 3** — Cache listas menu (mitigacion 3)
-
-- Mejora `usePaginatedQuery`
-- Complementa fase 2
-
-**Fase 4** (futura) — Modo offline / PWA (mitigacion 4)
-
-- Requiere que fases 1-3 esten estables
-- Evaluar si la UX offline justifica la complejidad adicional
-- Puede ser un issue separado
 
 ---
 
@@ -280,12 +236,25 @@ Con las mitigaciones 1-3, la app soporta ~200 usuarios dentro de la cuota gratui
 
 ## Criterios de aceptacion
 
-- [ ] Firestore offline persistence habilitada en produccion
-- [ ] Persistence deshabilitada en modo DEV (emuladores)
-- [ ] Cache client-side para business view con TTL de 5 min
-- [ ] Invalidacion de cache al hacer writes
-- [ ] Cache de primera pagina en listas del menu con TTL de 2 min
+### Mitigaciones 1-3 (COMPLETADAS)
+
+- [x] Firestore offline persistence habilitada en produccion
+- [x] Persistence deshabilitada en modo DEV (emuladores)
+- [x] Cache client-side para business view con TTL de 5 min
+- [x] Invalidacion de cache al hacer writes
+- [x] Cache de primera pagina en listas del menu con TTL de 2 min
+- [x] 0 regresiones en funcionalidad existente
+- [x] Reads por sesion tipica reducidos >50%
+- [x] 0 errores de lint, build y tests existentes
+- [x] Tests para logica de cache (TTL, invalidacion)
+
+### Mitigacion 4 — PWA + Service Worker (PENDIENTE)
+
+- [ ] Service Worker con Workbox generado via `vite-plugin-pwa`
+- [ ] Precache de assets estaticos (HTML, JS, CSS, JSON de comercios)
+- [ ] Runtime cache de Google Maps tiles (stale-while-revalidate)
+- [ ] Indicador visual de estado offline (banner/chip)
+- [ ] Manifiesto PWA (`manifest.json`) con iconos y configuracion de instalabilidad
+- [ ] App instalable desde navegador (prompt "Agregar a pantalla de inicio")
 - [ ] 0 regresiones en funcionalidad existente
-- [ ] Reads por sesion tipica reducidos >50%
 - [ ] 0 errores de lint, build y tests existentes
-- [ ] Tests para logica de cache (TTL, invalidacion)
