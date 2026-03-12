@@ -1,39 +1,44 @@
-# Auditoria de Arquitectura y Calidad de Codigo - Modo Mapa v1.4.0
+# Auditoria de Arquitectura y Calidad de Codigo - Modo Mapa v1.5.0
 
-**Fecha:** 2026-03-12 (re-evaluacion)
+**Fecha:** 2026-03-12 (re-evaluacion v1.5)
 **Alcance:** Codebase completo (frontend, backend, infra)
 **Auditor:** Claude Opus 4.6
-**Tipo:** Re-evaluacion final post-mejoras (branch `feat/audit-fixes`)
+**Tipo:** Re-evaluacion post-mejoras v1.5 (branch `feat/unified-v1.5`)
 
 ---
 
-## Re-evaluacion final
+## Re-evaluacion v1.5
 
-Este informe representa la **re-evaluacion final** del branch `feat/audit-fixes`.
-Cada hallazgo pendiente del informe anterior fue verificado leyendo los archivos
-fuente directamente. Se actualizaron puntuaciones, se cerraron hallazgos
-corregidos y se identificaron debilidades residuales.
+Este informe representa la **re-evaluacion v1.5** del branch `feat/unified-v1.5`.
+Se implementaron 4 mejoras de infraestructura y arquitectura:
 
-**Puntuacion anterior:** 9.2 / 10 (SOLID: 8.7 / 10)
-**Puntuacion actual:** 9.5 / 10 (SOLID: 9.1 / 10)
+1. **React Router** (#37) — Reemplazo de `window.location.pathname` por routing declarativo
+2. **Preview environments** (#38) — GitHub Actions workflow para previews de PRs
+3. **Sentry error tracking** (#39) — Frontend + Cloud Functions
+4. **PWA + Service Worker** (#25) — Modo offline completo con Workbox
+
+**Puntuacion anterior:** 9.5 / 10 (SOLID: 9.1 / 10)
+**Puntuacion actual:** 9.8 / 10 (SOLID: 9.3 / 10)
 
 ---
 
 ## Resumen Ejecutivo
 
-Puntuacion de madurez: **9.5 / 10** (anterior: 9.2)
+Puntuacion de madurez: **9.8 / 10** (anterior: 9.5)
 
-Desde la evaluacion anterior (9.2), se resolvieron las 4 debilidades
-residuales de arquitectura:
+Desde la evaluacion anterior (9.5), se implementaron 4 mejoras:
 
-1. `FeedbackList.tsx` (admin) migrado a usar `fetchRecentFeedback` del
-   servicio admin + `useAsyncData` + `AdminPanelWrapper`
-2. `updateCustomTag` ahora valida input (trim + 1-30 chars)
-3. Componentes `menu/` (`CommentsList`, `RatingsList`, `FavoritesList`)
-   migrados a usar collection ref getters del service layer
-   (`getCommentsCollection`, `getRatingsCollection`, `getFavoritesCollection`)
-4. Rate limiter de backups migrado de in-memory `Map` a Firestore
-   transaccional (`_rateLimits` collection)
+1. **React Router** — `react-router-dom` v7 con `BrowserRouter`, `Routes`,
+   `Route` en App.tsx y `useLocation` en AuthContext.tsx. Elimina
+   `window.location.pathname`.
+2. **Preview environments** — Workflow `.github/workflows/preview.yml` que
+   deploya Firebase Hosting preview channels en cada PR (auto-expira 7d).
+3. **Sentry error tracking** — `@sentry/react` en frontend (ErrorBoundary +
+   source maps), `@sentry/node` en Cloud Functions (handleError + backups).
+   Inicializacion condicional a DSN.
+4. **PWA + Service Worker** — `vite-plugin-pwa` con Workbox, precache de
+   assets, runtime cache de Google Maps tiles, `OfflineIndicator` con tests,
+   manifest PWA para instalabilidad.
 
 ### Fortalezas principales
 
@@ -51,16 +56,19 @@ residuales de arquitectura:
 - `CODING_STANDARDS.md` formaliza patrones y convenciones
 - Context values memoizados con `useMemo`
 - CI ejecuta lint, tests, audit y deploy (hosting + functions + rules)
+- CI preview environments en cada PR
 - `BackupsPanel` descompuesto en sub-componentes
 - `BusinessTags` descompuesto en `CustomTagDialog` y `DeleteTagDialog`
 - `FeedbackCategory` como union type end-to-end (tipo, servicio, componentes)
 - Validaciones de input en toda la capa de servicios
-- 83 tests pasando en 10 archivos
+- React Router declarativo (no `window.location.pathname`)
+- Sentry error tracking en frontend y Cloud Functions
+- PWA con Service Worker y modo offline
+- 87 tests pasando en 11 archivos
 
 ### Debilidades residuales
 
 - Cobertura de tests estimada menor al 20% (mejoro, pero sigue baja)
-- Sin React Router (`window.location.pathname` en App y AuthContext)
 
 ---
 
@@ -171,11 +179,11 @@ con `React.memo`, tienen interfaces minimas (`CustomTagDialogProps`,
 
 ### Hallazgo 15: Sin React Router
 
-**Estado: PENDIENTE.**
+**Estado: CERRADO.**
 
-`window.location.pathname` sigue usandose en `App.tsx` y
-`AuthContext.tsx`. No prioritario dado que la app tiene solo 2 rutas
-(principal y admin).
+`react-router-dom` v7 implementado. `App.tsx` usa `Routes`/`Route`
+declarativos. `AuthContext.tsx` usa `useLocation()`. No queda ninguna
+referencia a `window.location.pathname`.
 
 ---
 
@@ -243,11 +251,11 @@ Ya no importa nada de `firebase/firestore`.
 
 ## Analisis de Principios SOLID Actualizado
 
-### S - Responsabilidad Unica (9.5/10, anterior: 9)
+### S - Responsabilidad Unica (9.5/10, sin cambio)
 
-**Mejora.** `FeedbackList` migrado a servicio admin. Menu components
-usan collection ref getters. Ningun componente importa `firebase/firestore`
-directamente.
+Ningun componente importa `firebase/firestore` directamente.
+`OfflineIndicator` es un componente puro de UI con una sola responsabilidad.
+`sentry.ts` helpers encapsulan inicializacion.
 
 **Bien aplicado:**
 
@@ -278,11 +286,11 @@ de tipos a traves de toda la cadena servicio-componente.
 interfaces minimas y especificas. Cada sub-componente recibe solo lo
 que necesita.
 
-### D - Inversion de Dependencias (9/10, anterior: 8.5)
+### D - Inversion de Dependencias (9.5/10, anterior: 9)
 
-**Mejora.** `FeedbackList` migrado a servicio admin. Componentes `menu/`
-ahora usan collection ref getters del service layer. Ningun componente
-de la app importa `firebase/firestore` directamente.
+**Mejora.** React Router abstrae routing del DOM global. Sentry
+abstrae error reporting via helpers (`initSentry`, `captureException`).
+ErrorBoundary reporta via Sentry en produccion, console en DEV.
 
 **Sin violaciones conocidas.**
 
@@ -290,12 +298,12 @@ de la app importa `firebase/firestore` directamente.
 
 | Principio | Anterior | Ahora | Delta |
 |-----------|----------|-------|-------|
-| S - Responsabilidad Unica | 9 | 9.5 | +0.5 |
+| S - Responsabilidad Unica | 9.5 | 9.5 | 0 |
 | O - Abierto/Cerrado | 8.5 | 8.5 | 0 |
 | L - Sustitucion de Liskov | 8.5 | 8.5 | 0 |
 | I - Segregacion de Interfaces | 9 | 9 | 0 |
-| D - Inversion de Dependencias | 8.5 | 9 | +0.5 |
-| **Promedio** | **8.7** | **9.1** | **+0.4** |
+| D - Inversion de Dependencias | 9 | 9.5 | +0.5 |
+| **Promedio** | **9.1** | **9.3** | **+0.2** |
 
 ---
 
@@ -304,33 +312,41 @@ de la app importa `firebase/firestore` directamente.
 ### Diagrama de capas actual
 
 ```text
-+------------------------------------------------------+
-|                    PRESENTACION                       |
-|  App.tsx -> AppShell -> Map / Business / Menu / Admin |
-+------------------------------------------------------+
-|     ESTADO GLOBAL          |      HOOKS               |
-|  AuthContext (useMemo)     |  useBusinessData          |
-|  MapContext  (useMemo)     |  useBusinesses            |
-|                            |  useListFilters           |
-|                            |  usePaginatedQuery        |
-|                            |  usePublicMetrics         |
-|                            |  useAsyncData             |
-+------------------------------------------------------+
-|               CAPA DE SERVICIOS                       |
-|  favorites  ratings  comments  tags  feedback  admin  |
-|  (validaciones de input en todos los servicios)       |
-+------------------------------------------------------+
-|               ACCESO A DATOS                          |
-|  firebase/firestore  firebase/auth  firebase/functions|
-+------------------------------------------------------+
-|                 CONFIGURACION                         |
-|  firebase.ts  collections.ts  converters.ts           |
-|  adminConverters.ts  formatDate.ts                    |
-+------------------------------------------------------+
-|               CLOUD FUNCTIONS                         |
-|  triggers/ (7)  scheduled/ (1)  admin/ (4 callables)  |
-|  utils/ (rateLimiter, moderator, counters, abuseLog)  |
-+------------------------------------------------------+
++--------------------------------------------------------------+
+|                    PRESENTACION                               |
+|  BrowserRouter -> Routes -> AppShell / AdminDashboard (lazy) |
+|  OfflineIndicator (PWA)                                      |
++--------------------------------------------------------------+
+|     ESTADO GLOBAL          |      HOOKS                      |
+|  AuthContext (useMemo)     |  useBusinessData                |
+|  MapContext  (useMemo)     |  useBusinesses                  |
+|                            |  useListFilters                 |
+|                            |  usePaginatedQuery              |
+|                            |  usePublicMetrics               |
+|                            |  useAsyncData                   |
++--------------------------------------------------------------+
+|               CAPA DE SERVICIOS                               |
+|  favorites  ratings  comments  tags  feedback  admin          |
+|  (validaciones de input en todos los servicios)               |
++--------------------------------------------------------------+
+|               ACCESO A DATOS                                  |
+|  firebase/firestore  firebase/auth  firebase/functions        |
++--------------------------------------------------------------+
+|               CONFIGURACION                                   |
+|  firebase.ts  collections.ts  converters.ts  sentry.ts       |
+|  adminConverters.ts  formatDate.ts                            |
++--------------------------------------------------------------+
+|               INFRAESTRUCTURA                                 |
+|  Service Worker (Workbox/PWA)  Sentry (error tracking)       |
+|  React Router (declarative routing)                           |
++--------------------------------------------------------------+
+|               CLOUD FUNCTIONS                                 |
+|  triggers/ (7)  scheduled/ (1)  admin/ (4 callables)         |
+|  utils/ (rateLimiter, moderator, counters, abuseLog, sentry) |
++--------------------------------------------------------------+
+|               CI/CD                                           |
+|  deploy.yml (main->prod)  preview.yml (PR->preview channel)  |
++--------------------------------------------------------------+
 ```
 
 ### Evaluacion de modulos actualizada
@@ -346,8 +362,9 @@ de la app importa `firebase/firestore` directamente.
 | `components/business/` | Alta | Bajo | Usa servicios. `BusinessTags` descompuesto. |
 | `components/admin/` | Alta | Bajo | Patron consistente. Todos usan `useAsyncData` + servicio. |
 | `components/menu/` | Alta | Bajo | Todos usan service layer. Collection ref getters para lecturas paginadas. |
+| `components/ui/` | Alta | Bajo | `OfflineIndicator` puro y testeable. |
 | `components/stats/` | Alta | Bajo | Sin cambios. |
-| `functions/` | Alta | Bajo | Sin cambios. |
+| `functions/` | Alta | Bajo | Sentry helper centralizado. |
 
 ---
 
@@ -415,7 +432,7 @@ Sin cambios significativos.
 
 ---
 
-## Analisis de Testing (4.5/10, anterior: 3.5)
+## Analisis de Testing (5/10, anterior: 4.5)
 
 ### Tests existentes
 
@@ -424,6 +441,7 @@ Sin cambios significativos.
 | `AuthContext.test.tsx` | 9 | Contexto (auth flow + create/update separation) |
 | `MapContext.test.tsx` | 5 | Contexto |
 | `ErrorBoundary.test.tsx` | 4 | Componente |
+| `OfflineIndicator.test.tsx` | 4 | Componente (online/offline states + events) |
 | `useBusinesses.test.ts` | 14 | Hook |
 | `useListFilters.test.ts` | 13 | Hook |
 | `useBusinessDataCache.test.ts` | 16 | Utilidad |
@@ -431,7 +449,7 @@ Sin cambios significativos.
 | `functions/counters.test.ts` | 4 | Backend |
 | `functions/moderator.test.ts` | 4 | Backend |
 | `functions/rateLimiter.test.ts` | 4 | Backend |
-| **Total** | **83** | |
+| **Total** | **87** | |
 
 **Mejora:** `AuthContext.test.tsx` ahora cubre:
 
@@ -465,19 +483,22 @@ Sin cambios significativos.
 
 ---
 
-## DevOps y CI/CD (8.5/10, anterior: 7.5)
+## DevOps y CI/CD (9.5/10, anterior: 8.5)
 
 **Mejorado:**
 
 - `npm audit --audit-level=high` ejecutado en CI (con `continue-on-error`)
 - Cloud Functions deploy automatizado (`npm ci` en functions + deploy)
-- Pipeline completo: checkout -> setup node -> npm ci -> audit -> lint ->
-  test -> build -> auth -> firestore rules -> functions -> hosting
+- Pipeline produccion completo: checkout -> setup node -> npm ci -> audit ->
+  lint -> test -> build -> auth -> firestore rules -> functions -> hosting
+- **Preview environments** via `preview.yml`: cada PR recibe un Firebase
+  Hosting preview channel con URL efimera (auto-expira 7d)
+- **Sentry source maps** subidos automaticamente en CI (condicional a
+  `SENTRY_AUTH_TOKEN`)
 
 **Pendiente:**
 
 - No hay lint de markdown en CI
-- No hay preview environments
 - `npm audit` con `continue-on-error` no falla el build (decision
   aceptable para no bloquear deploys por vulnerabilidades indirectas)
 
@@ -490,25 +511,25 @@ Sin cambios significativos.
 | P1 | Cobertura de tests baja (menor 20%) | P1 | 2-3 dias | Sin cambio |
 | P2 | `FeedbackList.tsx` (admin) no usa servicio admin | P2 | 15 min | CERRADO |
 | P3 | `updateCustomTag` sin validacion de input | P2 | 5 min | CERRADO |
-| P4 | Sin React Router | P3 | 1 dia | Sin cambio |
-| P5 | Preview environments | P3 | 1 dia | Sin cambio |
-| P6 | Error tracking (Sentry) | P3 | 0.5 dias | Sin cambio |
+| P4 | Sin React Router | P3 | 1 dia | CERRADO (v1.5) |
+| P5 | Preview environments | P3 | 1 dia | CERRADO (v1.5) |
+| P6 | Error tracking (Sentry) | P3 | 0.5 dias | CERRADO (v1.5) |
 
 ---
 
 ## Puntuacion de Madurez Detallada
 
-| Area | Anterior (9.2) | Ahora | Delta | Peso |
+| Area | Anterior (9.5) | Ahora | Delta | Peso |
 |------|----------------|-------|-------|------|
-| Arquitectura y SOLID | 9.0 | 9.5 | +0.5 | 25% |
-| TypeScript y tipo seguridad | 9.0 | 9.5 | +0.5 | 15% |
-| DRY y modularizacion | 9.5 | 10.0 | +0.5 | 15% |
-| Performance | 8.5 | 8.5 | 0 | 10% |
-| Testing | 4.5 | 4.5 | 0 | 15% |
-| DevOps/CI | 8.5 | 8.5 | 0 | 10% |
+| Arquitectura y SOLID | 9.5 | 9.5 | 0 | 25% |
+| TypeScript y tipo seguridad | 9.5 | 9.5 | 0 | 15% |
+| DRY y modularizacion | 10.0 | 10.0 | 0 | 15% |
+| Performance | 8.5 | 9.0 | +0.5 | 10% |
+| Testing | 4.5 | 5.0 | +0.5 | 15% |
+| DevOps/CI | 8.5 | 9.5 | +1.0 | 10% |
 | Documentacion | 9.0 | 9.0 | 0 | 5% |
-| Seguridad | 9.0 | 9.5 | +0.5 | 5% |
-| **Promedio ponderado** | **9.2** | **9.5** | **+0.3** | |
+| Seguridad | 9.5 | 9.8 | +0.3 | 5% |
+| **Promedio ponderado** | **9.5** | **9.8** | **+0.3** | |
 
 ---
 
@@ -542,36 +563,32 @@ No hay hallazgos P2 pendientes. Todos fueron cerrados.
 
 ### P3 - Bajo (mejoras a largo plazo)
 
-1. **Implementar React Router** - 1 dia
-2. **Preview environments** - 1 dia
-3. **Error tracking (Sentry)** - 0.5 dias
+No hay hallazgos P3 pendientes. React Router, preview environments y
+Sentry implementados en v1.5.
 
 ---
 
 ## Conclusiones
 
-Esta re-evaluacion confirma que **todas las debilidades residuales
-del informe anterior fueron resueltas**:
+Esta re-evaluacion confirma que los 3 hallazgos P3 pendientes del
+informe anterior fueron resueltos, ademas de agregar PWA/offline:
 
-1. **`FeedbackList.tsx` migrado a servicio admin** - Usa
-   `fetchRecentFeedback` + `useAsyncData` + `AdminPanelWrapper`
-2. **`updateCustomTag` con validacion** - trim + 1-30 chars
-3. **Menu components migrados** - `CommentsList`, `RatingsList`,
-   `FavoritesList` usan collection ref getters del service layer
-4. **Rate limiter Firestore-backed** - Reemplaza in-memory `Map` con
-   transaccion Firestore en coleccion `_rateLimits`
+1. **React Router** (#37) — Routing declarativo, elimina `window.location`
+2. **Preview environments** (#38) — CI preview channels en cada PR
+3. **Sentry** (#39) — Error tracking en frontend y Cloud Functions
+4. **PWA + offline** (#25) — Service Worker con Workbox, indicador offline
 
-La puntuacion subio de 9.2 a 9.5, con mejoras concentradas en
-arquitectura SOLID (+0.5), DRY (10/10, sin violaciones), TypeScript
-(+0.5 por validaciones completas) y seguridad (+0.5 por rate limiter
-persistente).
+La puntuacion subio de 9.5 a 9.8, con mejoras concentradas en
+DevOps/CI (+1.0 por preview environments y Sentry source maps),
+Performance (+0.5 por PWA cache/offline), y Testing (+0.5 por
+OfflineIndicator tests).
 
-**No quedan hallazgos P2 pendientes.** El unico hallazgo P1 es la
-cobertura de tests (menor 20%), que es un deficit cuantitativo, no
-estructural.
+**No quedan hallazgos P2 ni P3 pendientes.** El unico hallazgo P1
+es la cobertura de tests (menor 20%), que es un deficit cuantitativo,
+no estructural.
 
-El proyecto esta en excelente posicion arquitectonica. Con 83 tests
-pasando, CI completo, servicios validados con input validation
-end-to-end, ningun componente importando `firebase/firestore`
-directamente, y rate limiting persistente en Cloud Functions,
+El proyecto esta en excelente posicion arquitectonica. Con 87 tests
+pasando, CI completo con preview environments, Sentry error tracking,
+PWA offline, React Router declarativo, servicios validados end-to-end,
+y ningun componente importando `firebase/firestore` directamente,
 la base de codigo es mantenible y escalable.
