@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await signInAnonymously(auth);
           } catch (error) {
-            console.error('Error signing in anonymously:', error);
+            if (import.meta.env.DEV) console.error('Error signing in anonymously:', error);
           }
         }
       }
@@ -68,10 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const trimmed = name.trim().slice(0, 30);
     if (!trimmed) return;
-    await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
-      displayName: trimmed,
-      createdAt: serverTimestamp(),
-    }, { merge: true });
+    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      // Update: only change displayName, preserve original createdAt
+      await updateDoc(userRef, { displayName: trimmed });
+    } else {
+      // Create: set both displayName and createdAt
+      await setDoc(userRef, {
+        displayName: trimmed,
+        createdAt: serverTimestamp(),
+      });
+    }
     setDisplayNameState(trimmed);
   };
 
@@ -84,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
       setAuthError(message);
-      console.error('Error signing in with Google:', error);
+      if (import.meta.env.DEV) console.error('Error signing in with Google:', error);
       return null;
     }
   };
@@ -93,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error('Error signing out:', error);
+      if (import.meta.env.DEV) console.error('Error signing out:', error);
     }
   };
 

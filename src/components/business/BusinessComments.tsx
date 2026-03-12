@@ -54,7 +54,7 @@ export default memo(function BusinessComments({ businessId, comments, isLoading,
       setNewComment('');
       onCommentsChange();
     } catch (error) {
-      console.error('Error adding comment:', error);
+      if (import.meta.env.DEV) console.error('Error adding comment:', error);
     }
     setIsSubmitting(false);
   };
@@ -86,6 +86,8 @@ export default memo(function BusinessComments({ businessId, comments, isLoading,
                 handleSubmit();
               }
             }}
+            slotProps={{ htmlInput: { maxLength: 500 } }}
+            helperText={newComment.length > 0 ? `${newComment.length}/500` : undefined}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',

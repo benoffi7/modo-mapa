@@ -27,7 +27,7 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
       }
       onToggle();
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      if (import.meta.env.DEV) console.error('Error toggling favorite:', error);
     }
     setIsToggling(false);
   }, [user, businessId, isFavorite, onToggle]);

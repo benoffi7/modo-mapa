@@ -27,7 +27,7 @@ export default function FeedbackForm() {
       await sendFeedback(user.uid, message.trim(), category);
       setSent(true);
     } catch (error) {
-      console.error('Error sending feedback:', error);
+      if (import.meta.env.DEV) console.error('Error sending feedback:', error);
     }
     setIsSubmitting(false);
   };

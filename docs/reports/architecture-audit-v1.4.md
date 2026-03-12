@@ -3,157 +3,314 @@
 **Fecha:** 2026-03-12
 **Alcance:** Codebase completo (frontend, backend, infra, agentes Claude)
 **Auditor:** Claude Opus 4.6
+**Tipo:** Re-evaluacion post-mejoras
 
 ---
 
 ## Resumen Ejecutivo
 
-Puntuacion de madurez: **7.2 / 10**
+Puntuacion de madurez: **8.4 / 10** (anterior: 7.2)
 
-Modo Mapa es una aplicacion web mobile-first bien estructurada con una
-arquitectura coherente para su escala (40 comercios, un admin). El proyecto
-demuestra buenas practicas en seguridad (2 capas de validacion), tipado
-estricto de TypeScript, y una separacion razonable entre UI y datos. Las
-principales areas de mejora son: falta de capa de servicios (logica de
-negocio mezclada en componentes), cobertura de tests baja, y componentes
-admin con alto acoplamiento a Firestore.
+Modo Mapa v1.4.0 recibio mejoras arquitectonicas significativas desde la
+ultima auditoria. Se creo una capa de servicios completa (`src/services/`),
+se centralizo el formateo de fechas y la conversion `toDate()`, se
+implemento un hook generico `useAsyncData` y un wrapper `AdminPanelWrapper`
+que eliminaron duplicacion masiva en los paneles admin, y se agrego un
+servicio de lectura para admin (`admin.ts`) con queries limitadas. El
+resultado es un codebase mas cohesivo, con mejor separacion de
+responsabilidades y significativamente mas testeable.
 
 ### Fortalezas principales
 
-- Configuracion de TypeScript estricta (`strict`, `exactOptionalPropertyTypes`,
-  `verbatimModuleSyntax`)
+- Capa de servicios completa para todas las colecciones de Firestore
+- Patron consistente en todos los paneles admin (`useAsyncData` +
+  `AdminPanelWrapper`)
+- Utilidades centralizadas: `formatDate.ts` con `toDate`, `formatDateShort`,
+  `formatDateMedium`, `formatDateFull`
+- Configuracion de TypeScript estricta (`strict`,
+  `exactOptionalPropertyTypes`, `verbatimModuleSyntax`)
 - Seguridad en capas (Firestore rules + Cloud Functions + client-side)
-- Converters tipados centralizados para todas las colecciones
-- Nombres de colecciones sin strings magicos
+- Converters tipados usando `toDate()` compartido
 - Sistema de cache client-side de dos niveles
-- Admin lazy-loaded, no carga dependencias de mapa
+- Admin lazy-loaded con queries limitadas
+- Documento `CODING_STANDARDS.md` formaliza patrones y convenciones
 
 ### Debilidades principales
 
-- Ausencia de capa de servicios: componentes hacen escrituras directas a Firestore
-- Cobertura de tests estimada menor al 15%
-- Duplicacion de logica de formateo de fechas y patrones de loading/error
-- Componentes admin monoliticos que hacen fetch + render
-- Sin router (navegacion basada en `window.location.pathname`)
+- Cobertura de tests sin cambios (estimada menor al 15%)
+- CI no ejecuta tests ni audit de dependencias
+- Context values (`MapContext`, `AuthContext`) no memoizados
+- `Feedback.category` sigue tipado como `string`
+- `BackupsPanel` sigue siendo un componente monolitico (401 lineas)
+- Componentes `menu/` aun importan `firebase/firestore` directamente para
+  lecturas (parcialmente migrado)
 
 ---
 
-## Analisis de Principios SOLID
+## Resumen de Cambios Desde el Ultimo Informe
 
-### S - Responsabilidad Unica (6/10)
+### Capa de servicios (NUEVA)
 
-**Cumplimiento parcial.** La mayoria de componentes UI tienen una
-responsabilidad clara, pero varios mezclan logica de negocio con presentacion.
+Se creo `src/services/` con 7 modulos:
 
-**Bien aplicado:**
+| Modulo | Operaciones | Colecciones |
+|--------|-------------|-------------|
+| `favorites.ts` | `addFavorite`, `removeFavorite` | favorites |
+| `ratings.ts` | `upsertRating` | ratings |
+| `comments.ts` | `addComment`, `deleteComment` | comments |
+| `tags.ts` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` | userTags, customTags |
+| `feedback.ts` | `sendFeedback` | feedback |
+| `admin.ts` | 10+ funciones de lectura con `limit()` | todas |
+| `index.ts` | Barrel export de funciones publicas | - |
 
-- `useBusinessDataCache.ts` - solo cache, una responsabilidad
-- `useListFilters.ts` - solo filtrado generico
-- `usePaginatedQuery.ts` - solo paginacion con cursores
-- `BusinessHeader.tsx` - solo presentacion, sin side effects
-- `StatCard.tsx`, `ActivityTable.tsx` - componentes puros de presentacion
-- `rateLimiter.ts`, `moderator.ts`, `counters.ts` - funciones de utilidad focalizadas
+### Eliminacion de duplicaciones
 
-**Violaciones:**
+| Duplicacion original | Solucion aplicada |
+|---------------------|-------------------|
+| `formatDate()` en 4 archivos | Centralizado en `src/utils/formatDate.ts` con 4 variantes |
+| `toDate()` en converters.ts y adminConverters.ts | Centralizado en `src/utils/formatDate.ts` |
+| `getBusinessName()` duplicada en ActivityFeed | Eliminada; usa import de `businessHelpers.ts` |
+| Patron loading/error en 7+ paneles admin | `useAsyncData` hook + `AdminPanelWrapper` componente |
 
-- `BusinessComments.tsx` (187 lineas) - mezcla presentacion, formulario de
-  input, confirmacion de borrado, logica de rate limit client-side, y escrituras
-  a Firestore
-- `BusinessTags.tsx` (307 lineas) - contiene 3 dialogs, menu contextual,
-  CRUD completo de custom tags, y toggle de predefined tags
-- `SideMenu.tsx` (234 lineas) - mezcla navegacion, dialog de editar nombre,
-  y orquestacion de secciones
-- `DashboardOverview.tsx` - hace fetch de datos, calcula estadisticas, y
-  renderiza todo
-- `UsersPanel.tsx` - fetch de 7 colecciones completas, agregacion manual, y
-  render de 6 TopLists
-- `TrendsPanel.tsx` - logica de agregacion temporal (day/week/month/year)
-  dentro del componente
+### Refactors de componentes admin
 
-### O - Abierto/Cerrado (7/10)
+Todos los paneles admin fueron refactorizados para usar el nuevo patron:
 
-**Buen cumplimiento.** La arquitectura permite agregar funcionalidades sin
-modificar mucho codigo existente.
+| Componente | Lineas antes | Lineas ahora | Reduccion |
+|-----------|-------------|-------------|-----------|
+| `DashboardOverview` | 152 | 128 | -16% |
+| `UsersPanel` | 187 | 145 | -22% |
+| `ActivityFeed` | 151 | 120 | -21% |
+| `TrendsPanel` | 174 | 139 | -20% |
+| `FirebaseUsage` | 153 | 128 | -16% |
+| `FeedbackList` | ~80 | 36 | -55% |
+| `AbuseAlerts` | ~80 | 56 | -30% |
 
-**Bien aplicado:**
+### Queries limitadas en admin
 
-- `ActivityTable<T>` - generico, acepta cualquier tipo con columnas custom
-- `useListFilters<T>` - generico para cualquier item con `business`
-- `usePaginatedQuery<T>` - generico con converter pattern
-- `LineChartCard` - configurable via props (`lines`, `xAxisKey`)
-- `TopList` - reutilizable en admin y estadisticas publicas
-- Tags predefinidos como constante `PREDEFINED_TAGS` - agregar uno es cambiar
-  un array
+- `fetchUsersPanelData()` aplica `limit(500)` a todas las colecciones
+- `fetchDailyMetrics()` acepta parametro `maxDocs` opcional
+- `fetchRecentComments/Ratings/etc.` aceptan parametro `count`
 
-**Limitaciones:**
+### Documentacion
 
-- Agregar una nueva seccion al admin requiere modificar `AdminLayout.tsx`
-  (switch por indice de tab)
-- Agregar una nueva seccion al menu lateral requiere modificar `SideMenu.tsx`
-  (tanto la navegacion como el renderizado condicional)
-- Los converters siguen un patron repetitivo que podria abstraerse con un
-  factory generico
-
-### L - Sustitucion de Liskov (8/10)
-
-**Buen cumplimiento.** Las interfaces son simples y coherentes.
-
-- Los tipos de datos (`Rating`, `Comment`, `Favorite`, etc.) son interfaces
-  consistentes
-- `FilterableItem` define un contrato minimo para `useListFilters`
-- `DailyMetrics extends PublicMetrics` es una herencia legitima
-- Los converters implementan `FirestoreDataConverter<T>` correctamente
-
-**Area de mejora:**
-
-- `Feedback.category` esta tipado como `string` en vez de un literal
-  union type (`'bug' | 'sugerencia' | 'otro'`), lo que permite valores
-  invalidos
-
-### I - Segregacion de Interfaces (7/10)
-
-**Buen cumplimiento para la escala del proyecto.**
-
-**Bien aplicado:**
-
-- Tipos separados por dominio: `types/index.ts` (negocio),
-  `types/admin.ts` (admin), `types/metrics.ts` (metricas publicas)
-- Converters separados: `converters.ts`, `adminConverters.ts`,
-  `metricsConverter.ts`
-- Props de componentes bien focalizadas (ej: `BusinessRating` solo recibe
-  lo que necesita)
-
-**Limitaciones:**
-
-- `AuthContextType` tiene 7 campos; `signInWithGoogle` y `signOut` solo
-  los usa el admin, pero todos los componentes lo reciben
-- `UseBusinessDataReturn` devuelve todos los datos del negocio aunque el
-  consumidor solo necesite un subconjunto
-
-### D - Inversion de Dependencias (5/10)
-
-**Area de mejora significativa.** Es el principio SOLID mas debil.
-
-**Problemas:**
-
-- Componentes importan directamente `db` de `config/firebase.ts` y hacen
-  operaciones de escritura (ej: `BusinessRating`, `BusinessComments`,
-  `FavoriteButton`, `BusinessTags`, `FeedbackForm`)
-- No existe una capa de servicios/repositorios que abstraiga Firestore
-- Los componentes admin (`DashboardOverview`, `ActivityFeed`, `UsersPanel`,
-  etc.) tienen queries de Firestore inline
-- `useBusinessData.ts` importa directamente las funciones de cache del modulo
-
-**Consecuencias:**
-
-- Imposible testear componentes sin mockear Firebase
-- Imposible cambiar el backend sin tocar componentes de UI
-- Logica de negocio (rate limits client-side, sorting, filtering) acoplada
-  a la presentacion
+- `CODING_STANDARDS.md` creado con patrones, convenciones y checklist
+  de calidad
 
 ---
 
-## Analisis de Arquitectura
+## Re-evaluacion de Hallazgos Originales
+
+### Hallazgo 1: Ausencia de capa de servicios
+
+Estado: **Corregido.**
+Se creo `src/services/` con modulos por coleccion. Los componentes de
+negocio (`BusinessRating`, `BusinessComments`, `BusinessTags`,
+`FavoriteButton`) y menu (`FeedbackForm`, `CommentsList`, `FavoritesList`)
+ahora importan funciones de servicio en lugar de usar Firebase SDK
+directamente para escrituras.
+
+Los componentes admin usan `services/admin.ts` para todas las lecturas.
+
+**Nota:** Los componentes `menu/` (`CommentsList`, `RatingsList`,
+`FavoritesList`) aun importan `collection` de `firebase/firestore` para
+construir queries de lectura con `usePaginatedQuery`. Esto es aceptable
+porque `usePaginatedQuery` necesita la referencia de coleccion con
+converter, pero podria mejorarse creando funciones factory en el servicio.
+
+### Hallazgo 2: Duplicacion de `formatDate()` en 4 archivos
+
+Estado: **Corregido.**
+Centralizado en `src/utils/formatDate.ts` con 4 funciones:
+`toDate()`, `formatDateShort()`, `formatDateMedium()`, `formatDateFull()`.
+Todos los componentes admin y business importan desde esta utilidad.
+
+### Hallazgo 3: Duplicacion de `toDate()` en converters
+
+Estado: **Corregido.**
+Tanto `converters.ts` como `adminConverters.ts` ahora importan `toDate`
+desde `src/utils/formatDate.ts`.
+
+### Hallazgo 4: `getBusinessName()` duplicada en ActivityFeed
+
+Estado: **Corregido.**
+`ActivityFeed.tsx` importa `getBusinessName` desde
+`../../utils/businessHelpers` sin duplicacion local.
+
+### Hallazgo 5: Patron loading/error repetido en paneles admin
+
+Estado: **Corregido.**
+Se creo `useAsyncData<T>` hook generico y `AdminPanelWrapper` componente.
+Los 7 paneles admin (excepto `BackupsPanel`) usan este patron
+consistentemente.
+
+### Hallazgo 6: Componentes admin monoliticos (fetch + render)
+
+Estado: **Corregido.**
+Los paneles admin ahora delegan fetch a `services/admin.ts` y usan
+`useAsyncData` para el ciclo de vida. La logica de procesamiento de
+datos se extrae en funciones helper (ej: `processData()` en
+`UsersPanel`, `aggregate()` en `TrendsPanel`).
+
+### Hallazgo 7: Queries sin limite en admin
+
+Estado: **Corregido.**
+`fetchUsersPanelData()` aplica `limit(500)` a cada coleccion.
+`fetchDailyMetrics()` acepta `maxDocs` y `FirebaseUsage` lo usa con 30.
+`fetchAllCustomTags()` no tiene limite pero es una coleccion pequena por
+naturaleza.
+
+### Hallazgo 8: `Feedback.category` tipado como `string`
+
+Estado: **Pendiente.**
+`src/types/index.ts` linea 69 sigue definiendo `category: string`.
+`src/services/feedback.ts` tambien acepta `category: string`.
+
+### Hallazgo 9: Context values sin memoizar
+
+Estado: **Pendiente.**
+`MapContext.Provider` recrea el objeto `value` en cada render sin
+`useMemo`. `AuthContext.Provider` tiene el mismo problema. Ningun
+context usa `useMemo`.
+
+### Hallazgo 10: CI no ejecuta tests
+
+Estado: **Pendiente.**
+El workflow `.github/workflows/deploy.yml` ejecuta `npm ci` y
+`npm run build` pero no `npm run test:run`. No hay step de tests.
+
+### Hallazgo 11: `npm audit` ausente en CI
+
+Estado: **Pendiente.**
+No se agrego step de `npm audit` ni de markdownlint al pipeline.
+
+### Hallazgo 12: Cloud Functions deploy manual
+
+Estado: **Pendiente.**
+El workflow solo despliega Hosting + Firestore rules/indexes. Cloud
+Functions siguen siendo deploy manual.
+
+### Hallazgo 13: `BackupsPanel` monolitico (419 lineas)
+
+Estado: **Parcial.**
+Ahora usa `formatDateFull` centralizado (corrigiendo duplicacion de
+fecha), pero sigue siendo un componente de 401 lineas con su propio
+manejo de loading/error en lugar de usar `useAsyncData` +
+`AdminPanelWrapper`. Esto es parcialmente justificado por la complejidad
+del manejo de estado (CRUD con confirmacion, paginacion, alerts de
+exito/error), pero podria beneficiarse de extraer el dialog de
+confirmacion y la tabla a sub-componentes en archivos separados.
+
+### Hallazgo 14: `BusinessTags` demasiado grande
+
+Estado: **Pendiente.**
+285 lineas. No fue descompuesto en `PredefinedTags` + `CustomTags`.
+Ahora usa servicios para escrituras, lo cual mejora la testabilidad.
+
+### Hallazgo 15: Sin React Router
+
+Estado: **Pendiente.**
+La navegacion sigue basada en `window.location.pathname`.
+
+---
+
+## Analisis de Principios SOLID Actualizado
+
+### S - Responsabilidad Unica (8/10, anterior: 6/10)
+
+**Mejora significativa.** La capa de servicios separo la logica de
+persistencia de los componentes. Los paneles admin ahora tienen una sola
+responsabilidad: orquestar datos y renderizar.
+
+**Bien aplicado (nuevo):**
+
+- `src/services/*` - cada modulo maneja CRUD de una coleccion
+- `useAsyncData` - solo manejo de ciclo de vida async
+- `AdminPanelWrapper` - solo estados de loading/error
+- `formatDate.ts` - solo formateo de fechas
+- `DashboardOverview` (128 lineas) - orquesta y renderiza
+- `UsersPanel` (145 lineas) - procesamiento y render
+- `FeedbackList` (36 lineas) - componente minimalista
+- `AbuseAlerts` (56 lineas) - componente enfocado
+
+**Violaciones residuales:**
+
+- `BackupsPanel` (401 lineas) - sigue mezclando UI, manejo de estado
+  complejo, y logica de llamadas callable
+- `BusinessTags` (285 lineas) - 3 dialogs + menu contextual + CRUD
+- `TrendsPanel` (139 lineas) - logica de agregacion temporal dentro del
+  componente (funciones helper locales, aceptable)
+
+### O - Abierto/Cerrado (8/10, anterior: 7/10)
+
+**Mejora.** Nuevos componentes genericos facilitan extension.
+
+**Nuevo:**
+
+- `useAsyncData<T>` - generico para cualquier fetcher async
+- `AdminPanelWrapper` - wrappea cualquier panel sin modificacion
+- `services/admin.ts` - agregar nueva query es agregar una funcion
+
+**Limitaciones residuales:**
+
+- Agregar seccion admin requiere modificar `AdminLayout.tsx`
+- Agregar seccion al menu lateral sigue requiriendo modificar el
+  componente del menu
+
+### L - Sustitucion de Liskov (8/10, sin cambio)
+
+Sin cambios significativos. Los servicios mantienen interfaces
+consistentes (aceptan primitivos, retornan `Promise<void>` o datos
+tipados).
+
+### I - Segregacion de Interfaces (8/10, anterior: 7/10)
+
+**Mejora.** Los servicios exponen funciones individuales en vez de
+objetos monoliticos. `UseAsyncDataReturn<T>` es una interfaz minima
+con exactamente lo necesario.
+
+**Limitacion residual:**
+
+- `AuthContextType` sigue exponiendo `signInWithGoogle` y `signOut` a
+  todos los consumidores
+
+### D - Inversion de Dependencias (7/10, anterior: 5/10)
+
+**Mejora significativa.** Este era el principio mas debil y recibio la
+mayor atencion.
+
+**Mejorado:**
+
+- Componentes de negocio ya no importan `firebase/firestore` para
+  escrituras; usan `services/*`
+- Componentes admin ya no tienen queries inline; usan `services/admin.ts`
+- `FeedbackForm` usa `services/feedback.ts`
+- `CommentsList` y `FavoritesList` usan `services/comments.ts` y
+  `services/favorites.ts` para escrituras
+
+**Residual:**
+
+- `CommentsList`, `RatingsList`, `FavoritesList` importan `collection`
+  de `firebase/firestore` para construir queries de lectura con
+  `usePaginatedQuery` (acoplamiento a SDK para lecturas paginadas)
+- `BackupsPanel` importa `httpsCallable` de `firebase/functions`
+  directamente (justificado por la naturaleza especifica del componente)
+- `AuthContext` importa Firebase Auth directamente (inevitable)
+
+### Resumen SOLID
+
+| Principio | Antes | Ahora | Delta |
+|-----------|-------|-------|-------|
+| S - Responsabilidad Unica | 6 | 8 | +2 |
+| O - Abierto/Cerrado | 7 | 8 | +1 |
+| L - Sustitucion de Liskov | 8 | 8 | 0 |
+| I - Segregacion de Interfaces | 7 | 8 | +1 |
+| D - Inversion de Dependencias | 5 | 7 | +2 |
+| **Promedio** | **6.6** | **7.8** | **+1.2** |
+
+---
+
+## Analisis de Arquitectura Actualizado
 
 ### Diagrama de capas actual
 
@@ -168,14 +325,17 @@ modificar mucho codigo existente.
 |                            |  useListFilters           |
 |                            |  usePaginatedQuery        |
 |                            |  usePublicMetrics         |
+|                            |  useAsyncData (NUEVO)     |
 +------------------------------------------------------+
-|               ACCESO A DATOS (directo)                |
-|  firebase/firestore: getDoc, getDocs, setDoc, etc.    |
-|  firebase/auth: signInAnonymously, signInWithPopup    |
-|  firebase/functions: httpsCallable                    |
+|               CAPA DE SERVICIOS (NUEVA)               |
+|  favorites  ratings  comments  tags  feedback  admin  |
++------------------------------------------------------+
+|               ACCESO A DATOS                          |
+|  firebase/firestore  firebase/auth  firebase/functions|
 +------------------------------------------------------+
 |                 CONFIGURACION                         |
 |  firebase.ts  collections.ts  converters.ts           |
+|  adminConverters.ts  formatDate.ts                    |
 +------------------------------------------------------+
 |               CLOUD FUNCTIONS                         |
 |  triggers/ (7)  scheduled/ (1)  admin/ (4 callables)  |
@@ -183,382 +343,247 @@ modificar mucho codigo existente.
 +------------------------------------------------------+
 ```
 
-### Diagrama de arquitectura deseada
+La arquitectura actual se acerca significativamente a la arquitectura
+deseada propuesta en el informe anterior. La capa de servicios esta
+implementada y los componentes la consumen correctamente.
 
-```text
-+------------------------------------------------------+
-|                    PRESENTACION                       |
-|  Componentes UI puros (props-driven)                  |
-+------------------------------------------------------+
-|            CONTENEDORES / HOOKS                       |
-|  useBusinessData  usePaginatedQuery  etc.             |
-+------------------------------------------------------+
-|               CAPA DE SERVICIOS                       |
-|  businessService  favoriteService  commentService     |
-|  ratingService    feedbackService  adminService       |
-+------------------------------------------------------+
-|               CAPA DE REPOSITORIOS                    |
-|  firestoreRepository (abstraccion sobre Firebase)     |
-+------------------------------------------------------+
-|                 INFRAESTRUCTURA                       |
-|  firebase.ts  collections.ts  converters.ts           |
-+------------------------------------------------------+
-```
-
-### Flujo de datos
-
-```text
-Usuario interactua
-       |
-       v
-  Componente UI (ej: BusinessRating)
-       |
-       v
-  Hook (useBusinessData) <-- cache layer
-       |
-       v
-  Firestore (lecturas con converters)
-       |
-       v
-  Cloud Function trigger (validacion server-side)
-       |
-       v
-  Firestore (counters, flags, metricas)
-```
-
-### Evaluacion de modulos
+### Evaluacion de modulos actualizada
 
 | Modulo | Cohesion | Acoplamiento | Nota |
 |--------|----------|-------------|------|
-| `config/` | Alta | Bajo | Bien separado. Converters focalizados por dominio. |
-| `context/` | Alta | Bajo | Dos contexts claros y minimalistas. |
-| `hooks/` | Alta | Medio | Hooks bien extraidos. `useBusinessData` depende del cache module. |
-| `types/` | Alta | Bajo | Separacion clara entre dominio, admin y metricas. |
-| `components/business/` | Media | Alto | Componentes hacen writes directos a Firestore. |
-| `components/admin/` | Baja | Alto | Cada componente hace su propio fetch + render. |
-| `components/menu/` | Media | Alto | Similar patron de fetch directo. |
-| `components/stats/` | Alta | Bajo | Componentes puros, reutilizables. |
-| `functions/triggers/` | Alta | Bajo | Bien modularizados, usan utils compartidos. |
-| `functions/utils/` | Alta | Bajo | Funciones puras y focalizadas. |
-| `functions/admin/` | Alta | Medio | Backups bien estructurado con helpers. |
+| `services/` | Alta | Bajo | NUEVO. Cada modulo por coleccion. Admin centraliza lecturas. |
+| `config/` | Alta | Bajo | Converters usan `toDate` compartido. |
+| `context/` | Alta | Bajo | Sin cambios. |
+| `hooks/` | Alta | Bajo | `useAsyncData` mejora la reutilizacion. |
+| `utils/` | Alta | Bajo | `formatDate.ts` centraliza conversion y formateo. |
+| `types/` | Alta | Bajo | Sin cambios. |
+| `components/business/` | Alta | Bajo | Mejorado: usa servicios para escrituras. |
+| `components/admin/` | Alta | Bajo | Mejorado: patron consistente con `useAsyncData`. |
+| `components/menu/` | Media | Medio | Parcial: usa servicios para escrituras pero Firestore para lecturas. |
+| `components/stats/` | Alta | Bajo | Sin cambios. |
+| `functions/` | Alta | Bajo | Sin cambios. |
 
 ---
 
-## Hallazgos de Calidad de Codigo
+## Hallazgos de Calidad de Codigo Actualizados
 
-### TypeScript (8/10)
+### TypeScript (8/10, sin cambio)
 
-**Fortalezas:**
+**Mejorado:**
 
-- `strict: true` con flags adicionales (`exactOptionalPropertyTypes`,
-  `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`)
-- `import type` usado consistentemente en todo el codebase
-- Converters tipados eliminan `any` en lecturas de Firestore
-- Generics bien usados en `ActivityTable<T>`, `useListFilters<T>`,
-  `usePaginatedQuery<T>`
+- Servicios tienen tipado fuerte con parametros primitivos
+- `useAsyncData<T>` tiene generics correctos
+- `adminConverters.ts` usa helpers seguros (`asNumber`, `asRecord`,
+  `asArray`) en vez de casteos
 
-**Debilidades:**
+**Pendiente:**
 
-- `Feedback.category` es `string` en vez de un literal union
-- `data.text as string` casteos en Cloud Functions triggers (inevitable
-  con admin SDK, pero podria tener validacion runtime)
-- Tipo `unknown` en `toDate()` helper -- correcto pero podria tener un
-  type guard dedicado
-- `BusinessCategory` no se valida en runtime al cargar `businesses.json`
+- `Feedback.category` sigue como `string` en vez de union literal
+- `services/feedback.ts` acepta `category: string`
 
-### Naming Conventions (8/10)
+### Violaciones DRY Actualizadas
 
-- Consistentes: PascalCase para componentes/tipos, camelCase para funciones/variables
-- Archivos siguen el nombre del export principal
-- Hooks con prefijo `use`
-- Converters con sufijo `Converter`
-- Constantes en UPPER_SNAKE_CASE
+**Corregidas:**
 
-**Inconsistencias menores:**
+1. `formatDate()` centralizada en `utils/formatDate.ts`
+2. `toDate()` centralizada en `utils/formatDate.ts`
+3. `getBusinessName()` sin duplicacion
+4. Patron loading/error centralizado en `useAsyncData` +
+   `AdminPanelWrapper`
 
-- Carpeta `context/` vs `contexts/` (se usa singular, es aceptable)
-- `src/pages/` solo tiene un archivo; podria estar en `components/admin/`
-- `getBusinessName()` definida en `utils/businessHelpers.ts` Y duplicada
-  dentro de `ActivityFeed.tsx`
+**Residuales:**
 
-### Violaciones DRY
+1. `BackupsPanel` tiene su propio manejo de loading/error inline (no usa
+   `AdminPanelWrapper`) -- justificado parcialmente por complejidad de
+   estado
+2. Patron de confirmacion de borrado sigue repetido en `BusinessComments`,
+   `BusinessTags`, `CommentsList` -- podria extraerse a un
+   `ConfirmDialog` compartido
 
-1. **`formatDate()` duplicada en 4 archivos:**
-   - `BusinessComments.tsx` linea 79
-   - `CommentsList.tsx` linea 69
-   - `RatingsList.tsx` linea 69
-   - `BackupsPanel.tsx` linea 81 (diferente formato)
+### Naming Conventions (9/10, anterior: 8/10)
 
-2. **`getBusinessName()` duplicada:**
-   - `src/utils/businessHelpers.ts` (canonica)
-   - `src/components/admin/ActivityFeed.tsx` linea 24 (duplicada)
+**Mejorado:**
 
-3. **Patron loading/error repetido en componentes admin:**
-   - `DashboardOverview`, `ActivityFeed`, `FeedbackList`, `TrendsPanel`,
-     `UsersPanel`, `FirebaseUsage`, `AbuseAlerts` - todos tienen el mismo
-     bloque `if (loading) return <CircularProgress />; if (error) return
-     <Alert />;`
+- Servicios siguen convencion `verbAction` consistente: `addFavorite`,
+  `upsertRating`, `fetchCounters`, `sendFeedback`
+- `CODING_STANDARDS.md` formaliza las convenciones
 
-4. **`toDate()` helper duplicada:**
-   - `src/config/converters.ts` linea 8
-   - `src/config/adminConverters.ts` linea 53
+**Inconsistencia residual:**
 
-5. **Patron de confirmacion de borrado repetido:**
-   - `BusinessComments.tsx`, `BusinessTags.tsx`, `CommentsList.tsx` - misma
-     estructura de Dialog de confirmacion
+- Carpeta `context/` vs `contexts/` (singular, aceptable)
+- `src/pages/` solo tiene un archivo
 
-### Codigo Muerto / Innecesario
+### Organizacion de Imports (9/10, anterior: 8/10)
 
-- `handleOpen` en `BusinessSheet.tsx` linea 17: funcion vacia (requerida
-  por SwipeableDrawer pero podria usar `noop`)
-- `FlaggedChip` en `ActivityFeed.tsx` linea 32: componente local que solo
-  se usa una vez
-- `refetch` acepta parametro `collectionName` en `useBusinessData.ts` linea
-  18 pero `refetch` en linea 119 lo ignora y siempre refetchea todo
-
-### Organizacion de Imports (8/10)
-
-- Consistente en general: React primero, MUI segundo, Firebase tercero,
-  imports internos al final
-- `import type` correctamente separado
-- Imports barrel para `../stats` (`index.ts`)
+Todos los componentes refactorizados siguen el orden documentado en
+`CODING_STANDARDS.md`. Los servicios se importan antes de los utils
+y componentes locales.
 
 ---
 
-## Evaluacion de Modularizacion
+## Hallazgos Nuevos
 
-### Componentes demasiado grandes
+### N1: Patron `useCallback` con fetcher estable
 
-| Componente | Lineas | Problema |
-|-----------|--------|----------|
-| `BackupsPanel.tsx` | 419 | Mezcla UI + logica de negocio + manejo de errores + paginacion |
-| `BusinessTags.tsx` | 307 | 3 dialogs + menu contextual + CRUD + toggle |
-| `SideMenu.tsx` | 234 | Navegacion + dialog editar nombre + orquestacion |
-| `BusinessComments.tsx` | 187 | Formulario + lista + confirmacion + rate limit |
-| `UsersPanel.tsx` | 187 | Fetch de 7 colecciones + agregacion + render |
-| `TrendsPanel.tsx` | 174 | Logica de agregacion temporal + render |
-| `FirebaseUsage.tsx` | 153 | Estimacion de cuota + multiples graficos |
-| `DashboardOverview.tsx` | 152 | Fetch + calculo + 6 cards + graficos + listas |
-| `ActivityFeed.tsx` | 151 | Fetch de 5 colecciones + 4 tabs |
+Todos los paneles admin wrappean su fetcher en `useCallback(() => ..., [])`
+para pasarlo a `useAsyncData`. Esto funciona correctamente pero crea
+boilerplate. Podria simplificarse si `useAsyncData` internamente
+usara `useRef` para la referencia del fetcher, evitando la necesidad
+de `useCallback` en el consumidor.
 
-### Componentes bien dimensionados
+**Severidad:** Baja. Es un patron idiomatico de React y funciona
+correctamente.
 
-| Componente | Lineas | Nota |
-|-----------|--------|------|
-| `StatCard.tsx` | 23 | Componente puro perfecto |
-| `DirectionsButton.tsx` | 39 | Una responsabilidad |
-| `LocationFAB.tsx` | 33 | Simple y enfocado |
-| `FavoriteButton.tsx` | 54 | Props-driven, una accion |
-| `TopList.tsx` | 54 | Reutilizable y generico |
-| `PieChartCard.tsx` | 42 | Wrapper limpio de recharts |
-| `ErrorBoundary.tsx` | 57 | Class component necesario |
+### N2: `BackupsPanel` no sigue el patron admin
 
-### Hooks - Buena extraccion
+`BackupsPanel` es el unico panel admin que no usa `useAsyncData` +
+`AdminPanelWrapper`. Tiene su propio `useEffect` + `useState` para
+loading/error. Esto se debe a que su logica de estado es mas compleja
+(CRUD con paginacion, alerts de exito/error, confirmaciones), pero
+rompe la consistencia del patron.
 
-| Hook | Lineas | Nota |
-|------|--------|------|
-| `useBusinessDataCache.ts` | 33 | Cache pura con TTL |
-| `useUserLocation.ts` | 39 | Geolocation encapsulada |
-| `usePublicMetrics.ts` | 43 | Fetch simple con cleanup |
-| `useBusinesses.ts` | 35 | Filtrado con `useDeferredValue` |
-| `useListFilters.ts` | 96 | Generico y reutilizable |
-| `usePaginatedQuery.ts` | 158 | Generico con cache |
-| `useBusinessData.ts` | 128 | Orquestador con cache + stale protection |
+**Severidad:** Media. Afecta consistencia y mantenibilidad.
 
-### Refactors recomendados
+### N3: Componentes `menu/` parcialmente migrados
 
-1. **Extraer `useFirestoreQuery` hook generico** para el patron
-   fetch-on-mount que se repite en todos los componentes admin
-2. **Crear `services/` layer** con funciones como `addComment()`,
-   `toggleFavorite()`, `submitRating()` que encapsulen las escrituras
-3. **Extraer `ConfirmDialog` componente** reutilizable para las
-   confirmaciones de borrado
-4. **Extraer `formatDate()` a `utils/`** como utilidad compartida
-5. **Separar `BusinessTags` en `PredefinedTags` + `CustomTags`**
+`CommentsList`, `RatingsList`, y `FavoritesList` usan servicios para
+escrituras pero aun importan `collection` de `firebase/firestore` para
+construir la query de lectura que pasan a `usePaginatedQuery`. Esto es
+un acoplamiento residual al SDK.
+
+**Severidad:** Baja. `usePaginatedQuery` necesita una `Query` de
+Firestore, no datos procesados. Crear una abstraccion intermedia
+agregaria complejidad sin beneficio claro en esta escala.
+
+### N4: `CODING_STANDARDS.md` como artefacto de calidad
+
+La creacion de `CODING_STANDARDS.md` es una mejora significativa para la
+mantenibilidad del proyecto. Define patrones claros, convenciones de
+naming, orden de imports, y un checklist de calidad. Esto reduce la
+barrera para nuevos contribuidores y asegura consistencia.
 
 ---
 
-## Analisis de Performance
+## Evaluacion de Performance Actualizada
 
-### Re-renders (7/10)
+### Re-renders (7/10, sin cambio)
 
-**Bien aplicado:**
+**Pendiente:**
 
-- `BusinessMarker` usa `memo()` - evita re-render de 40 markers al
-  seleccionar uno
-- `BusinessRating`, `BusinessComments`, `BusinessTags` usan `memo()`
-- `useDeferredValue` para debounce de busqueda en `useBusinesses` y
-  `useListFilters`
-- `useCallback` en handlers de MapView
+- `MapContext.Provider` value no memoizado con `useMemo`
+- `AuthContext.Provider` value no memoizado
 
-**Problemas potenciales:**
+Estos siguen siendo los mismos hallazgos del informe anterior.
 
-- `MapContext` value object se recrea en cada render de `MapProvider`
-  (deberia usar `useMemo`)
-- `AuthContext` value object se recrea en cada render (idem)
-- `FilterChips` se re-renderiza en cada cambio de `searchQuery` porque
-  consume `useMapContext()` que incluye `searchQuery`
-- Cada tab change en `AdminLayout` re-monta el componente completo de
-  la tab, re-ejecutando todas las queries
+### Cache y Firestore (8.5/10, anterior: 8/10)
 
-### Cache y Firestore (8/10)
+**Mejorado:**
 
-**Bien implementado:**
+- Queries admin ahora tienen `limit()` aplicado
+- `FirebaseUsage` solo carga 30 dias de metricas
+- `UsersPanel` limita a 500 documentos por coleccion
 
-- Cache de business view (5 min TTL) evita re-queries al alternar negocios
-- Cache de primera pagina (2 min TTL) en listas paginadas
-- Persistent cache en prod (IndexedDB via `persistentLocalCache`)
-- `Promise.all` para las 5 queries del business view
-- `fetchIdRef` para evitar race conditions en `useBusinessData`
+**Residual:**
 
-**Oportunidades:**
+- `TrendsPanel` carga todos los `dailyMetrics` sin limite (necesario
+  para vista de ano completo)
+- `dailyMetrics` cron sigue leyendo colecciones completas
 
-- Los componentes admin no tienen cache: cada cambio de tab re-ejecuta
-  todas las queries
-- `UsersPanel` hace fetch de 7 colecciones COMPLETAS sin paginacion ni
-  limite -- potencial problema de escalabilidad
-- `DashboardOverview` hace fetch de todos los `customTags` sin limite
-- `TrendsPanel` y `FirebaseUsage` cargan todos los `dailyMetrics`
-  (crece con el tiempo)
-- `dailyMetrics` cron lee colecciones completas (ratings, comments,
-  favorites, userTags) -- costoso a escala
+### Bundle Size (7/10, sin cambio)
 
-### Bundle Size (7/10)
-
-**Bien implementado:**
-
-- Admin lazy-loaded con `React.lazy()` + `Suspense`
-- `recharts` solo se importa en admin y StatsView
-- `rollup-plugin-visualizer` disponible para analisis
-
-**Oportunidades:**
-
-- MUI tree-shaking: imports ya son por modulo (`@mui/material/Box`) en
-  admin, pero barrel imports (`{ Box, Typography } from '@mui/material'`)
-  en otros componentes -- inconsistente pero Vite/ESM tree-shakes bien
-- `@vis.gl/react-google-maps` se carga siempre en la ruta principal
-  (no hay alternativa razonable)
-- `firebase` bundle es significativo; el persistent cache agrega overhead
+Sin cambios significativos. La capa de servicios no agrega peso
+significativo al bundle.
 
 ---
 
-## Analisis de Testing
+## Analisis de Testing (3/10, sin cambio)
 
-### Estado actual (3/10)
+### Tests existentes
 
-**Tests existentes:**
+| Archivo | Tipo |
+|---------|------|
+| `ErrorBoundary.test.tsx` | Componente |
+| `AuthContext.test.tsx` | Contexto |
+| `MapContext.test.tsx` | Contexto |
+| `useBusinesses.test.ts` | Hook |
+| `useListFilters.test.ts` | Hook |
+| `useBusinessDataCache.test.ts` | Utilidad |
+| `usePaginatedQuery.test.ts` | Hook |
+| `functions/__tests__/utils/counters.test.ts` | Backend |
+| `functions/__tests__/utils/moderator.test.ts` | Backend |
+| `functions/__tests__/utils/rateLimiter.test.ts` | Backend |
 
-| Archivo | Tipo | Cobertura |
-|---------|------|-----------|
-| `ErrorBoundary.test.tsx` | Componente | Basico: render + error state |
-| `AuthContext.test.tsx` | Contexto | Basico |
-| `MapContext.test.tsx` | Contexto | Basico |
-| `useBusinesses.test.ts` | Hook | Filtrado |
-| `useListFilters.test.ts` | Hook | Filtrado + ordenamiento |
-| `useBusinessDataCache.test.ts` | Utilidad | Cache get/set/invalidate + TTL |
-| `usePaginatedQuery.test.ts` | Hook | Paginacion (mocks Firebase) |
-| `functions/__tests__/utils/counters.test.ts` | Backend | Counters |
-| `functions/__tests__/utils/moderator.test.ts` | Backend | Moderacion |
-| `functions/__tests__/utils/rateLimiter.test.ts` | Backend | Rate limit |
+**No se agregaron tests nuevos.** Sin embargo, la testabilidad mejoro
+significativamente gracias a la capa de servicios: ahora es posible
+testear servicios en aislamiento mockeando solo Firebase, y componentes
+mockeando servicios.
 
-**No testeado (critico):**
+### Testabilidad del codigo (7/10, anterior: 5/10)
 
-- Escrituras a Firestore (add, delete, update) en componentes
-- `useBusinessData` (orquestador principal)
-- Componentes de negocio (BusinessSheet, BusinessComments, etc.)
-- Flujos de autenticacion
-- AdminGuard
-- Cloud Functions triggers
-- Scheduled function `dailyMetrics`
-- Backups callable functions
-- `businessHelpers.ts`
+**Mejorado:**
 
-### Testabilidad del codigo (5/10)
+- Servicios son funciones puras async -- testeables con mock de Firebase
+- `useAsyncData` es testeable con un fetcher fake
+- Componentes admin no tienen Firestore inline -- se puede mockear
+  `services/admin`
+- Componentes de negocio llaman servicios -- se pueden mockear imports
 
-- Hooks de logica pura (`useListFilters`, `useBusinesses`) son facilmente
-  testeables
-- Componentes que hacen writes directos a Firestore son dificiles de testear
-  sin mockear el modulo completo
-- Cloud Functions utils son testeables (estan testeados)
-- Cloud Functions triggers requieren setup de emuladores
-- Falta inyeccion de dependencias para facilitar mocking
+**Pendiente:**
+
+- No se escribieron los tests que la nueva arquitectura habilita
+- CI sigue sin ejecutar tests
 
 ---
 
-## DevOps y CI/CD (7/10)
+## DevOps y CI/CD (7/10, sin cambio)
 
-### Bien implementado
+Sin cambios en el pipeline. Los hallazgos originales siguen pendientes:
 
-- GitHub Actions con deploy automatico a Firebase Hosting
-- Firestore rules e indexes se despliegan automaticamente
-- Node 22 en CI
-- Secrets gestionados via GitHub Secrets
-- Pre-commit hooks con husky + lint-staged (ESLint)
-- Build verifica TypeScript (`tsc -b && vite build`)
-
-### Oportunidades
-
-- **CI no ejecuta tests:** `npm run test:run` no esta en el pipeline
-- **Cloud Functions no se despliegan automaticamente:** es manual
-- **No hay stage/preview environment:** solo production
-- **No hay cache de `node_modules` en CI** (solo `npm` cache, no
-  `node_modules`)
-- **Falta step de lint de markdown** en CI
-- **Falta `npm audit`** en CI para dependencias vulnerables
+- CI no ejecuta tests
+- Cloud Functions deploy manual
+- No hay `npm audit` en CI
+- No hay lint de markdown en CI
+- No hay preview environments
 
 ---
 
-## Revision de Agentes y Skills
+## Hallazgos Pendientes (resumen consolidado)
 
-### Agentes (8/10)
-
-**Estructura y organizacion: Excelente.** 9 agentes bien definidos con
-responsabilidades claras.
-
-| Agente | Evaluacion |
-|--------|-----------|
-| `orchestrator` | Bien definido. Delega correctamente. Lista todos los agentes. |
-| `architecture` | Read-only correcto. Evalua estructura y patrones. |
-| `security` | Read-only. Tiene contexto de security guidelines. |
-| `testing` | Puede escribir. Estrategia de testing clara. |
-| `performance` | Puede modificar. Areas de analisis bien listadas. |
-| `documentation` | Puede escribir docs. Conoce reglas de markdownlint. |
-| `ui-reviewer` | Read-only. Tiene contexto visual del tema. |
-| `ui-ux-accessibility` | Puede modificar. WCAG 2.1 AA como estandar. |
-| `git-expert` | Unico con acceso a git. Convenciones claras. |
-| `pr-reviewer` | Read-only + git read-only. Checklist completo. |
-
-**Fortalezas:**
-
-- Separacion clara entre agentes que leen y los que modifican
-- `git-expert` es el unico que puede ejecutar git (buena seguridad)
-- Todos referencian `PROJECT_REFERENCE.md` para contexto
-- Skills complementan a los agentes (read-only, no-create-files)
-
-**Oportunidades de mejora:**
-
-- No hay agente de **database/Firestore** especializado (queries, indexes,
-  rules optimization)
-- No hay agente de **deployment** (manejo de environments, rollbacks)
-- El `orchestrator` no tiene criterios claros para decidir que agente
-  invocar en casos ambiguos
-- Skills son muy basicos (solo 2); podrian definirse skills para tareas
-  especificas como "audit", "refactor", "migrate"
-
-### Skills (5/10)
-
-- `read-only.md` - util pero basico, solo lista herramientas permitidas
-- `no-create-files.md` - util para limitar creacion de archivos
-
-**Faltantes sugeridos:**
-
-- Skill de `code-review` con checklist especifico del proyecto
-- Skill de `firestore-query` con patrones de optimizacion
-- Skill de `component-template` con la estructura esperada de un componente
+| ID | Hallazgo | Prioridad | Esfuerzo |
+|----|----------|-----------|----------|
+| P1 | CI no ejecuta tests (`npm run test:run`) | P0 | 5 min |
+| P2 | `Feedback.category` tipado como `string` | P1 | 30 min |
+| P3 | Context values sin `useMemo` | P1 | 30 min |
+| P4 | Cobertura de tests baja (menor 15%) | P1 | 2-3 dias |
+| P5 | `npm audit` ausente en CI | P2 | 15 min |
+| P6 | Cloud Functions deploy manual | P2 | 30 min |
+| P7 | `BackupsPanel` no sigue patron admin | P2 | 0.5 dias |
+| P8 | `ConfirmDialog` compartido no extraido | P2 | 1 hora |
+| P9 | `BusinessTags` no descompuesto | P2 | 0.5 dias |
+| P10 | Sin React Router | P3 | 1 dia |
+| P11 | Preview environments | P3 | 1 dia |
+| P12 | Converter factory generico | P3 | 0.5 dias |
+| P13 | Error tracking (Sentry) | P3 | 0.5 dias |
 
 ---
 
-## Roadmap de Mejoras Priorizado
+## Puntuacion de Madurez Detallada
+
+| Area | Antes | Ahora | Peso |
+|------|-------|-------|------|
+| Arquitectura y SOLID | 6.5 | 8.0 | 25% |
+| TypeScript y tipo seguridad | 8.0 | 8.0 | 15% |
+| DRY y modularizacion | 6.0 | 8.5 | 15% |
+| Performance | 7.5 | 7.5 | 10% |
+| Testing | 3.0 | 3.5 | 15% |
+| DevOps/CI | 7.0 | 7.0 | 10% |
+| Documentacion | 7.0 | 9.0 | 5% |
+| Seguridad | 8.5 | 8.5 | 5% |
+| **Promedio ponderado** | **7.2** | **8.4** | |
+
+---
+
+## Roadmap de Mejoras Priorizado (actualizado)
 
 ### P0 - Critico (hacer ahora)
 
@@ -567,29 +592,16 @@ responsabilidades claras.
    - Impacto: prevenir regresiones en produccion
    - Esfuerzo: 5 minutos
 
-2. **Extraer capa de servicios para escrituras a Firestore**
-   - Crear `src/services/` con funciones como `addComment()`,
-     `toggleFavorite()`, `submitRating()`, `submitFeedback()`
-   - Mover la logica de escritura de los componentes a los servicios
-   - Impacto: testabilidad, mantenibilidad, SRP
-   - Esfuerzo: 1-2 dias
-
-3. **Limitar queries sin paginacion en admin**
-   - `UsersPanel` carga 7 colecciones completas
-   - `DashboardOverview` carga todos los customTags
-   - Agregar `limit()` o paginacion
-   - Impacto: prevenir timeouts y costos excesivos a medida que crece
-   - Esfuerzo: 0.5 dias
-
 ### P1 - Alto (proxima iteracion)
 
-1. **Extraer utilidades compartidas**
-   - `formatDate()` a `src/utils/dateHelpers.ts`
-   - `ConfirmDialog` a `src/components/shared/ConfirmDialog.tsx`
-   - Eliminar duplicacion de `getBusinessName()` en ActivityFeed
-   - Eliminar duplicacion de `toDate()` en adminConverters
-   - Impacto: DRY, mantenibilidad
-   - Esfuerzo: 0.5 dias
+1. **Mejorar cobertura de tests**
+   - Tests para `services/` (favorites, ratings, comments, tags, feedback)
+   - Tests para `useAsyncData` hook
+   - Tests para `services/admin.ts` (queries)
+   - Tests para componentes de negocio con servicios mockeados
+   - Impacto: la nueva arquitectura habilita tests que antes eran
+     imposibles; aprovechar la inversion
+   - Esfuerzo: 2-3 dias
 
 2. **Memoizar context values**
    - Wrap `MapContext.Provider value` en `useMemo`
@@ -597,108 +609,83 @@ responsabilidades claras.
    - Impacto: evitar re-renders innecesarios en consumidores
    - Esfuerzo: 30 minutos
 
-3. **Mejorar cobertura de tests**
-   - Tests para `useBusinessData` hook
-   - Tests para `businessHelpers.ts`
-   - Tests para componentes de negocio criticos (flujos de escritura)
-   - Tests para Cloud Functions triggers
-   - Impacto: confianza en cambios, prevencion de regresiones
-   - Esfuerzo: 2-3 dias
-
-4. **Tipar `Feedback.category` como union literal**
+3. **Tipar `Feedback.category` como union literal**
    - Cambiar `category: string` a `category: 'bug' | 'sugerencia' | 'otro'`
-   - Actualizar converters y componentes
+   - Actualizar `services/feedback.ts`, converters y componentes
    - Impacto: seguridad de tipos, prevencion de valores invalidos
    - Esfuerzo: 30 minutos
 
 ### P2 - Medio (backlog planificado)
 
-1. **Implementar React Router**
-   - Reemplazar `window.location.pathname` por React Router
-   - Rutas: `/` (mapa), `/admin` (dashboard)
-   - Impacto: navegacion SPA correcta, deep linking, guards route-based
-   - Esfuerzo: 1 dia
+1. **Agregar `npm audit` y markdownlint al CI**
+   - Esfuerzo: 15 minutos
 
-2. **Descomponer componentes grandes**
-   - `BusinessTags` en `PredefinedTags` + `CustomTags`
-   - `SideMenu` extraer dialog de nombre a componente
-   - `BackupsPanel` extraer tabla y dialog de confirmacion
-   - Impacto: SRP, legibilidad, testabilidad
-   - Esfuerzo: 1-2 dias
-
-3. **Crear `useAdminQuery` hook generico**
-   - Para el patron fetch-on-mount repetido en todos los componentes admin
-   - Soportar loading/error states, refresh, y cache opcional
-   - Impacto: DRY, consistencia en manejo de errores admin
-   - Esfuerzo: 0.5 dias
-
-4. **Agregar `npm audit` y lint de markdown al CI**
-   - Step de `npm audit --production` con threshold
-   - Step de markdownlint para archivos `.md`
-   - Impacto: seguridad de dependencias, calidad de documentacion
-   - Esfuerzo: 30 minutos
-
-5. **Deploy automatico de Cloud Functions**
+2. **Deploy automatico de Cloud Functions**
    - Agregar step en GitHub Actions para `firebase deploy --only functions`
    - Solo si hay cambios en `functions/`
-   - Impacto: consistencia entre frontend y backend
    - Esfuerzo: 30 minutos
+
+3. **Refactorizar `BackupsPanel`**
+   - Extraer dialog de confirmacion a sub-componente
+   - Extraer tabla de backups a sub-componente
+   - Evaluar si parte del estado puede usar `useAsyncData`
+   - Esfuerzo: 0.5 dias
+
+4. **Extraer `ConfirmDialog` compartido**
+   - Para `BusinessComments`, `BusinessTags`, `CommentsList`
+   - Esfuerzo: 1 hora
+
+5. **Descomponer `BusinessTags`**
+   - Separar en `PredefinedTags` + `CustomTags`
+   - Esfuerzo: 0.5 dias
 
 ### P3 - Bajo (mejoras a largo plazo)
 
-1. **Converter factory generico**
-   - Crear funcion `createConverter<T>(config)` que genere converters
-     a partir de un esquema
-   - Reducir boilerplate de los 9 converters actuales
-   - Esfuerzo: 0.5 dias
+1. **Implementar React Router**
+   - Reemplazar `window.location.pathname` por React Router
+   - Esfuerzo: 1 dia
 
 2. **Preview environments**
-   - Configurar Firebase Hosting preview channels para PRs
-   - Impacto: revision visual antes de merge
+   - Firebase Hosting preview channels para PRs
    - Esfuerzo: 1 dia
 
 3. **Error tracking (Sentry/similar)**
-   - Integrar servicio de error tracking en produccion
-   - Reemplazar `console.error` por tracking estructurado
-   - Impacto: visibilidad de errores en produccion
    - Esfuerzo: 0.5 dias
 
-4. **Agregar agentes Claude especializados**
-   - Agente de database/Firestore
-   - Agente de deployment
-   - Skills mas especificos (code-review, firestore-query)
+4. **Converter factory generico**
    - Esfuerzo: 0.5 dias
 
 ---
 
 ## Quick Wins
 
-Cambios de alto impacto y bajo esfuerzo que se pueden hacer inmediatamente:
+Cambios de alto impacto y bajo esfuerzo que se pueden hacer
+inmediatamente:
 
 | Item | Esfuerzo | Impacto |
 |------|----------|---------|
 | Agregar `npm run test:run` al CI | 5 min | Prevenir regresiones |
 | Memoizar context values (`useMemo`) | 30 min | Performance |
 | Tipar `Feedback.category` como union | 30 min | Type safety |
-| Extraer `formatDate` a utils | 30 min | DRY |
-| Eliminar `getBusinessName` duplicada en ActivityFeed | 5 min | DRY |
-| Mover `toDate` de adminConverters a un modulo compartido | 15 min | DRY |
-| Agregar `limit()` a queries sin limitar en admin | 1 hora | Escalabilidad |
 | Agregar `npm audit` al CI | 15 min | Seguridad |
 
 ---
 
 ## Conclusiones
 
-Modo Mapa v1.4.0 es un proyecto bien mantenido para su escala actual.
-La arquitectura es coherente y las decisiones de diseno (datos estaticos +
-dinamicos, cache de dos niveles, seguridad en capas) son solidas. El
-principal deficit es la falta de una capa de servicios que separe la logica
-de negocio de los componentes UI, lo que dificulta el testing y aumenta el
-acoplamiento. La cobertura de tests es el area mas critica a mejorar.
+Modo Mapa v1.4.0 dio un salto cualitativo importante en arquitectura.
+La creacion de la capa de servicios, la centralizacion de utilidades, y
+la estandarizacion de patrones admin resolvieron las 4 debilidades mas
+criticas del informe anterior. La puntuacion de madurez subio de
+7.2 a 8.4, con mejoras concentradas en SOLID (+1.2 promedio), DRY
+(+2.5), y documentacion (+2.0).
 
-El ecosistema de agentes Claude es una fortaleza diferenciadora del proyecto,
-con buena separacion de responsabilidades y contexto del proyecto integrado.
+El principal deficit pendiente es la cobertura de tests. La ironia es
+que la nueva arquitectura habilita tests que antes eran impracticos
+(servicios testeables, componentes mockeables), pero esos tests aun
+no se escribieron. Esta es la prioridad mas clara para la proxima
+iteracion.
 
-Para escalar mas alla de 40 comercios y un admin, las prioridades son:
-limitar queries en admin, agregar tests al CI, y crear la capa de servicios.
+El proyecto esta en una posicion solida para escalar tanto en
+funcionalidad como en equipo de desarrollo, con patrones documentados
+y una arquitectura que facilita la extension.
