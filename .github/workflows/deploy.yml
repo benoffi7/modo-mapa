@@ -20,6 +20,11 @@ jobs:
 
       - run: npm ci
 
+      - run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - run: npm run lint
+
       - run: npm run test:run
 
       - run: npm run build
@@ -40,6 +45,12 @@ jobs:
 
       - name: Deploy Firestore rules and indexes
         run: npx firebase-tools deploy --only firestore:rules,firestore:indexes --project modo-mapa-app
+
+      - name: Deploy Cloud Functions
+        run: |
+          cd functions && npm ci
+          cd ..
+          npx firebase-tools deploy --only functions --project modo-mapa-app
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

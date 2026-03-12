@@ -12,14 +12,21 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import type { PredefinedTagId } from '../types';
+
+const VALID_TAG_IDS: readonly string[] = ['barato', 'apto_celiacos', 'apto_veganos', 'rapido', 'delivery', 'buena_atencion'];
 
 // ── User Tags (predefined) ────────────────────────────────────────────
 
 export async function addUserTag(
   userId: string,
   businessId: string,
-  tagId: string,
+  tagId: PredefinedTagId | string,
 ): Promise<void> {
+  if (!VALID_TAG_IDS.includes(tagId)) {
+    throw new Error(`Invalid tagId: ${tagId}`);
+  }
+
   const docId = `${userId}__${businessId}__${tagId}`;
   await setDoc(doc(db, COLLECTIONS.USER_TAGS, docId), {
     userId,
@@ -45,6 +52,11 @@ export async function createCustomTag(
   businessId: string,
   label: string,
 ): Promise<void> {
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length > 30) {
+    throw new Error('Custom tag label must be 1-30 characters');
+  }
+
   await addDoc(collection(db, COLLECTIONS.CUSTOM_TAGS), {
     userId,
     businessId,

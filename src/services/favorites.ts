@@ -14,6 +14,10 @@ function docId(userId: string, businessId: string): string {
 }
 
 export async function addFavorite(userId: string, businessId: string): Promise<void> {
+  if (!userId || !businessId) {
+    throw new Error('userId and businessId are required');
+  }
+
   await setDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)), {
     userId,
     businessId,
