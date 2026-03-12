@@ -9,8 +9,9 @@ if (!admin.apps.length) {
 
 const ADMIN_EMAIL = 'benoffi11@gmail.com';
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
-const BACKUP_BUCKET = admin.storage().bucket();
-const BACKUP_PREFIX = `gs://${BACKUP_BUCKET.name}/backups/`;
+const BACKUP_BUCKET_NAME = 'modo-mapa-app-backups';
+const BACKUP_BUCKET = admin.storage().bucket(BACKUP_BUCKET_NAME);
+const BACKUP_PREFIX = `gs://${BACKUP_BUCKET_NAME}/backups/`;
 
 function verifyAdmin(email: string | undefined): void {
   if (email !== ADMIN_EMAIL) {
