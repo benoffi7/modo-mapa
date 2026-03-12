@@ -1,12 +1,16 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { v1 } from '@google-cloud/firestore';
-import { Storage } from '@google-cloud/storage';
+import * as admin from 'firebase-admin';
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 const ADMIN_EMAIL = 'benoffi11@gmail.com';
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
-const BUCKET_NAME = 'modo-mapa-app.appspot.com';
-const BACKUP_PREFIX = `gs://${BUCKET_NAME}/backups/`;
+const BACKUP_BUCKET = admin.storage().bucket();
+const BACKUP_PREFIX = `gs://${BACKUP_BUCKET.name}/backups/`;
 
 function verifyAdmin(email: string | undefined): void {
   if (email !== ADMIN_EMAIL) {
@@ -49,13 +53,10 @@ export const createBackup = onCall({
 export const listBackups = onCall(async (request) => {
   verifyAdmin(request.auth?.token.email);
 
-  logger.info('Listing backups', { user: request.auth?.token.email });
+  logger.info('Listing backups', { user: request.auth?.token.email, bucket: BACKUP_BUCKET.name });
 
   try {
-    const storage = new Storage();
-    const bucket = storage.bucket(BUCKET_NAME);
-
-    const [, , apiResponse] = await bucket.getFiles({
+    const [, , apiResponse] = await BACKUP_BUCKET.getFiles({
       prefix: 'backups/',
       delimiter: '/',
       autoPaginate: false,
