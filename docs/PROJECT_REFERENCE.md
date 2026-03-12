@@ -3,7 +3,7 @@
 **Versión:** 1.4.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Producción:** <https://modo-mapa-app.web.app>
-**Última actualización:** 2026-03-11
+**Última actualización:** 2026-03-12
 
 ---
 
@@ -40,14 +40,15 @@ main.tsx
        ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
        ├─ [/admin] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
-       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas)
+       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups)
        │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
        │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
        │         ├─ FeedbackList (tabla de feedback con categoría y estado)
        │         ├─ TrendsPanel (gráficos evolución + selector día/semana/mes/año)
        │         ├─ UsersPanel (rankings por usuario + stats)
        │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
-       │         └─ AbuseAlerts (tabla de logs de abuso)
+       │         ├─ AbuseAlerts (tabla de logs de abuso)
+       │         └─ BackupsPanel (crear, listar, restaurar backups Firestore)
        └─ [/*] MapProvider + APIProvider
             └─ AppShell.tsx
                  ├─ SearchBar (búsqueda + menú hamburguesa)
@@ -76,6 +77,8 @@ main.tsx
 functions/
 ├── src/
 │   ├── index.ts              → exports de todas las functions
+│   ├── admin/
+│   │   └── backups.ts        → createBackup, listBackups, restoreBackup (callable)
 │   ├── triggers/
 │   │   ├── comments.ts       → rate limit + moderación + counters
 │   │   ├── customTags.ts     → rate limit + moderación + counters
@@ -145,7 +148,7 @@ src/
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificación email
-│   │   ├── AdminLayout.tsx          # AppBar + Tabs (7 secciones)
+│   │   ├── AdminLayout.tsx          # AppBar + Tabs (8 secciones)
 │   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists + Custom Tags ranking
 │   │   ├── ActivityFeed.tsx         # Tabs por colección (últimos 20 items)
 │   │   ├── FeedbackList.tsx         # Tabla de feedback con categoría y flagged
@@ -153,6 +156,7 @@ src/
 │   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback)
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
 │   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
+│   │   ├── BackupsPanel.tsx         # Gestión de backups Firestore (crear, listar, restaurar)
 │   │   ├── StatCard.tsx             # Card con número grande
 │   │   ├── ActivityTable.tsx        # Tabla genérica
 │   │   └── charts/
@@ -201,7 +205,8 @@ src/
 | `firebase.json` | Config de hosting, functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
 | `vite.config.ts` | Plugin React + `__APP_VERSION__` desde package.json |
-| `.github/workflows/deploy.yml` | CI/CD: build + deploy a Firebase en push a main |
+| `firestore.indexes.json` | Índices compuestos Firestore (comments, ratings, favorites por userId+timestamp) |
+| `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD → specs → plan → implementar) |
 | `.env.example` | Template de variables de entorno |
 | `docs/SECURITY_GUIDELINES.md` | Guía de seguridad: App Check, timestamps, converters, patrones |
@@ -314,10 +319,18 @@ En CI/CD se inyectan como GitHub Secrets.
 1. Trigger: push a `main`
 2. Setup: Node 22 + npm cache
 3. Build: `npm run build` con secrets como env vars
-4. Deploy Firestore rules: `firebase deploy --only firestore:rules` (via service account)
-5. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+4. Auth: `google-github-actions/auth@v2` con service account
+5. Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes`
+6. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
 
-**IMPORTANTE:** Las Firestore rules (`firestore.rules`) se despliegan automáticamente junto con el hosting. Si se modifican rules sin deploy, producción queda desincronizada.
+**IMPORTANTE:** Firestore rules e indexes se despliegan automáticamente en cada push a main. Cloud Functions se despliegan manualmente con `firebase deploy --only functions`.
+
+**IAM roles requeridos** para el service account de CI/CD:
+
+- `roles/serviceusage.serviceUsageConsumer` — para invocar APIs de Firebase
+- `roles/firebase.admin` — para deploy de rules/indexes
+- `roles/datastore.importExportAdmin` — para backup export/import
+- `roles/storage.admin` — para listar/escribir backups en Cloud Storage
 
 **Flujo de feature:**
 
@@ -396,6 +409,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Firebase quota mitigations: offline persistence, business view cache, paginated query cache | [#26](https://github.com/benoffi7/modo-mapa/pull/26) | Merged | `docs/feat-firebase-quota-offline/` |
 | [#28](https://github.com/benoffi7/modo-mapa/issues/28) | feat | Modularizar componentes de estadísticas + sección pública | [#32](https://github.com/benoffi7/modo-mapa/pull/32) | Merged | `docs/feat-modularizar-stats/` |
 | [#31](https://github.com/benoffi7/modo-mapa/issues/31) | fix | Admin login popup se cierra automáticamente | [#33](https://github.com/benoffi7/modo-mapa/pull/33) | Merged | — |
+| [#34](https://github.com/benoffi7/modo-mapa/issues/34) | feat | Gestión de backups de Firestore desde /admin | [#35](https://github.com/benoffi7/modo-mapa/pull/35) | Merged | `docs/feat-admin-backups/` |
 | [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | — |
 
 ---
@@ -458,6 +472,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - **Usuarios**: rankings top 10 por métrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones)
 - **Firebase Usage**: gráficos lineales de reads/writes/deletes y usuarios activos (últimos 30 días), pie charts por colección, barras de cuota vs free tier
 - **Alertas**: logs de abuso (rate limit excedido, contenido flaggeado, top writers)
+- **Backups**: crear backup manual de Firestore, listar backups existentes, restaurar con confirmación. Usa Cloud Functions callable (`createBackup`, `listBackups`, `restoreBackup`) con `FirestoreAdminClient` para export/import a `gs://modo-mapa-app.appspot.com/backups/`
 
 ### Cloud Functions (server-side)
 
@@ -465,6 +480,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 - **Moderación de contenido**: banned words con normalización de acentos, word boundary matching
 - **Counters atómicos**: totales por colección + operaciones diarias
 - **Métricas diarias**: cron a las 3AM — distribución, tops, active users, reset counters
+- **Backups admin**: `createBackup` (Firestore export → GCS), `listBackups` (GCS prefixes), `restoreBackup` (Firestore import ← GCS). Solo admin.
 
 ### Filtros reutilizables
 

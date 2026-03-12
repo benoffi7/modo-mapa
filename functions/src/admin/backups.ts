@@ -5,7 +5,7 @@ import { Storage } from '@google-cloud/storage';
 
 const ADMIN_EMAIL = 'benoffi11@gmail.com';
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
-const BUCKET_NAME = 'modo-mapa-app.firebasestorage.app';
+const BUCKET_NAME = 'modo-mapa-app.appspot.com';
 const BACKUP_PREFIX = `gs://${BUCKET_NAME}/backups/`;
 
 function verifyAdmin(email: string | undefined): void {
