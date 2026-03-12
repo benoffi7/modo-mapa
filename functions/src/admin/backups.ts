@@ -5,6 +5,7 @@ import { defineString } from 'firebase-functions/params';
 import { v1 } from '@google-cloud/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { captureException } from '../utils/sentry';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ function getBackupBucket() {
 }
 
 function handleError(err: unknown, message: string, context: Record<string, unknown> = {}): never {
+  captureException(err);
   logger.error(message, { error: String(err), ...context });
 
   const errorStr = String(err);
