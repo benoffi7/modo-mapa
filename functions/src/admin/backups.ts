@@ -3,6 +3,7 @@ import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { defineString } from 'firebase-functions/params';
 import { v1 } from '@google-cloud/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -71,26 +72,34 @@ function maskEmail(email: string | undefined): string {
   return `${prefix}***@${domain}`;
 }
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_CALLS = 5;
+const RATE_LIMIT_COLLECTION = '_rateLimits';
 
-function checkRateLimit(uid: string): void {
+async function checkRateLimit(uid: string): Promise<void> {
+  const db = getFirestore();
+  const docRef = db.collection(RATE_LIMIT_COLLECTION).doc(`backup_${uid}`);
   const now = Date.now();
-  const entry = rateLimitMap.get(uid);
 
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(uid, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return;
-  }
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(docRef);
+    const data = snap.data() as { count: number; resetAt: number } | undefined;
 
-  entry.count++;
-  if (entry.count > RATE_LIMIT_MAX_CALLS) {
-    throw new HttpsError('resource-exhausted', 'Demasiadas solicitudes. Intenta de nuevo en un minuto.');
-  }
+    if (!data || now >= data.resetAt) {
+      tx.set(docRef, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+      return;
+    }
+
+    const newCount = data.count + 1;
+    if (newCount > RATE_LIMIT_MAX_CALLS) {
+      throw new HttpsError('resource-exhausted', 'Demasiadas solicitudes. Intenta de nuevo en un minuto.');
+    }
+
+    tx.update(docRef, { count: newCount });
+  });
 }
 
-function verifyAdmin(request: CallableRequest): void {
+async function verifyAdmin(request: CallableRequest): Promise<void> {
   const email = request.auth?.token.email;
   const emailVerified = request.auth?.token.email_verified;
 
@@ -102,7 +111,7 @@ function verifyAdmin(request: CallableRequest): void {
     throw new HttpsError('permission-denied', 'Solo admin puede gestionar backups');
   }
 
-  checkRateLimit(request.auth!.uid);
+  await checkRateLimit(request.auth!.uid);
 }
 
 function getBackupBucket() {
@@ -152,7 +161,7 @@ export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
-  verifyAdmin(request);
+  await verifyAdmin(request);
 
   const client = getFirestoreAdminClient();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -184,7 +193,7 @@ export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsRespons
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
-  verifyAdmin(request);
+  await verifyAdmin(request);
 
   const pageSize = clampPageSize(request.data?.pageSize);
   const pageToken = request.data?.pageToken;
@@ -237,7 +246,7 @@ export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: tru
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
-  verifyAdmin(request);
+  await verifyAdmin(request);
 
   const backupId = validateBackupId(request.data?.backupId);
   const backupUri = `${BACKUP_PREFIX}${backupId}`;
@@ -281,7 +290,7 @@ export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true 
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
-  verifyAdmin(request);
+  await verifyAdmin(request);
 
   const backupId = validateBackupId(request.data?.backupId);
 

@@ -22,7 +22,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     setSigningIn(true);
     setAccessDenied(false);
     const result = await signInWithGoogle();
-    if (result && result.email !== ADMIN_EMAIL) {
+    if (result && (result.email !== ADMIN_EMAIL || !result.emailVerified)) {
       setAccessDenied(true);
       await signOut();
     }

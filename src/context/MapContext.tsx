@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { Business } from '../types';
 
@@ -36,19 +36,19 @@ export function MapProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const value = useMemo<MapContextType>(() => ({
+    selectedBusiness,
+    setSelectedBusiness,
+    searchQuery,
+    setSearchQuery,
+    activeFilters,
+    toggleFilter,
+    userLocation,
+    setUserLocation,
+  }), [selectedBusiness, searchQuery, activeFilters, toggleFilter, userLocation]);
+
   return (
-    <MapContext.Provider
-      value={{
-        selectedBusiness,
-        setSelectedBusiness,
-        searchQuery,
-        setSearchQuery,
-        activeFilters,
-        toggleFilter,
-        userLocation,
-        setUserLocation,
-      }}
-    >
+    <MapContext.Provider value={value}>
       {children}
     </MapContext.Provider>
   );
