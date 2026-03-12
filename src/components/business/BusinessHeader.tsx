@@ -9,9 +9,10 @@ import DirectionsButton from './DirectionsButton';
 interface Props {
   business: Business;
   favoriteButton: ReactNode;
+  shareButton?: ReactNode;
 }
 
-export default function BusinessHeader({ business, favoriteButton }: Props) {
+export default function BusinessHeader({ business, favoriteButton, shareButton }: Props) {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -25,7 +26,10 @@ export default function BusinessHeader({ business, favoriteButton }: Props) {
             sx={{ mt: 0.5, fontSize: '0.75rem', height: 24 }}
           />
         </Box>
-        {favoriteButton}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {shareButton}
+          {favoriteButton}
+        </Box>
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, color: 'text.secondary' }}>

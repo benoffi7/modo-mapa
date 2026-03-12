@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -38,7 +38,33 @@ export async function addComment(
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
 }
 
+export async function editComment(commentId: string, userId: string, newText: string): Promise<void> {
+  const trimmed = newText.trim();
+  if (!trimmed || trimmed.length > 500) {
+    throw new Error('Comment text must be 1-500 characters');
+  }
+  await updateDoc(doc(db, COLLECTIONS.COMMENTS, commentId), {
+    text: trimmed,
+    updatedAt: serverTimestamp(),
+  });
+  invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+}
+
 export async function deleteComment(commentId: string, userId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+}
+
+export async function likeComment(userId: string, commentId: string): Promise<void> {
+  const docId = `${userId}__${commentId}`;
+  await setDoc(doc(db, COLLECTIONS.COMMENT_LIKES, docId), {
+    userId,
+    commentId,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function unlikeComment(userId: string, commentId: string): Promise<void> {
+  const docId = `${userId}__${commentId}`;
+  await deleteDoc(doc(db, COLLECTIONS.COMMENT_LIKES, docId));
 }
