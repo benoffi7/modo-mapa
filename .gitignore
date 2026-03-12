@@ -28,6 +28,7 @@ dist-ssr
 
 # Firebase
 .firebase/
+functions/lib/
 
 # Claude (keep agents and skills tracked, ignore local settings)
 .claude/*
