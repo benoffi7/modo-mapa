@@ -101,7 +101,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       setBusinessCache(bId, result);
     } catch (err) {
       if (fetchIdRef.current !== id) return;
-      console.error('Error loading business data:', err);
+      if (import.meta.env.DEV) console.error('Error loading business data:', err);
       setError(true);
     }
 
