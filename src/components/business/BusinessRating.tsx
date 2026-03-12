@@ -1,4 +1,4 @@
-import { useMemo, memo } from 'react';
+import { useMemo, useState, memo } from 'react';
 import { Box, Typography, Rating } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { upsertRating } from '../../services/ratings';
@@ -14,7 +14,7 @@ interface Props {
 export default memo(function BusinessRating({ businessId, ratings, isLoading, onRatingChange }: Props) {
   const { user } = useAuth();
 
-  const { averageRating, totalRatings, myRating } = useMemo(() => {
+  const { averageRating, totalRatings, serverMyRating } = useMemo(() => {
     let sum = 0;
     let myScore: number | null = null;
     for (const r of ratings) {
@@ -26,14 +26,23 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     return {
       averageRating: ratings.length > 0 ? sum / ratings.length : 0,
       totalRatings: ratings.length,
-      myRating: myScore,
+      serverMyRating: myScore,
     };
   }, [ratings, user]);
 
+  const [pendingRating, setPendingRating] = useState<number | null>(null);
+
+  const myRating = pendingRating ?? serverMyRating;
+
   const handleRate = async (_: unknown, value: number | null) => {
     if (!user || !value) return;
-    await upsertRating(user.uid, businessId, value);
-    onRatingChange();
+    setPendingRating(value);
+    try {
+      await upsertRating(user.uid, businessId, value);
+      onRatingChange();
+    } finally {
+      setPendingRating(null);
+    }
   };
 
   if (!isLoading && ratings.length === 0 && !user) {
