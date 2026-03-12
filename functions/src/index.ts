@@ -12,3 +12,6 @@ export { onUserCreated } from './triggers/users';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';
+
+// Admin
+export { createBackup, listBackups, restoreBackup } from './admin/backups';
