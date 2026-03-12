@@ -9,7 +9,6 @@ import { getStorage } from 'firebase-admin/storage';
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
   description: 'Email address of the admin user',
-  default: 'benoffi11@gmail.com',
 });
 
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
