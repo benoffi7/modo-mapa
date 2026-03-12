@@ -24,6 +24,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { httpsCallable } from 'firebase/functions';
 import type { HttpsCallableResult } from 'firebase/functions';
 import { functions } from '../../config/firebase';
+import { formatDateFull } from '../../utils/formatDate';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -75,24 +76,6 @@ const deleteBackupFn = httpsCallable<DeleteBackupRequest, SuccessResponse>(funct
 
 const AUTO_DISMISS_MS = 5000;
 const PAGE_SIZE = 20;
-
-// ── Helpers ────────────────────────────────────────────────────────────
-
-function formatDate(createdAt: string): string {
-  try {
-    const date = new Date(createdAt);
-    if (isNaN(date.getTime())) return createdAt;
-    return date.toLocaleString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return createdAt;
-  }
-}
 
 function extractErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -218,7 +201,7 @@ export default function BackupsPanel() {
     setSuccess(null);
     try {
       await restoreBackupFn({ backupId: backup.id });
-      setSuccess(`Backup del ${formatDate(backup.createdAt)} restaurado exitosamente.`);
+      setSuccess(`Backup del ${formatDateFull(backup.createdAt)} restaurado exitosamente.`);
     } catch (err) {
       logError('error restoring backup', err);
       setError(mapErrorToUserMessage(extractErrorMessage(err), 'Error al restaurar el backup'));
@@ -236,7 +219,7 @@ export default function BackupsPanel() {
     setSuccess(null);
     try {
       await deleteBackupFn({ backupId: backup.id });
-      setSuccess(`Backup del ${formatDate(backup.createdAt)} eliminado.`);
+      setSuccess(`Backup del ${formatDateFull(backup.createdAt)} eliminado.`);
       setBackups((prev) => prev.filter((b) => b.id !== backup.id));
       setTotalCount((prev) => prev - 1);
     } catch (err) {
@@ -318,7 +301,7 @@ export default function BackupsPanel() {
               <TableBody>
                 {backups.map((backup) => (
                   <TableRow key={backup.id}>
-                    <TableCell>{formatDate(backup.createdAt)}</TableCell>
+                    <TableCell>{formatDateFull(backup.createdAt)}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Restaurar backup">
                         <span>
@@ -327,7 +310,7 @@ export default function BackupsPanel() {
                             color="warning"
                             onClick={() => setConfirmAction({ type: 'restore', backup })}
                             disabled={operating}
-                            aria-label={`Restaurar backup del ${formatDate(backup.createdAt)}`}
+                            aria-label={`Restaurar backup del ${formatDateFull(backup.createdAt)}`}
                           >
                             <RestoreIcon fontSize="small" />
                           </IconButton>
@@ -340,7 +323,7 @@ export default function BackupsPanel() {
                             color="error"
                             onClick={() => setConfirmAction({ type: 'delete', backup })}
                             disabled={operating}
-                            aria-label={`Eliminar backup del ${formatDate(backup.createdAt)}`}
+                            aria-label={`Eliminar backup del ${formatDateFull(backup.createdAt)}`}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -382,7 +365,7 @@ export default function BackupsPanel() {
             <>
               <DialogContentText id="confirm-dialog-description">
                 Esta accion sobrescribira los datos actuales con el backup del{' '}
-                <strong>{confirmAction ? formatDate(confirmAction.backup.createdAt) : ''}</strong>.
+                <strong>{confirmAction ? formatDateFull(confirmAction.backup.createdAt) : ''}</strong>.
               </DialogContentText>
               <DialogContentText sx={{ mt: 1 }}>
                 Se creara un backup de seguridad automaticamente antes de restaurar.
@@ -392,7 +375,7 @@ export default function BackupsPanel() {
             <>
               <DialogContentText id="confirm-dialog-description">
                 Se eliminara permanentemente el backup del{' '}
-                <strong>{confirmAction ? formatDate(confirmAction.backup.createdAt) : ''}</strong>.
+                <strong>{confirmAction ? formatDateFull(confirmAction.backup.createdAt) : ''}</strong>.
               </DialogContentText>
               <DialogContentText sx={{ mt: 1, fontWeight: 'bold' }}>
                 Esta operacion NO es reversible.

@@ -19,6 +19,7 @@ import { useMapContext } from '../../context/MapContext';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { formatDateMedium } from '../../utils/formatDate';
 import ListFilters from './ListFilters';
 import type { Business, Rating as RatingType } from '../../types';
 
@@ -64,14 +65,6 @@ export default function RatingsList({ onNavigate }: Props) {
     if (!business) return;
     setSelectedBusiness(business);
     onNavigate();
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   if (isLoading) {
@@ -139,7 +132,7 @@ export default function RatingsList({ onNavigate }: Props) {
                     sx={{ display: 'flex', mt: 0.5 }}
                   />
                   <Typography component="span" variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
-                    {formatDate(item.updatedAt)}
+                    {formatDateMedium(item.updatedAt)}
                   </Typography>
                 </>
               }

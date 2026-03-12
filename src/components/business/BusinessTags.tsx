@@ -17,18 +17,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  addDoc,
-  updateDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
+import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { PREDEFINED_TAGS } from '../../types';
 import type { CustomTag, UserTag } from '../../types';
 
@@ -88,20 +78,13 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
   const handleToggleTag = async (tagId: string) => {
     if (!user) return;
     setPendingTagId(tagId);
-    const docId = `${user.uid}__${businessId}__${tagId}`;
-    const tagRef = doc(db, COLLECTIONS.USER_TAGS, docId);
 
     const existing = tagCounts.find((t) => t.tagId === tagId);
     try {
       if (existing?.userAdded) {
-        await deleteDoc(tagRef);
+        await removeUserTag(user.uid, businessId, tagId);
       } else {
-        await setDoc(tagRef, {
-          userId: user.uid,
-          businessId,
-          tagId,
-          createdAt: serverTimestamp(),
-        });
+        await addUserTag(user.uid, businessId, tagId);
       }
       onTagsChange();
     } catch (err) {
@@ -141,14 +124,9 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     if (!editingTag && customTags.length >= MAX_CUSTOM_TAGS) return;
 
     if (editingTag) {
-      await updateDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, editingTag.id), { label });
+      await updateCustomTag(editingTag.id, label);
     } else {
-      await addDoc(collection(db, COLLECTIONS.CUSTOM_TAGS), {
-        userId: user.uid,
-        businessId,
-        label,
-        createdAt: serverTimestamp(),
-      });
+      await createCustomTag(user.uid, businessId, label);
     }
     handleCloseDialog();
     onTagsChange();
@@ -161,7 +139,7 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
 
   const handleDelete = async () => {
     if (!menuTag) return;
-    await deleteDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, menuTag.id));
+    await deleteCustomTag(menuTag.id);
     setConfirmDeleteOpen(false);
     setMenuTag(null);
     onTagsChange();
