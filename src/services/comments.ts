@@ -2,9 +2,16 @@
  * Firestore service for the `comments` collection.
  */
 import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { commentConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import type { Comment } from '../types';
+
+export function getCommentsCollection(): CollectionReference<Comment> {
+  return collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter) as CollectionReference<Comment>;
+}
 
 export async function addComment(
   userId: string,

@@ -151,5 +151,10 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+
+    // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
+    match /_rateLimits/{docId} {
+      allow read, write: if false;
+    }
   }
 }

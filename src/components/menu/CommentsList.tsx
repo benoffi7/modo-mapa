@@ -15,15 +15,11 @@ import {
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { collection } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-import { commentConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { deleteComment } from '../../services/comments';
+import { deleteComment, getCommentsCollection } from '../../services/comments';
 import { formatDateMedium } from '../../utils/formatDate';
 import type { Business, Comment } from '../../types';
 
@@ -36,10 +32,7 @@ export default function CommentsList({ onNavigate }: Props) {
   const { setSelectedBusiness } = useMapContext();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const collectionRef = useMemo(
-    () => collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
-    [],
-  );
+  const collectionRef = useMemo(() => getCommentsCollection(), []);
 
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
     usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
