@@ -1,77 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-import { countersConverter } from '../../config/adminConverters';
-import { customTagConverter } from '../../config/converters';
+import { fetchCounters, fetchAllCustomTags } from '../../services/admin';
+import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
 import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
 import type { AdminCounters } from '../../types/admin';
+import type { CustomTag } from '../../types';
+import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
 
+interface DashboardData {
+  counters: AdminCounters | null;
+  customTagCounts: Array<{ label: string; value: number }>;
+}
+
 export default function DashboardOverview() {
-  const [counters, setCounters] = useState<AdminCounters | null>(null);
-  const [customTagCounts, setCustomTagCounts] = useState<Array<{ label: string; value: number }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const fetcher = useCallback(async (): Promise<DashboardData> => {
+    const [counters, customTags] = await Promise.all([
+      fetchCounters(),
+      fetchAllCustomTags(),
+    ]);
 
-  const { metrics, loading: metricsLoading, error: metricsError } = usePublicMetrics();
+    const labelMap = new Map<string, number>();
+    for (const tag of customTags as CustomTag[]) {
+      labelMap.set(tag.label, (labelMap.get(tag.label) ?? 0) + 1);
+    }
+    const customTagCounts = [...labelMap.entries()]
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
 
-  useEffect(() => {
-    let ignore = false;
-
-    Promise.all([
-      getDoc(doc(db, COLLECTIONS.CONFIG, 'counters').withConverter(countersConverter)),
-      getDocs(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter)),
-    ])
-      .then(([countersSnap, customTagsSnap]) => {
-        if (ignore) return;
-        setCounters(countersSnap.exists() ? countersSnap.data() : null);
-
-        const labelMap = new Map<string, number>();
-        for (const d of customTagsSnap.docs) {
-          const label = d.data().label;
-          labelMap.set(label, (labelMap.get(label) ?? 0) + 1);
-        }
-        setCustomTagCounts(
-          [...labelMap.entries()]
-            .map(([label, value]) => ({ label, value }))
-            .sort((a, b) => b.value - a.value),
-        );
-
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (ignore) return;
-        if (import.meta.env.DEV) console.error('DashboardOverview fetch error:', err);
-        setError(true);
-        setLoading(false);
-      });
-
-    return () => { ignore = true; };
+    return { counters, customTagCounts };
   }, []);
 
-  if (loading || metricsLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const { data, loading, error } = useAsyncData(fetcher);
+  const { metrics, loading: metricsLoading, error: metricsError } = usePublicMetrics();
 
-  if (error) {
-    return <Alert severity="error">Error cargando datos del dashboard. Revisá la consola para más detalles.</Alert>;
-  }
+  const isLoading = loading || metricsLoading;
+  const isError = error || metricsError;
 
-  if (metricsError) {
-    return <Alert severity="error">Error cargando métricas públicas. Revisá la consola para más detalles.</Alert>;
-  }
+  const counters = data?.counters;
+  const customTagCounts = data?.customTagCounts ?? [];
 
   const ratingPieData = metrics
     ? Object.entries(metrics.ratingDistribution).map(([key, value]) => ({
@@ -85,68 +55,74 @@ export default function DashboardOverview() {
     : [];
 
   return (
-    <Grid container spacing={2}>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Comercios" value={allBusinesses.length} />
-      </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Usuarios" value={counters?.users ?? 0} />
-      </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Comentarios" value={counters?.comments ?? 0} />
-      </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Ratings" value={counters?.ratings ?? 0} />
-      </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Favoritos" value={counters?.favorites ?? 0} />
-      </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Feedback" value={counters?.feedback ?? 0} />
-      </Grid>
+    <AdminPanelWrapper
+      loading={isLoading}
+      error={isError}
+      errorMessage="Error cargando datos del dashboard. Revisá la consola para más detalles."
+    >
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Comercios" value={allBusinesses.length} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Usuarios" value={counters?.users ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Comentarios" value={counters?.comments ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Ratings" value={counters?.ratings ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Favoritos" value={counters?.favorites ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Feedback" value={counters?.feedback ?? 0} />
+        </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
-        <PieChartCard title="Distribución de Ratings" data={ratingPieData} />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <PieChartCard title="Tags más usados" data={tagsPieData} />
-      </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <PieChartCard title="Distribución de Ratings" data={ratingPieData} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <PieChartCard title="Tags más usados" data={tagsPieData} />
+        </Grid>
 
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TopList
-          title="Top 10 — Más favoriteados"
-          items={(metrics?.topFavorited ?? []).map((t) => ({
-            label: getBusinessName(t.businessId),
-            value: t.count,
-          }))}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TopList
-          title="Top 10 — Más comentados"
-          items={(metrics?.topCommented ?? []).map((t) => ({
-            label: getBusinessName(t.businessId),
-            value: t.count,
-          }))}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TopList
-          title="Top 10 — Mejor calificados"
-          items={(metrics?.topRated ?? []).map((t) => ({
-            label: getBusinessName(t.businessId),
-            value: t.avgScore,
-            secondary: `${t.count} votos`,
-          }))}
-        />
-      </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <TopList
+            title="Top 10 — Más favoriteados"
+            items={(metrics?.topFavorited ?? []).map((t) => ({
+              label: getBusinessName(t.businessId),
+              value: t.count,
+            }))}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <TopList
+            title="Top 10 — Más comentados"
+            items={(metrics?.topCommented ?? []).map((t) => ({
+              label: getBusinessName(t.businessId),
+              value: t.count,
+            }))}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <TopList
+            title="Top 10 — Mejor calificados"
+            items={(metrics?.topRated ?? []).map((t) => ({
+              label: getBusinessName(t.businessId),
+              value: t.avgScore,
+              secondary: `${t.count} votos`,
+            }))}
+          />
+        </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TopList
-          title="Custom Tags — Candidatas a promover"
-          items={customTagCounts}
-        />
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TopList
+            title="Custom Tags — Candidatas a promover"
+            items={customTagCounts}
+          />
+        </Grid>
       </Grid>
-    </Grid>
+    </AdminPanelWrapper>
   );
 }

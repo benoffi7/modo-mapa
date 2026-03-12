@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { favoriteConverter } from '../../config/converters';
@@ -22,6 +22,7 @@ import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { removeFavorite } from '../../services/favorites';
 import ListFilters from './ListFilters';
 import type { Business, Favorite } from '../../types';
 
@@ -71,8 +72,7 @@ export default function FavoritesList({ onNavigate }: Props) {
 
   const handleRemoveFavorite = async (businessId: string) => {
     if (!user) return;
-    const docId = `${user.uid}__${businessId}`;
-    await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
+    await removeFavorite(user.uid, businessId);
     reload();
   };
 

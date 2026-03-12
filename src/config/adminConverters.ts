@@ -4,6 +4,11 @@ import type {
   SnapshotOptions,
 } from 'firebase/firestore';
 import type { AdminCounters, DailyMetrics, AbuseLog } from '../types/admin';
+import { toDate } from '../utils/formatDate';
+
+function asNumber(val: unknown, fallback = 0): number {
+  return typeof val === 'number' ? val : fallback;
+}
 
 export const countersConverter: FirestoreDataConverter<AdminCounters> = {
   toFirestore(data: AdminCounters) {
@@ -12,19 +17,29 @@ export const countersConverter: FirestoreDataConverter<AdminCounters> = {
   fromFirestore(snap: QueryDocumentSnapshot, options?: SnapshotOptions): AdminCounters {
     const d = snap.data(options);
     return {
-      comments: (d.comments as number) ?? 0,
-      ratings: (d.ratings as number) ?? 0,
-      favorites: (d.favorites as number) ?? 0,
-      feedback: (d.feedback as number) ?? 0,
-      users: (d.users as number) ?? 0,
-      customTags: (d.customTags as number) ?? 0,
-      userTags: (d.userTags as number) ?? 0,
-      dailyReads: (d.dailyReads as number) ?? 0,
-      dailyWrites: (d.dailyWrites as number) ?? 0,
-      dailyDeletes: (d.dailyDeletes as number) ?? 0,
+      comments: asNumber(d.comments),
+      ratings: asNumber(d.ratings),
+      favorites: asNumber(d.favorites),
+      feedback: asNumber(d.feedback),
+      users: asNumber(d.users),
+      customTags: asNumber(d.customTags),
+      userTags: asNumber(d.userTags),
+      dailyReads: asNumber(d.dailyReads),
+      dailyWrites: asNumber(d.dailyWrites),
+      dailyDeletes: asNumber(d.dailyDeletes),
     };
   },
 };
+
+function asRecord(val: unknown): Record<string, number> {
+  return (val != null && typeof val === 'object' && !Array.isArray(val))
+    ? val as Record<string, number>
+    : {};
+}
+
+function asArray<T>(val: unknown): T[] {
+  return Array.isArray(val) ? val as T[] : [];
+}
 
 export const dailyMetricsConverter: FirestoreDataConverter<DailyMetrics> = {
   toFirestore(data: DailyMetrics) {
@@ -34,28 +49,21 @@ export const dailyMetricsConverter: FirestoreDataConverter<DailyMetrics> = {
     const d = snap.data(options);
     return {
       date: snap.id,
-      ratingDistribution: (d.ratingDistribution as Record<string, number>) ?? {},
-      topFavorited: (d.topFavorited as DailyMetrics['topFavorited']) ?? [],
-      topCommented: (d.topCommented as DailyMetrics['topCommented']) ?? [],
-      topRated: (d.topRated as DailyMetrics['topRated']) ?? [],
-      topTags: (d.topTags as DailyMetrics['topTags']) ?? [],
-      dailyReads: (d.dailyReads as number) ?? 0,
-      dailyWrites: (d.dailyWrites as number) ?? 0,
-      dailyDeletes: (d.dailyDeletes as number) ?? 0,
-      writesByCollection: (d.writesByCollection as Record<string, number>) ?? {},
-      readsByCollection: (d.readsByCollection as Record<string, number>) ?? {},
-      deletesByCollection: (d.deletesByCollection as Record<string, number>) ?? {},
-      activeUsers: (d.activeUsers as number) ?? 0,
+      ratingDistribution: asRecord(d.ratingDistribution),
+      topFavorited: asArray(d.topFavorited),
+      topCommented: asArray(d.topCommented),
+      topRated: asArray(d.topRated),
+      topTags: asArray(d.topTags),
+      dailyReads: asNumber(d.dailyReads),
+      dailyWrites: asNumber(d.dailyWrites),
+      dailyDeletes: asNumber(d.dailyDeletes),
+      writesByCollection: asRecord(d.writesByCollection),
+      readsByCollection: asRecord(d.readsByCollection),
+      deletesByCollection: asRecord(d.deletesByCollection),
+      activeUsers: asNumber(d.activeUsers),
     };
   },
 };
-
-function toDate(field: unknown): Date {
-  if (field && typeof field === 'object' && 'toDate' in field) {
-    return (field as { toDate: () => Date }).toDate();
-  }
-  return new Date();
-}
 
 export const abuseLogConverter: FirestoreDataConverter<AbuseLog> = {
   toFirestore(data: AbuseLog) {
@@ -65,10 +73,10 @@ export const abuseLogConverter: FirestoreDataConverter<AbuseLog> = {
     const d = snap.data(options);
     return {
       id: snap.id,
-      userId: d.userId as string,
-      type: d.type as AbuseLog['type'],
-      collection: d.collection as string,
-      detail: d.detail as string,
+      userId: String(d.userId ?? ''),
+      type: String(d.type ?? 'rate_limit') as AbuseLog['type'],
+      collection: String(d.collection ?? ''),
+      detail: String(d.detail ?? ''),
       timestamp: toDate(d.timestamp),
     };
   },
