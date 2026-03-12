@@ -47,8 +47,23 @@ Every Firestore collection has a corresponding service module:
 
 - Service functions are plain `async` functions, not hooks.
 - They accept primitive parameters (userId, businessId, etc.), not Firebase objects.
+- They **validate input** as a first line of defense (defense in depth): text lengths, score ranges, enum whitelists.
+- They use strict types (`FeedbackCategory`, `PredefinedTagId`) instead of plain `string`.
 - They handle cache invalidation internally (e.g., `invalidateQueryCache`).
 - Components import from `src/services/` (or `src/services/index.ts` barrel).
+
+**Input validation examples:**
+
+```typescript
+// comments.ts - validate text length
+if (!trimmedText || trimmedText.length > 500) throw new Error('Comment text must be 1-500 characters');
+
+// tags.ts - validate against whitelist
+if (!VALID_TAG_IDS.includes(tagId)) throw new Error(`Invalid tagId: ${tagId}`);
+
+// ratings.ts - validate score range
+if (!Number.isInteger(score) || score < 1 || score > 5) throw new Error('Score must be 1-5');
+```
 
 ---
 
@@ -102,9 +117,16 @@ export default function SomePanel() {
 
 Keep components under 300 lines. When a component grows beyond this:
 
-1. Extract sub-components into the same file if only used there.
-2. Extract to a separate file if reusable.
-3. Extract hooks for complex state logic.
+1. Extract sub-components to separate files with `React.memo`.
+2. Extract types to a `*Types.ts` file.
+3. Extract pure utility functions to a `*Utils.ts` file.
+4. Extract hooks for complex state logic.
+5. The main component becomes an orchestrator that delegates rendering.
+
+**Examples in the codebase:**
+
+- `BackupsPanel` -> `BackupTable`, `BackupConfirmDialog`, `backupTypes`, `backupUtils`
+- `BusinessTags` -> `CustomTagDialog`, `DeleteTagDialog`
 
 ---
 

@@ -185,7 +185,11 @@ src/
 │   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback)
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
 │   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
-│   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (crear, listar, restaurar, eliminar + paginacion)
+│   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (orquestacion)
+│   │   ├── BackupTable.tsx          # Tabla de backups (memoizada con React.memo)
+│   │   ├── BackupConfirmDialog.tsx  # Dialog de confirmacion restore/delete (memoizado)
+│   │   ├── backupTypes.ts           # Tipos: BackupEntry, ConfirmAction
+│   │   ├── backupUtils.ts           # formatBackupDate, extractErrorMessage, mapErrorToUserMessage
 │   │   ├── StatCard.tsx             # Card con numero grande
 │   │   ├── ActivityTable.tsx        # Tabla generica
 │   │   └── charts/
@@ -211,7 +215,9 @@ src/
 │   │   ├── BusinessSheet.tsx        # Bottom sheet — orquesta useBusinessData + pasa props
 │   │   ├── BusinessHeader.tsx       # Nombre, categoria, direccion, telefono, favorito (prop), direcciones
 │   │   ├── BusinessRating.tsx       # Rating promedio + estrellas del usuario (props-driven)
-│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (CRUD) (props-driven)
+│   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (orquestacion, props-driven)
+│   │   ├── CustomTagDialog.tsx      # Dialog crear/editar custom tag (memoizado)
+│   │   ├── DeleteTagDialog.tsx      # Dialog confirmacion eliminacion tag (memoizado)
 │   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios (props-driven, flagged filtrados)
 │   │   ├── FavoriteButton.tsx       # Corazon toggle (props-driven)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
@@ -264,8 +270,10 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 
 - Las funciones son `async` planas, no hooks.
 - Aceptan parametros primitivos (userId, businessId, etc.), no objetos Firebase.
+- **Validan entrada** como primera linea de defensa (defense in depth): longitudes, rangos, whitelists.
 - Invalidan caches internamente (`invalidateQueryCache`, `invalidateBusinessCache`).
 - Los errores propagan al componente que llama.
+- Usan tipos estrictos (`FeedbackCategory`, `PredefinedTagId`) en vez de `string` generico.
 
 ---
 
@@ -495,12 +503,16 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 
 1. Trigger: push a `main`
 2. Setup: Node 22 + npm cache
-3. Build: `npm run build` con secrets como env vars
-4. Auth: `google-github-actions/auth@v2` con service account
-5. Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes`
-6. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+3. `npm audit --audit-level=high` (continue-on-error)
+4. `npm run lint`
+5. `npm run test:run`
+6. `npm run build` con secrets como env vars
+7. Auth: `google-github-actions/auth@v2` con service account
+8. Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes`
+9. Deploy Cloud Functions: `cd functions && npm ci && firebase deploy --only functions`
+10. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
 
-**IMPORTANTE:** Firestore rules e indexes se despliegan automaticamente en cada push a main. Cloud Functions se despliegan manualmente con `firebase deploy --only functions`.
+**Todo se despliega automaticamente** en cada push a main: hosting, Firestore rules/indexes, y Cloud Functions.
 
 **IAM roles requeridos** para el service account de CI/CD:
 
