@@ -7,6 +7,7 @@ import FilterChips from '../search/FilterChips';
 import BusinessSheet from '../business/BusinessSheet';
 import NameDialog from '../auth/NameDialog';
 import SideMenu from './SideMenu';
+import { OfflineIndicator } from '../ui/OfflineIndicator';
 
 export default function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,6 +21,7 @@ export default function AppShell() {
         overflow: 'hidden',
       }}
     >
+      <OfflineIndicator />
       <SearchBar onMenuClick={() => setMenuOpen(true)} />
       <FilterChips />
       <MapView />

@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const mockUser = { uid: 'test-uid-123' };
@@ -48,7 +49,11 @@ vi.mock('../config/converters', () => ({
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <MemoryRouter>
+      <AuthProvider>{children}</AuthProvider>
+    </MemoryRouter>
+  );
 }
 
 describe('AuthContext', () => {

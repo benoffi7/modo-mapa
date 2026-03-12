@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-12
@@ -27,6 +27,9 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronomi
 | Base de datos | Cloud Firestore | 12.10 |
 | Cloud Functions | Firebase Functions v2 | 6.3 |
 | Hosting | Firebase Hosting | — |
+| Routing | react-router-dom | 7.x |
+| Error tracking | @sentry/react + @sentry/node | latest |
+| PWA | vite-plugin-pwa (Workbox) | 1.2 |
 | CI/CD | GitHub Actions | — |
 
 ---
@@ -35,10 +38,12 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronomi
 
 ```text
 main.tsx
-  └─ App.tsx
-       ├─ ThemeProvider (MUI theme)
-       ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
-       ├─ [/admin] AdminDashboard (lazy loaded)
+  └─ BrowserRouter (react-router-dom)
+       └─ App.tsx
+            ├─ ThemeProvider (MUI theme)
+            ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
+            ├─ Routes
+            ├─ [/admin/*] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
        │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups)
        │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
@@ -51,6 +56,7 @@ main.tsx
        │         └─ BackupsPanel (crear, listar, restaurar, eliminar backups Firestore)
        └─ [/*] MapProvider + APIProvider
             └─ AppShell.tsx
+                 ├─ OfflineIndicator (chip offline, PWA)
                  ├─ SearchBar (busqueda + menu hamburguesa)
                  ├─ FilterChips (tags predefinidos)
                  ├─ MapView (Google Maps + markers)
@@ -221,6 +227,9 @@ src/
 │   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios (props-driven, flagged filtrados)
 │   │   ├── FavoriteButton.tsx       # Corazon toggle (props-driven)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
+│   ├── ui/
+│   │   ├── OfflineIndicator.tsx     # Chip MUI offline (PWA)
+│   │   └── OfflineIndicator.test.tsx
 │   └── menu/
 │       ├── FavoritesList.tsx
 │       ├── CommentsList.tsx
@@ -237,9 +246,12 @@ src/
 | `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check), timestamps server-side |
 | `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
-| `vite.config.ts` | Plugin React + `__APP_VERSION__` desde package.json |
+| `vite.config.ts` | Plugin React + VitePWA + Sentry + `__APP_VERSION__` desde package.json |
+| `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend) |
+| `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |
 | `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites por userId+timestamp) |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
+| `.github/workflows/preview.yml` | CI: lint + test + build + deploy preview channel en PRs |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD -> specs -> plan -> implementar) |
 | `.env.example` | Template de variables de entorno |
 | `functions/.env` | Variables de entorno de Cloud Functions (ADMIN_EMAIL) |
@@ -606,7 +618,10 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | [#28](https://github.com/benoffi7/modo-mapa/issues/28) | feat | Modularizar componentes de estadisticas + seccion publica | [#32](https://github.com/benoffi7/modo-mapa/pull/32) | Merged | `docs/feat-modularizar-stats/` |
 | [#31](https://github.com/benoffi7/modo-mapa/issues/31) | fix | Admin login popup se cierra automaticamente | [#33](https://github.com/benoffi7/modo-mapa/pull/33) | Merged | — |
 | [#34](https://github.com/benoffi7/modo-mapa/issues/34) | feat | Gestion de backups de Firestore desde /admin | [#35](https://github.com/benoffi7/modo-mapa/pull/35) | Merged | `docs/feat-admin-backups/` |
-| [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | — |
+| [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | `docs/feat-firebase-quota-offline/` |
+| [#37](https://github.com/benoffi7/modo-mapa/issues/37) | feat | Migrar a React Router | — | Open | `docs/feat-react-router/` |
+| [#38](https://github.com/benoffi7/modo-mapa/issues/38) | feat | Preview environments para PRs | — | Open | `docs/feat-preview-environments/` |
+| [#39](https://github.com/benoffi7/modo-mapa/issues/39) | feat | Sentry error tracking | — | Open | `docs/feat-sentry/` |
 
 ---
 

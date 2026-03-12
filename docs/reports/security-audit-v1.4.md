@@ -1,24 +1,28 @@
-# Auditoria de Seguridad - Modo Mapa v1.4.0 (Re-evaluacion 2026-03-12)
+# Auditoria de Seguridad - Modo Mapa v1.5.0 (Re-evaluacion 2026-03-12)
 
 **Fecha original:** 2026-03-12
 **Fecha re-evaluacion:** 2026-03-12
 **Auditor:** Claude Opus 4.6 (agente de seguridad)
 **Alcance:** Proyecto completo (frontend, backend, infraestructura, CI/CD)
-**Version auditada:** 1.4.0
-**Tipo:** Re-evaluacion posterior a correccion de todos los hallazgos pendientes (branch `feat/audit-fixes`)
+**Version auditada:** 1.5.0
+**Tipo:** Re-evaluacion post-mejoras v1.5 (branch `feat/unified-v1.5`)
 
 ---
 
-## Re-evaluacion 2026-03-12
+## Re-evaluacion v1.5 (2026-03-12)
 
-Se verificaron **todos** los hallazgos pendientes del reporte anterior (score 9.1) leyendo
-los archivos fuente actuales en la branch `feat/audit-fixes`. Los 5 items accionables
-del consolidado anterior (B-01, B-06, N-01, N-02, A-P5) han sido **corregidos
-completamente**.
+Re-evaluacion tras implementar 4 mejoras de infraestructura en `feat/unified-v1.5`:
 
-La puntuacion sube de 9.1 a **9.8 / 10**. Los unicos pendientes restantes son de
-severidad Informativa, sin impacto en la seguridad real de la aplicacion.
-M-02 (rate limiter en memoria) fue corregido con una solucion Firestore transaccional.
+1. **React Router** (#37) — Elimina `window.location.pathname`, sin impacto de seguridad.
+2. **Preview environments** (#38) — Workflow CI para preview channels. Comparte backend
+   de produccion (Firestore, Auth, Functions). Sin riesgo adicional.
+3. **Sentry** (#39) — Error tracking con DSN condicional. Source maps subidos a Sentry
+   y eliminados del deploy (`filesToDeleteAfterUpload`). No expone mapas publicamente.
+4. **PWA** (#25) — Service Worker con Workbox. Precache de assets, runtime cache de
+   Maps tiles. No cambia modelo de seguridad (Firestore persistence ya manejaba offline).
+
+La puntuacion se mantiene en **9.8 / 10**. No se detectaron nuevos hallazgos de seguridad.
+Las mejoras de Sentry agregan observabilidad sin exponer datos sensibles.
 
 ---
 
@@ -152,12 +156,12 @@ Puntuacion general: **9.8 / 10** (anterior: 9.6)
 #### B-01: `console.error` en produccion
 
 - **Estado:** CORREGIDO
-- **Verificacion (2026-03-12):** Se revisaron las 11 instancias de `console.error` en `src/`:
+- **Verificacion (2026-03-12):** Se revisaron las instancias de `console.error` en `src/`:
   - **10 con guard `import.meta.env.DEV`:** `AuthContext.tsx` (x3), `usePaginatedQuery.ts`,
     `BusinessTags.tsx`, `FavoriteButton.tsx`, `useAsyncData.ts`, `BusinessComments.tsx`,
     `FeedbackForm.tsx`, `backupUtils.ts` (via `logError` wrapper).
-  - **1 sin guard (exento):** `ErrorBoundary.tsx` -- es un error boundary de React que debe
-    loguear siempre para diagnostico.
+  - **1 con guard DEV:** `ErrorBoundary.tsx` -- ahora solo loguea en DEV; en produccion
+    reporta via `Sentry.captureException(error)` con component stack como contexto.
 - Los dos archivos especificamente pendientes del reporte anterior ya estan corregidos:
   - `src/hooks/useAsyncData.ts:35`: `if (import.meta.env.DEV) console.error(...)` -- OK
   - `src/components/menu/FeedbackForm.tsx:29`: `if (import.meta.env.DEV) console.error(...)` -- OK
@@ -299,7 +303,7 @@ Puntuacion general: **9.8 / 10** (anterior: 9.6)
 | A06 | Vulnerable Components | OK | `npm audit --audit-level=high` en CI. Sin evidencia de vulnerabilidades conocidas. |
 | A07 | Auth Failures | OK | Firebase Auth. Triple validacion admin: frontend + rules + Cloud Functions. `email_verified` en las tres capas. |
 | A08 | Software/Data Integrity | OK | CI ejecuta lint + tests + npm audit antes del build. `continue-on-error` solo en audit (razonable). |
-| A09 | Logging/Monitoring | OK | Cloud Functions loguean abusos. DailyMetrics y AbuseAlerts activos. Emails mascarados con `maskEmail()`. `console.error` condicionados a DEV. |
+| A09 | Logging/Monitoring | OK | Cloud Functions loguean abusos. DailyMetrics y AbuseAlerts activos. Emails mascarados con `maskEmail()`. `console.error` condicionados a DEV. Sentry error tracking en produccion (frontend + Cloud Functions). |
 | A10 | SSRF | N/A | No hay proxying de URLs de usuario. |
 
 ---
@@ -352,33 +356,35 @@ Los siguientes patrones de seguridad estan correctamente implementados:
 17. **Gitignore robusto:** `.env*` con exclusion de `.env.example`. `.claude/*` excluido.
 18. **CI/CD completo:** Pipeline ejecuta `npm audit` + `npm run lint` + `npm run test:run`
     antes del build y deploy.
-19. **console.error condicionados:** 10 de 11 instancias protegidas con `import.meta.env.DEV`.
-    La unica excepcion es `ErrorBoundary.tsx` (exento por diseno).
+19. **console.error condicionados:** Todas las instancias protegidas con `import.meta.env.DEV`.
+    `ErrorBoundary.tsx` reporta via Sentry en produccion.
 20. **TextField con maxLength:** Campos de comentarios (500) y feedback (1000) limitan
     caracteres con contador visible.
 21. **Ratings create/update separados:** `ratings.ts` usa `getDoc` + `updateDoc`/`setDoc`
     condicional, preservando `createdAt` original en updates.
+22. **Sentry error tracking:** Frontend (`@sentry/react`) y Cloud Functions (`@sentry/node`)
+    reportan errores a Sentry. DSN condicional (no activo sin config). Source maps subidos
+    en CI y eliminados del deploy publico.
+23. **Preview environments seguros:** Preview channels comparten backend de produccion.
+    No deployan Firestore rules ni Cloud Functions (solo hosting). Auto-expiran en 7 dias.
+24. **PWA Service Worker:** Generado por Workbox, solo cachea assets estaticos y tiles.
+    No intercepta requests de autenticacion ni Firestore.
 
 ---
 
 ## Evaluacion Final
 
-El proyecto Modo Mapa ha alcanzado un nivel de seguridad **excelente** (9.8/10) tras la
-correccion de todos los hallazgos accionables en `feat/audit-fixes`.
+El proyecto Modo Mapa mantiene un nivel de seguridad **excelente** (9.8/10) tras las
+mejoras de infraestructura en `feat/unified-v1.5`.
 
-**Cambios respecto al reporte anterior (9.6 -> 9.8):**
+**Cambios en v1.5:**
 
-- **M-02:** Rate limiter de backups migrado de in-memory `Map` a Firestore transaccional
-  (`_rateLimits` collection). Persiste entre cold starts. Regla de seguridad bloquea
-  acceso de clientes.
-
-**Cambios anteriores (9.1 -> 9.6):**
-
-- **B-01:** `console.error` con guard `import.meta.env.DEV`.
-- **B-06:** CI/CD ejecuta lint + tests.
-- **N-01:** Validacion de input en todos los servicios.
-- **N-02:** `ratings.ts` separa create/update.
-- **A-P5:** `npm audit` en CI.
+- **Sentry:** Error tracking en frontend (ErrorBoundary + captureException) y Cloud
+  Functions (handleError + backups). Source maps eliminados del deploy publico.
+- **Preview environments:** Solo deployan hosting, no rules ni functions. Auto-expiran.
+- **PWA:** Service Worker no intercepta auth ni Firestore. Solo cachea assets y tiles.
+- **React Router:** Elimina acceso directo a `window.location`, sin impacto de seguridad.
+- **ErrorBoundary:** Ahora reporta via Sentry en produccion en vez de `console.error`.
 
 **No se detectaron nuevos hallazgos de seguridad.**
 
@@ -391,11 +397,12 @@ han sido corregidos.**
 ## Metodologia
 
 Re-evaluacion mediante lectura directa de todos los archivos fuente en la branch
-`feat/audit-fixes`:
+`feat/unified-v1.5`:
 
 - **Firebase:** `firebase.json`, `firestore.rules`, `src/config/firebase.ts`
 - **Auth:** `src/context/AuthContext.tsx`, `src/components/admin/AdminGuard.tsx`
-- **Cloud Functions:** `functions/src/admin/backups.ts`
+- **Cloud Functions:** `functions/src/admin/backups.ts`, `functions/src/index.ts`,
+  `functions/src/utils/sentry.ts`
 - **Servicios:** `src/services/comments.ts`, `src/services/favorites.ts`,
   `src/services/ratings.ts`, `src/services/tags.ts`, `src/services/feedback.ts`,
   `src/services/admin.ts`
@@ -404,10 +411,13 @@ Re-evaluacion mediante lectura directa de todos los archivos fuente en la branch
 - **Frontend:** `src/components/business/BusinessComments.tsx`,
   `src/components/business/BusinessTags.tsx`, `src/components/business/FavoriteButton.tsx`,
   `src/components/menu/FeedbackForm.tsx`, `src/components/layout/ErrorBoundary.tsx`,
-  `src/components/admin/backupUtils.ts`
-- **CI/CD:** `.github/workflows/deploy.yml`
-- **Configuracion:** `.gitignore`
+  `src/components/admin/backupUtils.ts`, `src/components/ui/OfflineIndicator.tsx`
+- **Config:** `src/config/sentry.ts`, `vite.config.ts`
+- **CI/CD:** `.github/workflows/deploy.yml`, `.github/workflows/preview.yml`
+- **Routing:** `src/main.tsx`, `src/App.tsx`
+- **Configuracion:** `.gitignore`, `.env.example`
 
 Se verifico la ausencia de patrones peligrosos (`dangerouslySetInnerHTML`, `eval`,
-`innerHTML`) confirmando 0 ocurrencias. Se contabilizaron las instancias de
-`console.error` (11 total, 10 condicionadas a DEV, 1 exento por diseno).
+`innerHTML`) confirmando 0 ocurrencias. Se verifico que source maps se eliminan del
+deploy publico (`filesToDeleteAfterUpload`). Se verifico que Sentry DSN es condicional
+(no activo sin configuracion).

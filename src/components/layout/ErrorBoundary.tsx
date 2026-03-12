@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -19,7 +20,13 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, info.componentStack);
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack ?? '' } },
+    });
+
+    if (import.meta.env.DEV) {
+      console.error('ErrorBoundary caught:', error, info.componentStack);
+    }
   }
 
   handleReset = () => {
