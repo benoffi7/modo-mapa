@@ -1,9 +1,9 @@
-# Auditoria de Arquitectura y Calidad de Codigo - Modo Mapa v1.5.0
+# Auditoria de Arquitectura y Calidad de Codigo - Modo Mapa v1.5.1
 
-**Fecha:** 2026-03-12 (re-evaluacion v1.5)
+**Fecha:** 2026-03-12 (re-evaluacion v1.5.1)
 **Alcance:** Codebase completo (frontend, backend, infra)
 **Auditor:** Claude Opus 4.6
-**Tipo:** Re-evaluacion post-mejoras v1.5 (branch `feat/unified-v1.5`)
+**Tipo:** Re-evaluacion post-mejoras v1.5.1
 
 ---
 
@@ -16,6 +16,8 @@ Se implementaron 4 mejoras de infraestructura y arquitectura:
 2. **Preview environments** (#38) — GitHub Actions workflow para previews de PRs
 3. **Sentry error tracking** (#39) — Frontend + Cloud Functions
 4. **PWA + Service Worker** (#25) — Modo offline completo con Workbox
+5. **Selective refetch** (#41) — `refetch(collectionName)` recarga 1 query en vez de 5. Optimistic rating UI.
+6. **Dark mode + Theme playground** (#43) — `ColorModeContext`, toggle en SideMenu, `/dev/theme` playground.
 
 **Puntuacion anterior:** 9.5 / 10 (SOLID: 9.1 / 10)
 **Puntuacion actual:** 9.8 / 10 (SOLID: 9.3 / 10)

@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Version:** 1.5.0
+**Version:** 1.5.1
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-12
@@ -40,9 +40,10 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronomi
 main.tsx
   └─ BrowserRouter (react-router-dom)
        └─ App.tsx
-            ├─ ThemeProvider (MUI theme)
+            ├─ ColorModeProvider (dark/light theme + persistence)
             ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
             ├─ Routes
+            ├─ [/dev/theme] ThemePlayground (lazy, DEV only)
             ├─ [/admin/*] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
        │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups)
@@ -74,7 +75,8 @@ main.tsx
                       ├─ CommentsList
                       ├─ RatingsList + ListFilters
                       ├─ FeedbackForm
-                      └─ Footer (version)
+                      ├─ Dark mode toggle (switch + icon)
+                      └─ Footer (version + Theme link in DEV)
 ```
 
 ### Capas de la arquitectura
@@ -122,7 +124,7 @@ functions/
 ### Flujo de datos
 
 1. **Datos estaticos**: `businesses.json` (40 comercios) se carga como import estatico. No hay fetch.
-2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). El hook `useBusinessData` orquesta las 5 queries en paralelo con `Promise.all` y cache client-side.
+2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). El hook `useBusinessData` orquesta las 5 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion.
 3. **Service layer**: Componentes llaman funciones de `src/services/` para operaciones CRUD. Los servicios encapsulan Firestore SDK e invalidan caches internamente.
 4. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
 5. **Estado local**: Cada seccion del menu carga sus datos al montarse y los filtra client-side con `useListFilters`.
@@ -148,6 +150,7 @@ src/
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
+│   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
 │   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
 ├── services/
 │   ├── index.ts                     # Barrel export de todas las operaciones CRUD
@@ -162,14 +165,15 @@ src/
 │   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
-│   └── index.ts                     # MUI theme (colores Google, Roboto, borderRadius 8)
+│   └── index.ts                     # MUI theme with getDesignTokens(mode) for light/dark
 ├── data/
 │   └── businesses.json              # 40 comercios
 ├── hooks/
 │   ├── useAsyncData.ts              # Hook generico para fetch async con loading/error states
 │   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
 │   ├── useBusinessData.ts           # Orquesta 5 queries del business view con Promise.all + cache
-│   ├── useBusinessDataCache.ts      # Cache client-side para datos del business view (5 min TTL)
+│   ├── useBusinessDataCache.ts      # Cache client-side para datos del business view (5 min TTL) + patchBusinessCache
+│   ├── useColorMode.ts              # Hook for dark/light mode toggle (consumes ColorModeContext)
 │   ├── useListFilters.ts            # Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento
 │   ├── usePaginatedQuery.ts         # Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
@@ -178,7 +182,8 @@ src/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   └── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatDateFull (compartidos)
 ├── pages/
-│   └── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
+│   ├── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
+│   └── ThemePlayground.tsx          # Dev-only color playground with palette generator + output
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email
@@ -295,7 +300,8 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 |------|-------------|
 | `useAsyncData<T>` | Hook generico para fetch async. Retorna `{ data, loading, error }`. Usado por todos los paneles admin via `AdminPanelWrapper`. |
 | `useBusinessData` | Orquesta 5 queries Firestore del business view con `Promise.all` + cache (5 min TTL). |
-| `useBusinessDataCache` | Cache module-level (`Map`) para datos del business view. TTL 5 min. Se invalida en cada write. |
+| `useBusinessDataCache` | Cache module-level (`Map`) para datos del business view. TTL 5 min. Se invalida en cada write. Soporta `patchBusinessCache` para updates parciales. |
+| `useColorMode` | Hook para dark/light mode. Consume `ColorModeContext`. Retorna `{ mode, toggleColorMode }`. |
 | `useBusinesses` | Filtra `businesses.json` por searchQuery + activeFilters con `useDeferredValue`. |
 | `useListFilters<T>` | Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento. Usado en FavoritesList y RatingsList. |
 | `usePaginatedQuery<T>` | Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL). Exporta `invalidateQueryCache()`. |
@@ -486,10 +492,13 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 
 - **Primary:** #1a73e8 (Google Blue)
 - **Secondary:** #ea4335 (Google Red)
-- **Texto:** #202124 (primary), #5f6368 (secondary)
+- **Light mode:** bg #ffffff, text #202124 / #5f6368
+- **Dark mode:** bg #121212, paper #1e1e1e, text #e8eaed / #9aa0a6
 - **Fuente:** Roboto
 - **Border radius:** 8px (general), 16px (chips)
 - **Estilo:** inspirado en Google Maps
+- **Toggle:** Switch en menu lateral, persiste en localStorage, respeta `prefers-color-scheme`
+- **Playground:** `/dev/theme` (solo DEV) — color pickers, palette generator, component preview, copyable output
 
 ---
 
@@ -593,6 +602,10 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Cache module-level (`Map`) con TTL de 2 min para la primera pagina de listas paginadas. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
 | **Parallel query batching** | `useBusinessData` ejecuta las 5 queries de Firestore del business view en un solo `Promise.all` para reducir latencia y facilitar cache. |
+| **Selective refetch** | `refetch(collectionName)` recarga solo la coleccion afectada (1 query) en vez de las 5. `patchBusinessCache` mergea updates parciales en cache. |
+| **Optimistic UI (rating)** | `BusinessRating` usa `pendingRating` state para mostrar estrellas inmediatamente mientras el server confirma. |
+| **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SideMenu footer. |
+| **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
 | **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatDateFull`. Reemplaza duplicados en paneles admin y converters. |
 
 ---
@@ -618,10 +631,12 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | [#28](https://github.com/benoffi7/modo-mapa/issues/28) | feat | Modularizar componentes de estadisticas + seccion publica | [#32](https://github.com/benoffi7/modo-mapa/pull/32) | Merged | `docs/feat-modularizar-stats/` |
 | [#31](https://github.com/benoffi7/modo-mapa/issues/31) | fix | Admin login popup se cierra automaticamente | [#33](https://github.com/benoffi7/modo-mapa/pull/33) | Merged | — |
 | [#34](https://github.com/benoffi7/modo-mapa/issues/34) | feat | Gestion de backups de Firestore desde /admin | [#35](https://github.com/benoffi7/modo-mapa/pull/35) | Merged | `docs/feat-admin-backups/` |
-| [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | `docs/feat-firebase-quota-offline/` |
-| [#37](https://github.com/benoffi7/modo-mapa/issues/37) | feat | Migrar a React Router | — | Open | `docs/feat-react-router/` |
-| [#38](https://github.com/benoffi7/modo-mapa/issues/38) | feat | Preview environments para PRs | — | Open | `docs/feat-preview-environments/` |
-| [#39](https://github.com/benoffi7/modo-mapa/issues/39) | feat | Sentry error tracking | — | Open | `docs/feat-sentry/` |
+| [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
+| [#37](https://github.com/benoffi7/modo-mapa/issues/37) | feat | Migrar a React Router | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
+| [#38](https://github.com/benoffi7/modo-mapa/issues/38) | feat | Preview environments para PRs | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
+| [#39](https://github.com/benoffi7/modo-mapa/issues/39) | feat | Sentry error tracking | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
+| [#41](https://github.com/benoffi7/modo-mapa/issues/41) | fix | Tags reload on any action + rating flicker | [#42](https://github.com/benoffi7/modo-mapa/pull/42) | Merged | — |
+| [#43](https://github.com/benoffi7/modo-mapa/issues/43) | feat | Dark mode + theme playground | — | Open | — |
 
 ---
 
@@ -679,7 +694,8 @@ Documentacion adicional:
   - **Feedback**: formulario con categoria (bug/sugerencia/otro) + mensaje (max 1000). Estado de exito.
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`.
   - **Agregar comercio**: link externo a Google Forms.
-- Footer con version de la app
+- Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
+- Footer con version de la app (+ link a Theme Playground en DEV)
 
 ### Dashboard Admin (/admin)
 
