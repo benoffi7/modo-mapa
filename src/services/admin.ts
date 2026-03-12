@@ -12,6 +12,7 @@ import {
   orderBy,
   limit,
 } from 'firebase/firestore';
+import type { QueryConstraint } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import {
@@ -159,7 +160,7 @@ export async function fetchUsersPanelData(maxPerCollection = 500): Promise<UserC
 // ── Daily Metrics ──────────────────────────────────────────────────────
 
 export async function fetchDailyMetrics(order: 'asc' | 'desc', maxDocs?: number): Promise<DailyMetrics[]> {
-  const constraints = [orderBy('date', order)];
+  const constraints: QueryConstraint[] = [orderBy('date', order)];
   if (maxDocs) constraints.push(limit(maxDocs));
 
   const snap = await getDocs(
