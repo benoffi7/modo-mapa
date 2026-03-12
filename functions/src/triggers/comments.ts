@@ -1,4 +1,4 @@
-import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
@@ -48,6 +48,37 @@ export const onCommentCreated = onDocumentCreated(
     // 3. Counters
     await incrementCounter(db, 'comments', 1);
     await trackWrite(db, 'comments');
+  },
+);
+
+export const onCommentUpdated = onDocumentUpdated(
+  'comments/{commentId}',
+  async (event) => {
+    const db = getFirestore();
+    const after = event.data?.after;
+    const before = event.data?.before;
+    if (!after || !before) return;
+
+    const afterData = after.data();
+    const beforeData = before.data();
+
+    // Only re-moderate if text changed (ignore likeCount updates from Cloud Functions)
+    if (afterData.text !== beforeData.text) {
+      const flagged = await checkModeration(db, afterData.text as string);
+      if (flagged && !afterData.flagged) {
+        await after.ref.update({ flagged: true });
+        await logAbuse(db, {
+          userId: afterData.userId as string,
+          type: 'flagged',
+          collection: 'comments',
+          detail: `Flagged edited text: "${(afterData.text as string).slice(0, 100)}"`,
+        });
+      }
+      // If text is now clean but was flagged, remove flag
+      if (!flagged && afterData.flagged) {
+        await after.ref.update({ flagged: false });
+      }
+    }
   },
 );
 

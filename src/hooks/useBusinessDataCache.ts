@@ -6,6 +6,7 @@ export interface BusinessCacheEntry {
   comments: Comment[];
   userTags: UserTag[];
   customTags: CustomTag[];
+  userCommentLikes: Set<string>;
   timestamp: number;
 }
 

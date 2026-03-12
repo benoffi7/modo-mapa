@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Version:** 1.5.1
+**Version:** 2.0.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-12
@@ -63,10 +63,11 @@ main.tsx
                  ├─ MapView (Google Maps + markers)
                  ├─ LocationFAB (geolocalizacion)
                  ├─ BusinessSheet (bottom sheet con detalle)
-                 │    ├─ BusinessHeader (nombre, direccion, favorito, direcciones)
+                 │    ├─ BusinessHeader (nombre, direccion, favorito, share, direcciones)
                  │    ├─ BusinessRating (estrellas promedio + calificar)
                  │    ├─ BusinessTags (tags predefinidos + custom)
-                 │    └─ BusinessComments (lista + formulario + eliminar)
+                 │    ├─ BusinessComments (lista + formulario + editar + undo delete + likes + sorting)
+                 │    └─ ShareButton (Web Share API + clipboard fallback)
                  ├─ NameDialog (nombre de usuario, primera visita)
                  └─ SideMenu (drawer lateral)
                       ├─ Header (avatar + nombre + editar)
@@ -102,7 +103,8 @@ functions/
 │   ├── admin/
 │   │   └── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
 │   ├── triggers/
-│   │   ├── comments.ts       → rate limit + moderacion + counters
+│   │   ├── comments.ts       → rate limit + moderacion + counters + onUpdate re-moderation
+│   │   ├── commentLikes.ts   → likeCount increment/decrement + rate limit + counters
 │   │   ├── customTags.ts     → rate limit + moderacion + counters
 │   │   ├── feedback.ts       → rate limit + moderacion + counters
 │   │   ├── ratings.ts        → counters (create/update/delete)
@@ -144,8 +146,8 @@ src/
 ├── index.css                        # Estilos globales minimos
 ├── config/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
-│   ├── collections.ts               # Nombres de colecciones Firestore centralizados
-│   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback)
+│   ├── collections.ts               # Nombres de colecciones Firestore centralizados (incl. COMMENT_LIKES)
+│   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback, commentLike)
 │   ├── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
 ├── context/
@@ -156,12 +158,12 @@ src/
 │   ├── index.ts                     # Barrel export de todas las operaciones CRUD
 │   ├── favorites.ts                 # addFavorite, removeFavorite
 │   ├── ratings.ts                   # upsertRating
-│   ├── comments.ts                  # addComment, deleteComment
+│   ├── comments.ts                  # addComment, editComment, deleteComment, likeComment, unlikeComment
 │   ├── tags.ts                      # addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag
 │   ├── feedback.ts                  # sendFeedback
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CustomTag, UserTag, Favorite, Feedback
+│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback
 │   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
@@ -229,8 +231,9 @@ src/
 │   │   ├── BusinessTags.tsx         # Tags predefinidos (voto) + custom tags (orquestacion, props-driven)
 │   │   ├── CustomTagDialog.tsx      # Dialog crear/editar custom tag (memoizado)
 │   │   ├── DeleteTagDialog.tsx      # Dialog confirmacion eliminacion tag (memoizado)
-│   │   ├── BusinessComments.tsx     # Comentarios + formulario + eliminar propios (props-driven, flagged filtrados)
+│   │   ├── BusinessComments.tsx     # Comentarios + formulario + editar + undo delete + likes + sorting (props-driven)
 │   │   ├── FavoriteButton.tsx       # Corazon toggle (props-driven)
+│   │   ├── ShareButton.tsx          # Compartir comercio (Web Share API + clipboard fallback)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
 │   ├── ui/
 │   │   ├── OfflineIndicator.tsx     # Chip MUI offline (PWA)
@@ -277,7 +280,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 |--------|-----------|-------------|
 | `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection` |
 | `ratings.ts` | `ratings` | `upsertRating`, `getRatingsCollection` |
-| `comments.ts` | `comments` | `addComment`, `deleteComment`, `getCommentsCollection` |
+| `comments.ts` | `comments`, `commentLikes` | `addComment`, `editComment`, `deleteComment`, `likeComment`, `unlikeComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
 | `feedback.ts` | `feedback` | `sendFeedback` |
 | `admin.ts` | Todas (read-only) | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs` |
@@ -299,7 +302,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | Hook | Descripcion |
 |------|-------------|
 | `useAsyncData<T>` | Hook generico para fetch async. Retorna `{ data, loading, error }`. Usado por todos los paneles admin via `AdminPanelWrapper`. |
-| `useBusinessData` | Orquesta 5 queries Firestore del business view con `Promise.all` + cache (5 min TTL). |
+| `useBusinessData` | Orquesta 5 queries Firestore del business view con `Promise.all` + cache (5 min TTL). Tambien fetchea user likes por comentario. |
 | `useBusinessDataCache` | Cache module-level (`Map`) para datos del business view. TTL 5 min. Se invalida en cada write. Soporta `patchBusinessCache` para updates parciales. |
 | `useColorMode` | Hook para dark/light mode. Consume `ColorModeContext`. Retorna `{ mode, toggleColorMode }`. |
 | `useBusinesses` | Filtra `businesses.json` por searchQuery + activeFilters con `useDeferredValue`. |
@@ -362,7 +365,8 @@ return (
 | `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
 | `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
 | `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
-| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, flagged? | Read auth; create owner; delete owner |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged? | Read auth; create owner; update owner (text+updatedAt only); delete owner |
+| `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
 | `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/otro), createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
@@ -398,7 +402,7 @@ CATEGORY_LABELS: restaurant→Restaurante, cafe→Cafe, bakery→Panaderia, bar�
                  fastfood→Comida rapida, icecream→Heladeria, pizza→Pizzeria
 
 // Admin types
-interface AdminCounters { comments, ratings, favorites, feedback, users, customTags, userTags, dailyReads, dailyWrites, dailyDeletes }
+interface AdminCounters { comments, ratings, favorites, feedback, users, customTags, userTags, commentLikes, dailyReads, dailyWrites, dailyDeletes }
 interface DailyMetrics { date, ratingDistribution, topFavorited, topCommented, topRated, topTags, dailyReads/Writes/Deletes, byCollection, activeUsers }
 interface AbuseLog { id, userId, type, collection, detail, timestamp }
 ```
@@ -572,10 +576,12 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 |--------|-------------|
 | **Auth anonima + Google Sign-In** | Usuarios normales se autentican anonimamente. Admin usa Google Sign-In solo en `/admin`. |
 | **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
-| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. Garantiza unicidad sin queries extra. |
+| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. Garantiza unicidad sin queries extra. |
 | **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. |
 | **Datos estaticos + dinamicos** | Comercios en JSON local, interacciones en Firestore. Se cruzan por `businessId` client-side. |
-| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. |
+| **Undo delete** | Comentarios se eliminan con undo (5s timer + Snackbar). Usado en BusinessComments y CommentsList. |
+| **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
 | **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (Firestore-backed, 5/min/user). |
 | **Moderacion de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). |
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
@@ -622,7 +628,7 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | [#11](https://github.com/benoffi7/modo-mapa/issues/11) | feat | Feedback, Ratings, Agregar comercio, Version, Filtros | [#12](https://github.com/benoffi7/modo-mapa/pull/12) | Merged | `docs/feat-menu-feedback-ratings-version/` |
 | [#13](https://github.com/benoffi7/modo-mapa/issues/13) | fix | customTags read rule demasiado restrictiva | [#14](https://github.com/benoffi7/modo-mapa/pull/14) | Merged | — |
 | [#15](https://github.com/benoffi7/modo-mapa/issues/15) | security | Auditoria de seguridad — hallazgos iniciales | [#16](https://github.com/benoffi7/modo-mapa/pull/16) | Merged | — |
-| [#17](https://github.com/benoffi7/modo-mapa/issues/17) | feat | Agregar edicion de comentarios | — | Open | — |
+| [#17](https://github.com/benoffi7/modo-mapa/issues/17) | feat | Agregar edicion de comentarios | — | Closed (via #45) | — |
 | — | security | Resolver hallazgos pendientes: App Check, timestamps, converters | [#18](https://github.com/benoffi7/modo-mapa/pull/18) | Merged | — |
 | — | chore | Resolver mejoras tecnicas: debounce, tests, paginacion, husky, bundle analysis, strictTypes | [#20](https://github.com/benoffi7/modo-mapa/pull/20) | Merged | — |
 | [#19](https://github.com/benoffi7/modo-mapa/issues/19) | fix | Fix CSP policy, tags auth guard, lint errors | [#22](https://github.com/benoffi7/modo-mapa/pull/22) | Merged | `docs/fix-csp-and-tags-permissions/` |
@@ -637,6 +643,8 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | [#39](https://github.com/benoffi7/modo-mapa/issues/39) | feat | Sentry error tracking | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
 | [#41](https://github.com/benoffi7/modo-mapa/issues/41) | fix | Tags reload on any action + rating flicker | [#42](https://github.com/benoffi7/modo-mapa/pull/42) | Merged | — |
 | [#43](https://github.com/benoffi7/modo-mapa/issues/43) | feat | Dark mode + theme playground | — | Open | — |
+| [#45](https://github.com/benoffi7/modo-mapa/issues/45) | feat | Comentarios 2.0: editar, undo delete, likes, sorting | — | Open | `docs/feat-comments-2.0/` |
+| [#46](https://github.com/benoffi7/modo-mapa/issues/46) | feat | Compartir comercio (share + deep link) | — | Open | `docs/feat-comments-2.0/` |
 
 ---
 
@@ -680,7 +688,8 @@ Documentacion adicional:
 - Rating: promedio + estrellas del usuario (1-5)
 - Tags predefinidos: vote count + toggle del usuario
 - Tags custom: crear, editar, eliminar (privados por usuario)
-- Comentarios: lista + formulario + eliminar propios (flaggeados ocultos)
+- Comentarios: lista + formulario + editar propios + undo delete + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)"
+- Compartir: boton share (Web Share API con fallback a clipboard). Deep link via `?business={id}`
 - Datos cargados en paralelo (`Promise.all`) con cache client-side (5 min TTL)
 - Escrituras via service layer (`src/services/`)
 
@@ -689,7 +698,7 @@ Documentacion adicional:
 - Header con avatar, nombre, boton editar nombre
 - Secciones:
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio.
-  - **Comentarios**: lista con texto truncado. Eliminar con confirmacion. Click navega al comercio.
+  - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio.
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio.
   - **Feedback**: formulario con categoria (bug/sugerencia/otro) + mensaje (max 1000). Estado de exito.
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`.
@@ -730,7 +739,7 @@ Todas las funciones callable:
 - Validan input (backupId con regex `^[\w.-]+$`)
 - Logging con email enmascarado
 
-**Rate limiting server-side (triggers):** comments (20/dia), customTags (10/business), feedback (5/dia).
+**Rate limiting server-side (triggers):** comments (20/dia), commentLikes (50/dia), customTags (10/business), feedback (5/dia).
 
 **Moderacion de contenido:** banned words con normalizacion de acentos, word boundary matching.
 

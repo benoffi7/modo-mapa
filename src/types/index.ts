@@ -38,7 +38,15 @@ export interface Comment {
   businessId: string;
   text: string;
   createdAt: Date;
+  updatedAt?: Date;
+  likeCount: number;
   flagged?: boolean;
+}
+
+export interface CommentLike {
+  userId: string;
+  commentId: string;
+  createdAt: Date;
 }
 
 export interface UserTag {

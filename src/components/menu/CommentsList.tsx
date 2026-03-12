@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import {
   Box,
   List,
@@ -6,12 +6,9 @@ import {
   ListItemText,
   IconButton,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -30,7 +27,10 @@ interface Props {
 export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useMapContext();
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Undo delete
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const collectionRef = useMemo(() => getCommentsCollection(), []);
 
@@ -38,20 +38,36 @@ export default function CommentsList({ onNavigate }: Props) {
     usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
 
   const comments = useMemo(() => {
-    return rawItems.map((data) => ({
-      id: data.id,
-      businessId: data.businessId,
-      business: allBusinesses.find((b) => b.id === data.businessId) || null,
-      text: data.text,
-      createdAt: data.createdAt,
-    }));
-  }, [rawItems]);
+    return rawItems
+      .filter((data) => data.id !== pendingDeleteId)
+      .map((data) => ({
+        id: data.id,
+        businessId: data.businessId,
+        business: allBusinesses.find((b) => b.id === data.businessId) || null,
+        text: data.text,
+        createdAt: data.createdAt,
+      }));
+  }, [rawItems, pendingDeleteId]);
 
-  const handleDelete = async () => {
-    if (!confirmDeleteId || !user) return;
-    await deleteComment(confirmDeleteId, user.uid);
-    setConfirmDeleteId(null);
-    reload();
+  const handleDelete = (commentId: string) => {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+
+    setPendingDeleteId(commentId);
+    deleteTimerRef.current = setTimeout(async () => {
+      if (!user) return;
+      try {
+        await deleteComment(commentId, user.uid);
+        reload();
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('Error deleting comment:', err);
+      }
+      setPendingDeleteId(null);
+    }, 5000);
+  };
+
+  const handleUndoDelete = () => {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    setPendingDeleteId(null);
   };
 
   const handleSelectBusiness = (business: Business | null) => {
@@ -85,7 +101,7 @@ export default function CommentsList({ onNavigate }: Props) {
     );
   }
 
-  if (comments.length === 0) {
+  if (comments.length === 0 && !pendingDeleteId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
@@ -124,9 +140,10 @@ export default function CommentsList({ onNavigate }: Props) {
               edge="end"
               onClick={(e) => {
                 e.stopPropagation();
-                setConfirmDeleteId(comment.id);
+                handleDelete(comment.id);
               }}
               sx={{ color: '#5f6368' }}
+              aria-label="Eliminar comentario"
             >
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
@@ -143,18 +160,15 @@ export default function CommentsList({ onNavigate }: Props) {
         </Box>
       )}
 
-      <Dialog open={Boolean(confirmDeleteId)} onClose={() => setConfirmDeleteId(null)}>
-        <DialogTitle>Eliminar comentario</DialogTitle>
-        <DialogContent>
-          <Typography>¿Eliminar este comentario?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteId(null)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
+      <Snackbar
+        open={pendingDeleteId !== null}
+        message="Comentario eliminado"
+        action={
+          <Button color="primary" size="small" onClick={handleUndoDelete}>
+            Deshacer
           </Button>
-        </DialogActions>
-      </Dialog>
+        }
+      />
     </>
   );
 }
