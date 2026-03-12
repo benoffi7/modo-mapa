@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions/v2';
 import { v1 } from '@google-cloud/firestore';
 import { Storage } from '@google-cloud/storage';
 
@@ -23,45 +24,63 @@ export const createBackup = onCall({
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const outputUri = `${BACKUP_PREFIX}${timestamp}`;
 
-  const [operation] = await client.exportDocuments({
-    name: PROJECT_DB,
-    outputUriPrefix: outputUri,
-  });
+  logger.info('Creating backup', { outputUri, user: request.auth?.token.email });
 
-  const [response] = await operation.promise();
+  try {
+    const [operation] = await client.exportDocuments({
+      name: PROJECT_DB,
+      outputUriPrefix: outputUri,
+    });
 
-  return {
-    id: timestamp,
-    outputUri: response.outputUriPrefix ?? outputUri,
-  };
+    const [response] = await operation.promise();
+
+    logger.info('Backup created successfully', { outputUri: response.outputUriPrefix });
+
+    return {
+      id: timestamp,
+      outputUri: response.outputUriPrefix ?? outputUri,
+    };
+  } catch (err) {
+    logger.error('Failed to create backup', { error: String(err), outputUri });
+    throw new HttpsError('internal', 'Error al crear el backup. Verifica permisos IAM del service account.');
+  }
 });
 
 export const listBackups = onCall(async (request) => {
   verifyAdmin(request.auth?.token.email);
 
-  const storage = new Storage();
-  const bucket = storage.bucket(BUCKET_NAME);
+  logger.info('Listing backups', { user: request.auth?.token.email });
 
-  const [, , apiResponse] = await bucket.getFiles({
-    prefix: 'backups/',
-    delimiter: '/',
-    autoPaginate: false,
-  });
+  try {
+    const storage = new Storage();
+    const bucket = storage.bucket(BUCKET_NAME);
 
-  const prefixes: string[] = (apiResponse as { prefixes?: string[] }).prefixes ?? [];
+    const [, , apiResponse] = await bucket.getFiles({
+      prefix: 'backups/',
+      delimiter: '/',
+      autoPaginate: false,
+    });
 
-  const backups = prefixes
-    .map((p: string) => {
-      const id = p.replace('backups/', '').replace(/\/$/, '');
-      return {
-        id,
-        uri: `${BACKUP_PREFIX}${id}`,
-        createdAt: id.replace(/T/, ' ').replace(/-(\d{2})-(\d{2})-(\d+)Z/, ':$1:$2.$3Z'),
-      };
-    })
-    .sort((a, b) => b.id.localeCompare(a.id));
+    const prefixes: string[] = (apiResponse as { prefixes?: string[] }).prefixes ?? [];
 
-  return { backups };
+    const backups = prefixes
+      .map((p: string) => {
+        const id = p.replace('backups/', '').replace(/\/$/, '');
+        return {
+          id,
+          uri: `${BACKUP_PREFIX}${id}`,
+          createdAt: id.replace(/T/, ' ').replace(/-(\d{2})-(\d{2})-(\d+)Z/, ':$1:$2.$3Z'),
+        };
+      })
+      .sort((a, b) => b.id.localeCompare(a.id));
+
+    logger.info('Backups listed', { count: backups.length });
+
+    return { backups };
+  } catch (err) {
+    logger.error('Failed to list backups', { error: String(err) });
+    throw new HttpsError('internal', 'Error al listar backups. Verifica permisos de Storage.');
+  }
 });
 
 export const restoreBackup = onCall({
@@ -75,13 +94,22 @@ export const restoreBackup = onCall({
     throw new HttpsError('invalid-argument', 'URI de backup invalido');
   }
 
-  const client = new v1.FirestoreAdminClient();
-  const [operation] = await client.importDocuments({
-    name: PROJECT_DB,
-    inputUriPrefix: backupUri,
-  });
+  logger.warn('Restoring backup', { backupUri, user: request.auth?.token.email });
 
-  await operation.promise();
+  try {
+    const client = new v1.FirestoreAdminClient();
+    const [operation] = await client.importDocuments({
+      name: PROJECT_DB,
+      inputUriPrefix: backupUri,
+    });
 
-  return { success: true };
+    await operation.promise();
+
+    logger.info('Backup restored successfully', { backupUri });
+
+    return { success: true };
+  } catch (err) {
+    logger.error('Failed to restore backup', { error: String(err), backupUri });
+    throw new HttpsError('internal', 'Error al restaurar el backup. Verifica permisos IAM del service account.');
+  }
 });

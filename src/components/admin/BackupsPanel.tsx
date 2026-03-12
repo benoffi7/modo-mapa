@@ -59,10 +59,19 @@ export default function BackupsPanel() {
 
   const fetchBackups = useCallback(async () => {
     try {
+      setError(null);
       const result = await listBackupsFn();
       setBackups(result.data.backups);
     } catch (err) {
-      setError(`Error cargando backups: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('BackupsPanel: error listing backups', err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('internal') || message.includes('INTERNAL')) {
+        setError('No se pudo conectar con el servicio de backups. Verificá que las Cloud Functions estén desplegadas.');
+      } else if (message.includes('permission-denied')) {
+        setError('No tenés permisos para ver los backups.');
+      } else {
+        setError(`Error cargando backups: ${message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +91,13 @@ export default function BackupsPanel() {
       setLoading(true);
       await fetchBackups();
     } catch (err) {
-      setError(`Error creando backup: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('BackupsPanel: error creating backup', err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('internal') || message.includes('INTERNAL')) {
+        setError('Error al crear el backup. Verificá que las Cloud Functions estén desplegadas y que el service account tenga permisos de export.');
+      } else {
+        setError(`Error creando backup: ${message}`);
+      }
     } finally {
       setOperating(false);
     }
@@ -96,9 +111,15 @@ export default function BackupsPanel() {
     setSuccess(null);
     try {
       await restoreBackupFn({ backupUri: confirmRestore.uri });
-      setSuccess(`Backup ${formatDate(confirmRestore.createdAt)} restaurado exitosamente.`);
+      setSuccess(`Backup del ${formatDate(confirmRestore.createdAt)} restaurado exitosamente.`);
     } catch (err) {
-      setError(`Error restaurando backup: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('BackupsPanel: error restoring backup', err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('internal') || message.includes('INTERNAL')) {
+        setError('Error al restaurar el backup. Verificá que el service account tenga permisos de import.');
+      } else {
+        setError(`Error restaurando backup: ${message}`);
+      }
     } finally {
       setOperating(false);
     }
