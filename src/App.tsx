@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -23,33 +24,31 @@ function AdminFallback() {
 }
 
 function App() {
-  const isAdmin = window.location.pathname.startsWith('/admin');
-
-  if (isAdmin) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <ErrorBoundary>
-          <AuthProvider>
-            <Suspense fallback={<AdminFallback />}>
-              <AdminDashboard />
-            </Suspense>
-          </AuthProvider>
-        </ErrorBoundary>
-      </ThemeProvider>
-    );
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <ErrorBoundary>
         <AuthProvider>
-          <MapProvider>
-            <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-              <AppShell />
-            </APIProvider>
-          </MapProvider>
+          <Routes>
+            <Route
+              path="/admin/*"
+              element={
+                <Suspense fallback={<AdminFallback />}>
+                  <AdminDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                <MapProvider>
+                  <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                    <AppShell />
+                  </APIProvider>
+                </MapProvider>
+              }
+            />
+          </Routes>
         </AuthProvider>
       </ErrorBoundary>
     </ThemeProvider>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   signInAnonymously,
   onAuthStateChanged,
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [displayName, setDisplayNameState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setDisplayNameState(userDoc.data().displayName || null);
         }
       } else {
-        const isAdminRoute = window.location.pathname.startsWith('/admin');
+        const isAdminRoute = location.pathname.startsWith('/admin');
         if (isAdminRoute) {
           setUser(null);
         } else {
@@ -62,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     });
     return unsubscribe;
-  }, []);
+  }, [location.pathname]);
 
   const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
