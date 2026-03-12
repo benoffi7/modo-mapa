@@ -32,7 +32,7 @@ export function useAsyncData<T>(fetcher: () => Promise<T>): UseAsyncDataReturn<T
       })
       .catch((err) => {
         if (ignore) return;
-        console.error('useAsyncData error:', err);
+        if (import.meta.env.DEV) console.error('useAsyncData error:', err);
         setError(true);
         setLoading(false);
       });

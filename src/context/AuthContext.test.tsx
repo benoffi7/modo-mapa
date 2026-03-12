@@ -8,6 +8,7 @@ let authStateCallback: ((user: unknown) => void) | null = null;
 const mockSignInAnonymously = vi.fn();
 const mockGetDoc = vi.fn();
 const mockSetDoc = vi.fn();
+const mockUpdateDoc = vi.fn();
 
 vi.mock('firebase/auth', () => ({
   signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args),
@@ -27,6 +28,7 @@ vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => mockDocRef),
   getDoc: (...args: unknown[]) => mockGetDoc(...args),
   setDoc: (...args: unknown[]) => mockSetDoc(...args),
+  updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
   getFirestore: vi.fn(),
   connectFirestoreEmulator: vi.fn(),
   serverTimestamp: () => 'server-timestamp',
@@ -55,6 +57,7 @@ describe('AuthContext', () => {
     authStateCallback = null;
     mockGetDoc.mockResolvedValue({ exists: () => false });
     mockSetDoc.mockResolvedValue(undefined);
+    mockUpdateDoc.mockResolvedValue(undefined);
     mockSignInAnonymously.mockResolvedValue({ user: mockUser });
   });
 
@@ -126,7 +129,8 @@ describe('AuthContext', () => {
   });
 
   describe('setDisplayName', () => {
-    it('trims and saves name to Firestore', async () => {
+    it('creates new user doc with createdAt when doc does not exist', async () => {
+      mockGetDoc.mockResolvedValue({ exists: () => false });
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
@@ -140,8 +144,31 @@ describe('AuthContext', () => {
       expect(mockSetDoc).toHaveBeenCalledWith(
         mockDocRef,
         { displayName: 'María', createdAt: 'server-timestamp' },
-        { merge: true },
       );
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
+      expect(result.current.displayName).toBe('María');
+    });
+
+    it('updates existing user doc without overwriting createdAt', async () => {
+      mockGetDoc.mockResolvedValue({
+        exists: () => true,
+        data: () => ({ displayName: 'Old Name' }),
+      });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.setDisplayName('  María  ');
+      });
+
+      expect(mockUpdateDoc).toHaveBeenCalledWith(
+        mockDocRef,
+        { displayName: 'María' },
+      );
+      expect(mockSetDoc).not.toHaveBeenCalled();
       expect(result.current.displayName).toBe('María');
     });
 
@@ -172,6 +199,7 @@ describe('AuthContext', () => {
       });
 
       expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
     });
 
     it('does nothing when user is null', async () => {
@@ -182,6 +210,7 @@ describe('AuthContext', () => {
       });
 
       expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
     });
   });
 });

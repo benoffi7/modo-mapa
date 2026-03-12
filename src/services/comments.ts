@@ -12,6 +12,15 @@ export async function addComment(
   businessId: string,
   text: string,
 ): Promise<void> {
+  const trimmedText = text.trim();
+  const trimmedName = userName.trim();
+  if (!trimmedText || trimmedText.length > 500) {
+    throw new Error('Comment text must be 1-500 characters');
+  }
+  if (!trimmedName || trimmedName.length > 30) {
+    throw new Error('User name must be 1-30 characters');
+  }
+
   await addDoc(collection(db, COLLECTIONS.COMMENTS), {
     userId,
     userName,

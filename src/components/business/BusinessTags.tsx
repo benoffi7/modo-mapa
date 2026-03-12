@@ -1,17 +1,9 @@
-import { useState, useMemo, memo } from 'react';
-import {
-  Box,
-  Chip,
-  Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Menu,
-  MenuItem,
-} from '@mui/material';
+import { useState, useMemo, memo, useCallback } from 'react';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
@@ -21,6 +13,8 @@ import { useAuth } from '../../context/AuthContext';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { PREDEFINED_TAGS } from '../../types';
 import type { CustomTag, UserTag } from '../../types';
+import CustomTagDialog from './CustomTagDialog';
+import DeleteTagDialog from './DeleteTagDialog';
 
 interface Props {
   businessId: string;
@@ -37,21 +31,17 @@ interface TagCount {
   userAdded: boolean;
 }
 
+const MAX_CUSTOM_TAGS = 10;
+
 export default memo(function BusinessTags({ businessId, seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
   const { user } = useAuth();
 
-  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [dialogValue, setDialogValue] = useState('');
-
-  // Context menu state
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [menuTag, setMenuTag] = useState<CustomTag | null>(null);
-
-  // Delete confirmation
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-
   const [pendingTagId, setPendingTagId] = useState<string | null>(null);
 
   const tagCounts = useMemo<TagCount[]>(() => {
@@ -78,7 +68,6 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
   const handleToggleTag = async (tagId: string) => {
     if (!user) return;
     setPendingTagId(tagId);
-
     const existing = tagCounts.find((t) => t.tagId === tagId);
     try {
       if (existing?.userAdded) {
@@ -93,7 +82,14 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     setPendingTagId(null);
   };
 
-  // Custom tag handlers
+  // ── Dialog handlers ───────────────────────────────────────────────────
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogOpen(false);
+    setEditingTag(null);
+    setDialogValue('');
+  }, []);
+
   const handleOpenCreateDialog = () => {
     setEditingTag(null);
     setDialogValue('');
@@ -109,15 +105,7 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingTag(null);
-    setDialogValue('');
-  };
-
-  const MAX_CUSTOM_TAGS = 10;
-
-  const handleSaveCustomTag = async () => {
+  const handleSaveCustomTag = useCallback(async () => {
     if (!user) return;
     const label = dialogValue.trim();
     if (!label || label.length > 30) return;
@@ -130,20 +118,20 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     }
     handleCloseDialog();
     onTagsChange();
-  };
+  }, [user, dialogValue, editingTag, customTags.length, businessId, onTagsChange, handleCloseDialog]);
 
   const handleOpenDeleteConfirm = () => {
     setMenuAnchor(null);
     setConfirmDeleteOpen(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!menuTag) return;
     await deleteCustomTag(menuTag.id);
     setConfirmDeleteOpen(false);
     setMenuTag(null);
     onTagsChange();
-  };
+  }, [menuTag, onTagsChange]);
 
   const handleCustomTagClick = (event: React.MouseEvent<HTMLElement>, tag: CustomTag) => {
     setMenuAnchor(event.currentTarget);
@@ -158,7 +146,6 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
         Etiquetas
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-        {/* Predefined tags */}
         {PREDEFINED_TAGS.map((tag) => {
           const tagData = tagCounts.find((t) => t.tagId === tag.id);
           const isSeed = seedTags.includes(tag.id);
@@ -178,14 +165,11 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
               disabled={pendingTagId === tag.id}
               variant={isSeed || userAdded ? 'filled' : 'outlined'}
               color={userAdded ? 'primary' : 'default'}
-              sx={{
-                opacity: isVisible ? 1 : 0.6,
-              }}
+              sx={{ opacity: isVisible ? 1 : 0.6 }}
             />
           );
         })}
 
-        {/* Custom tags */}
         {customTags.map((tag) => (
           <Chip
             key={tag.id}
@@ -198,7 +182,6 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
           />
         ))}
 
-        {/* Add custom tag button */}
         {user && customTags.length < MAX_CUSTOM_TAGS && (
           <Chip
             label="Agregar"
@@ -211,14 +194,10 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
         )}
       </Box>
 
-      {/* Context menu for custom tags */}
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
-        onClose={() => {
-          setMenuAnchor(null);
-          setMenuTag(null);
-        }}
+        onClose={() => { setMenuAnchor(null); setMenuTag(null); }}
       >
         <MenuItem onClick={handleOpenEditDialog}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
@@ -230,56 +209,21 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
         </MenuItem>
       </Menu>
 
-      {/* Create/Edit dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>{editingTag ? 'Editar etiqueta' : 'Agregar etiqueta'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            size="small"
-            placeholder="Ej: Tiene estacionamiento"
-            value={dialogValue}
-            onChange={(e) => setDialogValue(e.target.value.slice(0, 30))}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSaveCustomTag();
-              }
-            }}
-            helperText={`${dialogValue.length}/30`}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button
-            onClick={handleSaveCustomTag}
-            variant="contained"
-            disabled={!dialogValue.trim()}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <CustomTagDialog
+        open={dialogOpen}
+        isEditing={editingTag !== null}
+        value={dialogValue}
+        onChange={setDialogValue}
+        onSave={handleSaveCustomTag}
+        onClose={handleCloseDialog}
+      />
 
-      {/* Delete confirmation dialog */}
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-        <DialogTitle>Eliminar etiqueta</DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Eliminar etiqueta &ldquo;{menuTag?.label}&rdquo;?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setConfirmDeleteOpen(false); setMenuTag(null); }}>
-            Cancelar
-          </Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteTagDialog
+        open={confirmDeleteOpen}
+        tagLabel={menuTag?.label}
+        onConfirm={handleDelete}
+        onClose={() => { setConfirmDeleteOpen(false); setMenuTag(null); }}
+      />
     </Box>
   );
 });

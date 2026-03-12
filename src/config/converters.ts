@@ -4,13 +4,7 @@ import type {
   SnapshotOptions,
 } from 'firebase/firestore';
 import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory } from '../types';
-
-function toDate(field: unknown): Date {
-  if (field && typeof field === 'object' && 'toDate' in field) {
-    return (field as { toDate: () => Date }).toDate();
-  }
-  return new Date();
-}
+import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
   toFirestore(profile: UserProfile) {
