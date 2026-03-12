@@ -1,66 +1,75 @@
 import { createTheme } from '@mui/material/styles';
+import type { ThemeOptions } from '@mui/material/styles';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1a73e8',
-      light: '#4791db',
-      dark: '#115293',
+export function getDesignTokens(mode: 'light' | 'dark'): ThemeOptions {
+  const isLight = mode === 'light';
+
+  return {
+    palette: {
+      mode,
+      primary: {
+        main: '#1a73e8',
+        light: '#4791db',
+        dark: '#115293',
+      },
+      secondary: {
+        main: '#ea4335',
+      },
+      background: {
+        default: isLight ? '#ffffff' : '#121212',
+        paper: isLight ? '#ffffff' : '#1e1e1e',
+      },
+      text: {
+        primary: isLight ? '#202124' : '#e8eaed',
+        secondary: isLight ? '#5f6368' : '#9aa0a6',
+      },
     },
-    secondary: {
-      main: '#ea4335',
+    typography: {
+      fontFamily: '"Roboto", "Arial", sans-serif',
+      h6: {
+        fontSize: '1.1rem',
+        fontWeight: 500,
+      },
+      body1: {
+        fontSize: '0.95rem',
+      },
+      body2: {
+        fontSize: '0.85rem',
+      },
     },
-    background: {
-      default: '#ffffff',
-      paper: '#ffffff',
+    shape: {
+      borderRadius: 8,
     },
-    text: {
-      primary: '#202124',
-      secondary: '#5f6368',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Arial", sans-serif',
-    h6: {
-      fontSize: '1.1rem',
-      fontWeight: 500,
-    },
-    body1: {
-      fontSize: '0.95rem',
-    },
-    body2: {
-      fontSize: '0.85rem',
-      color: '#5f6368',
-    },
-  },
-  shape: {
-    borderRadius: 8,
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            boxShadow: isLight
+              ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)'
+              : '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)',
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            borderRadius: 16,
+            fontWeight: 500,
+            fontSize: '0.8rem',
+          },
+        },
+      },
+      MuiFab: {
+        styleOverrides: {
+          root: {
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          },
         },
       },
     },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          fontWeight: 500,
-          fontSize: '0.8rem',
-        },
-      },
-    },
-    MuiFab: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-        },
-      },
-    },
-  },
-});
+  };
+}
+
+const theme = createTheme(getDesignTokens('light'));
 
 export default theme;
