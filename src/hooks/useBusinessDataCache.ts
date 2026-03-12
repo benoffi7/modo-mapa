@@ -30,3 +30,12 @@ export function setBusinessCache(businessId: string, data: Omit<BusinessCacheEnt
 export function invalidateBusinessCache(businessId: string): void {
   cache.delete(businessId);
 }
+
+export function patchBusinessCache(
+  businessId: string,
+  patch: Partial<Omit<BusinessCacheEntry, 'timestamp'>>,
+): void {
+  const entry = cache.get(businessId);
+  if (!entry) return;
+  cache.set(businessId, { ...entry, ...patch, timestamp: Date.now() });
+}
