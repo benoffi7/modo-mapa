@@ -312,9 +312,12 @@ En CI/CD se inyectan como GitHub Secrets.
 **GitHub Actions** (`.github/workflows/deploy.yml`):
 
 1. Trigger: push a `main`
-2. Setup: Node 20 + npm cache
+2. Setup: Node 22 + npm cache
 3. Build: `npm run build` con secrets como env vars
-4. Deploy: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+4. Deploy Firestore rules: `firebase deploy --only firestore:rules` (via service account)
+5. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+
+**IMPORTANTE:** Las Firestore rules (`firestore.rules`) se despliegan automáticamente junto con el hosting. Si se modifican rules sin deploy, producción queda desincronizada.
 
 **Flujo de feature:**
 
@@ -392,6 +395,7 @@ En CI/CD se inyectan como GitHub Secrets.
 | — | feat | Security hardening: Cloud Functions, admin dashboard, rate limiting, moderation | [#27](https://github.com/benoffi7/modo-mapa/pull/27) | Merged | `docs/feat-security-hardening/` |
 | [#24](https://github.com/benoffi7/modo-mapa/issues/24) | feat | Firebase quota mitigations: offline persistence, business view cache, paginated query cache | [#26](https://github.com/benoffi7/modo-mapa/pull/26) | Merged | `docs/feat-firebase-quota-offline/` |
 | [#28](https://github.com/benoffi7/modo-mapa/issues/28) | feat | Modularizar componentes de estadísticas + sección pública | [#32](https://github.com/benoffi7/modo-mapa/pull/32) | Merged | `docs/feat-modularizar-stats/` |
+| [#31](https://github.com/benoffi7/modo-mapa/issues/31) | fix | Admin login popup se cierra automáticamente | [#33](https://github.com/benoffi7/modo-mapa/pull/33) | Merged | — |
 | [#25](https://github.com/benoffi7/modo-mapa/issues/25) | feat | PWA + offline mode | — | Open | — |
 
 ---

@@ -25,6 +25,7 @@ Eres el revisor oficial de Pull Requests del proyecto **Modo Mapa**.
 7. **Documentacion**: los cambios relevantes estan documentados?
 8. **Markdown**: archivos `.md` cumplen markdownlint?
 9. **TypeScript**: `import type` para tipos, `exactOptionalPropertyTypes`?
+10. **Firestore rules**: si se modifican rules en `firestore.rules`, verificar que el CI/CD las despliega (ver `deploy.yml`). Si se agregan colecciones o cambian permisos, asegurar que las rules estan en sync con el codigo.
 
 ## Comandos git permitidos (solo lectura)
 
