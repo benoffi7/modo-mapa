@@ -3,8 +3,14 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite, Feedback } from '../types';
-import { toDate } from '../utils/formatDate';
+import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory } from '../types';
+
+function toDate(field: unknown): Date {
+  if (field && typeof field === 'object' && 'toDate' in field) {
+    return (field as { toDate: () => Date }).toDate();
+  }
+  return new Date();
+}
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
   toFirestore(profile: UserProfile) {
@@ -118,7 +124,7 @@ export const feedbackConverter: FirestoreDataConverter<Feedback> = {
       id: snapshot.id,
       userId: d.userId,
       message: d.message ?? '',
-      category: d.category ?? 'otro',
+      category: (d.category as FeedbackCategory) ?? 'otro',
       createdAt: toDate(d.createdAt),
       ...(d.flagged === true ? { flagged: true } : {}),
     };

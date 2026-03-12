@@ -8,10 +8,11 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
-import { sendFeedback } from '../../services/feedback';
-
-type FeedbackCategory = 'bug' | 'sugerencia' | 'otro';
+import type { FeedbackCategory } from '../../types';
 
 export default function FeedbackForm() {
   const { user } = useAuth();
@@ -24,10 +25,15 @@ export default function FeedbackForm() {
     if (!user || !message.trim()) return;
     setIsSubmitting(true);
     try {
-      await sendFeedback(user.uid, message.trim(), category);
+      await addDoc(collection(db, COLLECTIONS.FEEDBACK), {
+        userId: user.uid,
+        message: message.trim(),
+        category,
+        createdAt: serverTimestamp(),
+      });
       setSent(true);
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error sending feedback:', error);
+      console.error('Error sending feedback:', error);
     }
     setIsSubmitting(false);
   };
