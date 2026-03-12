@@ -12,8 +12,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
-
-type FeedbackCategory = 'bug' | 'sugerencia' | 'otro';
+import type { FeedbackCategory } from '../../types';
 
 export default function FeedbackForm() {
   const { user } = useAuth();

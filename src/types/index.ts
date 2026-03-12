@@ -62,11 +62,13 @@ export interface Favorite {
   createdAt: Date;
 }
 
+export type FeedbackCategory = 'bug' | 'sugerencia' | 'otro';
+
 export interface Feedback {
   id: string;
   userId: string;
   message: string;
-  category: string;
+  category: FeedbackCategory;
   createdAt: Date;
   flagged?: boolean;
 }
