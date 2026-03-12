@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase-admin/app';
+import { initSentry } from './utils/sentry';
 
 initializeApp();
+initSentry();
 
 // Triggers
 export { onCommentCreated, onCommentDeleted } from './triggers/comments';
