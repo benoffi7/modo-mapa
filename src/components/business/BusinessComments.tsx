@@ -17,11 +17,9 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
-import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
+import { addComment, deleteComment } from '../../services/comments';
+import { formatDateMedium } from '../../utils/formatDate';
 import type { Comment } from '../../types';
 
 interface Props {
@@ -52,36 +50,20 @@ export default memo(function BusinessComments({ businessId, comments, isLoading,
     const text = newComment.trim();
     const userName = displayName || 'Anónimo';
     try {
-      await addDoc(collection(db, COLLECTIONS.COMMENTS), {
-        userId: user.uid,
-        userName,
-        businessId,
-        text,
-        createdAt: serverTimestamp(),
-      });
+      await addComment(user.uid, userName, businessId, text);
       setNewComment('');
-      invalidateQueryCache(COLLECTIONS.COMMENTS, user.uid);
       onCommentsChange();
     } catch (error) {
-      console.error('Error adding comment:', error);
+      if (import.meta.env.DEV) console.error('Error adding comment:', error);
     }
     setIsSubmitting(false);
   };
 
   const handleDeleteComment = async () => {
     if (!confirmDeleteId || !user) return;
-    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
+    await deleteComment(confirmDeleteId, user.uid);
     setConfirmDeleteId(null);
-    invalidateQueryCache(COLLECTIONS.COMMENTS, user.uid);
     onCommentsChange();
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   return (
@@ -104,6 +86,8 @@ export default memo(function BusinessComments({ businessId, comments, isLoading,
                 handleSubmit();
               }
             }}
+            slotProps={{ htmlInput: { maxLength: 500 } }}
+            helperText={newComment.length > 0 ? `${newComment.length}/500` : undefined}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',
@@ -144,7 +128,7 @@ export default memo(function BusinessComments({ businessId, comments, isLoading,
                       {comment.userName || 'Anónimo'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {formatDate(comment.createdAt)}
+                      {formatDateMedium(comment.createdAt)}
                     </Typography>
                   </Box>
                 }

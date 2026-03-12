@@ -50,13 +50,17 @@ if (import.meta.env.DEV) {
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectFunctionsEmulator(functions, 'localhost', 5001);
 } else {
-  // App Check solo en producción — los emuladores no lo necesitan.
+  // App Check obligatorio en producción — los emuladores no lo necesitan.
   // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
   const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
-  if (recaptchaKey) {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
-      isTokenAutoRefreshEnabled: true,
-    });
+  if (!recaptchaKey) {
+    throw new Error(
+      'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY is required in production. ' +
+      'App Check protects Firebase resources from abuse. See docs/SECURITY_GUIDELINES.md.',
+    );
   }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+    isTokenAutoRefreshEnabled: true,
+  });
 }

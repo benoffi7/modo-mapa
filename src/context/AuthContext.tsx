@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import {
   signInAnonymously,
@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await signInAnonymously(auth);
           } catch (error) {
-            console.error('Error signing in anonymously:', error);
+            if (import.meta.env.DEV) console.error('Error signing in anonymously:', error);
           }
         }
       }
@@ -64,18 +64,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const setDisplayName = async (name: string) => {
+  const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
     const trimmed = name.trim().slice(0, 30);
     if (!trimmed) return;
-    await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
-      displayName: trimmed,
-      createdAt: serverTimestamp(),
-    }, { merge: true });
+    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      // Update: only change displayName, preserve original createdAt
+      await updateDoc(userRef, { displayName: trimmed });
+    } else {
+      // Create: set both displayName and createdAt
+      await setDoc(userRef, {
+        displayName: trimmed,
+        createdAt: serverTimestamp(),
+      });
+    }
     setDisplayNameState(trimmed);
-  };
+  }, [user]);
 
-  const signInWithGoogle = async (): Promise<User | null> => {
+  const signInWithGoogle = useCallback(async (): Promise<User | null> => {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
@@ -84,21 +92,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
       setAuthError(message);
-      console.error('Error signing in with Google:', error);
+      if (import.meta.env.DEV) console.error('Error signing in with Google:', error);
       return null;
     }
-  };
+  }, []);
 
-  const signOut = async (): Promise<void> => {
+  const signOut = useCallback(async (): Promise<void> => {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error('Error signing out:', error);
+      if (import.meta.env.DEV) console.error('Error signing out:', error);
     }
-  };
+  }, []);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
+  }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut]);
 
   return (
-    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

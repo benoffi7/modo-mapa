@@ -2,11 +2,8 @@ import { useState, useCallback } from 'react';
 import { IconButton } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
-import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
+import { addFavorite, removeFavorite } from '../../services/favorites';
 
 interface Props {
   businessId: string;
@@ -21,22 +18,16 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
 
   const toggleFavorite = useCallback(async () => {
     if (!user) return;
-    const docId = `${user.uid}__${businessId}`;
     setIsToggling(true);
     try {
       if (isFavorite) {
-        await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId));
+        await removeFavorite(user.uid, businessId);
       } else {
-        await setDoc(doc(db, COLLECTIONS.FAVORITES, docId), {
-          userId: user.uid,
-          businessId,
-          createdAt: serverTimestamp(),
-        });
+        await addFavorite(user.uid, businessId);
       }
-      invalidateQueryCache(COLLECTIONS.FAVORITES, user.uid);
       onToggle();
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      if (import.meta.env.DEV) console.error('Error toggling favorite:', error);
     }
     setIsToggling(false);
   }, [user, businessId, isFavorite, onToggle]);

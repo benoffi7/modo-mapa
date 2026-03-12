@@ -1,10 +1,7 @@
 import { useMemo, memo } from 'react';
 import { Box, Typography, Rating } from '@mui/material';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../context/AuthContext';
-import { invalidateQueryCache } from '../../hooks/usePaginatedQuery';
+import { upsertRating } from '../../services/ratings';
 import type { Rating as RatingType } from '../../types';
 
 interface Props {
@@ -35,15 +32,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
 
   const handleRate = async (_: unknown, value: number | null) => {
     if (!user || !value) return;
-    const docId = `${user.uid}__${businessId}`;
-    await setDoc(doc(db, COLLECTIONS.RATINGS, docId), {
-      userId: user.uid,
-      businessId,
-      score: value,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    invalidateQueryCache(COLLECTIONS.RATINGS, user.uid);
+    await upsertRating(user.uid, businessId, value);
     onRatingChange();
   };
 
@@ -59,7 +48,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     <Box sx={{ py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-          {averageRating > 0 ? averageRating.toFixed(1) : '—'}
+          {averageRating > 0 ? averageRating.toFixed(1) : '\u2014'}
         </Typography>
         <Rating value={averageRating} precision={0.1} readOnly size="small" />
         <Typography variant="body2">
