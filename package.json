@@ -1,7 +1,7 @@
 {
   "name": "modo-mapa",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -26,10 +26,13 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "@sentry/react": "^10.43.0",
+    "@sentry/vite-plugin": "^5.1.1",
     "@vis.gl/react-google-maps": "^1.7.1",
     "firebase": "^12.10.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.1",
     "recharts": "^3.8.0"
   },
   "devDependencies": {
@@ -52,6 +55,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.18"
   }
 }
