@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import {
   signInAnonymously,
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const setDisplayName = async (name: string) => {
+  const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
     const trimmed = name.trim().slice(0, 30);
     if (!trimmed) return;
@@ -81,9 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
     setDisplayNameState(trimmed);
-  };
+  }, [user]);
 
-  const signInWithGoogle = async (): Promise<User | null> => {
+  const signInWithGoogle = useCallback(async (): Promise<User | null> => {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
@@ -95,18 +95,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (import.meta.env.DEV) console.error('Error signing in with Google:', error);
       return null;
     }
-  };
+  }, []);
 
-  const signOut = async (): Promise<void> => {
+  const signOut = useCallback(async (): Promise<void> => {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error signing out:', error);
     }
-  };
+  }, []);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
+  }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut]);
 
   return (
-    <AuthContext.Provider value={{ user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
