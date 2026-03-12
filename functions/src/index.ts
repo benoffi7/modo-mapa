@@ -5,7 +5,8 @@ initializeApp();
 initSentry();
 
 // Triggers
-export { onCommentCreated, onCommentDeleted } from './triggers/comments';
+export { onCommentCreated, onCommentUpdated, onCommentDeleted } from './triggers/comments';
+export { onCommentLikeCreated, onCommentLikeDeleted } from './triggers/commentLikes';
 export { onCustomTagCreated, onCustomTagDeleted } from './triggers/customTags';
 export { onFeedbackCreated } from './triggers/feedback';
 export { onRatingWritten } from './triggers/ratings';

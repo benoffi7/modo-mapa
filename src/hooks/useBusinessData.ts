@@ -13,10 +13,13 @@ interface UseBusinessDataReturn {
   comments: Comment[];
   userTags: UserTag[];
   customTags: CustomTag[];
+  userCommentLikes: Set<string>;
   isLoading: boolean;
   error: boolean;
   refetch: (collectionName?: CollectionName) => void;
 }
+
+const EMPTY_LIKES = new Set<string>();
 
 const EMPTY: UseBusinessDataReturn = {
   isFavorite: false,
@@ -24,12 +27,27 @@ const EMPTY: UseBusinessDataReturn = {
   comments: [],
   userTags: [],
   customTags: [],
+  userCommentLikes: EMPTY_LIKES,
   isLoading: false,
   error: false,
   refetch: () => {},
 };
 
 type CollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags';
+
+/** Fetch user's likes for a set of comment IDs using individual getDoc calls. */
+async function fetchUserLikes(uid: string, commentIds: string[]): Promise<Set<string>> {
+  if (commentIds.length === 0) return new Set();
+  const checks = commentIds.map((cId) =>
+    getDoc(doc(db, COLLECTIONS.COMMENT_LIKES, `${uid}__${cId}`)),
+  );
+  const snaps = await Promise.all(checks);
+  const liked = new Set<string>();
+  snaps.forEach((s, i) => {
+    if (s.exists()) liked.add(commentIds[i]);
+  });
+  return liked;
+}
 
 async function fetchSingleCollection(bId: string, uid: string, col: CollectionName) {
   switch (col) {
@@ -51,7 +69,8 @@ async function fetchSingleCollection(bId: string, uid: string, col: CollectionNa
       ));
       const result = snap.docs.map((d) => d.data()).filter((c) => !c.flagged);
       result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      return { comments: result };
+      const userCommentLikes = await fetchUserLikes(uid, result.map((c) => c.id));
+      return { comments: result, userCommentLikes };
     }
     case 'userTags': {
       const snap = await getDocs(query(
@@ -102,12 +121,16 @@ async function fetchBusinessData(bId: string, uid: string) {
   const customTagsResult = customTagsSnap.docs.map((d) => d.data());
   customTagsResult.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
+  // Fetch user likes for comments (after we know comment IDs)
+  const userCommentLikes = await fetchUserLikes(uid, commentsResult.map((c) => c.id));
+
   return {
     isFavorite: favSnap.exists(),
     ratings: ratingsSnap.docs.map((d) => d.data()),
     comments: commentsResult,
     userTags: userTagsSnap.docs.map((d) => d.data()),
     customTags: customTagsResult,
+    userCommentLikes,
   };
 }
 
@@ -119,7 +142,8 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     comments: Comment[];
     userTags: UserTag[];
     customTags: CustomTag[];
-  }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [] });
+    userCommentLikes: Set<string>;
+  }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [], userCommentLikes: EMPTY_LIKES });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
   const fetchIdRef = useRef(0);

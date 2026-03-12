@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory } from '../types';
+import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -57,8 +57,20 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       businessId: d.businessId,
       text: d.text,
       createdAt: toDate(d.createdAt),
+      likeCount: (d.likeCount as number) ?? 0,
+      ...(d.updatedAt ? { updatedAt: toDate(d.updatedAt) } : {}),
       ...(d.flagged === true ? { flagged: true } : {}),
     };
+  },
+};
+
+export const commentLikeConverter: FirestoreDataConverter<CommentLike> = {
+  toFirestore(like: CommentLike) {
+    return { userId: like.userId, commentId: like.commentId, createdAt: like.createdAt };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): CommentLike {
+    const d = snapshot.data(options);
+    return { userId: d.userId, commentId: d.commentId, createdAt: toDate(d.createdAt) };
   },
 };
 

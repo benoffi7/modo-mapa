@@ -4,12 +4,24 @@
  * Requires emulators running: npm run emulators
  */
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator, doc, setDoc, collection, addDoc, Timestamp } from 'firebase/firestore';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(join(__dirname, '..', 'functions', 'node_modules', 'x.js'));
+const admin = require('firebase-admin');
+const { Timestamp } = require('firebase-admin/firestore');
 
-const app = initializeApp({ projectId: 'modo-mapa-app', apiKey: 'fake' });
-const db = getFirestore(app);
-connectFirestoreEmulator(db, 'localhost', 8080);
+// Use admin SDK to bypass Firestore rules in emulator
+process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+admin.initializeApp({ projectId: 'modo-mapa-app' });
+const db = admin.firestore();
+
+// Helper wrappers to match client SDK API used below
+const doc = (_db, col, id) => db.collection(col).doc(id);
+const setDoc = (ref, data) => ref.set(data);
+const addDoc = (colRef, data) => colRef.add(data);
+const collection = (_db, name) => db.collection(name);
 
 const BUSINESS_IDS = [
   'biz_001', 'biz_002', 'biz_003', 'biz_004', 'biz_005',
@@ -78,6 +90,7 @@ async function seed() {
     users: 10,
     customTags: 15,
     userTags: 50,
+    commentLikes: 80,
     dailyReads: 342,
     dailyWrites: 87,
     dailyDeletes: 12,
@@ -176,19 +189,42 @@ async function seed() {
     });
   }
 
-  // 5. Comments (using admin email auth bypass won't work on emulator without auth)
-  // For collections with auth rules, we write directly to emulator
+  // 5. Comments (with likeCount and some with updatedAt for "edited" indicator)
   console.log('Creating comments...');
+  const commentIds = [];
   for (let i = 0; i < 60; i++) {
     const userId = randomFrom(USER_IDS);
     const idx = USER_IDS.indexOf(userId);
-    await addDoc(collection(db, 'comments'), {
+    const createdAt = daysAgo(randomInt(0, 25));
+    const isEdited = i % 10 === 0;
+    const ref = await addDoc(collection(db, 'comments'), {
       userId,
       userName: USER_NAMES[idx],
       businessId: randomFrom(BUSINESS_IDS),
       text: randomFrom(COMMENT_TEXTS),
-      createdAt: daysAgo(randomInt(0, 25)),
+      createdAt,
+      likeCount: randomInt(0, 8),
+      ...(isEdited ? { updatedAt: daysAgo(randomInt(0, 3)) } : {}),
       ...(i % 15 === 0 ? { flagged: true } : {}),
+    });
+    commentIds.push({ id: ref.id, userId });
+  }
+
+  // 5b. Comment likes
+  console.log('Creating comment likes...');
+  const likePairs = new Set();
+  for (let i = 0; i < 80; i++) {
+    const userId = randomFrom(USER_IDS);
+    const comment = randomFrom(commentIds);
+    // Don't self-like
+    if (userId === comment.userId) continue;
+    const key = `${userId}__${comment.id}`;
+    if (likePairs.has(key)) continue;
+    likePairs.add(key);
+    await setDoc(doc(db, 'commentLikes', key), {
+      userId,
+      commentId: comment.id,
+      createdAt: daysAgo(randomInt(0, 15)),
     });
   }
 
@@ -280,7 +316,8 @@ async function seed() {
 
   console.log('\n✅ Seed complete!');
   console.log('- 10 users');
-  console.log('- ~60 comments (4 flagged)');
+  console.log('- ~60 comments (4 flagged, ~6 edited, with likeCount)');
+  console.log('- ~80 comment likes');
   console.log('- ~40 ratings');
   console.log('- ~30 favorites');
   console.log('- ~50 user tags');

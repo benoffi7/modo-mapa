@@ -6,6 +6,7 @@ import BusinessRating from './BusinessRating';
 import BusinessTags from './BusinessTags';
 import BusinessComments from './BusinessComments';
 import FavoriteButton from './FavoriteButton';
+import ShareButton from './ShareButton';
 
 export default function BusinessSheet() {
   const { selectedBusiness, setSelectedBusiness } = useMapContext();
@@ -59,6 +60,7 @@ export default function BusinessSheet() {
                   onToggle={() => data.refetch('favorites')}
                 />
               }
+              shareButton={<ShareButton business={selectedBusiness} />}
             />
             <Divider sx={{ my: 1.5 }} />
             <BusinessRating
@@ -80,6 +82,7 @@ export default function BusinessSheet() {
             <BusinessComments
               businessId={selectedBusiness.id}
               comments={data.comments}
+              userCommentLikes={data.userCommentLikes}
               isLoading={data.isLoading}
               onCommentsChange={() => data.refetch('comments')}
             />

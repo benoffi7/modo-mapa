@@ -66,6 +66,7 @@ service cloud.firestore {
 
     // Comentarios — cualquier usuario autenticado puede leer.
     // Owner puede crear con userName (1-30), text (1-500) y timestamp validado.
+    // Owner puede editar solo el texto (1-500) con updatedAt validado.
     // Owner puede eliminar sus propios comentarios.
     match /comments/{docId} {
       allow read: if request.auth != null;
@@ -76,6 +77,28 @@ service cloud.firestore {
         && request.resource.data.userName.size() <= 30
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
+        && request.resource.data.createdAt == request.time;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.businessId == resource.data.businessId
+        && request.resource.data.userName == resource.data.userName
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Likes en comentarios — cualquier usuario autenticado puede leer.
+    // Owner puede crear (con timestamp validado) o eliminar su like.
+    match /commentLikes/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.commentId is string
+        && request.resource.data.commentId.size() > 0
         && request.resource.data.createdAt == request.time;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;

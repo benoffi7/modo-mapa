@@ -9,4 +9,5 @@ export const COLLECTIONS = {
   CONFIG: 'config',
   DAILY_METRICS: 'dailyMetrics',
   ABUSE_LOGS: 'abuseLogs',
+  COMMENT_LIKES: 'commentLikes',
 } as const;
