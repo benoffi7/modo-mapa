@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { dailyMetricsConverter } from '../../config/adminConverters';
+import { fetchDailyMetrics } from '../../services/admin';
+import { useAsyncData } from '../../hooks/useAsyncData';
 import type { DailyMetrics } from '../../types/admin';
+import AdminPanelWrapper from './AdminPanelWrapper';
 import LineChartCard from './charts/LineChartCard';
 
 type Granularity = 'day' | 'week' | 'month' | 'year';
@@ -77,98 +75,65 @@ function aggregate(metrics: DailyMetrics[], granularity: Granularity): Aggregate
 }
 
 export default function TrendsPanel() {
-  const [allMetrics, setAllMetrics] = useState<DailyMetrics[]>([]);
   const [granularity, setGranularity] = useState<Granularity>('day');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    let ignore = false;
+  const fetcher = useCallback(() => fetchDailyMetrics('asc'), []);
+  const { data: allMetrics, loading, error } = useAsyncData(fetcher);
 
-    getDocs(
-      query(
-        collection(db, 'dailyMetrics').withConverter(dailyMetricsConverter),
-        orderBy('date', 'asc'),
-      ),
-    )
-      .then((snap) => {
-        if (ignore) return;
-        setAllMetrics(snap.docs.map((d) => d.data()));
-        setLoading(false);
-      })
-      .catch(() => {
-        if (ignore) return;
-        setError(true);
-        setLoading(false);
-      });
-
-    return () => { ignore = true; };
-  }, []);
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return <Alert severity="error">Error cargando tendencias.</Alert>;
-  }
-
-  const data = aggregate(allMetrics, granularity);
+  const data = allMetrics ? aggregate(allMetrics, granularity) : [];
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <ToggleButtonGroup
-          value={granularity}
-          exclusive
-          onChange={(_, v: Granularity | null) => { if (v) setGranularity(v); }}
-          size="small"
-        >
-          <ToggleButton value="day">Día</ToggleButton>
-          <ToggleButton value="week">Semana</ToggleButton>
-          <ToggleButton value="month">Mes</ToggleButton>
-          <ToggleButton value="year">Año</ToggleButton>
-        </ToggleButtonGroup>
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando tendencias.">
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <ToggleButtonGroup
+            value={granularity}
+            exclusive
+            onChange={(_, v: Granularity | null) => { if (v) setGranularity(v); }}
+            size="small"
+          >
+            <ToggleButton value="day">Día</ToggleButton>
+            <ToggleButton value="week">Semana</ToggleButton>
+            <ToggleButton value="month">Mes</ToggleButton>
+            <ToggleButton value="year">Año</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <LineChartCard
+              title="Actividad por tipo"
+              data={data}
+              xAxisKey="label"
+              lines={[
+                { dataKey: 'comments', color: '#1976d2', label: 'Comentarios' },
+                { dataKey: 'ratings', color: '#388e3c', label: 'Ratings' },
+                { dataKey: 'favorites', color: '#f57c00', label: 'Favoritos' },
+                { dataKey: 'feedback', color: '#7b1fa2', label: 'Feedback' },
+                { dataKey: 'tags', color: '#00796b', label: 'Tags' },
+              ]}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <LineChartCard
+              title="Usuarios activos"
+              data={data}
+              xAxisKey="label"
+              lines={[{ dataKey: 'activeUsers', color: '#7b1fa2', label: 'Usuarios activos' }]}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <LineChartCard
+              title="Total de escrituras"
+              data={data}
+              xAxisKey="label"
+              lines={[{ dataKey: 'totalWrites', color: '#388e3c', label: 'Writes totales' }]}
+            />
+          </Grid>
+        </Grid>
       </Box>
-
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12 }}>
-          <LineChartCard
-            title="Actividad por tipo"
-            data={data}
-            xAxisKey="label"
-            lines={[
-              { dataKey: 'comments', color: '#1976d2', label: 'Comentarios' },
-              { dataKey: 'ratings', color: '#388e3c', label: 'Ratings' },
-              { dataKey: 'favorites', color: '#f57c00', label: 'Favoritos' },
-              { dataKey: 'feedback', color: '#7b1fa2', label: 'Feedback' },
-              { dataKey: 'tags', color: '#00796b', label: 'Tags' },
-            ]}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <LineChartCard
-            title="Usuarios activos"
-            data={data}
-            xAxisKey="label"
-            lines={[{ dataKey: 'activeUsers', color: '#7b1fa2', label: 'Usuarios activos' }]}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <LineChartCard
-            title="Total de escrituras"
-            data={data}
-            xAxisKey="label"
-            lines={[{ dataKey: 'totalWrites', color: '#388e3c', label: 'Writes totales' }]}
-          />
-        </Grid>
-      </Grid>
-    </Box>
+    </AdminPanelWrapper>
   );
 }

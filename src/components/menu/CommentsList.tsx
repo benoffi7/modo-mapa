@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   List,
@@ -15,8 +15,7 @@ import {
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useState } from 'react';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { commentConverter } from '../../config/converters';
@@ -24,6 +23,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { deleteComment } from '../../services/comments';
+import { formatDateMedium } from '../../utils/formatDate';
 import type { Business, Comment } from '../../types';
 
 interface Props {
@@ -54,8 +55,8 @@ export default function CommentsList({ onNavigate }: Props) {
   }, [rawItems]);
 
   const handleDelete = async () => {
-    if (!confirmDeleteId) return;
-    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, confirmDeleteId));
+    if (!confirmDeleteId || !user) return;
+    await deleteComment(confirmDeleteId, user.uid);
     setConfirmDeleteId(null);
     reload();
   };
@@ -64,14 +65,6 @@ export default function CommentsList({ onNavigate }: Props) {
     if (!business) return;
     setSelectedBusiness(business);
     onNavigate();
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   };
 
   const truncate = (text: string, max: number) => {
@@ -128,7 +121,7 @@ export default function CommentsList({ onNavigate }: Props) {
                     {truncate(comment.text, 80)}
                   </Typography>
                   <Typography component="span" variant="caption" color="text.disabled" sx={{ display: 'block' }}>
-                    {formatDate(comment.createdAt)}
+                    {formatDateMedium(comment.createdAt)}
                   </Typography>
                 </>
               }
