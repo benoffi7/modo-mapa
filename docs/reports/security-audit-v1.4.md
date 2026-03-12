@@ -16,15 +16,15 @@ los archivos fuente actuales en la branch `feat/audit-fixes`. Los 5 items accion
 del consolidado anterior (B-01, B-06, N-01, N-02, A-P5) han sido **corregidos
 completamente**.
 
-La puntuacion sube de 9.1 a **9.6 / 10**. Los unicos pendientes restantes son de
-severidad Informativa o riesgo aceptado (M-02), sin impacto en la seguridad real
-de la aplicacion.
+La puntuacion sube de 9.1 a **9.8 / 10**. Los unicos pendientes restantes son de
+severidad Informativa, sin impacto en la seguridad real de la aplicacion.
+M-02 (rate limiter en memoria) fue corregido con una solucion Firestore transaccional.
 
 ---
 
 ## Resumen Ejecutivo
 
-Puntuacion general: **9.6 / 10** (anterior: 9.1)
+Puntuacion general: **9.8 / 10** (anterior: 9.6)
 
 ### Resumen de hallazgos
 
@@ -32,7 +32,7 @@ Puntuacion general: **9.6 / 10** (anterior: 9.1)
 |-----------|----------|------------|---------|------------------------|
 | Critico | 0 | 0 | 0 | 0 |
 | Alto | 2 | 2 | 0 | 0 |
-| Medio | 5 + 1 nuevo | 5 | 0 | 1 (riesgo aceptado) |
+| Medio | 5 + 1 nuevo | 6 | 0 | 0 |
 | Bajo | 6 + 2 nuevos | 8 | 0 | 0 |
 | Informativo | 5 | 0 | 0 | 5 |
 
@@ -97,13 +97,23 @@ Puntuacion general: **9.6 / 10** (anterior: 9.1)
 
 #### M-02: Rate limit en memoria para Cloud Functions de backups
 
-- **Estado:** Aceptado (sin cambios)
-- **Evidencia:** `functions/src/admin/backups.ts:74` sigue usando `Map` en memoria.
-- **Justificacion:** Riesgo bajo. Solo un admin puede invocar estas funciones, protegidas
-  por `verifyAdmin` (email + email_verified) y `enforceAppCheck: true`. En un cold start
-  el Map se reinicia, pero el rate limiter sigue siendo efectivo contra rafagas rapidas.
-- **Recomendacion:** No requiere accion inmediata. Evaluar Firestore-backed rate limiter
-  solo si la app escala a multiples admins.
+- **Estado:** CORREGIDO
+- **Evidencia:** `functions/src/admin/backups.ts:78-99` ahora usa Firestore transaccional:
+
+  ```typescript
+  async function checkRateLimit(uid: string): Promise<void> {
+    const db = getFirestore();
+    const docRef = db.collection('_rateLimits').doc(`backup_${uid}`);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(docRef);
+      // ... atomic read-increment with window reset
+    });
+  }
+  ```
+
+- Rate limiter persiste entre cold starts via coleccion `_rateLimits` en Firestore.
+- Atomicidad garantizada por `runTransaction`.
+- Regla de seguridad en `firestore.rules:156-158`: `allow read, write: if false` (solo admin SDK).
 
 #### M-03: CSP no incluye dominios de reCAPTCHA
 
@@ -265,7 +275,7 @@ Puntuacion general: **9.6 / 10** (anterior: 9.1)
 
 | ID | Severidad | Titulo | Estado | Esfuerzo | Prioridad |
 |----|-----------|--------|--------|----------|-----------|
-| M-02 | Medio | Rate limiter en memoria (backups) | Aceptado | Medio | 3 - Backlog |
+| M-02 | Medio | Rate limiter en memoria (backups) | CORREGIDO | — | — |
 | I-01 | Info | Cloud Functions triggers sin App Check | Aceptado | N/A | N/A |
 | I-02 | Info | Admin email hardcodeado | Pendiente | Medio | 3 - Backlog |
 | I-03 | Info | Datos estaticos en JSON local | Aceptado | N/A | N/A |
@@ -284,7 +294,7 @@ Puntuacion general: **9.6 / 10** (anterior: 9.1)
 | A01 | Broken Access Control | OK | `isAdmin()` con `email_verified`. `isValidBusinessId()` en todas las colecciones. Ownership en todas las rules. Separacion create/update en users y ratings. |
 | A02 | Cryptographic Failures | OK | Auth delegada a Firebase. HTTPS forzado. Sin datos sensibles en el cliente. |
 | A03 | Injection | OK | Sin SQL. Firestore parametrizado. 0 ocurrencias de `dangerouslySetInnerHTML`, `eval`, `innerHTML`. |
-| A04 | Insecure Design | OK | Rate limiting en dos capas. Moderacion de contenido. Capa de servicios con validacion de entrada. App Check obligatorio en produccion. |
+| A04 | Insecure Design | OK | Rate limiting en multiples capas (client, triggers, Firestore-backed callable). Moderacion de contenido. Capa de servicios con validacion de entrada. App Check obligatorio en produccion. |
 | A05 | Security Misconfiguration | OK | CSP completa incluyendo reCAPTCHA. App Check obligatorio (throw si falta clave). Headers de seguridad correctos. |
 | A06 | Vulnerable Components | OK | `npm audit --audit-level=high` en CI. Sin evidencia de vulnerabilidades conocidas. |
 | A07 | Auth Failures | OK | Firebase Auth. Triple validacion admin: frontend + rules + Cloud Functions. `email_verified` en las tres capas. |
@@ -327,7 +337,7 @@ Los siguientes patrones de seguridad estan correctamente implementados:
 6. **Validacion de enums:** `category` en feedback (3 valores) y `tagId` en userTags
    (6 valores predefinidos) validados por whitelist en rules.
 7. **Timestamps server-side:** Todas las reglas de `create` validan `createdAt == request.time`.
-8. **Rate limiting en dos capas:** Client-side (UI) + server-side (Cloud Functions triggers).
+8. **Rate limiting en multiples capas:** Client-side (UI) + server-side triggers + Firestore-backed callable rate limiter.
 9. **Moderacion de contenido:** Banned words con normalizacion, regex con word boundaries.
 10. **Converters tipados:** Lecturas de Firestore con `withConverter<T>()`.
 11. **Ownership enforcement:** Todas las colecciones validan `userId == request.auth.uid`.
@@ -353,24 +363,28 @@ Los siguientes patrones de seguridad estan correctamente implementados:
 
 ## Evaluacion Final
 
-El proyecto Modo Mapa ha alcanzado un nivel de seguridad **excelente** (9.6/10) tras la
+El proyecto Modo Mapa ha alcanzado un nivel de seguridad **excelente** (9.8/10) tras la
 correccion de todos los hallazgos accionables en `feat/audit-fixes`.
 
-**Cambios respecto al reporte anterior (9.1 -> 9.6):**
+**Cambios respecto al reporte anterior (9.6 -> 9.8):**
 
-- **B-01:** `console.error` en `useAsyncData.ts` y `FeedbackForm.tsx` ahora tienen guard
-  `import.meta.env.DEV`. Solo `ErrorBoundary.tsx` queda sin guard (exento).
-- **B-06:** CI/CD ahora ejecuta `npm run lint` ademas de `npm run test:run` antes del build.
-- **N-01:** Todos los servicios (`comments.ts`, `favorites.ts`, `ratings.ts`, `tags.ts`,
-  `feedback.ts`) validan parametros de entrada antes de enviar a Firestore.
-- **N-02:** `ratings.ts` separa create y update correctamente, preservando `createdAt`.
-- **A-P5:** `npm audit --audit-level=high` agregado al pipeline de CI.
+- **M-02:** Rate limiter de backups migrado de in-memory `Map` a Firestore transaccional
+  (`_rateLimits` collection). Persiste entre cold starts. Regla de seguridad bloquea
+  acceso de clientes.
 
-**No se detectaron nuevos hallazgos de seguridad** introducidos por estos cambios.
+**Cambios anteriores (9.1 -> 9.6):**
 
-Los hallazgos pendientes son todos de severidad **Informativa** o riesgo **aceptado**
-(M-02: rate limiter en memoria para admin-only functions), sin impacto en la seguridad
-real de la aplicacion. No se requieren correcciones adicionales.
+- **B-01:** `console.error` con guard `import.meta.env.DEV`.
+- **B-06:** CI/CD ejecuta lint + tests.
+- **N-01:** Validacion de input en todos los servicios.
+- **N-02:** `ratings.ts` separa create/update.
+- **A-P5:** `npm audit` en CI.
+
+**No se detectaron nuevos hallazgos de seguridad.**
+
+Los hallazgos pendientes son todos de severidad **Informativa**, sin impacto en la
+seguridad real de la aplicacion. **Todos los hallazgos de severidad Media o superior
+han sido corregidos.**
 
 ---
 

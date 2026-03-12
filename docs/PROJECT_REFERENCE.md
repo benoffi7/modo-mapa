@@ -83,7 +83,7 @@ Components ──► Services ──► Firestore SDK ──► Cloud Firestore
      └─ Utils (formatDate, businessHelpers)
 ```
 
-Los componentes **nunca** importan `firebase/firestore` directamente para escrituras. Usan el service layer (`src/services/`). Las lecturas de admin tambien pasan por `services/admin.ts`.
+Los componentes **nunca** importan `firebase/firestore` directamente. Usan el service layer (`src/services/`) para escrituras y collection ref getters para lecturas paginadas. Las lecturas de admin pasan por `services/admin.ts`.
 
 ### Cloud Functions
 
@@ -258,9 +258,9 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 
 | Modulo | Coleccion | Operaciones |
 |--------|-----------|-------------|
-| `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite` |
-| `ratings.ts` | `ratings` | `upsertRating` |
-| `comments.ts` | `comments` | `addComment`, `deleteComment` |
+| `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection` |
+| `ratings.ts` | `ratings` | `upsertRating`, `getRatingsCollection` |
+| `comments.ts` | `comments` | `addComment`, `deleteComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
 | `feedback.ts` | `feedback` | `sendFeedback` |
 | `admin.ts` | Todas (read-only) | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs` |
@@ -351,6 +351,7 @@ return (
 | `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
+| `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
 
 ---
 
@@ -434,7 +435,7 @@ En CI/CD se inyectan como GitHub Secrets.
 ### Cloud Functions — seguridad
 
 - **Verificacion de admin**: email + `email_verified` + comparacion con `ADMIN_EMAIL` parametrizado.
-- **Rate limiting**: 5 llamadas por minuto por usuario (in-memory, por instancia).
+- **Rate limiting**: 5 llamadas por minuto por usuario (Firestore-backed, persiste entre cold starts).
 - **Validacion de input**: `validateBackupId` rechaza caracteres invalidos con regex `^[\w.-]+$`.
 - **Logging seguro**: `maskEmail()` enmascara emails en logs (`ben***@gmail.com`).
 - **Manejo de errores**: errores de permisos y not-found se mapean a `HttpsError` apropiados.
@@ -554,7 +555,7 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. |
 | **Datos estaticos + dinamicos** | Comercios en JSON local, interacciones en Firestore. Se cruzan por `businessId` client-side. |
 | **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. |
-| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (in-memory, 5/min/user). |
+| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (Firestore-backed, 5/min/user). |
 | **Moderacion de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). |
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
