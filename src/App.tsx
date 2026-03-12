@@ -1,17 +1,16 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import theme from './theme';
+import { ColorModeProvider } from './context/ColorModeContext';
 import { AuthProvider } from './context/AuthContext';
 import { MapProvider } from './context/MapContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import AppShell from './components/layout/AppShell';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ThemePlayground = lazy(() => import('./pages/ThemePlayground'));
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -25,11 +24,20 @@ function AdminFallback() {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ColorModeProvider>
       <ErrorBoundary>
         <AuthProvider>
           <Routes>
+            {import.meta.env.DEV && (
+              <Route
+                path="/dev/theme"
+                element={
+                  <Suspense fallback={<AdminFallback />}>
+                    <ThemePlayground />
+                  </Suspense>
+                }
+              />
+            )}
             <Route
               path="/admin/*"
               element={
@@ -51,7 +59,7 @@ function App() {
           </Routes>
         </AuthProvider>
       </ErrorBoundary>
-    </ThemeProvider>
+    </ColorModeProvider>
   );
 }
 

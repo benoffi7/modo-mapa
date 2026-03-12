@@ -1,10 +1,10 @@
-# Auditoria de Seguridad - Modo Mapa v1.5.0 (Re-evaluacion 2026-03-12)
+# Auditoria de Seguridad - Modo Mapa v1.5.1 (Re-evaluacion 2026-03-12)
 
 **Fecha original:** 2026-03-12
 **Fecha re-evaluacion:** 2026-03-12
 **Auditor:** Claude Opus 4.6 (agente de seguridad)
 **Alcance:** Proyecto completo (frontend, backend, infraestructura, CI/CD)
-**Version auditada:** 1.5.0
+**Version auditada:** 1.5.1
 **Tipo:** Re-evaluacion post-mejoras v1.5 (branch `feat/unified-v1.5`)
 
 ---

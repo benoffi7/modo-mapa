@@ -10,6 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Switch,
   Toolbar,
   Dialog,
   DialogTitle,
@@ -26,7 +27,10 @@ import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useAuth } from '../../context/AuthContext';
+import { useColorMode } from '../../hooks/useColorMode';
 import FavoritesList from '../menu/FavoritesList';
 import CommentsList from '../menu/CommentsList';
 import RatingsList from '../menu/RatingsList';
@@ -55,6 +59,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
 
 export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName } = useAuth();
+  const { mode, toggleColorMode } = useColorMode();
   const [activeSection, setActiveSection] = useState<Section>('nav');
   const [feedbackKey, setFeedbackKey] = useState(0);
 
@@ -164,11 +169,38 @@ export default function SideMenu({ open, onClose }: Props) {
                 </ListItemButton>
               </List>
 
-              {/* Version footer */}
+              {/* Version footer + dark mode toggle */}
               <Box sx={{ mt: 'auto' }}>
+                <Divider />
+                <ListItemButton onClick={toggleColorMode} sx={{ py: 1 }}>
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    {mode === 'dark' ? <DarkModeIcon sx={{ color: '#ffb74d' }} /> : <LightModeIcon sx={{ color: '#fb8c00' }} />}
+                  </ListItemIcon>
+                  <ListItemText primary="Modo oscuro" />
+                  <Switch
+                    edge="end"
+                    size="small"
+                    checked={mode === 'dark'}
+                    onChange={toggleColorMode}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </ListItemButton>
                 <Divider />
                 <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', py: 1.5 }}>
                   Versión {__APP_VERSION__}
+                  {import.meta.env.DEV && (
+                    <>
+                      {' · '}
+                      <Typography
+                        component="a"
+                        href="/dev/theme"
+                        variant="caption"
+                        sx={{ color: 'text.disabled', textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                        Theme
+                      </Typography>
+                    </>
+                  )}
                 </Typography>
               </Box>
             </>
