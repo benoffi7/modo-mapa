@@ -1,14 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { defineString } from 'firebase-functions/params';
 import { v1 } from '@google-cloud/firestore';
-import * as admin from 'firebase-admin';
+import { getStorage } from 'firebase-admin/storage';
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+// ── Constants ──────────────────────────────────────────────────────────
 
-// #7 - Admin email from environment config instead of hardcoded
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
   description: 'Email address of the admin user',
   default: 'benoffi11@gmail.com',
@@ -16,10 +14,56 @@ const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
 
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
 const BACKUP_BUCKET_NAME = 'modo-mapa-app-backups';
-const BACKUP_BUCKET = admin.storage().bucket(BACKUP_BUCKET_NAME);
 const BACKUP_PREFIX = `gs://${BACKUP_BUCKET_NAME}/backups/`;
 
-// #8 - Sanitize PII: mask email for logging (show first 3 chars + domain)
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
+// ── Interfaces ─────────────────────────────────────────────────────────
+
+interface BackupEntry {
+  id: string;
+  createdAt: string;
+}
+
+interface CreateBackupResponse {
+  id: string;
+  createdAt: string;
+}
+
+interface ListBackupsRequest {
+  pageSize?: number;
+  pageToken?: string;
+}
+
+interface ListBackupsResponse {
+  backups: BackupEntry[];
+  nextPageToken: string | null;
+  totalCount: number;
+}
+
+interface RestoreBackupRequest {
+  backupId: string;
+}
+
+interface DeleteBackupRequest {
+  backupId: string;
+}
+
+// ── Singleton for FirestoreAdminClient ─────────────────────────────────
+
+type FirestoreAdminClient = InstanceType<typeof v1.FirestoreAdminClient>;
+let firestoreAdminClient: FirestoreAdminClient | null = null;
+
+function getFirestoreAdminClient(): FirestoreAdminClient {
+  if (!firestoreAdminClient) {
+    firestoreAdminClient = new v1.FirestoreAdminClient();
+  }
+  return firestoreAdminClient;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+
 function maskEmail(email: string | undefined): string {
   if (!email) return '<no-email>';
   const [local, domain] = email.split('@');
@@ -28,10 +72,9 @@ function maskEmail(email: string | undefined): string {
   return `${prefix}***@${domain}`;
 }
 
-// #2 - In-memory rate limiting per user
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX_CALLS = 5; // max 5 calls per minute per user
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_CALLS = 5;
 
 function checkRateLimit(uid: string): void {
   const now = Date.now();
@@ -48,8 +91,7 @@ function checkRateLimit(uid: string): void {
   }
 }
 
-// #3 - email_verified check added
-function verifyAdmin(request: { auth?: { uid: string; token: { email?: string; email_verified?: boolean } } }): void {
+function verifyAdmin(request: CallableRequest): void {
   const email = request.auth?.token.email;
   const emailVerified = request.auth?.token.email_verified;
 
@@ -61,28 +103,59 @@ function verifyAdmin(request: { auth?: { uid: string; token: { email?: string; e
     throw new HttpsError('permission-denied', 'Solo admin puede gestionar backups');
   }
 
-  // Rate limit after auth check
   checkRateLimit(request.auth!.uid);
 }
 
-// #5 - Resolve opaque backup ID to internal GCS URI (server-side only)
-function resolveBackupUri(backupId: string): string {
-  // Validate ID format: ISO timestamp with dashes (e.g., 2024-01-15T10-30-00-000Z)
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+Z$/.test(backupId)) {
-    throw new HttpsError('invalid-argument', 'ID de backup invalido');
-  }
-  return `${BACKUP_PREFIX}${backupId}`;
+function getBackupBucket() {
+  return getStorage().bucket(BACKUP_BUCKET_NAME);
 }
 
-// #1 - App Check enforcement + #6 - config for all functions
-export const createBackup = onCall({
+function handleError(err: unknown, message: string, context: Record<string, unknown> = {}): never {
+  logger.error(message, { error: String(err), ...context });
+
+  const errorStr = String(err);
+  if (errorStr.includes('PERMISSION_DENIED') || errorStr.includes('permission')) {
+    throw new HttpsError('permission-denied', `${message}. Verifica permisos IAM del service account.`);
+  }
+  if (errorStr.includes('NOT_FOUND') || errorStr.includes('not found')) {
+    throw new HttpsError('not-found', `${message}. Recurso no encontrado.`);
+  }
+  throw new HttpsError('internal', `${message}. Verifica permisos IAM del service account.`);
+}
+
+function validateBackupId(backupId: unknown): string {
+  if (typeof backupId !== 'string' || backupId.length === 0) {
+    throw new HttpsError('invalid-argument', 'backupId es requerido y debe ser un string');
+  }
+  if (!/^[\w.-]+$/.test(backupId)) {
+    throw new HttpsError('invalid-argument', 'backupId contiene caracteres invalidos');
+  }
+  return backupId;
+}
+
+function parseBackupPrefix(prefix: string): BackupEntry {
+  const id = prefix.replace('backups/', '').replace(/\/$/, '');
+  return {
+    id,
+    createdAt: id.replace(/T/, ' ').replace(/-(\d{2})-(\d{2})-(\d+)Z/, ':$1:$2.$3Z'),
+  };
+}
+
+function clampPageSize(requested: unknown): number {
+  const n = typeof requested === 'number' ? requested : DEFAULT_PAGE_SIZE;
+  return Math.max(1, Math.min(n, MAX_PAGE_SIZE));
+}
+
+// ── Cloud Functions ────────────────────────────────────────────────────
+
+export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   timeoutSeconds: 300,
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
   verifyAdmin(request);
 
-  const client = new v1.FirestoreAdminClient();
+  const client = getFirestoreAdminClient();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const outputUri = `${BACKUP_PREFIX}${timestamp}`;
 
@@ -94,35 +167,39 @@ export const createBackup = onCall({
       outputUriPrefix: outputUri,
     });
 
-    const [response] = await operation.promise();
+    await operation.promise();
 
     logger.info('Backup created successfully', { backupId: timestamp });
 
-    // #5 - Return opaque ID only, no internal URI
     return {
       id: timestamp,
-      // Derive the createdAt from the timestamp ID for consistency
       createdAt: timestamp.replace(/T/, ' ').replace(/-(\d{2})-(\d{2})-(\d+)Z/, ':$1:$2.$3Z'),
-      outputUri: response.outputUriPrefix ?? outputUri,
     };
   } catch (err) {
-    logger.error('Failed to create backup', { error: String(err), backupId: timestamp });
-    throw new HttpsError('internal', 'Error al crear el backup. Verifica permisos IAM del service account.');
+    handleError(err, 'Error al crear el backup', { backupId: timestamp });
   }
 });
 
-// #1 - App Check + #6 - timeout/memory config for listBackups
-export const listBackups = onCall({
+export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsResponse>>({
   timeoutSeconds: 60,
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
   verifyAdmin(request);
 
-  logger.info('Listing backups', { user: maskEmail(request.auth?.token.email) });
+  const pageSize = clampPageSize(request.data?.pageSize);
+  const pageToken = request.data?.pageToken;
+
+  logger.info('Listing backups', {
+    user: maskEmail(request.auth?.token.email),
+    bucket: BACKUP_BUCKET_NAME,
+    pageSize,
+    pageToken: pageToken ?? null,
+  });
 
   try {
-    const [, , apiResponse] = await BACKUP_BUCKET.getFiles({
+    const bucket = getBackupBucket();
+    const [, , apiResponse] = await bucket.getFiles({
       prefix: 'backups/',
       delimiter: '/',
       autoPaginate: false,
@@ -130,44 +207,48 @@ export const listBackups = onCall({
 
     const prefixes: string[] = (apiResponse as { prefixes?: string[] }).prefixes ?? [];
 
-    // #5 - Don't expose gs:// URIs, only return opaque IDs
-    const backups = prefixes
-      .map((p: string) => {
-        const id = p.replace('backups/', '').replace(/\/$/, '');
-        return {
-          id,
-          createdAt: id.replace(/T/, ' ').replace(/-(\d{2})-(\d{2})-(\d+)Z/, ':$1:$2.$3Z'),
-        };
-      })
+    const allBackups = prefixes
+      .map(parseBackupPrefix)
       .sort((a, b) => b.id.localeCompare(a.id));
 
-    logger.info('Backups listed', { count: backups.length });
+    const totalCount = allBackups.length;
 
-    return { backups };
+    let startIndex = 0;
+    if (pageToken) {
+      const tokenIndex = allBackups.findIndex((b) => b.id === pageToken);
+      if (tokenIndex >= 0) {
+        startIndex = tokenIndex;
+      }
+    }
+
+    const page = allBackups.slice(startIndex, startIndex + pageSize);
+    const hasMore = startIndex + pageSize < totalCount;
+    const nextPageToken = hasMore ? allBackups[startIndex + pageSize].id : null;
+
+    logger.info('Backups listed', { count: page.length, totalCount });
+
+    return { backups: page, nextPageToken, totalCount };
   } catch (err) {
-    logger.error('Failed to list backups', { error: String(err) });
-    throw new HttpsError('internal', 'Error al listar backups. Verifica permisos de Storage.');
+    handleError(err, 'Error al listar backups');
   }
 });
 
-// #1 - App Check enforcement
-export const restoreBackup = onCall({
+export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: true; safetyBackupId: string }>>({
   timeoutSeconds: 300,
   memory: '256MiB',
   enforceAppCheck: true,
 }, async (request) => {
   verifyAdmin(request);
 
-  // #5 - Accept opaque backup ID instead of raw URI
-  const { backupId } = request.data as { backupId: string };
-  const backupUri = resolveBackupUri(backupId);
+  const backupId = validateBackupId(request.data?.backupId);
+  const backupUri = `${BACKUP_PREFIX}${backupId}`;
 
   logger.warn('Restoring backup', { backupId, user: maskEmail(request.auth?.token.email) });
 
   try {
-    const client = new v1.FirestoreAdminClient();
+    const client = getFirestoreAdminClient();
 
-    // #4 - Pre-restore safety backup
+    // Pre-restore safety backup
     const safetyTimestamp = `pre-restore-${new Date().toISOString().replace(/[:.]/g, '-')}`;
     const safetyUri = `${BACKUP_PREFIX}${safetyTimestamp}`;
     logger.info('Creating pre-restore safety backup', { safetyBackupId: safetyTimestamp });
@@ -189,9 +270,41 @@ export const restoreBackup = onCall({
 
     logger.info('Backup restored successfully', { backupId });
 
-    return { success: true, safetyBackupId: safetyTimestamp };
+    return { success: true as const, safetyBackupId: safetyTimestamp };
   } catch (err) {
-    logger.error('Failed to restore backup', { error: String(err), backupId });
-    throw new HttpsError('internal', 'Error al restaurar el backup. Verifica permisos IAM del service account.');
+    if (err instanceof HttpsError) throw err;
+    handleError(err, 'Error al restaurar el backup', { backupId });
+  }
+});
+
+export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true }>>({
+  timeoutSeconds: 120,
+  memory: '256MiB',
+  enforceAppCheck: true,
+}, async (request) => {
+  verifyAdmin(request);
+
+  const backupId = validateBackupId(request.data?.backupId);
+
+  logger.warn('Deleting backup', { backupId, user: maskEmail(request.auth?.token.email) });
+
+  try {
+    const bucket = getBackupBucket();
+    const prefix = `backups/${backupId}/`;
+
+    const [files] = await bucket.getFiles({ prefix });
+
+    if (files.length === 0) {
+      throw new HttpsError('not-found', 'Backup no encontrado');
+    }
+
+    await Promise.all(files.map((file) => file.delete()));
+
+    logger.info('Backup deleted successfully', { backupId, filesDeleted: files.length });
+
+    return { success: true as const };
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    handleError(err, 'Error al eliminar el backup', { backupId });
   }
 });
