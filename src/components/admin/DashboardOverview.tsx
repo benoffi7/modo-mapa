@@ -49,7 +49,7 @@ export default function DashboardOverview() {
       })
       .catch((err) => {
         if (ignore) return;
-        console.error('DashboardOverview fetch error:', err);
+        if (import.meta.env.DEV) console.error('DashboardOverview fetch error:', err);
         setError(true);
         setLoading(false);
       });
