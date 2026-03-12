@@ -19,9 +19,9 @@ import Typography from '@mui/material/Typography';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 
+// #5 - No more `uri` field exposed to frontend
 interface BackupEntry {
   id: string;
-  uri: string;
   createdAt: string;
 }
 
@@ -63,7 +63,11 @@ export default function BackupsPanel() {
       const result = await listBackupsFn();
       setBackups(result.data.backups);
     } catch (err) {
-      console.error('BackupsPanel: error listing backups', err);
+      // #9 - No console.error in production
+      if (import.meta.env.DEV) {
+         
+        console.error('BackupsPanel: error listing backups', err);
+      }
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('internal') || message.includes('INTERNAL')) {
         setError('No se pudo conectar con el servicio de backups. Verificá que las Cloud Functions estén desplegadas.');
@@ -91,7 +95,11 @@ export default function BackupsPanel() {
       setLoading(true);
       await fetchBackups();
     } catch (err) {
-      console.error('BackupsPanel: error creating backup', err);
+      // #9 - No console.error in production
+      if (import.meta.env.DEV) {
+         
+        console.error('BackupsPanel: error creating backup', err);
+      }
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('internal') || message.includes('INTERNAL')) {
         setError('Error al crear el backup. Verificá que las Cloud Functions estén desplegadas y que el service account tenga permisos de export.');
@@ -110,10 +118,15 @@ export default function BackupsPanel() {
     setError(null);
     setSuccess(null);
     try {
-      await restoreBackupFn({ backupUri: confirmRestore.uri });
+      // #5 - Send opaque backupId instead of raw URI
+      await restoreBackupFn({ backupId: confirmRestore.id });
       setSuccess(`Backup del ${formatDate(confirmRestore.createdAt)} restaurado exitosamente.`);
     } catch (err) {
-      console.error('BackupsPanel: error restoring backup', err);
+      // #9 - No console.error in production
+      if (import.meta.env.DEV) {
+         
+        console.error('BackupsPanel: error restoring backup', err);
+      }
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('internal') || message.includes('INTERNAL')) {
         setError('Error al restaurar el backup. Verificá que el service account tenga permisos de import.');
@@ -198,8 +211,8 @@ export default function BackupsPanel() {
             Esta accion sobrescribira los datos actuales con el backup del{' '}
             <strong>{confirmRestore ? formatDate(confirmRestore.createdAt) : ''}</strong>.
           </DialogContentText>
-          <DialogContentText sx={{ mt: 1, fontWeight: 'bold' }}>
-            Esta operacion NO es reversible.
+          <DialogContentText sx={{ mt: 1 }}>
+            Se creara un backup de seguridad automaticamente antes de restaurar.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
