@@ -7,7 +7,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { feedbackConverter } from '../../config/converters';
-import type { Feedback } from '../../types';
+import type { Feedback, FeedbackCategory } from '../../types';
 import ActivityTable from './ActivityTable';
 
 export default function FeedbackList() {
@@ -49,7 +49,7 @@ export default function FeedbackList() {
     return <Alert severity="error">Error cargando feedback.</Alert>;
   }
 
-  function categoryColor(cat: string): 'error' | 'primary' | 'default' {
+  function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'default' {
     if (cat === 'bug') return 'error';
     if (cat === 'sugerencia') return 'primary';
     return 'default';
