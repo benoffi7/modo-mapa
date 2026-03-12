@@ -4,7 +4,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter, commentConverter, userTagConverter, customTagConverter } from '../config/converters';
 import { useAuth } from '../context/AuthContext';
-import { getBusinessCache, setBusinessCache, invalidateBusinessCache } from './useBusinessDataCache';
+import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
 import type { Rating, Comment, UserTag, CustomTag } from '../types';
 
 interface UseBusinessDataReturn {
@@ -15,7 +15,7 @@ interface UseBusinessDataReturn {
   customTags: CustomTag[];
   isLoading: boolean;
   error: boolean;
-  refetch: (collectionName?: 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags') => void;
+  refetch: (collectionName?: CollectionName) => void;
 }
 
 const EMPTY: UseBusinessDataReturn = {
@@ -28,6 +28,50 @@ const EMPTY: UseBusinessDataReturn = {
   error: false,
   refetch: () => {},
 };
+
+type CollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags';
+
+async function fetchSingleCollection(bId: string, uid: string, col: CollectionName) {
+  switch (col) {
+    case 'favorites': {
+      const snap = await getDoc(doc(db, COLLECTIONS.FAVORITES, `${uid}__${bId}`));
+      return { isFavorite: snap.exists() };
+    }
+    case 'ratings': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
+        where('businessId', '==', bId),
+      ));
+      return { ratings: snap.docs.map((d) => d.data()) };
+    }
+    case 'comments': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
+        where('businessId', '==', bId),
+      ));
+      const result = snap.docs.map((d) => d.data()).filter((c) => !c.flagged);
+      result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      return { comments: result };
+    }
+    case 'userTags': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
+        where('businessId', '==', bId),
+      ));
+      return { userTags: snap.docs.map((d) => d.data()) };
+    }
+    case 'customTags': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
+        where('userId', '==', uid),
+        where('businessId', '==', bId),
+      ));
+      const result = snap.docs.map((d) => d.data());
+      result.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      return { customTags: result };
+    }
+  }
+}
 
 async function fetchBusinessData(bId: string, uid: string) {
   const favDocId = `${uid}__${bId}`;
@@ -116,10 +160,26 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     load(businessId, user.uid);
   }, [businessId, user, load]);
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback((collectionName?: CollectionName) => {
     if (!businessId || !user) return;
-    invalidateBusinessCache(businessId);
-    load(businessId, user.uid);
+
+    if (!collectionName) {
+      invalidateBusinessCache(businessId);
+      load(businessId, user.uid);
+      return;
+    }
+
+    const id = ++fetchIdRef.current;
+    fetchSingleCollection(businessId, user.uid, collectionName)
+      .then((patch) => {
+        if (fetchIdRef.current !== id) return;
+        setData((prev) => ({ ...prev, ...patch }));
+        patchBusinessCache(businessId, patch);
+      })
+      .catch((err) => {
+        if (fetchIdRef.current !== id) return;
+        if (import.meta.env.DEV) console.error(`Error refetching ${collectionName}:`, err);
+      });
   }, [businessId, user, load]);
 
   if (!businessId) return EMPTY;
