@@ -1,10 +1,17 @@
 /**
  * Firestore service for the `ratings` collection.
  */
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import type { Rating } from '../types';
+
+export function getRatingsCollection(): CollectionReference<Rating> {
+  return collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter) as CollectionReference<Rating>;
+}
 
 export async function upsertRating(
   userId: string,

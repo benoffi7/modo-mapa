@@ -10,11 +10,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { collection } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-import { ratingConverter } from '../../config/converters';
 import { useAuth } from '../../context/AuthContext';
+import { getRatingsCollection } from '../../services/ratings';
 import { useMapContext } from '../../context/MapContext';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
@@ -31,10 +28,7 @@ export default function RatingsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useMapContext();
 
-  const collectionRef = useMemo(
-    () => collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
-    [],
-  );
+  const collectionRef = useMemo(() => getRatingsCollection(), []);
 
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
     usePaginatedQuery<RatingType>(collectionRef, user?.uid, 'updatedAt');

@@ -66,7 +66,12 @@ export async function createCustomTag(
 }
 
 export async function updateCustomTag(tagId: string, label: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, tagId), { label });
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length > 30) {
+    throw new Error('Custom tag label must be 1-30 characters');
+  }
+
+  await updateDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, tagId), { label: trimmed });
 }
 
 export async function deleteCustomTag(tagId: string): Promise<void> {

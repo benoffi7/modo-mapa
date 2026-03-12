@@ -4,10 +4,17 @@
  * All Firestore reads/writes for favorites go through this module so
  * components never import Firestore SDK directly.
  */
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import type { Favorite } from '../types';
+
+export function getFavoritesCollection(): CollectionReference<Favorite> {
+  return collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter) as CollectionReference<Favorite>;
+}
 
 function docId(userId: string, businessId: string): string {
   return `${userId}__${businessId}`;
