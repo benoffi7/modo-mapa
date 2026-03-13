@@ -39,7 +39,7 @@ export interface UserProfileData {
   }>;
 }
 
-export async function fetchUserProfile(userId: string): Promise<UserProfileData> {
+export async function fetchUserProfile(userId: string, fallbackName?: string): Promise<UserProfileData> {
   const userDocRef = doc(db, COLLECTIONS.USERS, userId).withConverter(userProfileConverter);
 
   const commentsQuery = query(
@@ -69,9 +69,13 @@ export async function fetchUserProfile(userId: string): Promise<UserProfileData>
     where('status', '==', 'approved'),
   );
 
+  // User doc may not be readable (rules restrict to owner/admin).
+  // Fetch it best-effort; the rest of the data is public.
+  const userDocPromise = getDoc(userDocRef).catch(() => null);
+
   const [userSnap, commentsSnap, ratingsSnap, favoritesSnap, customTagsSnap, photosSnap] =
     await Promise.all([
-      getDoc(userDocRef),
+      userDocPromise,
       getDocs(commentsQuery),
       getDocs(ratingsQuery),
       getDocs(favoritesQuery),
@@ -79,7 +83,7 @@ export async function fetchUserProfile(userId: string): Promise<UserProfileData>
       getDocs(photosQuery),
     ]);
 
-  const userProfile = userSnap.exists() ? userSnap.data() : null;
+  const userProfile = userSnap?.exists() ? userSnap.data() : null;
   const comments = commentsSnap.docs.map((d) => d.data());
 
   const likesReceived = comments.reduce((sum, c) => sum + c.likeCount, 0);
@@ -93,7 +97,7 @@ export async function fetchUserProfile(userId: string): Promise<UserProfileData>
   }));
 
   return {
-    displayName: userProfile?.displayName ?? 'Anónimo',
+    displayName: userProfile?.displayName ?? fallbackName ?? 'Anónimo',
     createdAt: userProfile?.createdAt ?? new Date(),
     stats: {
       comments: commentsSnap.size,

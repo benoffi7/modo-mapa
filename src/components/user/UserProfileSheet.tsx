@@ -14,12 +14,13 @@ import type { Business } from '../../types';
 
 interface Props {
   userId: string | null;
+  userName?: string;
   onClose: () => void;
 }
 
-export default function UserProfileSheet({ userId, onClose }: Props) {
+export default function UserProfileSheet({ userId, userName, onClose }: Props) {
   const isOpen = userId !== null;
-  const { profile, loading } = useUserProfile(userId);
+  const { profile, loading } = useUserProfile(userId, userName);
   const { setSelectedBusiness } = useMapContext();
 
   const handleOpen = () => {};

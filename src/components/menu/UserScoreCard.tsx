@@ -16,17 +16,12 @@ const ACTION_LABELS: Record<keyof UserRankingEntry['breakdown'], string> = {
 interface Props {
   entry: UserRankingEntry | undefined;
   position: number | undefined;
+  isLive?: boolean;
 }
 
-export default function UserScoreCard({ entry, position }: Props) {
+export default function UserScoreCard({ entry, position, isLive }: Props) {
   if (!entry) {
-    return (
-      <Card variant="outlined" sx={{ mx: 2, mb: 2, p: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          No apareces en el ranking de este periodo.
-        </Typography>
-      </Card>
-    );
+    return null;
   }
 
   return (
@@ -37,6 +32,11 @@ export default function UserScoreCard({ entry, position }: Props) {
         </Typography>
         {position != null && (
           <Chip label={`#${position}`} size="small" color="primary" variant="outlined" />
+        )}
+        {isLive && (
+          <Typography variant="caption" color="text.secondary">
+            (en vivo)
+          </Typography>
         )}
       </Box>
 

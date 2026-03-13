@@ -40,7 +40,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const { user, displayName } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
 
   // Sort
   const [sortMode, setSortMode] = useState<SortMode>('recent');
@@ -264,7 +264,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                     component="span"
                     variant="body2"
                     sx={{ fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-                    onClick={() => setProfileUserId(comment.userId)}
+                    onClick={() => setProfileUser({ id: comment.userId, name: comment.userName })}
                   >
                     {comment.userName || 'Anónimo'}
                   </Typography>
@@ -384,7 +384,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         }
       />
 
-      <UserProfileSheet userId={profileUserId} onClose={() => setProfileUserId(null)} />
+      <UserProfileSheet userId={profileUser?.id ?? null} userName={profileUser?.name} onClose={() => setProfileUser(null)} />
     </Box>
   );
 });

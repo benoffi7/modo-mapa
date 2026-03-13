@@ -1,11 +1,14 @@
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../../context/AuthContext';
 import { useRankings } from '../../hooks/useRankings';
+import { fetchUserLiveScore } from '../../services/rankings';
 import RankingItem from './RankingItem';
 import UserScoreCard from './UserScoreCard';
+import type { UserRankingEntry } from '../../types';
 
 const PERIOD_OPTIONS = [
   { value: 'weekly', label: 'Esta semana' },
@@ -14,13 +17,36 @@ const PERIOD_OPTIONS = [
 ] as const;
 
 export default function RankingsView() {
-  const { user } = useAuth();
+  const { user, displayName } = useAuth();
   const { ranking, loading, error, periodType, setPeriodType } = useRankings();
 
   const maxScore = ranking?.rankings[0]?.score ?? 0;
   const currentUserEntry = ranking?.rankings.find((e) => e.userId === user?.uid);
   const currentUserPosition = ranking?.rankings.findIndex((e) => e.userId === user?.uid);
   const position = currentUserPosition != null && currentUserPosition >= 0 ? currentUserPosition + 1 : undefined;
+
+  // Live score fallback when user is not in the pre-computed ranking
+  const [liveEntry, setLiveEntry] = useState<UserRankingEntry | null>(null);
+  const shouldFetchLive = !!user && !loading && !currentUserEntry;
+  const uid = user?.uid;
+  const name = displayName || 'Anónimo';
+
+  useEffect(() => {
+    if (!shouldFetchLive || !uid) return;
+
+    let cancelled = false;
+    fetchUserLiveScore(uid, name, periodType)
+      .then((entry) => {
+        if (!cancelled) setLiveEntry(entry.score > 0 ? entry : null);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveEntry(null);
+      });
+
+    return () => { cancelled = true; setLiveEntry(null); };
+  }, [shouldFetchLive, uid, name, periodType]);
+
+  const effectiveEntry = currentUserEntry ?? liveEntry ?? undefined;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -86,8 +112,8 @@ export default function RankingsView() {
       </Box>
 
       {/* Current user card */}
-      {!loading && !error && ranking && (
-        <UserScoreCard entry={currentUserEntry} position={position} />
+      {!loading && !error && (ranking || liveEntry) && (
+        <UserScoreCard entry={effectiveEntry} position={position} isLive={!currentUserEntry && liveEntry != null} />
       )}
     </Box>
   );
