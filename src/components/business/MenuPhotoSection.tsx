@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Chip } from '@mui/material';
+import { Box, Typography, Button, Chip, IconButton } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
@@ -64,13 +64,29 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
         <Box>
           <Box
             onClick={() => setViewerOpen(true)}
-            sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden', mb: 0.5 }}
+            sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden', mb: 0.5, position: 'relative' }}
           >
             <img
               src={photoUrl}
               alt="Menú"
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
             />
+            {user && !hasPending && (
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); setUploadOpen(true); }}
+                sx={{
+                  position: 'absolute',
+                  bottom: 6,
+                  right: 6,
+                  bgcolor: 'rgba(0,0,0,0.55)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+                }}
+              >
+                <CameraAltIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            )}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             {menuPhoto.reviewedAt && (
@@ -103,17 +119,6 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
             </Typography>
           )}
         </Box>
-      )}
-
-      {user && menuPhoto && !hasPending && (
-        <Button
-          startIcon={<CameraAltIcon />}
-          size="small"
-          onClick={() => setUploadOpen(true)}
-          sx={{ mt: 0.5 }}
-        >
-          Actualizar foto
-        </Button>
       )}
 
       <MenuPhotoUpload

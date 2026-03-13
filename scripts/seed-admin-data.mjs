@@ -360,6 +360,64 @@ async function seed() {
     await addDoc(collection(db, 'menuPhotos'), data);
   }
 
+  // Monthly ranking (so top 3 users have badges in profiles)
+  console.log('Creating monthly ranking...');
+  const now = new Date();
+  const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+  const periodKey = `monthly_${now.getFullYear()}-${monthStr}`;
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const rankingEntries = USER_IDS.map((userId, i) => ({
+    userId,
+    displayName: USER_NAMES[i],
+    score: 100 - i * 8 + randomInt(0, 5),
+    breakdown: {
+      comments: randomInt(5, 20),
+      ratings: randomInt(3, 15),
+      likes: randomInt(2, 10),
+      tags: randomInt(1, 5),
+      favorites: randomInt(2, 8),
+      photos: randomInt(0, 3),
+    },
+  })).sort((a, b) => b.score - a.score);
+
+  await setDoc(doc(db, 'userRankings', periodKey), {
+    period: periodKey,
+    startDate: monthStart,
+    endDate: monthEnd,
+    rankings: rankingEntries,
+    totalParticipants: rankingEntries.length,
+  });
+
+  // Ensure every business has a comment from a top-3 user
+  console.log('Creating top-user comments for all businesses...');
+  const TOP_3_IDS = rankingEntries.slice(0, 3).map((r) => r.userId);
+  const TOP_3_NAMES = TOP_3_IDS.map((id) => USER_NAMES[USER_IDS.indexOf(id)]);
+  for (const bizId of BUSINESS_IDS) {
+    const topIdx = randomInt(0, 2);
+    await addDoc(collection(db, 'comments'), {
+      userId: TOP_3_IDS[topIdx],
+      userName: TOP_3_NAMES[topIdx],
+      businessId: bizId,
+      text: randomFrom(COMMENT_TEXTS),
+      createdAt: daysAgo(randomInt(0, 15)),
+      likeCount: randomInt(2, 12),
+    });
+  }
+
+  // User settings (all public for testing profile sheets)
+  console.log('Creating user settings...');
+  for (let i = 0; i < USER_IDS.length; i++) {
+    await setDoc(doc(db, 'userSettings', USER_IDS[i]), {
+      profilePublic: true,
+      notificationsEnabled: i % 3 === 0,
+      notifyLikes: i % 3 === 0,
+      notifyPhotos: i % 3 === 0,
+      notifyRankings: i % 3 === 0,
+      updatedAt: new Date(),
+    });
+  }
+
   // Update counters with new collections
   await db.doc('config/counters').set({
     priceLevels: plPairs.size,
@@ -379,6 +437,9 @@ async function seed() {
   console.log('- 12 abuse logs');
   console.log(`- ${plPairs.size} price levels`);
   console.log('- 5 menu photos (2 pending, 2 approved, 1 rejected)');
+  console.log('- 1 monthly ranking (10 users, top 3 with badges)');
+  console.log('- 30 top-user comments (1 per business from top 3)');
+  console.log('- 10 user settings (all public)');
   console.log('- Counters and moderation config');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');
   console.log('Open http://localhost:5173/admin to see the dashboard');

@@ -38,6 +38,8 @@
 | [#55](https://github.com/benoffi7/modo-mapa/issues/55) | feat | Perfil publico de usuario | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
 | [#57](https://github.com/benoffi7/modo-mapa/issues/57) | feat | Firebase Analytics (GA4) | [#60](https://github.com/benoffi7/modo-mapa/pull/60) | Merged | `docs/feat-firebase-analytics/` |
 | [#59](https://github.com/benoffi7/modo-mapa/issues/59) | feat | Panel de configuracion de usuario (perfil publico/privado, notificaciones) | [#62](https://github.com/benoffi7/modo-mapa/pull/62) | Merged | `docs/feat-user-settings/` |
+| — | feat | Centralizar constantes + Constants Dashboard (DEV only) | [#66](https://github.com/benoffi7/modo-mapa/pull/66) | Merged | `docs/feat-constants-dashboard/` |
+| — | feat | Ranking badge en perfil de usuario + mejoras UX foto menu + seed improvements | [#67](https://github.com/benoffi7/modo-mapa/pull/67) | Merged | — |
 
 ---
 
@@ -69,6 +71,7 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 | `docs/feat-menu-photos-history/` | Fotos de menu + Visitas + Precio (#48/#49/#50) |
 | `docs/feat-firebase-analytics/` | Firebase Analytics GA4 (#57) |
 | `docs/feat-user-settings/` | Panel de configuracion de usuario (#59) |
+| `docs/feat-constants-dashboard/` | Constants Dashboard DEV only (#66) |
 
 ### Documentacion adicional
 
@@ -77,3 +80,4 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 | `docs/CODING_STANDARDS.md` | Estandares de codigo, service layer, patrones de componentes, convenciones TS, SOLID |
 | `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |
 | `docs/reports/architecture-audit-v1.4.md` | Auditoria de arquitectura v1.4 |
+| `docs/INFORME_MEJORAS_FUNCIONALES_v1.md` | Informe de mejoras funcionales con estado de implementacion |

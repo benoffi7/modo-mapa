@@ -1,14 +1,16 @@
-import { SwipeableDrawer, Box, Typography, Avatar, Divider, Skeleton, List, ListItemButton, ListItemText } from '@mui/material';
+import { SwipeableDrawer, Box, Typography, Avatar, Chip, Divider, Skeleton, List, ListItemButton, ListItemText } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useMapContext } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateMedium } from '../../utils/formatDate';
+import { MEDALS } from '../../constants/rankings';
 import UserStatsRow from './UserStatsRow';
 import type { Business } from '../../types';
 
@@ -84,10 +86,21 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
                 >
                   {profile.displayName.charAt(0).toUpperCase()}
                 </Avatar>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                    {profile.displayName}
-                  </Typography>
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                      {profile.displayName}
+                    </Typography>
+                    {profile.rankingPosition !== null && profile.rankingPosition <= 3 && (
+                      <Chip
+                        label={`${MEDALS[profile.rankingPosition]} #${profile.rankingPosition}`}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem', height: 22 }}
+                      />
+                    )}
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     Miembro desde {formatDateMedium(profile.createdAt)}
                   </Typography>
@@ -107,6 +120,17 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
                 <UserStatsRow icon={<ThumbUpAltOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />} label="Likes recibidos" count={profile.stats.likesReceived} />
                 <UserStatsRow icon={<LocalOfferOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />} label="Tags creados" count={profile.stats.customTags} />
                 <UserStatsRow icon={<PhotoCameraOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />} label="Fotos aprobadas" count={profile.stats.photos} />
+                {profile.rankingPosition !== null && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <EmojiEventsOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <Typography variant="body2">Ranking mensual</Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {profile.rankingPosition <= 3 ? MEDALS[profile.rankingPosition] : ''} #{profile.rankingPosition}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
 
               {/* Recent comments */}
