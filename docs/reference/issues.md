@@ -36,6 +36,8 @@
 | [#53](https://github.com/benoffi7/modo-mapa/issues/53) | feat | Rankings de usuarios (hub social) | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
 | [#54](https://github.com/benoffi7/modo-mapa/issues/54) | feat | Notificaciones in-app | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
 | [#55](https://github.com/benoffi7/modo-mapa/issues/55) | feat | Perfil publico de usuario | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
+| [#57](https://github.com/benoffi7/modo-mapa/issues/57) | feat | Firebase Analytics (GA4) | [#60](https://github.com/benoffi7/modo-mapa/pull/60) | Merged | `docs/feat-firebase-analytics/` |
+| [#59](https://github.com/benoffi7/modo-mapa/issues/59) | feat | Panel de configuracion de usuario (perfil publico/privado, notificaciones) | [#62](https://github.com/benoffi7/modo-mapa/pull/62) | Merged | `docs/feat-user-settings/` |
 
 ---
 
@@ -65,6 +67,8 @@ Cada feature tiene su carpeta en `docs/<tipo>-<descripcion>/` con:
 | `docs/feat-admin-backups/` | Gestion de backups (#34) |
 | `docs/feat-comments-2.0/` | Comentarios 2.0 (#45) + Compartir (#46) |
 | `docs/feat-menu-photos-history/` | Fotos de menu + Visitas + Precio (#48/#49/#50) |
+| `docs/feat-firebase-analytics/` | Firebase Analytics GA4 (#57) |
+| `docs/feat-user-settings/` | Panel de configuracion de usuario (#59) |
 
 ### Documentacion adicional
 
