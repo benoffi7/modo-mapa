@@ -148,5 +148,155 @@
     "lng": -58.4210,
     "tags": ["apto_celiacos", "delivery"],
     "phone": "+5411-4831-0048"
+  },
+  {
+    "id": "biz_016",
+    "name": "Manolo",
+    "address": "Bv. Marítimo P. Peralta Ramos 67, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0023,
+    "lng": -57.5375,
+    "tags": ["buena_atencion"],
+    "phone": "+54223-451-8800"
+  },
+  {
+    "id": "biz_017",
+    "name": "Alfonsina",
+    "address": "Av. Patricio Peralta Ramos 153, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0033,
+    "lng": -57.5355,
+    "tags": ["buena_atencion"],
+    "phone": "+54223-486-2671"
+  },
+  {
+    "id": "biz_018",
+    "name": "Montecatini",
+    "address": "San Martín 2381, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0075,
+    "lng": -57.5450,
+    "tags": ["barato", "rapido"],
+    "phone": "+54223-495-1005"
+  },
+  {
+    "id": "biz_019",
+    "name": "Tisiano",
+    "address": "San Martín 2689, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0055,
+    "lng": -57.5465,
+    "tags": ["buena_atencion", "apto_celiacos"],
+    "phone": "+54223-451-2771"
+  },
+  {
+    "id": "biz_020",
+    "name": "La Fonte D'Oro",
+    "address": "Rivadavia 2537, Mar del Plata, Buenos Aires",
+    "category": "pizza",
+    "lat": -38.0050,
+    "lng": -57.5500,
+    "tags": ["barato", "rapido"],
+    "phone": "+54223-493-5306"
+  },
+  {
+    "id": "biz_021",
+    "name": "Helados Lucciano's",
+    "address": "Rivadavia 2301, Mar del Plata, Buenos Aires",
+    "category": "icecream",
+    "lat": -38.0048,
+    "lng": -57.5480,
+    "tags": ["buena_atencion", "apto_celiacos"],
+    "phone": null
+  },
+  {
+    "id": "biz_022",
+    "name": "Havanna Café",
+    "address": "Av. Colón 1599, Mar del Plata, Buenos Aires",
+    "category": "cafe",
+    "lat": -38.0012,
+    "lng": -57.5445,
+    "tags": ["buena_atencion"],
+    "phone": null
+  },
+  {
+    "id": "biz_023",
+    "name": "La Parrilla del Puerto",
+    "address": "12 de Octubre 3301, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0310,
+    "lng": -57.5320,
+    "tags": ["buena_atencion"],
+    "phone": "+54223-489-1010"
+  },
+  {
+    "id": "biz_024",
+    "name": "Antares",
+    "address": "Güemes 2861, Mar del Plata, Buenos Aires",
+    "category": "bar",
+    "lat": -37.9945,
+    "lng": -57.5525,
+    "tags": ["buena_atencion"],
+    "phone": "+54223-492-9191"
+  },
+  {
+    "id": "biz_025",
+    "name": "Lo de Fede",
+    "address": "Güemes 2965, Mar del Plata, Buenos Aires",
+    "category": "fastfood",
+    "lat": -37.9942,
+    "lng": -57.5530,
+    "tags": ["barato", "rapido", "delivery"],
+    "phone": null
+  },
+  {
+    "id": "biz_026",
+    "name": "Sur Café",
+    "address": "Av. Colón 1777, Mar del Plata, Buenos Aires",
+    "category": "cafe",
+    "lat": -38.0008,
+    "lng": -57.5450,
+    "tags": ["apto_veganos", "buena_atencion"],
+    "phone": null
+  },
+  {
+    "id": "biz_027",
+    "name": "Panadería Don Luis",
+    "address": "Catamarca 1502, Mar del Plata, Buenos Aires",
+    "category": "bakery",
+    "lat": -37.9985,
+    "lng": -57.5510,
+    "tags": ["barato", "delivery"],
+    "phone": "+54223-474-3322"
+  },
+  {
+    "id": "biz_028",
+    "name": "Almacén de Pizzas",
+    "address": "Córdoba 1725, Mar del Plata, Buenos Aires",
+    "category": "pizza",
+    "lat": -37.9990,
+    "lng": -57.5490,
+    "tags": ["delivery", "rapido"],
+    "phone": "+54223-495-2200"
+  },
+  {
+    "id": "biz_029",
+    "name": "Verde Raíz",
+    "address": "Rivadavia 3045, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0060,
+    "lng": -57.5520,
+    "tags": ["apto_veganos", "apto_celiacos"],
+    "phone": "+54223-491-8877"
+  },
+  {
+    "id": "biz_030",
+    "name": "El Palacio del Bife",
+    "address": "Av. Colón 2137, Mar del Plata, Buenos Aires",
+    "category": "restaurant",
+    "lat": -38.0005,
+    "lng": -57.5460,
+    "tags": ["buena_atencion", "barato"],
+    "phone": "+54223-474-5566"
   }
 ]
