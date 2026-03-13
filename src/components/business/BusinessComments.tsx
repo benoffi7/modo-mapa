@@ -384,7 +384,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         }
       />
 
-      <UserProfileSheet userId={profileUser?.id ?? null} userName={profileUser?.name} onClose={() => setProfileUser(null)} />
+      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={() => setProfileUser(null)} />
     </Box>
   );
 });

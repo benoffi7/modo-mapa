@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Drawer,
   Box,
@@ -40,6 +40,7 @@ import RatingsList from '../menu/RatingsList';
 import FeedbackForm from '../menu/FeedbackForm';
 import StatsView from '../menu/StatsView';
 import RankingsView from '../menu/RankingsView';
+import { trackEvent } from '../../utils/analytics';
 
 declare const __APP_VERSION__: string;
 
@@ -66,7 +67,18 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
 export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
-  const [activeSection, setActiveSection] = useState<Section>('nav');
+  useEffect(() => {
+    if (open) trackEvent('side_menu_open');
+  }, [open]);
+
+  const [activeSection, setActiveSectionRaw] = useState<Section>('nav');
+
+  const setActiveSection = (section: Section) => {
+    setActiveSectionRaw(section);
+    if (section !== 'nav') {
+      trackEvent('side_menu_section', { section });
+    }
+  };
   const [feedbackKey, setFeedbackKey] = useState(0);
 
   // Edit name dialog
@@ -192,7 +204,7 @@ export default function SideMenu({ open, onClose }: Props) {
               {/* Version footer + dark mode toggle */}
               <Box sx={{ mt: 'auto' }}>
                 <Divider />
-                <ListItemButton onClick={toggleColorMode} sx={{ py: 1 }}>
+                <ListItemButton onClick={() => { trackEvent('dark_mode_toggle', { enabled: mode !== 'dark' }); toggleColorMode(); }} sx={{ py: 1 }}>
                   <ListItemIcon sx={{ minWidth: 40 }}>
                     {mode === 'dark' ? <DarkModeIcon sx={{ color: '#ffb74d' }} /> : <LightModeIcon sx={{ color: '#fb8c00' }} />}
                   </ListItemIcon>

@@ -7,6 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { trackEvent } from '../utils/analytics';
 import type { Rating } from '../types';
 
 export function getRatingsCollection(): CollectionReference<Rating> {
@@ -42,4 +43,5 @@ export async function upsertRating(
   }
 
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
+  trackEvent('rating_submit', { business_id: businessId, score });
 }
