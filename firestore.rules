@@ -47,12 +47,22 @@ service cloud.firestore {
     // Owner puede crear/actualizar con score 1-5.
     // create valida createdAt y updatedAt; update solo valida updatedAt.
     // criteria es un mapa opcional con scores 1-5 por criterio.
+    // Validates optional criteria map: keys must be from allowed set, each value int 1-5
+    function isValidCriteriaValue(crit, key) {
+      return !(key in crit) || (crit[key] is int && crit[key] >= 1 && crit[key] <= 5);
+    }
+
     function isValidCriteria(data) {
       return !('criteria' in data)
         || (data.criteria is map
           && data.criteria.keys().hasOnly(['food', 'service', 'price', 'ambiance', 'speed'])
           && data.criteria.size() >= 1
           && data.criteria.size() <= 5
+          && isValidCriteriaValue(data.criteria, 'food')
+          && isValidCriteriaValue(data.criteria, 'service')
+          && isValidCriteriaValue(data.criteria, 'price')
+          && isValidCriteriaValue(data.criteria, 'ambiance')
+          && isValidCriteriaValue(data.criteria, 'speed')
         );
     }
 
@@ -68,7 +78,8 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && isValidCriteria(request.resource.data);
       allow update: if request.auth != null
-        && request.resource.data.userId == request.auth.uid
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
         && request.resource.data.score is int
         && request.resource.data.score >= 1
         && request.resource.data.score <= 5
@@ -87,6 +98,7 @@ service cloud.firestore {
     match /comments/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId', 'replyCount'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.userName.size() > 0

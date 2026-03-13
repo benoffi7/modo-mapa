@@ -1,7 +1,7 @@
 /**
  * Firestore service for suggestion data queries.
  */
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { favoriteConverter, ratingConverter, userTagConverter } from '../config/converters';
@@ -14,23 +14,27 @@ export interface UserSuggestionData {
 }
 
 export async function fetchUserSuggestionData(userId: string): Promise<UserSuggestionData> {
+  const QUERY_LIMIT = 200;
   const [favsSnap, ratingsSnap, tagsSnap] = await Promise.all([
     getDocs(
       query(
         collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter),
         where('userId', '==', userId),
+        limit(QUERY_LIMIT),
       ),
     ),
     getDocs(
       query(
         collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
         where('userId', '==', userId),
+        limit(QUERY_LIMIT),
       ),
     ),
     getDocs(
       query(
         collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
         where('userId', '==', userId),
+        limit(QUERY_LIMIT),
       ),
     ),
   ]);
