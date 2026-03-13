@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, increment, writeBatch } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -31,19 +31,29 @@ export async function addComment(
     throw new Error('User name must be 1-30 characters');
   }
 
-  await addDoc(collection(db, COLLECTIONS.COMMENTS), {
-    userId,
-    userName,
-    businessId,
-    text,
-    createdAt: serverTimestamp(),
-    ...(parentId ? { parentId } : {}),
-  });
-
-  // Increment parent's replyCount atomically
   if (parentId) {
-    await updateDoc(doc(db, COLLECTIONS.COMMENTS, parentId), {
+    // Use batch for atomic reply + parent replyCount increment
+    const batch = writeBatch(db);
+    const newRef = doc(collection(db, COLLECTIONS.COMMENTS));
+    batch.set(newRef, {
+      userId,
+      userName,
+      businessId,
+      text,
+      createdAt: serverTimestamp(),
+      parentId,
+    });
+    batch.update(doc(db, COLLECTIONS.COMMENTS, parentId), {
       replyCount: increment(1),
+    });
+    await batch.commit();
+  } else {
+    await addDoc(collection(db, COLLECTIONS.COMMENTS), {
+      userId,
+      userName,
+      businessId,
+      text,
+      createdAt: serverTimestamp(),
     });
   }
 
@@ -65,17 +75,16 @@ export async function editComment(commentId: string, userId: string, newText: st
 }
 
 export async function deleteComment(commentId: string, userId: string, parentId?: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
-
-  // Decrement parent's replyCount atomically
   if (parentId) {
-    const parentRef = doc(db, COLLECTIONS.COMMENTS, parentId);
-    const parentSnap = await getDoc(parentRef);
-    if (parentSnap.exists()) {
-      await updateDoc(parentRef, {
-        replyCount: increment(-1),
-      });
-    }
+    // Use batch for atomic delete + parent replyCount decrement
+    const batch = writeBatch(db);
+    batch.delete(doc(db, COLLECTIONS.COMMENTS, commentId));
+    batch.update(doc(db, COLLECTIONS.COMMENTS, parentId), {
+      replyCount: increment(-1),
+    });
+    await batch.commit();
+  } else {
+    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
   }
 
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
