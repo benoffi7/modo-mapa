@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `priceLevels` collection.
  */
-import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -45,4 +45,13 @@ export async function upsertPriceLevel(
 
   invalidateQueryCache(COLLECTIONS.PRICE_LEVELS, userId);
   trackEvent('price_level_vote', { business_id: businessId, level });
+}
+
+export async function deletePriceLevel(
+  userId: string,
+  businessId: string,
+): Promise<void> {
+  const docId = `${userId}__${businessId}`;
+  await deleteDoc(doc(db, COLLECTIONS.PRICE_LEVELS, docId));
+  invalidateQueryCache(COLLECTIONS.PRICE_LEVELS, userId);
 }

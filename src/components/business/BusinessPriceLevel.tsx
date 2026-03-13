@@ -1,7 +1,7 @@
 import { useMemo, useState, memo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { upsertPriceLevel } from '../../services/priceLevels';
+import { upsertPriceLevel, deletePriceLevel } from '../../services/priceLevels';
 import { PRICE_LEVEL_LABELS } from '../../types';
 import { LEVELS, LEVEL_SYMBOLS } from '../../constants/business';
 import type { PriceLevel } from '../../types';
@@ -32,18 +32,29 @@ export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoa
     };
   }, [priceLevels, user]);
 
+  // pendingLevel: number = voting, 0 = pending delete, null = no change
   const [pendingLevel, setPendingLevel] = useState<number | null>(null);
-  const myLevel = pendingLevel ?? serverMyLevel;
+  const myLevel = pendingLevel === 0 ? null : (pendingLevel ?? serverMyLevel);
 
   const handleVote = async (level: number) => {
     if (!user) return;
-    setPendingLevel(level);
-    try {
-      await upsertPriceLevel(user.uid, businessId, level);
-      onPriceLevelChange();
-    } catch {
-      // Revert optimistic update on failure
-      setPendingLevel(null);
+    // Toggle: click same level = remove vote
+    if (myLevel === level) {
+      setPendingLevel(0);
+      try {
+        await deletePriceLevel(user.uid, businessId);
+        onPriceLevelChange();
+      } catch {
+        setPendingLevel(null);
+      }
+    } else {
+      setPendingLevel(level);
+      try {
+        await upsertPriceLevel(user.uid, businessId, level);
+        onPriceLevelChange();
+      } catch {
+        setPendingLevel(null);
+      }
     }
   };
 
