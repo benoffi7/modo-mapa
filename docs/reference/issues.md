@@ -43,6 +43,9 @@
 | — | feat | Phase 4: threads (F5), multi-criteria (F7), suggestions (F10) + docs reorg | [#68](https://github.com/benoffi7/modo-mapa/pull/68) | Merged | — |
 | [#69](https://github.com/benoffi7/modo-mapa/issues/69) | security | Security audit Round 1: C1, H1, H3, M2, L1 | [#68](https://github.com/benoffi7/modo-mapa/pull/68) | Closed | `docs/reports/audit-phase4-v1.md` |
 | [#70](https://github.com/benoffi7/modo-mapa/issues/70) | security | Security audit Round 2: N1, N2, N3, H2, M1 + Round 3: N4, N5, N6 | [#71](https://github.com/benoffi7/modo-mapa/pull/71), [#72](https://github.com/benoffi7/modo-mapa/pull/72) | Closed | — |
+| — | chore | Pre-launch prep: docs update, coding standards, pre-launch audit report | [#74](https://github.com/benoffi7/modo-mapa/pull/74) | Merged | `docs/reports/pre-launch-audit.md` |
+| — | feat | Pre-launch optimizations: critical tests + query fixes + lazy Sentry | [#75](https://github.com/benoffi7/modo-mapa/pull/75) | Merged | — |
+| — | feat | Lazy-load SideMenu + should-have tests (#5-#7) | [#76](https://github.com/benoffi7/modo-mapa/pull/76) | Merged | — |
 
 ---
 

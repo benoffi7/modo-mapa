@@ -83,40 +83,39 @@ Todas las vulnerabilidades identificadas en las 3 rondas de auditoría fueron re
 
 | Área | Archivos | Tests | Cobertura |
 |------|----------|-------|-----------|
-| Frontend hooks | 16 | 4 testeados (56 tests) | ~25% |
-| Frontend services | 14 | 0 | **0%** |
+| Frontend hooks | 16 | 6 testeados (76 tests) | ~38% |
+| Frontend services | 14 | 2 testeados (25 tests) | ~14% |
 | Frontend utils | 3 | 0 | **0%** |
 | Frontend contexts | 2 | 2 testeados (22 tests) | 100% |
-| Backend triggers | 9 | 0 | **0%** |
-| Backend utils | 6 | 3 testeados | 50% |
-| **Total** | | **74 tests passing** | |
+| Backend triggers | 9 | 2 testeados (28 tests) | ~22% |
+| Backend utils | 6 | 4 testeados (22 tests) | 67% |
+| **Total** | | **161 tests passing** | |
 
-### Top 7 tests críticos faltantes para lanzamiento
+### Top 7 tests críticos — TODOS COMPLETADOS (PRs #75, #76)
 
-1. **`functions/src/triggers/comments.ts`** — cascade delete (riesgo: DATA LOSS)
-2. **`functions/src/triggers/comments.ts`** — rate limit + moderation (riesgo: ABUSE)
-3. **`src/services/comments.ts`** — input validation
-4. **`src/services/ratings.ts`** — criteria merge logic
-5. **`src/hooks/useSuggestions.ts`** — scoring algorithm + Haversine
-6. **`functions/src/triggers/commentLikes.ts`** — likeCount + notifications
-7. **`functions/src/utils/notifications.ts`** — shouldNotify preferences
+1. ~~`functions/src/triggers/comments.ts`~~ — 18 tests (cascade delete, replyCount, rate limit, moderation, re-moderation) ✅
+2. ~~`src/services/comments.ts`~~ — 12 tests (input validation, trim, parentId) ✅
+3. ~~`src/services/ratings.ts`~~ — 10 tests (score validation, criteria merge, create vs update) ✅
+4. ~~`src/hooks/useSuggestions.ts`~~ — 10 tests (scoring, penalties, sorting, limit) ✅
+5. ~~`functions/src/triggers/commentLikes.ts`~~ — 10 tests (likeCount, rate limit, notifications) ✅
+6. ~~`functions/src/utils/notifications.ts`~~ — 9 tests (shouldNotify preferences, all types, expiry) ✅
 
 ---
 
 ## 6. Recomendaciones priorizadas para lanzamiento
 
-### Must-have (antes del launch)
+### Must-have — COMPLETADO (PR #75)
 
-1. **Tests críticos (#1-#4)**: cascade delete, rate limiting, input validation
-2. **Fix P2.1**: N+1 likes query → batched `where(documentId(), 'in', ...)`
-3. **Fix P2.2**: Add `limit()` to `usePriceLevelFilter`
+1. ~~**Tests críticos (#1-#4)**~~: cascade delete, rate limiting, input validation ✅
+2. ~~**Fix P2.1**~~: N+1 likes → batched `documentId('in')` (30 per batch) ✅
+3. ~~**Fix P2.2**~~: `limit(20K)` + TTL 5min en `usePriceLevelFilter` ✅
 
-### Should-have (primera semana post-launch)
+### Should-have — COMPLETADO (PRs #75, #76)
 
-4. **Fix P1.1**: Lazy-load Sentry
-5. **Fix P1.3**: Lazy-load SideMenu sections
-6. **Fix P2.5**: Notification polling con visibility awareness
-7. **Tests #5-#7**: suggestions scoring, likeCount, notifications
+4. ~~**Fix P1.1**~~: Sentry lazy-loaded via dynamic import ✅
+5. ~~**Fix P1.3**~~: SideMenu sections lazy-loaded (main chunk 484→361 kB gzip, -25%) ✅
+6. ~~**Fix P2.5**~~: Notification polling con visibility awareness ✅
+7. ~~**Tests #5-#7**~~: suggestions, likeCount, notifications ✅
 
 ### Nice-to-have (post-launch iterativo)
 
