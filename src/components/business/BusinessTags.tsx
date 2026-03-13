@@ -12,6 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../../context/AuthContext';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { PREDEFINED_TAGS } from '../../types';
+import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
 import type { CustomTag, UserTag } from '../../types';
 import CustomTagDialog from './CustomTagDialog';
 import DeleteTagDialog from './DeleteTagDialog';
@@ -30,8 +31,6 @@ interface TagCount {
   count: number;
   userAdded: boolean;
 }
-
-const MAX_CUSTOM_TAGS = 10;
 
 export default memo(function BusinessTags({ businessId, seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
   const { user } = useAuth();
@@ -109,7 +108,7 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     if (!user) return;
     const label = dialogValue.trim();
     if (!label || label.length > 30) return;
-    if (!editingTag && customTags.length >= MAX_CUSTOM_TAGS) return;
+    if (!editingTag && customTags.length >= MAX_CUSTOM_TAGS_PER_BUSINESS) return;
 
     if (editingTag) {
       await updateCustomTag(editingTag.id, label);
@@ -182,7 +181,7 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
           />
         ))}
 
-        {user && customTags.length < MAX_CUSTOM_TAGS && (
+        {user && customTags.length < MAX_CUSTOM_TAGS_PER_BUSINESS && (
           <Chip
             label="Agregar"
             size="small"

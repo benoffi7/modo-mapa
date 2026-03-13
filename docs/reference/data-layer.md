@@ -1,5 +1,28 @@
 # Data layer — Services, Hooks, Utils
 
+## Constantes centralizadas (`src/constants/`)
+
+Todos los valores magicos, configuraciones, labels y opciones estan centralizados en `src/constants/` organizados por dominio:
+
+| Modulo | Contenido |
+| ------ | --------- |
+| `validation.ts` | Limites de longitud (comment, displayName, customTag, feedback), truncamiento, score options |
+| `cache.ts` | TTLs de cache (business 5min, query 2min, profile 60s) |
+| `storage.ts` | Keys de localStorage (colorMode, visits, analyticsConsent) |
+| `timing.ts` | Intervalos (poll 60s, auto-dismiss 5s, six months) |
+| `feedback.ts` | Categorias validas de feedback |
+| `ui.ts` | Colores de graficos, URL agregar comercio |
+| `map.ts` | Centro de Buenos Aires, colores por categoria |
+| `tags.ts` | Tags predefinidos, IDs validos |
+| `rankings.ts` | Scoring, medallas, labels de acciones, opciones de periodo |
+| `business.ts` | Niveles de precio, simbolos, chips, labels de categoria |
+| `admin.ts` | Email admin, page size, status chips/labels, abuse type labels/colors |
+| `index.ts` | Barrel re-export de todos los modulos + COLLECTIONS de config |
+
+`types/index.ts` re-exporta `PREDEFINED_TAGS`, `PRICE_LEVEL_LABELS` y `CATEGORY_LABELS` desde constants para backwards compatibility.
+
+---
+
 ## Service layer (`src/services/`)
 
 Capa de abstraccion entre componentes y Firestore. Los componentes nunca importan `firebase/firestore` directamente para escrituras.

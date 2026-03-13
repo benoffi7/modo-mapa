@@ -3,21 +3,9 @@ import Chip from '@mui/material/Chip';
 import { fetchAbuseLogs } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
-import type { AbuseLog } from '../../types/admin';
+import { ABUSE_TYPE_COLORS, ABUSE_TYPE_LABELS, TRUNCATE_DETAIL_PREVIEW } from '../../constants';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
-
-const TYPE_COLORS: Record<AbuseLog['type'], 'warning' | 'error' | 'info'> = {
-  rate_limit: 'warning',
-  flagged: 'error',
-  top_writers: 'info',
-};
-
-const TYPE_LABELS: Record<AbuseLog['type'], string> = {
-  rate_limit: 'Rate Limit',
-  flagged: 'Contenido Flaggeado',
-  top_writers: 'Top Writer',
-};
 
 export default function AbuseAlerts() {
   const fetcher = useCallback(() => fetchAbuseLogs(50), []);
@@ -32,8 +20,8 @@ export default function AbuseAlerts() {
             label: 'Tipo',
             render: (log) => (
               <Chip
-                label={TYPE_LABELS[log.type]}
-                color={TYPE_COLORS[log.type]}
+                label={ABUSE_TYPE_LABELS[log.type]}
+                color={ABUSE_TYPE_COLORS[log.type]}
                 size="small"
               />
             ),
@@ -42,7 +30,7 @@ export default function AbuseAlerts() {
           { label: 'Colección', render: (log) => log.collection },
           {
             label: 'Detalle',
-            render: (log) => log.detail.length > 80 ? `${log.detail.slice(0, 80)}...` : log.detail,
+            render: (log) => log.detail.length > TRUNCATE_DETAIL_PREVIEW ? `${log.detail.slice(0, TRUNCATE_DETAIL_PREVIEW)}...` : log.detail,
           },
           {
             label: 'Fecha',

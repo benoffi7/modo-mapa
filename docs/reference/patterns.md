@@ -8,6 +8,14 @@
 | **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
 | **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 
+## Constantes centralizadas
+
+| Patron | Descripcion |
+| ------ | ----------- |
+| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin). Barrel re-export en `constants/index.ts`. |
+| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
+| **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
+
 ## Datos y estado
 
 | Patron | Descripcion |

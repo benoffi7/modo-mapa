@@ -10,6 +10,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { CATEGORY_LABELS } from '../../types';
 import type { BusinessCategory } from '../../types';
+import { SCORE_OPTIONS } from '../../constants/validation';
 import type { SortOption } from '../../hooks/useListFilters';
 
 interface Props {
@@ -25,8 +26,6 @@ interface Props {
   resultCount: number;
   totalCount: number;
 }
-
-const SCORE_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export default function ListFilters({
   searchQuery,

@@ -8,13 +8,8 @@ import { useRankings } from '../../hooks/useRankings';
 import { fetchUserLiveScore } from '../../services/rankings';
 import RankingItem from './RankingItem';
 import UserScoreCard from './UserScoreCard';
+import { PERIOD_OPTIONS } from '../../constants/rankings';
 import type { UserRankingEntry } from '../../types';
-
-const PERIOD_OPTIONS = [
-  { value: 'weekly', label: 'Esta semana' },
-  { value: 'monthly', label: 'Este mes' },
-  { value: 'yearly', label: 'Este año' },
-] as const;
 
 export default function RankingsView() {
   const { user, displayName } = useAuth();

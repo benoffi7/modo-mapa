@@ -45,11 +45,10 @@ import PrivacyPolicy from '../menu/PrivacyPolicy';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { trackEvent } from '../../utils/analytics';
+import { ADD_BUSINESS_URL } from '../../constants/ui';
+import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 
 declare const __APP_VERSION__: string;
-
-const ADD_BUSINESS_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSdCclz8fH1OQj-McD_xEsXAwP6umIcNVsudS3ZiYBXqBqoaRg/viewform';
 
 interface Props {
   open: boolean;
@@ -253,6 +252,15 @@ export default function SideMenu({ open, onClose }: Props) {
                       >
                         Theme
                       </Typography>
+                      {' · '}
+                      <Typography
+                        component="a"
+                        href="/dev/constants"
+                        variant="caption"
+                        sx={{ color: 'text.disabled', textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                        Constants
+                      </Typography>
                     </>
                   )}
                 </Typography>
@@ -304,7 +312,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 handleSaveName();
               }
             }}
-            inputProps={{ maxLength: 30 }}
+            inputProps={{ maxLength: MAX_DISPLAY_NAME_LENGTH }}
             sx={{ mt: 1 }}
           />
         </DialogContent>

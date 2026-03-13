@@ -81,14 +81,10 @@ export interface Feedback {
   flagged?: boolean;
 }
 
-export const PREDEFINED_TAGS = [
-  { id: 'barato', label: 'Barato', icon: 'AttachMoney' },
-  { id: 'apto_celiacos', label: 'Apto celíacos', icon: 'NoFood' },
-  { id: 'apto_veganos', label: 'Apto veganos', icon: 'Eco' },
-  { id: 'rapido', label: 'Rápido', icon: 'Speed' },
-  { id: 'delivery', label: 'Delivery', icon: 'DeliveryDining' },
-  { id: 'buena_atencion', label: 'Buena atención', icon: 'ThumbUp' },
-] as const;
+import { PREDEFINED_TAGS } from '../constants/tags';
+import { PRICE_LEVEL_LABELS, CATEGORY_LABELS } from '../constants/business';
+
+export { PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS };
 
 export type PredefinedTagId = (typeof PREDEFINED_TAGS)[number]['id'];
 
@@ -133,21 +129,6 @@ export interface AppNotification {
   expiresAt: Date;
 }
 
-export const PRICE_LEVEL_LABELS: Record<number, string> = {
-  1: 'Económico',
-  2: 'Moderado',
-  3: 'Caro',
-};
-
-export const CATEGORY_LABELS: Record<BusinessCategory, string> = {
-  restaurant: 'Restaurante',
-  cafe: 'Café',
-  bakery: 'Panadería',
-  bar: 'Bar',
-  fastfood: 'Comida rápida',
-  icecream: 'Heladería',
-  pizza: 'Pizzería',
-};
 
 export interface UserRankingEntry {
   userId: string;
