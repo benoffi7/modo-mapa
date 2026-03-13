@@ -51,11 +51,8 @@ service cloud.firestore {
       return !('criteria' in data)
         || (data.criteria is map
           && data.criteria.keys().hasOnly(['food', 'service', 'price', 'ambiance', 'speed'])
-          && (!('food' in data.criteria) || (data.criteria.food is int && data.criteria.food >= 1 && data.criteria.food <= 5))
-          && (!('service' in data.criteria) || (data.criteria.service is int && data.criteria.service >= 1 && data.criteria.service <= 5))
-          && (!('price' in data.criteria) || (data.criteria.price is int && data.criteria.price >= 1 && data.criteria.price <= 5))
-          && (!('ambiance' in data.criteria) || (data.criteria.ambiance is int && data.criteria.ambiance >= 1 && data.criteria.ambiance <= 5))
-          && (!('speed' in data.criteria) || (data.criteria.speed is int && data.criteria.speed >= 1 && data.criteria.speed <= 5))
+          && data.criteria.size() >= 1
+          && data.criteria.size() <= 5
         );
     }
 
