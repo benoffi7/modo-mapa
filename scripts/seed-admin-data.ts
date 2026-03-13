@@ -365,6 +365,21 @@ async function seed() {
     });
   }
 
+  // 14. User Settings (some public, some with notifications)
+  console.log('Creating user settings...');
+  for (let i = 0; i < USER_IDS.length; i++) {
+    const isPublic = i % 2 === 0; // Half public, half private
+    const notifsOn = i % 3 === 0; // Some with notifications
+    await db.doc(`userSettings/${USER_IDS[i]}`).set({
+      profilePublic: isPublic,
+      notificationsEnabled: notifsOn,
+      notifyLikes: notifsOn,
+      notifyPhotos: notifsOn,
+      notifyRankings: notifsOn,
+      updatedAt: new Date(),
+    });
+  }
+
   console.log('\nSeed complete!');
   console.log('- 10 users');
   console.log('- 60 comments (4 flagged)');
@@ -377,6 +392,7 @@ async function seed() {
   console.log('- 12 abuse logs');
   console.log('- 2 user rankings (weekly + monthly)');
   console.log('- 12 notifications');
+  console.log('- 10 user settings');
   console.log('- Counters and moderation config');
 
   process.exit(0);

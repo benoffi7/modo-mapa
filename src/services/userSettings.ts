@@ -1,0 +1,38 @@
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { COLLECTIONS } from '../config/collections';
+import { userSettingsConverter } from '../config/converters';
+import type { UserSettings } from '../types';
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  profilePublic: false,
+  notificationsEnabled: false,
+  notifyLikes: false,
+  notifyPhotos: false,
+  notifyRankings: false,
+  updatedAt: new Date(),
+};
+
+export async function fetchUserSettings(userId: string): Promise<UserSettings> {
+  const snap = await getDoc(
+    doc(db, COLLECTIONS.USER_SETTINGS, userId).withConverter(userSettingsConverter),
+  );
+  return snap.exists() ? snap.data() : { ...DEFAULT_SETTINGS };
+}
+
+export async function updateUserSettings(
+  userId: string,
+  updates: Partial<Omit<UserSettings, 'updatedAt'>>,
+): Promise<void> {
+  const ref = doc(db, COLLECTIONS.USER_SETTINGS, userId);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    // Document exists — merge only the changed fields
+    await setDoc(ref, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+  } else {
+    // First write — send all fields so Firestore rules pass validation
+    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings } = DEFAULT_SETTINGS;
+    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, ...updates, updatedAt: serverTimestamp() });
+  }
+}

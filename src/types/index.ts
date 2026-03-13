@@ -170,3 +170,12 @@ export interface UserRanking {
   rankings: UserRankingEntry[];
   totalParticipants: number;
 }
+
+export interface UserSettings {
+  profilePublic: boolean;
+  notificationsEnabled: boolean;
+  notifyLikes: boolean;
+  notifyPhotos: boolean;
+  notifyRankings: boolean;
+  updatedAt: Date;
+}

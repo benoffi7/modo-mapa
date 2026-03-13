@@ -14,4 +14,5 @@ export const COLLECTIONS = {
   PRICE_LEVELS: 'priceLevels',
   USER_RANKINGS: 'userRankings',
   NOTIFICATIONS: 'notifications',
+  USER_SETTINGS: 'userSettings',
 } as const;

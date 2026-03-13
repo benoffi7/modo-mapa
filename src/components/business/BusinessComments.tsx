@@ -24,6 +24,7 @@ import { useAuth } from '../../context/AuthContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import { formatDateMedium } from '../../utils/formatDate';
 import UserProfileSheet from '../user/UserProfileSheet';
+import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import type { Comment } from '../../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -41,6 +42,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
+
+  // Profile visibility
+  const commentUserIds = useMemo(() => comments.map((c) => c.userId), [comments]);
+  const profileVisibility = useProfileVisibility(commentUserIds);
 
   // Sort
   const [sortMode, setSortMode] = useState<SortMode>('recent');
@@ -210,7 +215,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       </Box>
 
       {user && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <TextField
             fullWidth
             size="small"
@@ -231,14 +236,22 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               },
             }}
           />
-          <Button
-            variant="contained"
+          <IconButton
+            color="primary"
             onClick={handleSubmit}
             disabled={isSubmitting || !newComment.trim()}
-            sx={{ borderRadius: '20px', minWidth: 'auto', px: 2 }}
+            sx={{
+              bgcolor: 'primary.main',
+              color: '#fff',
+              width: 40,
+              height: 40,
+              flexShrink: 0,
+              '&:hover': { bgcolor: 'primary.dark' },
+              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+            }}
           >
-            <SendIcon fontSize="small" />
-          </Button>
+            <SendIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         </Box>
       )}
 
@@ -263,8 +276,14 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                   <Typography
                     component="span"
                     variant="body2"
-                    sx={{ fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-                    onClick={() => setProfileUser({ id: comment.userId, name: comment.userName })}
+                    sx={{
+                      fontWeight: 600,
+                      ...(profileVisibility.get(comment.userId) ? {
+                        cursor: 'pointer',
+                        '&:hover': { textDecoration: 'underline' },
+                      } : {}),
+                    }}
+                    onClick={() => profileVisibility.get(comment.userId) && setProfileUser({ id: comment.userId, name: comment.userName })}
                   >
                     {comment.userName || 'Anónimo'}
                   </Typography>
