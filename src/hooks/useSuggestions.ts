@@ -36,43 +36,41 @@ export function useSuggestions(): {
   const { user } = useAuth();
   const { userLocation } = useMapContext();
 
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [ratings, setRatings] = useState<Rating[]>([]);
-  const [userTags, setUserTags] = useState<UserTag[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
+  interface SuggestionState {
+    favorites: Favorite[];
+    ratings: Rating[];
+    userTags: UserTag[];
+    isLoading: boolean;
+    error: boolean;
+  }
+
+  const initialState: SuggestionState = { favorites: [], ratings: [], userTags: [], isLoading: false, error: false };
+  const [state, setState] = useState<SuggestionState>(initialState);
 
   useEffect(() => {
     if (!user) {
-      setFavorites([]);
-      setRatings([]);
-      setUserTags([]);
-      setError(false);
+      setState(initialState);
       return;
     }
 
     let cancelled = false;
-    setIsLoading(true);
-    setError(false);
+    setState((prev) => ({ ...prev, isLoading: true, error: false }));
 
     fetchUserSuggestionData(user.uid)
       .then((data) => {
-        if (cancelled) return;
-        setFavorites(data.favorites);
-        setRatings(data.ratings);
-        setUserTags(data.userTags);
+        if (!cancelled) setState({ favorites: data.favorites, ratings: data.ratings, userTags: data.userTags, isLoading: false, error: false });
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setState((prev) => ({ ...prev, isLoading: false, error: true }));
       });
 
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const { favorites, ratings, userTags, isLoading, error } = state;
 
   const suggestions = useMemo(() => {
     if (favorites.length === 0 && ratings.length === 0 && userTags.length === 0) {
