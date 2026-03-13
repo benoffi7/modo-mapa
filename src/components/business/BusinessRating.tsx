@@ -131,7 +131,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
   if (!isLoading && ratings.length === 0 && !user) {
     return (
       <Box sx={{ py: 1 }}>
-        <Typography variant="body2" color="text.secondary">Sin calificaciones a\u00fan</Typography>
+        <Typography variant="body2" color="text.secondary">Sin calificaciones aún</Typography>
       </Box>
     );
   }
@@ -144,13 +144,13 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
         </Typography>
         <Rating value={averageRating} precision={0.1} readOnly size="small" />
         <Typography variant="body2">
-          ({totalRatings} {totalRatings === 1 ? 'opini\u00f3n' : 'opiniones'})
+          ({totalRatings} {totalRatings === 1 ? 'opinión' : 'opiniones'})
         </Typography>
       </Box>
       {user && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Tu calificaci\u00f3n:
+            Tu calificación:
           </Typography>
           <Rating
             value={myRating}
@@ -158,7 +158,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
             size="medium"
           />
           {myRating != null && (
-            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', p: 0.25 }} aria-label="Borrar calificaci\u00f3n">
+            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', p: 0.25 }} aria-label="Borrar calificación">
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
           )}
@@ -205,7 +205,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
               {user && (
                 <Box>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: '0.8rem' }}>
-                    Tu calificaci\u00f3n por criterio:
+                    Tu calificación por criterio:
                   </Typography>
                   {RATING_CRITERIA.map((criterion) => {
                     const Icon = CRITERION_ICONS[criterion.id];
