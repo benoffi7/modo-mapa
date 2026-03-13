@@ -37,11 +37,16 @@ Every Firestore collection has a corresponding service module:
 | Module | Collection | Operations |
 |--------|-----------|------------|
 | `favorites.ts` | `favorites` | add, remove |
-| `ratings.ts` | `ratings` | upsert |
-| `comments.ts` | `comments` | add, delete |
+| `ratings.ts` | `ratings` | upsert, delete, upsertCriteriaRating |
+| `comments.ts` | `comments` | add, edit, delete, like, unlike |
 | `tags.ts` | `userTags`, `customTags` | add, remove, create, update, delete |
 | `feedback.ts` | `feedback` | send |
+| `priceLevels.ts` | `priceLevels` | upsert, delete |
+| `menuPhotos.ts` | `menuPhotos` | upload, getForBusiness, report |
+| `suggestions.ts` | — | fetchUserSuggestionData (aggregates favorites, ratings, userTags) |
 | `admin.ts` | All collections | fetch (read-only, admin queries) |
+| `userProfile.ts` | `users`, etc. | fetchUserProfile (read-only aggregate) |
+| `rankings.ts` | `userRankings` | fetchLatestRanking |
 
 **Rules:**
 
@@ -321,6 +326,48 @@ Both caches are invalidated on write operations via `invalidateBusinessCache()` 
 
 ---
 
+## Security Coding Standards
+
+### Firestore Rules — Mandatory Patterns
+
+When adding a new Firestore collection, ALL of these patterns must be applied:
+
+1. **`keys().hasOnly([...])`** on every `create` rule — prevents field injection.
+2. **Ownership check on update/delete**: always use `resource.data.userId == request.auth.uid` (existing doc), never `request.resource.data.userId`.
+3. **userId immutability on update**: add `request.resource.data.userId == resource.data.userId`.
+4. **`affectedKeys().hasOnly([...])`** on update rules when the collection has server-managed fields (like `replyCount`, `likeCount`, `flagged`).
+5. **Server timestamps**: `createdAt == request.time` on create, `updatedAt == request.time` on update.
+
+### Server-Side Data Integrity
+
+Fields managed by Cloud Functions (never writable by clients):
+
+| Field | Collection | Managed by |
+|-------|-----------|------------|
+| `replyCount` | `comments` | `onCommentCreated` / `onCommentDeleted` |
+| `likeCount` | `comments` | `onCommentLikeCreated` / `onCommentLikeDeleted` |
+| `flagged` | `comments` | `onCommentCreated` / `onCommentUpdated` (moderation) |
+| `reportCount` | `menuPhotos` | `reportMenuPhoto` callable |
+| `thumbnailPath` | `menuPhotos` | `onMenuPhotoCreated` |
+
+### Service Layer — Defense in Depth
+
+Services validate input before sending to Firestore (even though rules also validate):
+
+- Text lengths, score ranges, enum whitelists
+- `limit()` on all queries that could return unbounded results (max 200)
+- Trimming text input before write
+
+### Cloud Functions — Checklist for New Triggers
+
+- Add rate limiting via `checkRateLimit()` if user-facing
+- Add content moderation via `checkModeration()` for text fields
+- Update counters via `incrementCounter()` / `trackWrite()` / `trackDelete()`
+- Use `FieldValue.increment()` for atomic counter updates
+- Implement cascade deletes if the doc has child relationships
+
+---
+
 ## How to Add a New Feature
 
 1. **Types**: Define interfaces in `src/types/`.
@@ -341,3 +388,9 @@ Both caches are invalidated on write operations via `invalidateBusinessCache()` 
 - [ ] Imports ordered correctly
 - [ ] `npx tsc --noEmit` passes
 - [ ] `npm run lint` has no errors
+- [ ] Firestore rules: `keys().hasOnly()` on create, ownership on update/delete, userId immutability
+- [ ] Service queries use `limit()` (max 200)
+- [ ] Cloud Function triggers: rate limit + moderation + counters
+- [ ] Constants in `src/constants/` (no magic numbers)
+- [ ] Privacy policy updated if new user data is collected
+- [ ] Seed script updated for new collections (`scripts/seed-admin-data.mjs`)
