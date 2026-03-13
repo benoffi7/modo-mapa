@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.2.0
+**Version:** 2.3.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-13
@@ -30,6 +30,7 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronomi
 | Hosting | Firebase Hosting | — |
 | Routing | react-router-dom | 7.x |
 | Error tracking | @sentry/react + @sentry/node | latest |
+| Analytics | Firebase Analytics (GA4) | 12.10 |
 | PWA | vite-plugin-pwa (Workbox) | 1.2 |
 | CI/CD | GitHub Actions | — |
 
@@ -62,6 +63,8 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Menu lateral**: recientes (localStorage), favoritos, comentarios, calificaciones, rankings, feedback, estadisticas
 - **Notificaciones**: campana con badge, drawer, polling 60s, triggers automaticos (likes, fotos, rankings)
 - **Perfil publico**: click en nombre de usuario → drawer con stats y comentarios recientes
+- **Configuracion de usuario**: panel lateral con perfil publico/privado + preferencias de notificaciones (master + granulares)
+- **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback, tendencias, usuarios, Firebase usage, alertas, backups, fotos
 - **Cloud Functions**: 8 callable + 14 triggers + 5 scheduled
 - **Seguridad**: App Check, Firestore rules, rate limiting (3 capas), moderacion, CSP

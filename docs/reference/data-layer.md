@@ -7,12 +7,13 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | Modulo | Coleccion | Operaciones |
 |--------|-----------|-------------|
 | `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection` |
-| `ratings.ts` | `ratings` | `upsertRating`, `getRatingsCollection` |
+| `ratings.ts` | `ratings` | `upsertRating`, `deleteRating`, `getRatingsCollection` |
 | `comments.ts` | `comments`, `commentLikes` | `addComment`, `editComment`, `deleteComment`, `likeComment`, `unlikeComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
 | `feedback.ts` | `feedback` | `sendFeedback` |
 | `menuPhotos.ts` | `menuPhotos` | `uploadMenuPhoto` (con AbortSignal + progress callback), `getUserPendingPhotos` |
 | `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `getBusinessPriceLevels` |
+| `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `admin.ts` | Todas (read-only) | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos` |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
@@ -51,6 +52,9 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useVisitHistory` | Historial de visitas en localStorage (ultimos 20 comercios). Retorna `{ visits, recordVisit }`. Se usa en BusinessSheet para registrar y en RecentVisits para mostrar. |
 | `useUserLocation` | Geolocalizacion del navegador. |
 | `usePublicMetrics` | Hook para metricas publicas de dailyMetrics (estadisticas en menu lateral). |
+| `useUserSettings` | Settings del usuario (perfil publico, notificaciones). Optimistic UI con revert on error. Retorna `{ settings, loading, updateSetting }`. |
+| `useProfileVisibility` | Cache module-level con TTL 60s para `profilePublic` de otros usuarios. Batch fetch con `documentId() in`. Retorna `Map<string, boolean>`. Usa `useSyncExternalStore`. |
+| `useNotifications` | Polling cada 60s de notificaciones no leidas. Retorna `{ notifications, unreadCount, loading, markRead, markAllRead, refresh }`. |
 
 ### `useBusinessData` — Race condition fix
 
@@ -77,6 +81,16 @@ Funciones centralizadas de formato de fecha en locale argentino (es-AR):
 | `formatDateShort(date)` | Formato corto: dd/MM, HH:mm | `12/03, 14:30` |
 | `formatDateMedium(date)` | Formato medio: d MMM yyyy | `12 mar 2026` |
 | `formatDateFull(dateStr)` | Formato completo desde ISO string: dd/MM/yyyy, HH:mm | `12/03/2026, 14:30` |
+
+### `analytics.ts`
+
+Utilidad centralizada para Firebase Analytics (GA4). Solo activa en produccion, lazy-loaded via dynamic import.
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `initAnalytics(app)` | Inicializa analytics (solo en PROD). Llamada desde `main.tsx` |
+| `trackEvent(name, params?)` | Envia evento custom a GA4. No-op si analytics no inicializado |
+| `setUserProperty(name, value)` | Establece propiedad de usuario en GA4 |
 
 ### `businessHelpers.ts`
 

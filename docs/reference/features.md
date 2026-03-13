@@ -18,7 +18,7 @@
 - Boton favorito (toggle corazon)
 - Boton direcciones (abre Google Maps)
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
-- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`
+- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion
 - **Tags predefinidos**: vote count + toggle del usuario
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
 - **Comentarios**: lista + formulario + editar propios + undo delete (5s) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)"
@@ -42,6 +42,7 @@
   - **Rankings**: ranking semanal/mensual con scoring por actividad. Cards con medallas y barra de progreso. "Tu actividad" con desglose de puntos (en vivo si no estas en ranking pre-computado)
   - **Feedback**: formulario con categoria (bug/sugerencia/otro) + mensaje (max 1000). Estado de exito
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
+  - **Configuracion**: panel con toggles de privacidad (perfil publico/privado) y notificaciones (master + likes/fotos/rankings). Defaults todos en false. Optimistic UI con revert on error
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
 - Footer con version de la app (+ link a Theme Playground en DEV)
@@ -68,6 +69,22 @@
 - Ultimos 5 comentarios con link al comercio
 - Graceful handling cuando el doc del usuario no es accesible (rules restringen a owner/admin)
 - Fallback de nombre desde el comentario
+- Visibilidad controlada por `profilePublic` en `userSettings` — cache con TTL 60s en `useProfileVisibility`
+
+---
+
+## Firebase Analytics
+
+- Firebase Analytics (GA4) integrado solo en produccion (`import.meta.env.PROD`)
+- Lazy-loaded via dynamic import para no impactar bundle size
+- Utilidad centralizada en `src/utils/analytics.ts`: `initAnalytics`, `trackEvent`, `setUserProperty`
+- Eventos trackeados:
+  - `business_view` (id, nombre, categoria)
+  - `business_search` (query)
+  - `business_filter_tag` / `business_filter_price`
+  - `rating_submit` (business_id, score)
+  - `side_menu_open`, `dark_mode_toggle`
+- Inicializado en `main.tsx` despues de crear la app Firebase
 
 ---
 
