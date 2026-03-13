@@ -1,0 +1,152 @@
+# Firestore — Colecciones y tipos
+
+## Colecciones
+
+| Coleccion | Doc ID | Campos | Reglas |
+|-----------|--------|--------|--------|
+| `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
+| `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
+| `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged? | Read auth; create owner; update owner (text+updatedAt only); delete owner |
+| `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
+| `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
+| `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
+| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/otro), createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
+| `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
+| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
+| `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
+| `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
+| `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3 |
+| `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
+
+### Subcollections
+
+| Parent | Subcollection | Doc ID | Campos | Proposito |
+|--------|---------------|--------|--------|-----------|
+| `menuPhotos/{photoId}` | `reports` | `{userId}` | createdAt | Previene reportes duplicados por usuario. `reportCount` en doc padre se incrementa atomicamente. |
+
+---
+
+## Tipos principales
+
+```typescript
+// Business (datos estaticos del JSON)
+interface Business {
+  id: string;             // "biz_001"
+  name: string;           // "La Parrilla de Juan"
+  address: string;        // "Av. Corrientes 1234, CABA"
+  category: BusinessCategory;
+  lat: number;
+  lng: number;
+  tags: string[];         // ["barato", "buena_atencion"]
+  phone: string | null;
+}
+
+type BusinessCategory = 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'fastfood' | 'icecream' | 'pizza';
+
+// Tags predefinidos (6)
+PREDEFINED_TAGS: barato, apto_celiacos, apto_veganos, rapido, delivery, buena_atencion
+
+// Categorias con labels en espanol (7)
+CATEGORY_LABELS: restaurant→Restaurante, cafe→Cafe, bakery→Panaderia, bar→Bar,
+                 fastfood→Comida rapida, icecream→Heladeria, pizza→Pizzeria
+
+// Menu Photos & Price Levels
+type MenuPhotoStatus = 'pending' | 'approved' | 'rejected';
+interface MenuPhoto {
+  id: string;
+  userId: string;
+  businessId: string;
+  storagePath: string;
+  thumbnailPath: string;
+  status: MenuPhotoStatus;
+  rejectionReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  createdAt: Date;
+  reportCount: number;
+}
+
+interface PriceLevel {
+  userId: string;
+  businessId: string;
+  level: 1 | 2 | 3;      // 1=Economico, 2=Moderado, 3=Caro
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+PRICE_LEVEL_LABELS: 1→Economico ($), 2→Moderado ($$), 3→Caro ($$$)
+
+// Admin types
+interface AdminCounters {
+  comments, ratings, favorites, feedback, users, customTags, userTags,
+  commentLikes, priceLevels, menuPhotos,
+  dailyReads, dailyWrites, dailyDeletes
+}
+
+interface DailyMetrics {
+  date, ratingDistribution, topFavorited, topCommented, topRated, topTags,
+  dailyReads, dailyWrites, dailyDeletes, byCollection, activeUsers
+}
+
+interface AbuseLog { id, userId, type, collection, detail, timestamp }
+```
+
+---
+
+## Converters (`src/config/converters.ts`)
+
+Todos los tipos tienen un `FirestoreDataConverter<T>` centralizado. Las lecturas usan `withConverter<T>()` para tipado seguro. Las escrituras **no** usan converter (necesitan `serverTimestamp()` que no es compatible con los tipos del converter).
+
+Converters disponibles:
+
+- `ratingConverter`, `commentConverter`, `commentLikeConverter`
+- `favoriteConverter`, `userTagConverter`, `customTagConverter`
+- `feedbackConverter`, `menuPhotoConverter`, `priceLevelConverter`
+
+Admin converters (`src/config/adminConverters.ts`):
+
+- `adminCountersConverter`, `dailyMetricsConverter`, `abuseLogConverter`
+
+Metrics converter (`src/config/metricsConverter.ts`):
+
+- `publicMetricsConverter`
+
+---
+
+## Cloud Storage — Fotos de menu
+
+### Estructura
+
+```text
+menu-photos/
+└── {userId}/
+    └── {timestamp}_{businessId}.jpg    # Original
+    └── thumb_{timestamp}_{businessId}.jpg  # Thumbnail (generado por Cloud Function)
+```
+
+### Reglas (`storage.rules`)
+
+- **Upload**: solo usuarios autenticados, a su propio path (`menu-photos/{userId}/`), maximo 5MB, solo imagenes (`image/*`).
+- **Read**: cualquier usuario autenticado puede leer.
+- **Delete**: solo Cloud Functions (admin SDK).
+
+---
+
+## Cloud Storage — Backups
+
+### Bucket
+
+- **Nombre**: `modo-mapa-app-backups`
+- **Region**: `southamerica-east1`
+- **Estructura**: `gs://modo-mapa-app-backups/backups/{timestamp}/`
+- **Formato timestamp**: ISO 8601 con `:` y `.` reemplazados por `-` (ej: `2026-03-12T14-30-00-000Z`)
+
+### Lifecycle policy
+
+- **Retencion**: 90 dias. Los backups mas antiguos se eliminan automaticamente via lifecycle rule del bucket.
+- **Eliminacion manual**: disponible via `deleteBackup` Cloud Function.
+
+### Backups de seguridad pre-restore
+
+Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restore-` para poder revertir si algo sale mal.

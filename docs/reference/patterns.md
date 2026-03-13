@@ -1,0 +1,88 @@
+# Patrones y convenciones
+
+## Autenticacion y acceso
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Auth anonima + Google Sign-In** | Usuarios normales se autentican anonimamente. Admin usa Google Sign-In solo en `/admin`. |
+| **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
+| **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
+
+## Datos y estado
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Datos estaticos + dinamicos** | Comercios en JSON local, interacciones en Firestore. Se cruzan por `businessId` client-side. |
+| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. |
+| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. Garantiza unicidad sin queries extra. |
+| **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
+| **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
+| **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
+
+## Queries y cache
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Parallel query batching** | `useBusinessData` ejecuta las 7 queries de Firestore del business view en un solo `Promise.all` para reducir latencia y facilitar cache. |
+| **Selective refetch** | `refetch(collectionName)` recarga solo la coleccion afectada (1 query) en vez de las 7. `patchBusinessCache` mergea updates parciales en cache. |
+| **patchedRef race condition fix** | En `useBusinessData`, `patchedRef` trackea colecciones actualizadas por refetches parciales. Al completar full load, preserva esas colecciones del state actual en vez de sobreescribir. Refetches parciales no incrementan `fetchIdRef`. |
+| **Business data cache** | `useBusinessDataCache.ts` — cache module-level (`Map`) con TTL de 5 min para las 7 queries del business view. Se invalida en cada write. |
+| **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Cache module-level (`Map`) con TTL de 2 min para la primera pagina de listas paginadas. |
+| **Firestore persistent cache (prod)** | En produccion se usa `initializeFirestore` con `persistentLocalCache` + `persistentMultipleTabManager` para cachear datos en IndexedDB. |
+| **usePaginatedQuery** | Hook generico para paginacion con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Boton "Cargar mas". |
+
+## UI patterns
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. |
+| **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm. `key={businessId}` en BusinessPriceLevel para reset de `pendingLevel`. Evita useEffect + refs para reset, compatible con strict lint rules. |
+| **Undo delete** | Comentarios se eliminan con undo (5s timer + Snackbar). Usado en BusinessComments y CommentsList. |
+| **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
+| **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
+| **Admin panel pattern** | Todos los paneles admin usan `useAsyncData` + `AdminPanelWrapper` para estados loading/error. |
+| **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
+| **Hook generico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
+| **Debounce con useDeferredValue** | `useBusinesses` y `useListFilters` usan `useDeferredValue` de React 19 para debounce de busqueda. |
+| **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
+
+## Uploads y media
+
+| Patron | Descripcion |
+|--------|-------------|
+| **AbortController for uploads** | `MenuPhotoUpload` usa `AbortController` para cancelar compression + Storage upload en cualquier punto de la cadena. Boton cancel siempre habilitado durante upload. |
+| **Photo reporting** | Usuarios reportan fotos via `reportMenuPhoto` callable. Subcollection `reports` bajo cada foto previene duplicados (doc ID = userId). `reportCount` incrementado atomicamente con `FieldValue.increment(1)`. |
+| **Photo staleness** | Si la foto fue revisada hace mas de 6 meses, se muestra un chip "Posiblemente desactualizado" (warning). |
+
+## Server-side
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (Firestore-backed, 5/min/user). |
+| **Moderacion de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). Normalizacion de acentos + word boundary. |
+| **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
+| **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
+
+## TypeScript y build
+
+| Patron | Descripcion |
+|--------|-------------|
+| **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
+| **exactOptionalPropertyTypes** | Habilitado en tsconfig. Propiedades opcionales requieren `\| undefined` explicito para asignar `undefined`. |
+| **Pre-commit hooks** | `husky` + `lint-staged` ejecuta ESLint en archivos `.ts/.tsx` staged antes de cada commit. |
+| **Markdown lint** | Archivos `.md` deben cumplir markdownlint (`.markdownlint.json`). Reglas clave: blank lines around headings/lists/fences, language en code blocks. |
+| **Lazy loading admin** | `/admin` usa `lazy()` + `Suspense`. No carga MapProvider/APIProvider. |
+| **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
+
+## Dark mode
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SideMenu footer. |
+| **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
+
+## Utilidades compartidas
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatDateFull`. Reemplaza duplicados en paneles admin y converters. |
