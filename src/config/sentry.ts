@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/react';
-
 declare const __APP_VERSION__: string;
 
 export function initSentry(): void {
@@ -12,10 +10,13 @@ export function initSentry(): void {
     return;
   }
 
-  Sentry.init({
-    dsn,
-    environment: import.meta.env.DEV ? 'development' : 'production',
-    release: `modo-mapa@${__APP_VERSION__}`,
-    tracesSampleRate: 0,
+  // Lazy-load Sentry to keep it out of the main bundle (~40kB gzip savings)
+  void import('@sentry/react').then((Sentry) => {
+    Sentry.init({
+      dsn,
+      environment: import.meta.env.DEV ? 'development' : 'production',
+      release: `modo-mapa@${__APP_VERSION__}`,
+      tracesSampleRate: 0,
+    });
   });
 }
