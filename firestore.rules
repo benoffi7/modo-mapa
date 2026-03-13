@@ -50,6 +50,7 @@ service cloud.firestore {
     function isValidCriteria(data) {
       return !('criteria' in data)
         || (data.criteria is map
+          && data.criteria.keys().hasOnly(['food', 'service', 'price', 'ambiance', 'speed'])
           && (!('food' in data.criteria) || (data.criteria.food is int && data.criteria.food >= 1 && data.criteria.food <= 5))
           && (!('service' in data.criteria) || (data.criteria.service is int && data.criteria.service >= 1 && data.criteria.service <= 5))
           && (!('price' in data.criteria) || (data.criteria.price is int && data.criteria.price >= 1 && data.criteria.price <= 5))
@@ -95,7 +96,9 @@ service cloud.firestore {
         && request.resource.data.userName.size() <= 30
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (!('parentId' in request.resource.data) || (request.resource.data.parentId is string && request.resource.data.parentId.size() > 0 && request.resource.data.parentId.size() <= 40))
+        && (!('replyCount' in request.resource.data) || request.resource.data.replyCount == 0);
       allow update: if request.auth != null
         && (
           // Owner can edit text
@@ -108,9 +111,12 @@ service cloud.firestore {
             && request.resource.data.userName == resource.data.userName
             && request.resource.data.createdAt == resource.data.createdAt)
           ||
-          // Any authenticated user can update replyCount (for thread replies)
+          // Any authenticated user can increment/decrement replyCount by exactly 1 (for thread replies)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount'])
-            && request.resource.data.replyCount is int)
+            && request.resource.data.replyCount is int
+            && request.resource.data.replyCount >= 0
+            && (request.resource.data.replyCount == resource.data.replyCount + 1
+                || request.resource.data.replyCount == resource.data.replyCount - 1))
         );
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;

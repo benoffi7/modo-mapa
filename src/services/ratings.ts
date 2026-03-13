@@ -67,25 +67,18 @@ export async function upsertCriteriaRating(
   const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
   const existing = await getDoc(ratingRef);
 
-  if (existing.exists()) {
-    // Merge criteria with existing criteria
-    const existingData = existing.data();
-    const mergedCriteria = { ...(existingData?.criteria ?? {}), ...criteria };
-    await updateDoc(ratingRef, {
-      criteria: mergedCriteria,
-      updatedAt: serverTimestamp(),
-    });
-  } else {
-    // If no global rating exists yet, default score to 3 (middle value)
-    await setDoc(ratingRef, {
-      userId,
-      businessId,
-      score: 3,
-      criteria,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+  if (!existing.exists()) {
+    // Require a global rating before allowing criteria ratings
+    throw new Error('Calificá con estrellas antes de agregar detalle por criterio');
   }
+
+  // Merge criteria with existing criteria
+  const existingData = existing.data();
+  const mergedCriteria = { ...(existingData?.criteria ?? {}), ...criteria };
+  await updateDoc(ratingRef, {
+    criteria: mergedCriteria,
+    updatedAt: serverTimestamp(),
+  });
 
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
   trackEvent('criteria_rating_submit', { business_id: businessId });
