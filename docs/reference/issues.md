@@ -40,6 +40,9 @@
 | [#59](https://github.com/benoffi7/modo-mapa/issues/59) | feat | Panel de configuracion de usuario (perfil publico/privado, notificaciones) | [#62](https://github.com/benoffi7/modo-mapa/pull/62) | Merged | `docs/feat/security/user-settings/` |
 | — | feat | Centralizar constantes + Constants Dashboard (DEV only) | [#66](https://github.com/benoffi7/modo-mapa/pull/66) | Merged | `docs/feat/infra/constants-dashboard/` |
 | — | feat | Ranking badge en perfil de usuario + mejoras UX foto menu + seed improvements | [#67](https://github.com/benoffi7/modo-mapa/pull/67) | Merged | — |
+| — | feat | Phase 4: threads (F5), multi-criteria (F7), suggestions (F10) + docs reorg | [#68](https://github.com/benoffi7/modo-mapa/pull/68) | Merged | — |
+| [#69](https://github.com/benoffi7/modo-mapa/issues/69) | security | Security audit Round 1: C1, H1, H3, M2, L1 | [#68](https://github.com/benoffi7/modo-mapa/pull/68) | Closed | `docs/reports/audit-phase4-v1.md` |
+| [#70](https://github.com/benoffi7/modo-mapa/issues/70) | security | Security audit Round 2: N1, N2, N3, H2, M1 + Round 3: N4, N5, N6 | [#71](https://github.com/benoffi7/modo-mapa/pull/71), [#72](https://github.com/benoffi7/modo-mapa/pull/72) | Closed | — |
 
 ---
 
