@@ -62,7 +62,13 @@ export function useNotifications(): UseNotificationsReturn {
     loadNotifications(uid).finally(() => setLoading(false));
 
     const currentUid = uid;
-    intervalRef.current = setInterval(() => loadCountOnly(currentUid), POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(() => {
+      // Only poll when tab is visible to avoid wasting queries at scale
+      if (document.visibilityState === 'visible') {
+        loadCountOnly(currentUid);
+      }
+    }, POLL_INTERVAL_MS);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
