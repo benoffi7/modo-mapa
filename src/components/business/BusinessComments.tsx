@@ -553,6 +553,9 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                         borderColor: 'divider',
                         ml: 0.5,
                         pl: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
                       }}
                     >
                       {visibleReplies.map((reply) => renderComment(reply, true))}
