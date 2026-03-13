@@ -1,4 +1,4 @@
-import type { Rating, Comment, UserTag, CustomTag } from '../types';
+import type { Rating, Comment, UserTag, CustomTag, MenuPhoto, PriceLevel } from '../types';
 
 export interface BusinessCacheEntry {
   isFavorite: boolean;
@@ -7,6 +7,8 @@ export interface BusinessCacheEntry {
   userTags: UserTag[];
   customTags: CustomTag[];
   userCommentLikes: Set<string>;
+  priceLevels: PriceLevel[];
+  menuPhoto: MenuPhoto | null;
   timestamp: number;
 }
 

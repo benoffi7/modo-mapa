@@ -8,6 +8,7 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const requiredEnvVars = [
@@ -34,6 +35,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const functions = getFunctions(app);
+export const storage = getStorage(app);
 
 // DEV: getFirestore estándar (emuladores no soportan persistent cache)
 // PROD: persistent cache en IndexedDB para reducir reads de Firestore
@@ -49,6 +51,7 @@ if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectFunctionsEmulator(functions, 'localhost', 5001);
+  connectStorageEmulator(storage, 'localhost', 9199);
 } else {
   // App Check obligatorio en producción — los emuladores no lo necesitan.
   // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).

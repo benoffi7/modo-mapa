@@ -1,12 +1,12 @@
 {
   "name": "modo-mapa",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "firebase emulators:exec --only auth,firestore,functions 'npm run dev'",
-    "emulators": "firebase emulators:start --only auth,firestore,functions",
+    "dev:full": "firebase emulators:exec --only auth,firestore,functions,storage 'npm run dev'",
+    "emulators": "firebase emulators:start --only auth,firestore,functions,storage",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -29,6 +29,7 @@
     "@sentry/react": "^10.43.0",
     "@sentry/vite-plugin": "^5.1.1",
     "@vis.gl/react-google-maps": "^1.7.1",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.10.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -10,4 +10,6 @@ export const COLLECTIONS = {
   DAILY_METRICS: 'dailyMetrics',
   ABUSE_LOGS: 'abuseLogs',
   COMMENT_LIKES: 'commentLikes',
+  MENU_PHOTOS: 'menuPhotos',
+  PRICE_LEVELS: 'priceLevels',
 } as const;

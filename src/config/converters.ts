@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory } from '../types';
+import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -151,6 +151,58 @@ export const favoriteConverter: FirestoreDataConverter<Favorite> = {
       userId: d.userId,
       businessId: d.businessId,
       createdAt: toDate(d.createdAt),
+    };
+  },
+};
+
+export const menuPhotoConverter: FirestoreDataConverter<MenuPhoto> = {
+  toFirestore(photo: MenuPhoto) {
+    return {
+      userId: photo.userId,
+      businessId: photo.businessId,
+      storagePath: photo.storagePath,
+      thumbnailPath: photo.thumbnailPath,
+      status: photo.status,
+      createdAt: photo.createdAt,
+      reportCount: photo.reportCount,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): MenuPhoto {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      userId: d.userId,
+      businessId: d.businessId,
+      storagePath: d.storagePath ?? '',
+      thumbnailPath: d.thumbnailPath ?? '',
+      status: d.status ?? 'pending',
+      rejectionReason: d.rejectionReason,
+      reviewedBy: d.reviewedBy,
+      reviewedAt: d.reviewedAt ? toDate(d.reviewedAt) : undefined,
+      createdAt: toDate(d.createdAt),
+      reportCount: (d.reportCount as number) ?? 0,
+    };
+  },
+};
+
+export const priceLevelConverter: FirestoreDataConverter<PriceLevel> = {
+  toFirestore(pl: PriceLevel) {
+    return {
+      userId: pl.userId,
+      businessId: pl.businessId,
+      level: pl.level,
+      createdAt: pl.createdAt,
+      updatedAt: pl.updatedAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): PriceLevel {
+    const d = snapshot.data(options);
+    return {
+      userId: d.userId,
+      businessId: d.businessId,
+      level: d.level,
+      createdAt: toDate(d.createdAt),
+      updatedAt: toDate(d.updatedAt),
     };
   },
 };
