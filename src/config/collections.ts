@@ -12,4 +12,5 @@ export const COLLECTIONS = {
   COMMENT_LIKES: 'commentLikes',
   MENU_PHOTOS: 'menuPhotos',
   PRICE_LEVELS: 'priceLevels',
+  USER_RANKINGS: 'userRankings',
 } as const;

@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel } from '../types';
+import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -203,6 +203,28 @@ export const priceLevelConverter: FirestoreDataConverter<PriceLevel> = {
       level: d.level,
       createdAt: toDate(d.createdAt),
       updatedAt: toDate(d.updatedAt),
+    };
+  },
+};
+
+export const userRankingConverter: FirestoreDataConverter<UserRanking> = {
+  toFirestore(ranking: UserRanking) {
+    return {
+      period: ranking.period,
+      startDate: ranking.startDate,
+      endDate: ranking.endDate,
+      rankings: ranking.rankings,
+      totalParticipants: ranking.totalParticipants,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): UserRanking {
+    const d = snapshot.data(options);
+    return {
+      period: d.period,
+      startDate: toDate(d.startDate),
+      endDate: toDate(d.endDate),
+      rankings: (d.rankings as UserRankingEntry[]) ?? [],
+      totalParticipants: (d.totalParticipants as number) ?? 0,
     };
   },
 };

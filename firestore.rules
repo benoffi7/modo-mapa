@@ -210,6 +210,13 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    // Rankings de usuarios — cualquier usuario autenticado puede leer.
+    // Cloud Functions escribe con admin SDK.
+    match /userRankings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_rateLimits/{docId} {
       allow read, write: if false;
