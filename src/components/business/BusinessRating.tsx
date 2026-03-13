@@ -205,7 +205,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
               {user && (
                 <Box>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: '0.8rem' }}>
-                    Tu calificación por criterio:
+                    Tu calificación por criterio{!myRating ? ' (calificá primero con estrellas)' : ':'}
                   </Typography>
                   {RATING_CRITERIA.map((criterion) => {
                     const Icon = CRITERION_ICONS[criterion.id];
@@ -221,6 +221,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
                           onChange={(_, value) => handleCriterionRate(criterion.id, value)}
                           size="small"
                           sx={{ fontSize: 16 }}
+                          disabled={!myRating}
                         />
                       </Box>
                     );
