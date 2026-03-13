@@ -1,5 +1,5 @@
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
@@ -45,7 +45,14 @@ export const onCommentCreated = onDocumentCreated(
       });
     }
 
-    // 3. Counters
+    // 3. Increment parent replyCount (server-side — H2 security fix)
+    const parentId = data.parentId as string | undefined;
+    if (parentId) {
+      const parentRef = db.collection('comments').doc(parentId);
+      await parentRef.update({ replyCount: FieldValue.increment(1) });
+    }
+
+    // 4. Counters
     await incrementCounter(db, 'comments', 1);
     await trackWrite(db, 'comments');
   },
@@ -84,8 +91,37 @@ export const onCommentUpdated = onDocumentUpdated(
 
 export const onCommentDeleted = onDocumentDeleted(
   'comments/{commentId}',
-  async () => {
+  async (event) => {
     const db = getFirestore();
+    const data = event.data?.data();
+    const commentId = event.params.commentId;
+
+    // 1. Decrement parent replyCount if this was a reply (H2 security fix)
+    const parentId = data?.parentId as string | undefined;
+    if (parentId) {
+      const parentRef = db.collection('comments').doc(parentId);
+      const parentSnap = await parentRef.get();
+      if (parentSnap.exists) {
+        const currentCount = (parentSnap.data()?.replyCount as number) ?? 0;
+        await parentRef.update({ replyCount: Math.max(0, currentCount - 1) });
+      }
+    }
+
+    // 2. Cascade delete orphaned replies if this was a parent comment (M1 fix)
+    const repliesSnap = await db.collection('comments')
+      .where('parentId', '==', commentId)
+      .get();
+
+    if (!repliesSnap.empty) {
+      const batch = db.batch();
+      for (const replyDoc of repliesSnap.docs) {
+        batch.delete(replyDoc.ref);
+      }
+      await batch.commit();
+      // Each deleted reply will trigger its own onCommentDeleted (for counter decrement)
+    }
+
+    // 3. Counters
     await incrementCounter(db, 'comments', -1);
     await trackDelete(db, 'comments');
   },
