@@ -10,7 +10,7 @@ Podes leer y modificar codigo para optimizaciones de performance.
 
 ## Contexto del proyecto
 
-- Consulta `docs/PROJECT_REFERENCE.md` para arquitectura y patrones.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para arquitectura y patrones.
 - `verbatimModuleSyntax: true` → usa `import type` para tipos.
 - Bundle analysis: `npm run analyze` genera `dist/stats.html`.
 

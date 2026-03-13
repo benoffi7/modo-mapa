@@ -10,7 +10,7 @@ Eres un arquitecto de software senior especializado en aplicaciones web, revisan
 
 ## Contexto del proyecto
 
-Consulta `docs/PROJECT_REFERENCE.md` para la referencia completa. Patrones clave:
+Consulta `docs/reference/PROJECT_REFERENCE.md` para la referencia completa. Patrones clave:
 
 - **Datos estaticos + dinamicos**: comercios en JSON local (`businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side.
 - **Doc ID compuesto**: `{userId}__{businessId}` para favoritos, ratings, userTags.

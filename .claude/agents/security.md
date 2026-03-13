@@ -10,7 +10,7 @@ Eres un auditor de seguridad web senior para el proyecto **Modo Mapa** (React 19
 
 ## Contexto del proyecto
 
-- Consulta `docs/PROJECT_REFERENCE.md` para arquitectura y patrones.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para arquitectura y patrones.
 - Consulta `docs/SECURITY_GUIDELINES.md` para guia de seguridad del proyecto.
 - Auth: Firebase Anonymous Auth (usuarios) + Google Sign-In (admin solamente).
 - Admin guard: 2 capas — frontend (AdminGuard email check) + server (Firestore rules `request.auth.token.email`).

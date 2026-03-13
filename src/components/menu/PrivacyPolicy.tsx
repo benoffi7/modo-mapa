@@ -57,8 +57,15 @@ export default function PrivacyPolicy() {
             ser cualquier nombre, no tiene que ser real).
           </Li>
           <Li>
-            <strong>Contenido generado:</strong> comentarios, calificaciones, favoritos,
-            etiquetas, fotos de menú, feedback y votos de nivel de gasto.
+            <strong>Contenido generado:</strong> comentarios (incluyendo respuestas en hilos),
+            calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
+            favoritos, etiquetas, fotos de menú, feedback y votos de nivel de gasto.
+          </Li>
+          <Li>
+            <strong>Datos de comportamiento (local):</strong> para las sugerencias
+            personalizadas, la app analiza tus favoritos, calificaciones y etiquetas
+            en el dispositivo para recomendarte comercios. Este análisis es 100% local
+            y no se envía a ningún servidor.
           </Li>
           <Li>
             <strong>Datos de uso (opcional):</strong> si activás &quot;Enviar datos de uso&quot;

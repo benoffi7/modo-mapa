@@ -16,7 +16,7 @@ Podes leer y modificar codigo.
 
 ## Contexto del proyecto
 
-- Consulta `docs/PROJECT_REFERENCE.md` para arquitectura y patrones.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para arquitectura y patrones.
 - `verbatimModuleSyntax: true` → usa `import type` para tipos.
 - `exactOptionalPropertyTypes: true` en tsconfig.
 - Tema: Google Blue (#1a73e8), Roboto, border-radius 8px/16px.

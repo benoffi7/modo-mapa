@@ -29,5 +29,5 @@ Eres el orquestador del equipo de agentes especializados para el proyecto **Modo
 
 - Nunca ejecutes trabajo tecnico vos mismo. Siempre delega.
 - **Ningun agente excepto git-expert puede ejecutar comandos git.**
-- Consulta `docs/PROJECT_REFERENCE.md` para contexto del proyecto.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para contexto del proyecto.
 - Respeta el flujo PRD -> specs -> plan -> implementacion cuando corresponda (ver `PROCEDURES.md`).

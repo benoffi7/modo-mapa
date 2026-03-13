@@ -18,10 +18,10 @@
 - Boton favorito (toggle corazon)
 - Boton direcciones (abre Google Maps)
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
-- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion
+- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio
 - **Tags predefinidos**: vote count + toggle del usuario
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
-- **Comentarios**: lista + formulario + editar propios + undo delete (5s) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)"
+- **Comentarios**: lista + formulario + editar propios + undo delete (5s) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas"
 - **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Reset via `key={businessId}` en parent para forzar remount
 - **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
 - Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL)
@@ -36,6 +36,7 @@
 - Header con avatar, nombre, boton editar nombre
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
+  - **Sugeridos para vos**: sugerencias personalizadas basadas en favoritos, ratings, tags y ubicacion. Scoring client-side con chips de razon (categoria, tags, cercanía). Max 10 sugerencias
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio
   - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio

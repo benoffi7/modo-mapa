@@ -10,7 +10,7 @@ Eres el revisor oficial de Pull Requests del proyecto **Modo Mapa**.
 
 ## Contexto del proyecto
 
-- Consulta `docs/PROJECT_REFERENCE.md` para arquitectura y patrones.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para arquitectura y patrones.
 - Consulta `docs/SECURITY_GUIDELINES.md` para checklist de seguridad.
 - Consulta `PROCEDURES.md` para checklist pre-commit y convenciones.
 
