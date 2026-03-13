@@ -56,6 +56,13 @@
         { "fieldPath": "level", "order": "ASCENDING" }
       ]
     }
+    {
+      "collectionGroup": "userRankings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "period", "order": "DESCENDING" }
+      ]
+    }
   ],
   "fieldOverrides": []
 }

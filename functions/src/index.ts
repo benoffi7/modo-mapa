@@ -18,6 +18,7 @@ export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';
 export { cleanupRejectedPhotos } from './scheduled/cleanupPhotos';
+export { computeWeeklyRanking, computeMonthlyRanking } from './scheduled/rankings';
 
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';

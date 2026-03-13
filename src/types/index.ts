@@ -131,3 +131,25 @@ export const CATEGORY_LABELS: Record<BusinessCategory, string> = {
   icecream: 'Heladería',
   pizza: 'Pizzería',
 };
+
+export interface UserRankingEntry {
+  userId: string;
+  displayName: string;
+  score: number;
+  breakdown: {
+    comments: number;
+    ratings: number;
+    likes: number;
+    tags: number;
+    favorites: number;
+    photos: number;
+  };
+}
+
+export interface UserRanking {
+  period: string;
+  startDate: Date;
+  endDate: Date;
+  rankings: UserRankingEntry[];
+  totalParticipants: number;
+}
