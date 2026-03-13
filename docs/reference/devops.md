@@ -76,17 +76,26 @@ Script de gestion del entorno de desarrollo local. Maneja emuladores Firebase y 
 2. Setup: Node 22 + npm cache
 3. `npm audit --audit-level=high` (continue-on-error)
 4. `npm run lint`
-5. `npm run test:run`
-6. `npm run build` con secrets como env vars
-7. Auth: `google-github-actions/auth@v2` con service account
-8. Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes`
-9. Deploy Cloud Functions: `cd functions && npm ci && firebase deploy --only functions`
-10. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
+5. `npm run test:run` (root — solo `src/`, excluye `functions/`)
+6. Functions tests: `cd functions && npm ci && npm run test:run`
+7. `npm run build` con secrets como env vars
+8. Auth: `google-github-actions/auth@v2` con service account
+9. Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes`
+10. Deploy Cloud Functions: `cd functions && npm ci && firebase deploy --only functions`
+11. Deploy Hosting: Firebase Hosting (canal `live`) via `FirebaseExtended/action-hosting-deploy@v0`
 
 **Preview** (`.github/workflows/preview.yml`):
 
 - Trigger: PR a `main`
-- Lint + test + build + deploy preview channel
+- Lint + tests (root + functions) + build + deploy preview channel
+- Permissions: `contents: read`, `checks: write`, `pull-requests: write`
+
+**Arquitectura de tests en CI:**
+
+- Root vitest (`vite.config.ts`): entorno jsdom, solo `src/`, excluye `functions/**`
+- Functions vitest (`functions/vitest.config.ts`): entorno node, solo `functions/src/`
+- VITE_ env vars solo disponibles en el step de build, NO en tests
+- Tests que importan modulos que chainan a `firebase.ts` deben mockear la cadena
 
 **Todo se despliega automaticamente** en cada push a main: hosting, Firestore rules/indexes, y Cloud Functions.
 
@@ -96,6 +105,7 @@ Script de gestion del entorno de desarrollo local. Maneja emuladores Firebase y 
 
 - `roles/serviceusage.serviceUsageConsumer` — para invocar APIs de Firebase
 - `roles/firebase.admin` — para deploy de rules/indexes
+- `roles/iam.serviceAccountUser` — **requerido** para deploy de Cloud Functions (`iam.serviceAccounts.ActAs`)
 
 **Service account de Cloud Functions** (`591435782056-compute@developer.gserviceaccount.com`):
 
