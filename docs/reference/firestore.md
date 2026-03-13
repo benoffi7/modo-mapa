@@ -7,7 +7,7 @@
 | `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
 | `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
 | `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), criteria? (food/service/price/ambiance/speed, each 1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5, isValidCriteria validation |
-| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged?, parentId?, replyCount? | Read auth; create owner (replyCount must be 0 or absent); update owner (text+updatedAt) or any auth user (replyCount +/-1); delete owner |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged?, parentId?, replyCount? | Read auth; create owner (`keys().hasOnly`, no replyCount); update owner (`affectedKeys` text+updatedAt only); delete owner. replyCount managed by Cloud Functions. |
 | `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
@@ -17,6 +17,9 @@
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
+| `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
 
 ### Subcollections
