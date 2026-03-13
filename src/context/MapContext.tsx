@@ -2,9 +2,21 @@ import { createContext, useContext, useState, useCallback, useMemo } from 'react
 import type { ReactNode } from 'react';
 import type { Business } from '../types';
 
-interface MapContextType {
+/* ─── Selection context (changes on marker click) ─── */
+
+interface SelectionContextType {
   selectedBusiness: Business | null;
   setSelectedBusiness: (business: Business | null) => void;
+}
+
+const SelectionContext = createContext<SelectionContextType>({
+  selectedBusiness: null,
+  setSelectedBusiness: () => {},
+});
+
+/* ─── Filters context (changes on search/filter/location) ─── */
+
+interface FiltersContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   activeFilters: string[];
@@ -15,9 +27,7 @@ interface MapContextType {
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
 }
 
-const MapContext = createContext<MapContextType>({
-  selectedBusiness: null,
-  setSelectedBusiness: () => {},
+const FiltersContext = createContext<FiltersContextType>({
   searchQuery: '',
   setSearchQuery: () => {},
   activeFilters: [],
@@ -27,6 +37,8 @@ const MapContext = createContext<MapContextType>({
   userLocation: null,
   setUserLocation: () => {},
 });
+
+/* ─── Combined provider ─── */
 
 export function MapProvider({ children }: { children: ReactNode }) {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -45,9 +57,12 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setActivePriceFilter((prev) => prev === level ? null : level);
   }, []);
 
-  const value = useMemo<MapContextType>(() => ({
+  const selectionValue = useMemo<SelectionContextType>(() => ({
     selectedBusiness,
     setSelectedBusiness,
+  }), [selectedBusiness]);
+
+  const filtersValue = useMemo<FiltersContextType>(() => ({
     searchQuery,
     setSearchQuery,
     activeFilters,
@@ -56,14 +71,27 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setPriceFilter,
     userLocation,
     setUserLocation,
-  }), [selectedBusiness, searchQuery, activeFilters, toggleFilter, activePriceFilter, setPriceFilter, userLocation]);
+  }), [searchQuery, activeFilters, toggleFilter, activePriceFilter, setPriceFilter, userLocation]);
 
   return (
-    <MapContext.Provider value={value}>
-      {children}
-    </MapContext.Provider>
+    <SelectionContext.Provider value={selectionValue}>
+      <FiltersContext.Provider value={filtersValue}>
+        {children}
+      </FiltersContext.Provider>
+    </SelectionContext.Provider>
   );
 }
 
-export { MapContext };
-export const useMapContext = () => useContext(MapContext);
+/* ─── Hooks ─── */
+
+export const useSelection = () => useContext(SelectionContext);
+export const useFilters = () => useContext(FiltersContext);
+
+/** @deprecated Use useSelection() or useFilters() directly */
+export function useMapContext() {
+  const selection = useContext(SelectionContext);
+  const filters = useContext(FiltersContext);
+  return { ...selection, ...filters };
+}
+
+export { SelectionContext, FiltersContext };

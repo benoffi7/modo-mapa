@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('../config/firebase', () => ({ db: {} }));
 vi.mock('../config/collections', () => ({ COLLECTIONS: { COMMENTS: 'comments', COMMENT_LIKES: 'commentLikes' } }));
 vi.mock('../config/converters', () => ({ commentConverter: {} }));
-vi.mock('../hooks/usePaginatedQuery', () => ({ invalidateQueryCache: vi.fn() }));
+vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
 const mockAddDoc = vi.fn().mockResolvedValue({ id: 'newDoc' });

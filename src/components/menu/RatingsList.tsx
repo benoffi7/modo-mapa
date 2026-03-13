@@ -12,7 +12,7 @@ import {
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { getRatingsCollection } from '../../services/ratings';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -26,7 +26,7 @@ interface Props {
 
 export default function RatingsList({ onNavigate }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
 
   const collectionRef = useMemo(() => getRatingsCollection(), []);
 

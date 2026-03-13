@@ -2,17 +2,24 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { Map, useMap } from '@vis.gl/react-google-maps';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection, useFilters } from '../../context/MapContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
 
 export default function MapView() {
   const map = useMap();
-  const { selectedBusiness, setSelectedBusiness, userLocation, searchQuery, activeFilters } = useMapContext();
+  const { selectedBusiness, setSelectedBusiness } = useSelection();
+  const { userLocation, searchQuery, activeFilters } = useFilters();
   const { businesses } = useBusinesses();
   const hasActiveFilters = searchQuery.trim().length > 0 || activeFilters.length > 0;
   const hasInitialLocation = useRef(false);
+
+  // Stable ref for businesses so handleMarkerClick doesn't invalidate memo'd markers
+  const businessesRef = useRef(businesses);
+  useEffect(() => {
+    businessesRef.current = businesses;
+  }, [businesses]);
 
   useEffect(() => {
     if (map && userLocation && !hasInitialLocation.current) {
@@ -30,20 +37,18 @@ export default function MapView() {
 
   const handleMarkerClick = useCallback(
     (businessId: string) => {
-      const business = businesses.find((b) => b.id === businessId);
+      const business = businessesRef.current.find((b) => b.id === businessId);
       if (business) {
         setSelectedBusiness(business);
         map?.panTo({ lat: business.lat, lng: business.lng });
       }
     },
-    [businesses, setSelectedBusiness, map]
+    [setSelectedBusiness, map]
   );
 
   const handleMapClick = useCallback(() => {
-    if (selectedBusiness) {
-      setSelectedBusiness(null);
-    }
-  }, [selectedBusiness, setSelectedBusiness]);
+    setSelectedBusiness(null);
+  }, [setSelectedBusiness]);
 
   return (
     <>

@@ -3,7 +3,7 @@ import { Paper, InputBase, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useMapContext } from '../../context/MapContext';
+import { useFilters } from '../../context/MapContext';
 import { useAuth } from '../../context/AuthContext';
 import { trackEvent } from '../../utils/analytics';
 import NotificationBell from '../notifications/NotificationBell';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function SearchBar({ onMenuClick }: Props) {
-  const { searchQuery, setSearchQuery } = useMapContext();
+  const { searchQuery, setSearchQuery } = useFilters();
   const { user } = useAuth();
   const [focused, setFocused] = useState(false);
 

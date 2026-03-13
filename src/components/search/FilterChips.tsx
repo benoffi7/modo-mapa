@@ -1,11 +1,11 @@
 import { Box, Chip, Divider } from '@mui/material';
-import { useMapContext } from '../../context/MapContext';
+import { useFilters } from '../../context/MapContext';
 import { trackEvent } from '../../utils/analytics';
 import { PREDEFINED_TAGS } from '../../types';
 import { PRICE_CHIPS } from '../../constants/business';
 
 export default function FilterChips() {
-  const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useMapContext();
+  const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useFilters();
 
   const chipSx = (isActive: boolean) => ({
     backgroundColor: isActive ? undefined : 'background.paper',

@@ -1,7 +1,7 @@
 import { Box, List, ListItemButton, ListItemText, Typography, Button } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { CATEGORY_LABELS } from '../../types';
 
@@ -23,7 +23,7 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 export default function RecentVisits({ onNavigate }: Props) {
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
   const { visits, clearHistory } = useVisitHistory();
 
   const validVisits = visits.filter((v) => v.business !== null);

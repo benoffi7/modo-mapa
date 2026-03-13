@@ -3,6 +3,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
+import { incrementBusinessCount } from '../utils/aggregates';
 import { logAbuse } from '../utils/abuseLogger';
 
 export const onCommentCreated = onDocumentCreated(
@@ -52,9 +53,13 @@ export const onCommentCreated = onDocumentCreated(
       await parentRef.update({ replyCount: FieldValue.increment(1) });
     }
 
-    // 4. Counters
+    // 4. Counters + aggregates
+    const businessId = data.businessId as string | undefined;
     await incrementCounter(db, 'comments', 1);
     await trackWrite(db, 'comments');
+    if (businessId) {
+      await incrementBusinessCount(db, 'businessComments', businessId, 1);
+    }
   },
 );
 
@@ -121,8 +126,12 @@ export const onCommentDeleted = onDocumentDeleted(
       // Each deleted reply will trigger its own onCommentDeleted (for counter decrement)
     }
 
-    // 3. Counters
+    // 3. Counters + aggregates
+    const businessId = data?.businessId as string | undefined;
     await incrementCounter(db, 'comments', -1);
     await trackDelete(db, 'comments');
+    if (businessId) {
+      await incrementBusinessCount(db, 'businessComments', businessId, -1);
+    }
   },
 );

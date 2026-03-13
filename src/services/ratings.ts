@@ -6,7 +6,7 @@ import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
-import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import type { Rating, RatingCriteria } from '../types';
 

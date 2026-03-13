@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useFilters } from '../context/MapContext';
 
 export function useUserLocation() {
-  const { userLocation, setUserLocation } = useMapContext();
+  const { userLocation, setUserLocation } = useFilters();
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
