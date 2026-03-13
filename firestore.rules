@@ -36,6 +36,7 @@ service cloud.firestore {
     match /favorites/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.createdAt == request.time;
@@ -69,6 +70,7 @@ service cloud.firestore {
     match /ratings/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'score', 'createdAt', 'updatedAt', 'criteria'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.score is int
@@ -93,12 +95,12 @@ service cloud.firestore {
     // Owner puede crear con userName (1-30), text (1-500) y timestamp validado.
     // Puede incluir parentId opcional (para respuestas/threads).
     // Owner puede editar solo el texto (1-500) con updatedAt validado.
-    // Cualquier usuario autenticado puede incrementar/decrementar replyCount (para threads).
+    // replyCount es gestionado exclusivamente por Cloud Functions (onCommentCreated/Deleted).
     // Owner puede eliminar sus propios comentarios.
     match /comments/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId', 'replyCount'])
+        && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.userName.size() > 0
@@ -106,31 +108,16 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.createdAt == request.time
-        && (!('parentId' in request.resource.data) || (request.resource.data.parentId is string && request.resource.data.parentId.size() > 0 && request.resource.data.parentId.size() <= 40))
-        && (!('replyCount' in request.resource.data) || request.resource.data.replyCount == 0);
+        && (!('parentId' in request.resource.data) || (request.resource.data.parentId is string && request.resource.data.parentId.size() > 0 && request.resource.data.parentId.size() <= 40));
       allow update: if request.auth != null
-        && (
-          // Owner can edit text
-          (resource.data.userId == request.auth.uid
-            && request.resource.data.text.size() > 0
-            && request.resource.data.text.size() <= 500
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.userId == resource.data.userId
-            && request.resource.data.businessId == resource.data.businessId
-            && request.resource.data.userName == resource.data.userName
-            && request.resource.data.createdAt == resource.data.createdAt)
-          ||
-          // Any authenticated user can increment/decrement replyCount by exactly 1 (for thread replies)
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount'])
-            && request.resource.data.replyCount is int
-            && request.resource.data.replyCount >= 0
-            && (
-              // First reply: replyCount goes from non-existent to 1
-              (!('replyCount' in resource.data) && request.resource.data.replyCount == 1)
-              // Subsequent: +1 or -1
-              || ('replyCount' in resource.data && (request.resource.data.replyCount == resource.data.replyCount + 1 || request.resource.data.replyCount == resource.data.replyCount - 1))
-            ))
-        );
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.businessId == resource.data.businessId
+        && request.resource.data.userName == resource.data.userName
+        && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
@@ -140,6 +127,7 @@ service cloud.firestore {
     match /commentLikes/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'commentId', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.commentId is string
         && request.resource.data.commentId.size() > 0
@@ -154,6 +142,7 @@ service cloud.firestore {
     match /userTags/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'tagId', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.tagId in ['barato', 'apto_celiacos', 'apto_veganos', 'rapido', 'delivery', 'buena_atencion']
@@ -167,6 +156,7 @@ service cloud.firestore {
     // category debe ser uno de: bug, sugerencia, otro.
     match /feedback/{docId} {
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
@@ -183,6 +173,7 @@ service cloud.firestore {
     match /customTags/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'label', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.label is string
@@ -191,6 +182,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
         && request.resource.data.label is string
         && request.resource.data.label.size() > 0
         && request.resource.data.label.size() <= 30;
@@ -239,6 +231,7 @@ service cloud.firestore {
     match /priceLevels/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'level', 'createdAt', 'updatedAt'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.level is int
@@ -247,7 +240,8 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if request.auth != null
-        && request.resource.data.userId == request.auth.uid
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
         && request.resource.data.level is int
         && request.resource.data.level >= 1
         && request.resource.data.level <= 3

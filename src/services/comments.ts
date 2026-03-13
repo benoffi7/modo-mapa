@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, increment, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -31,31 +31,17 @@ export async function addComment(
     throw new Error('User name must be 1-30 characters');
   }
 
+  const commentData: Record<string, unknown> = {
+    userId,
+    userName: trimmedName,
+    businessId,
+    text: trimmedText,
+    createdAt: serverTimestamp(),
+  };
   if (parentId) {
-    // Use batch for atomic reply + parent replyCount increment
-    const batch = writeBatch(db);
-    const newRef = doc(collection(db, COLLECTIONS.COMMENTS));
-    batch.set(newRef, {
-      userId,
-      userName,
-      businessId,
-      text,
-      createdAt: serverTimestamp(),
-      parentId,
-    });
-    batch.update(doc(db, COLLECTIONS.COMMENTS, parentId), {
-      replyCount: increment(1),
-    });
-    await batch.commit();
-  } else {
-    await addDoc(collection(db, COLLECTIONS.COMMENTS), {
-      userId,
-      userName,
-      businessId,
-      text,
-      createdAt: serverTimestamp(),
-    });
+    commentData.parentId = parentId;
   }
+  await addDoc(collection(db, COLLECTIONS.COMMENTS), commentData);
 
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
   trackEvent('comment_submit', { business_id: businessId, is_edit: false, is_reply: !!parentId });
@@ -74,19 +60,10 @@ export async function editComment(commentId: string, userId: string, newText: st
   trackEvent('comment_submit', { is_edit: true });
 }
 
-export async function deleteComment(commentId: string, userId: string, parentId?: string): Promise<void> {
-  if (parentId) {
-    // Use batch for atomic delete + parent replyCount decrement
-    const batch = writeBatch(db);
-    batch.delete(doc(db, COLLECTIONS.COMMENTS, commentId));
-    batch.update(doc(db, COLLECTIONS.COMMENTS, parentId), {
-      replyCount: increment(-1),
-    });
-    await batch.commit();
-  } else {
-    await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
-  }
-
+export async function deleteComment(commentId: string, userId: string): Promise<void> {
+  await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
+  // replyCount decrement and cascade delete of orphaned replies
+  // are handled server-side by the onCommentDeleted Cloud Function.
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
 }
 
