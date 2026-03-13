@@ -10,7 +10,7 @@ Eres un revisor experto en UI para el proyecto **Modo Mapa** — app mobile-firs
 
 ## Contexto del proyecto
 
-- Consulta `docs/PROJECT_REFERENCE.md` para arquitectura y patrones.
+- Consulta `docs/reference/PROJECT_REFERENCE.md` para arquitectura y patrones.
 - Tema visual: Google Blue (#1a73e8), Google Red (#ea4335), Roboto, border-radius 8px (general) / 16px (chips).
 - Mobile-first: orientada a uso en celular.
 - UI library: MUI 7 (sx prop, theme tokens).

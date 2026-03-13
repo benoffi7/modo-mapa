@@ -41,6 +41,7 @@ src/
 │   ├── priceLevels.ts               # upsertPriceLevel, getBusinessPriceLevels
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
 │   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
+│   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
@@ -62,7 +63,8 @@ src/
 │   ├── useVisitHistory.ts           # Historial de visitas en localStorage (ultimos 20)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
 │   ├── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
-│   └── useUserProfile.ts           # Hook para perfil publico de usuario (stats + ranking)
+│   ├── useUserProfile.ts           # Hook para perfil publico de usuario (stats + ranking)
+│   └── useSuggestions.ts           # Hook para sugerencias personalizadas (scoring client-side)
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   └── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatDateFull (compartidos)

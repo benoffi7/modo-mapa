@@ -14,14 +14,14 @@
 | F2 | Fotos de menú (upload + validación admin) | Alta | Alta | Alto | IMPLEMENTADO |
 | F3 | Hub social (rankings de usuarios) | Media | Media | Alto | IMPLEMENTADO |
 | F4 | Notificaciones in-app | Media | Media | Medio | IMPLEMENTADO |
-| F5 | Respuestas a comentarios (threads) | Media | Media | Medio | PENDIENTE |
+| F5 | Respuestas a comentarios (threads) | Media | Media | Medio | IMPLEMENTADO |
 | F6 | Perfil de usuario público | Baja | Baja | Medio | IMPLEMENTADO |
-| F7 | Reseñas detalladas (multi-criterio) | Baja | Media | Medio | PENDIENTE |
+| F7 | Reseñas detalladas (multi-criterio) | Baja | Media | Medio | IMPLEMENTADO |
 | F8 | Compartir comercio | Baja | Baja | Bajo | IMPLEMENTADO |
 | F9 | Historial de visitas | Baja | Baja | Bajo | IMPLEMENTADO |
-| F10 | Sugerencias personalizadas | Baja | Alta | Alto | PENDIENTE |
+| F10 | Sugerencias personalizadas | Baja | Alta | Alto | IMPLEMENTADO |
 
-Progreso global: 8/10 features implementadas
+Progreso global: 10/10 features implementadas
 
 ---
 
@@ -133,44 +133,18 @@ Progreso global: 8/10 features implementadas
 
 ---
 
-## F5 — Respuestas a comentarios (threads) — PENDIENTE
+## F5 — Respuestas a comentarios (threads) — IMPLEMENTADO
 
-### Alcance
+### Implementado
 
-Permitir responder a un comentario existente, creando un hilo de conversación.
-
-### Diseño
-
-```text
-Juan P. — 12/03, 14:30
-  "Las milanesas son espectaculares"
-  ♡ 5    💬 2    Responder
-
-    └─ María G. — 12/03, 15:00
-       "Totalmente! Probaste la napolitana?"
-       ♡ 1
-
-    └─ Pedro M. — 12/03, 16:20
-       "Yo recomiendo la de pollo"
-       ♡ 0
-```
-
-### Modelo de datos
-
-Agregar campo opcional al Comment existente:
-
-```text
-parentId?: string     # ID del comentario padre (null = top-level)
-```
-
-### Consideraciones
-
-- Máximo 1 nivel de anidamiento (respuestas a respuestas se muestran planas)
-- Las respuestas heredan el businessId del padre
-- Eliminar un padre no elimina las respuestas (quedan como "comentario eliminado")
-- Mostrar respuestas colapsadas por default, expandir con "Ver 2 respuestas"
-
-### Estimación de complejidad: Media
+- Campos `parentId` y `replyCount` en tipo Comment
+- 1 nivel de anidamiento (respuestas colapsadas por default)
+- "Ver N respuestas" toggle para expandir/colapsar
+- Formulario de respuesta inline
+- Respuestas indentadas con borde izquierdo
+- Operaciones atómicas con `writeBatch` (crear/eliminar reply + actualizar replyCount)
+- Firestore rules: validación de `parentId` (string, 1-40 chars), `replyCount` init=0, update monotónico +1/-1
+- Componente `BusinessComments.tsx` refactorizado para agrupar top-level/replies
 
 ---
 
@@ -187,40 +161,17 @@ parentId?: string     # ID del comentario padre (null = top-level)
 
 ---
 
-## F7 — Reseñas multi-criterio — PENDIENTE
+## F7 — Reseñas multi-criterio — IMPLEMENTADO
 
-### Alcance
+### Implementado
 
-Extender el sistema de rating actual (1-5 estrellas global) con criterios específicos.
-
-### Criterios propuestos
-
-| Criterio | Icono |
-|----------|-------|
-| Comida | 🍽️ |
-| Atención | 👋 |
-| Precio | 💰 |
-| Ambiente | 🏠 |
-| Rapidez | ⚡ |
-
-### Modelo de datos
-
-Agregar al Rating existente:
-
-```text
-criteria?: {
-  food?: number        # 1-5
-  service?: number     # 1-5
-  price?: number       # 1-5
-  ambiance?: number    # 1-5
-  speed?: number       # 1-5
-}
-```
-
-### Estimación de complejidad: Media
-
-- Backwards compatible (criteria es opcional)
-- La complejidad está en calcular promedios por criterio server-side
+- Campo opcional `criteria` (map) en tipo Rating con 5 criterios: food, service, price, ambiance, speed (1-5)
+- Sección expandible "Detalle por criterio" en `BusinessRating.tsx`
+- Promedios por criterio calculados client-side
+- Requiere rating global existente antes de agregar criterios (`upsertCriteriaRating`)
+- Configuración en `src/constants/criteria.ts` (`RATING_CRITERIA`)
+- Firestore rules: `isValidCriteria()` con `keys().hasOnly()` y valores 1-5
+- Converter actualizado en `src/config/converters.ts`
 
 ---
 
@@ -246,32 +197,17 @@ criteria?: {
 
 ---
 
-## F10 — Sugerencias personalizadas — PENDIENTE
+## F10 — Sugerencias personalizadas — IMPLEMENTADO
 
-### Alcance
+### Implementado
 
-"Para vos" — lista de comercios sugeridos basados en el comportamiento del usuario.
-
-### Algoritmo (heurístico simple)
-
-```text
-score(business) =
-  + 3 si la categoría coincide con las más favoriteadas del usuario
-  + 2 si tiene tags que el usuario suele votar
-  + 1 si está cerca de la ubicación actual
-  - 5 si ya es favorito (no sugerir lo que ya conoce)
-  - 3 si ya tiene rating del usuario
-```
-
-### Implementación
-
-- 100% client-side usando datos ya disponibles (favorites, ratings, userTags, location)
-- Sección "Sugeridos para vos" en el menú lateral o como cards horizontales sobre el mapa
-- Se recalcula cada vez que se abre (no persiste)
-
-### Estimación de complejidad: Alta (por la lógica de scoring)
-
-- Pero sin costo de Firestore, todo es client-side
+- Hook `useSuggestions()` con scoring client-side (categoría +3, tag +2, cercanía +1, favorito -5, rated -3)
+- Service `fetchUserSuggestionData()` en `src/services/suggestions.ts` (patrón service layer)
+- Constantes en `src/constants/suggestions.ts` (SUGGESTION_WEIGHTS, MAX_SUGGESTIONS=10, NEARBY_RADIUS_KM=1)
+- Sección "Sugeridos para vos" en menú lateral (`SuggestionsView.tsx`)
+- Chips con razón de sugerencia (categoría, tags, cercanía)
+- UI de error y estado vacío
+- 100% client-side, sin costo de Firestore adicional
 
 ---
 
@@ -302,13 +238,13 @@ score(business) =
 | F4 Notificaciones in-app | Implementado |
 | F6 Perfil de usuario público | Implementado |
 
-### Fase 4 — Profundidad (v2.3+) — PENDIENTE
+### Fase 4 — Profundidad (v2.3+) — COMPLETADA
 
 | Feature | Estado |
 |---------|--------|
-| F5 Threads de comentarios | Pendiente |
-| F7 Reseñas multi-criterio | Pendiente |
-| F10 Sugerencias personalizadas | Pendiente |
+| F5 Threads de comentarios | Implementado |
+| F7 Reseñas multi-criterio | Implementado |
+| F10 Sugerencias personalizadas | Implementado |
 
 ---
 
@@ -320,12 +256,12 @@ score(business) =
 | F2 Fotos de menú | +1 query por comercio | +uploads (bajo, rate limited) | +Cloud Storage | Implementado |
 | F3 Rankings | +1 read por período | +cron writes (bajo) | — | Implementado |
 | F4 Notificaciones | +1 query por sesión | +trigger writes | — | Implementado |
-| F5 Threads | Sin cambio (mismo query) | Sin cambio | — | Pendiente |
-| F6 Perfiles | +1 query por click | — | — | Parcial |
-| F7 Multi-criterio | Sin cambio | Sin cambio (mismo doc) | — | Pendiente |
+| F5 Threads | Sin cambio (mismo query) | +batch writes (reply) | — | Implementado |
+| F6 Perfiles | +1 query por click | — | — | Implementado |
+| F7 Multi-criterio | Sin cambio | Sin cambio (mismo doc) | — | Implementado |
 | F8 Compartir | — | — | — | Implementado |
 | F9 Historial | — (localStorage) | — | — | Implementado |
-| F10 Sugerencias | — (client-side) | — | — | Pendiente |
+| F10 Sugerencias | +3 queries (favs, ratings, tags) | — | — | Implementado |
 
 ---
 
@@ -339,7 +275,7 @@ score(business) =
 - **Paginación**: `usePaginatedQuery` reutilizable para listas
 - **Cache**: `useBusinessDataCache` extendido con TTL centralizado (`BUSINESS_CACHE_TTL_MS`)
 - **Moderación**: Moderador de contenido aplica a edición y futuros threads
-- **Constantes**: Todas centralizadas en `src/constants/` (11 módulos, barrel export)
+- **Constantes**: Todas centralizadas en `src/constants/` (14 módulos, barrel export)
 
 ### Consideraciones de seguridad
 

@@ -106,11 +106,11 @@ Esto permite que cada agente tenga su propio directorio con su propia rama, sin 
 Después de mergear un PR a `main`:
 
 1. **Verificar CI** — Esperar a que GitHub Actions termine y confirmar que pasa. Si falla, diagnosticar y fixear inmediatamente. Main nunca debe quedar roto.
-2. **Bump de versión** — Incrementar en `package.json` y `docs/PROJECT_REFERENCE.md`:
+2. **Bump de versión** — Incrementar en `package.json` y `docs/reference/PROJECT_REFERENCE.md`:
    - PATCH (1.1.x) para fixes
    - MINOR (1.x.0) para features
    - MAJOR (x.0.0) cada 10 iteraciones
-3. **Actualizar `docs/PROJECT_REFERENCE.md`** — Agregar el issue y PR a la tabla de issues resueltos
+3. **Actualizar `docs/reference/PROJECT_REFERENCE.md`** — Agregar el issue y PR a la tabla de issues resueltos
 4. **Auditar política de privacidad** — Ejecutar el agente `privacy-policy` para verificar que la política siga actualizada respecto a los cambios mergeados. Si hay discrepancias, actualizarla en el mismo merge o en un commit inmediato.
 
 ### Convenciones de naming

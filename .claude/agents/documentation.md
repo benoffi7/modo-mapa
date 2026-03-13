@@ -21,7 +21,7 @@ Cada iteracion se empieza desde cero actualizando los archivos existentes (no se
 
 ## Archivos clave de documentacion
 
-- `docs/PROJECT_REFERENCE.md` — Referencia completa del proyecto (actualizar post-merge)
+- `docs/reference/PROJECT_REFERENCE.md` — Referencia completa del proyecto (actualizar post-merge)
 - `docs/SECURITY_GUIDELINES.md` — Guia de seguridad
 - `PROCEDURES.md` — Flujo de desarrollo
 
