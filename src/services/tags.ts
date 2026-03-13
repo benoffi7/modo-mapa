@@ -13,9 +13,9 @@ import {
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { trackEvent } from '../utils/analytics';
+import { VALID_TAG_IDS } from '../constants/tags';
+import { MAX_CUSTOM_TAG_LENGTH } from '../constants/validation';
 import type { PredefinedTagId } from '../types';
-
-const VALID_TAG_IDS: readonly string[] = ['barato', 'apto_celiacos', 'apto_veganos', 'rapido', 'delivery', 'buena_atencion'];
 
 // ── User Tags (predefined) ────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ export async function createCustomTag(
   label: string,
 ): Promise<void> {
   const trimmed = label.trim();
-  if (!trimmed || trimmed.length > 30) {
+  if (!trimmed || trimmed.length > MAX_CUSTOM_TAG_LENGTH) {
     throw new Error('Custom tag label must be 1-30 characters');
   }
 
@@ -70,7 +70,7 @@ export async function createCustomTag(
 
 export async function updateCustomTag(tagId: string, label: string): Promise<void> {
   const trimmed = label.trim();
-  if (!trimmed || trimmed.length > 30) {
+  if (!trimmed || trimmed.length > MAX_CUSTOM_TAG_LENGTH) {
     throw new Error('Custom tag label must be 1-30 characters');
   }
 

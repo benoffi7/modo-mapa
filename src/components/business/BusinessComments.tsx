@@ -25,6 +25,7 @@ import { addComment, editComment, deleteComment, likeComment, unlikeComment } fr
 import { formatDateMedium } from '../../utils/formatDate';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
+import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import type { Comment } from '../../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -63,7 +64,6 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
   const [optimisticLikeDelta, setOptimisticLikeDelta] = useState<Map<string, number>>(new Map());
 
-  const MAX_COMMENTS_PER_DAY = 20;
 
   const userCommentsToday = comments.filter((c) => {
     if (c.userId !== user?.uid) return false;
@@ -228,8 +228,8 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                 handleSubmit();
               }
             }}
-            slotProps={{ htmlInput: { maxLength: 500 } }}
-            helperText={newComment.length > 0 ? `${newComment.length}/500` : undefined}
+            slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+            helperText={newComment.length > 0 ? `${newComment.length}/${MAX_COMMENT_LENGTH}` : undefined}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',
@@ -306,8 +306,8 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                       maxRows={4}
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      slotProps={{ htmlInput: { maxLength: 500 } }}
-                      helperText={`${editText.length}/500`}
+                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+                      helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
                     />
                     <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
                       <IconButton

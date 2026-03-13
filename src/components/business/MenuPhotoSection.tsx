@@ -8,6 +8,7 @@ import { getUserPendingPhotos } from '../../services/menuPhotos';
 import { formatDateMedium } from '../../utils/formatDate';
 import MenuPhotoUpload from './MenuPhotoUpload';
 import MenuPhotoViewer from './MenuPhotoViewer';
+import { SIX_MONTHS_MS } from '../../constants/timing';
 import type { MenuPhoto } from '../../types';
 
 interface Props {
@@ -16,8 +17,6 @@ interface Props {
   isLoading: boolean;
   onPhotoChange: () => void;
 }
-
-const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
 
 export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onPhotoChange }: Props) {
   const { user } = useAuth();

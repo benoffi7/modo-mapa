@@ -7,17 +7,11 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { fetchAllPhotos } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import type { MenuPhoto, MenuPhotoStatus } from '../../types';
+import { STATUS_LABELS } from '../../constants/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import PhotoReviewCard from './PhotoReviewCard';
 
 type StatusFilter = 'all' | MenuPhotoStatus;
-
-const STATUS_LABELS: Record<StatusFilter, string> = {
-  all: 'Todas',
-  pending: 'Pendientes',
-  approved: 'Aprobadas',
-  rejected: 'Rechazadas',
-};
 
 export default function PhotoReviewPanel() {
   const [refreshKey, setRefreshKey] = useState(0);

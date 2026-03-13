@@ -6,8 +6,7 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../context/AuthContext';
-
-const ADMIN_EMAIL = 'benoffi11@gmail.com';
+import { ADMIN_EMAIL } from '../../constants/admin';
 
 interface AdminGuardProps {
   children: ReactNode;

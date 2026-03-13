@@ -9,10 +9,7 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import LineChartCard from './charts/LineChartCard';
 import { PieChartCard } from '../stats';
-
-// Spark plan free tier (monthly)
-const FREE_TIER_READS = 50_000;
-const FREE_TIER_WRITES = 20_000;
+import { FREE_TIER_READS, FREE_TIER_WRITES } from '../../constants/admin';
 
 export default function FirebaseUsage() {
   const fetcher = useCallback(() => fetchDailyMetrics('desc', 30), []);

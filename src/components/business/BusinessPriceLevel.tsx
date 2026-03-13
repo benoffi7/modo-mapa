@@ -3,6 +3,7 @@ import { Box, Typography, Button } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { upsertPriceLevel } from '../../services/priceLevels';
 import { PRICE_LEVEL_LABELS } from '../../types';
+import { LEVELS, LEVEL_SYMBOLS } from '../../constants/business';
 import type { PriceLevel } from '../../types';
 
 interface Props {
@@ -11,9 +12,6 @@ interface Props {
   isLoading: boolean;
   onPriceLevelChange: () => void;
 }
-
-const LEVELS = [1, 2, 3] as const;
-const LEVEL_SYMBOLS: Record<number, string> = { 1: '$', 2: '$$', 3: '$$$' };
 
 export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoading, onPriceLevelChange }: Props) {
   const { user } = useAuth();

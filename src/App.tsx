@@ -12,6 +12,7 @@ import { useScreenTracking } from './hooks/useScreenTracking';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ThemePlayground = lazy(() => import('./pages/ThemePlayground'));
+const ConstantsDashboard = lazy(() => import('./pages/ConstantsDashboard'));
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -32,14 +33,24 @@ function App() {
         <AuthProvider>
           <Routes>
             {import.meta.env.DEV && (
-              <Route
-                path="/dev/theme"
-                element={
-                  <Suspense fallback={<AdminFallback />}>
-                    <ThemePlayground />
-                  </Suspense>
-                }
-              />
+              <>
+                <Route
+                  path="/dev/theme"
+                  element={
+                    <Suspense fallback={<AdminFallback />}>
+                      <ThemePlayground />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/dev/constants"
+                  element={
+                    <Suspense fallback={<AdminFallback />}>
+                      <ConstantsDashboard />
+                    </Suspense>
+                  }
+                />
+              </>
             )}
             <Route
               path="/admin/*"

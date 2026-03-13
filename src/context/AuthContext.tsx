@@ -14,6 +14,7 @@ import { auth, db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
 import { setUserProperty } from '../utils/analytics';
+import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 
 interface AuthContextType {
   user: User | null;
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
-    const trimmed = name.trim().slice(0, 30);
+    const trimmed = name.trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
     if (!trimmed) return;
     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
     const userSnap = await getDoc(userRef);

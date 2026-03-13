@@ -2,12 +2,7 @@ import { Box, Chip, Divider } from '@mui/material';
 import { useMapContext } from '../../context/MapContext';
 import { trackEvent } from '../../utils/analytics';
 import { PREDEFINED_TAGS } from '../../types';
-
-const PRICE_CHIPS = [
-  { level: 1, label: '$' },
-  { level: 2, label: '$$' },
-  { level: 3, label: '$$$' },
-] as const;
+import { PRICE_CHIPS } from '../../constants/business';
 
 export default function FilterChips() {
   const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useMapContext();

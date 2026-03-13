@@ -2,16 +2,8 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import { ACTION_LABELS } from '../../constants/rankings';
 import type { UserRankingEntry } from '../../types';
-
-const ACTION_LABELS: Record<keyof UserRankingEntry['breakdown'], string> = {
-  comments: 'Comentarios',
-  ratings: 'Calificaciones',
-  likes: 'Likes',
-  tags: 'Etiquetas',
-  favorites: 'Favoritos',
-  photos: 'Fotos',
-};
 
 interface Props {
   entry: UserRankingEntry | undefined;

@@ -45,7 +45,7 @@
   - **Configuracion**: panel con toggles de privacidad (perfil publico/privado) y notificaciones (master + likes/fotos/rankings). Defaults todos en false. Optimistic UI con revert on error
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
-- Footer con version de la app (+ link a Theme Playground en DEV)
+- Footer con version de la app (+ links a Theme Playground y Constants Dashboard en DEV)
 
 ---
 
@@ -70,6 +70,21 @@
 - Graceful handling cuando el doc del usuario no es accesible (rules restringen a owner/admin)
 - Fallback de nombre desde el comentario
 - Visibilidad controlada por `profilePublic` en `userSettings` — cache con TTL 60s en `useProfileVisibility`
+
+---
+
+## Constants Dashboard (`/dev/constants`, DEV only)
+
+- Browser de todas las constantes centralizadas en `src/constants/`
+- Busqueda por nombre o valor
+- Filtro por modulo (chips toggle)
+- Cada constante muestra: nombre (monospace), tipo (badge), valor (formateado)
+- Boton "Copiar import" genera la linea de import correcta al clipboard
+- Deteccion automatica de valores duplicados entre modulos (banner warning)
+- Stats footer: N de M constantes visibles, total modulos, duplicados
+- Registry auto-descubre constantes via `Object.entries` sobre cada modulo
+- Lazy-loaded con `React.lazy()`, solo incluido en bundle DEV
+- Accesible desde link en footer del SideMenu
 
 ---
 

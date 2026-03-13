@@ -5,9 +5,9 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { trackEvent } from '../utils/analytics';
+import { VALID_CATEGORIES } from '../constants/feedback';
+import { MAX_FEEDBACK_LENGTH } from '../constants/validation';
 import type { FeedbackCategory } from '../types';
-
-const VALID_CATEGORIES: FeedbackCategory[] = ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro'];
 
 export async function sendFeedback(
   userId: string,
@@ -15,7 +15,7 @@ export async function sendFeedback(
   category: FeedbackCategory,
 ): Promise<void> {
   const trimmed = message.trim();
-  if (!trimmed || trimmed.length > 1000) {
+  if (!trimmed || trimmed.length > MAX_FEEDBACK_LENGTH) {
     throw new Error('Feedback message must be 1-1000 characters');
   }
   if (!VALID_CATEGORIES.includes(category)) {

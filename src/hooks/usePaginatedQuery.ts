@@ -22,8 +22,7 @@ interface UsePaginatedQueryReturn<T> {
   reload: () => Promise<void>;
 }
 
-// --- First-page cache with TTL ---
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+import { QUERY_CACHE_TTL_MS } from '../constants/cache';
 
 interface CacheEntry {
   items: unknown[];
@@ -75,7 +74,7 @@ export function usePaginatedQuery<T>(
     if (isFirstPage && !skipCache) {
       const cacheKey = getCacheKey(stableRef.path, userId);
       const cached = queryCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      if (cached && Date.now() - cached.timestamp < QUERY_CACHE_TTL_MS) {
         setItems(cached.items as T[]);
         setHasMore(cached.hasMore);
         lastDocRef.current = cached.lastDoc as QueryDocumentSnapshot<T> | null;

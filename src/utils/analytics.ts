@@ -5,7 +5,7 @@ let analytics: Analytics | null = null;
 let enabled = false;
 let firebaseApp: FirebaseApp | null = null;
 
-const LS_KEY = 'analytics-consent';
+import { STORAGE_KEY_ANALYTICS_CONSENT } from '../constants/storage';
 
 function activateAnalytics(app: FirebaseApp): void {
   enabled = true;
@@ -19,14 +19,14 @@ export function initAnalytics(app: FirebaseApp): void {
   firebaseApp = app;
   if (!import.meta.env.PROD) return;
 
-  const consent = localStorage.getItem(LS_KEY);
+  const consent = localStorage.getItem(STORAGE_KEY_ANALYTICS_CONSENT);
   if (consent === 'true') {
     activateAnalytics(app);
   }
 }
 
 export function setAnalyticsEnabled(value: boolean): void {
-  localStorage.setItem(LS_KEY, String(value));
+  localStorage.setItem(STORAGE_KEY_ANALYTICS_CONSENT, String(value));
   enabled = value;
 
   if (!import.meta.env.PROD || !firebaseApp) return;

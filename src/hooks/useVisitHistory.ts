@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { allBusinesses } from './useBusinesses';
+import { STORAGE_KEY_VISITS, MAX_VISIT_HISTORY } from '../constants';
 import type { Business } from '../types';
 
 interface VisitEntry {
@@ -8,12 +9,9 @@ interface VisitEntry {
   visitCount: number;
 }
 
-const STORAGE_KEY = 'modo-mapa-visits';
-const MAX_ENTRIES = 50;
-
 function readVisits(): VisitEntry[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY_VISITS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -21,7 +19,7 @@ function readVisits(): VisitEntry[] {
 }
 
 function writeVisits(visits: VisitEntry[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(visits));
+  localStorage.setItem(STORAGE_KEY_VISITS, JSON.stringify(visits));
 }
 
 export interface VisitWithBusiness extends VisitEntry {
@@ -46,7 +44,7 @@ export function useVisitHistory() {
         updated = [
           { businessId, lastVisited: now, visitCount: 1 },
           ...prev,
-        ].slice(0, MAX_ENTRIES);
+        ].slice(0, MAX_VISIT_HISTORY);
       }
 
       writeVisits(updated);
@@ -55,7 +53,7 @@ export function useVisitHistory() {
   }, []);
 
   const clearHistory = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY_VISITS);
     setVisits([]);
   }, []);
 

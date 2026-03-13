@@ -6,9 +6,8 @@ import {
   markAllNotificationsRead,
   getUnreadCount,
 } from '../services/notifications';
+import { POLL_INTERVAL_MS } from '../constants/timing';
 import type { AppNotification } from '../types';
-
-const POLL_INTERVAL_MS = 60_000;
 const EMPTY_NOTIFICATIONS: AppNotification[] = [];
 
 interface UseNotificationsReturn {

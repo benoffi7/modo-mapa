@@ -13,6 +13,19 @@ src/
 │   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback, commentLike)
 │   ├── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
+├── constants/
+│   ├── index.ts                    # Barrel re-export de todos los módulos + COLLECTIONS
+│   ├── validation.ts               # MAX_COMMENT_LENGTH, MAX_DISPLAY_NAME_LENGTH, SCORE_OPTIONS, etc.
+│   ├── cache.ts                    # BUSINESS_CACHE_TTL_MS, QUERY_CACHE_TTL_MS, PROFILE_CACHE_TTL_MS
+│   ├── storage.ts                  # STORAGE_KEY_COLOR_MODE, STORAGE_KEY_VISITS, STORAGE_KEY_ANALYTICS_CONSENT
+│   ├── timing.ts                   # POLL_INTERVAL_MS, AUTO_DISMISS_MS, SIX_MONTHS_MS
+│   ├── feedback.ts                 # VALID_CATEGORIES
+│   ├── ui.ts                       # CHART_COLORS, ADD_BUSINESS_URL
+│   ├── map.ts                      # BUENOS_AIRES_CENTER, CATEGORY_COLORS
+│   ├── tags.ts                     # PREDEFINED_TAGS, VALID_TAG_IDS
+│   ├── rankings.ts                 # SCORING, MEDALS, ACTION_LABELS, PERIOD_OPTIONS
+│   ├── business.ts                 # LEVELS, LEVEL_SYMBOLS, PRICE_CHIPS, PRICE_LEVEL_LABELS, CATEGORY_LABELS
+│   └── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
@@ -28,7 +41,7 @@ src/
 │   ├── priceLevels.ts               # upsertPriceLevel, getBusinessPriceLevels
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel, PRICE_LEVEL_LABELS
+│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
 │   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
@@ -52,7 +65,9 @@ src/
 │   └── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatDateFull (compartidos)
 ├── pages/
 │   ├── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
-│   └── ThemePlayground.tsx          # Dev-only color playground with palette generator + output
+│   ├── ThemePlayground.tsx          # Dev-only color playground with palette generator + output
+│   ├── ConstantsDashboard.tsx       # Dev-only constants browser with search, filter, copy import
+│   └── constantsRegistry.ts        # Auto-discovers all constants modules via Object.entries
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email
