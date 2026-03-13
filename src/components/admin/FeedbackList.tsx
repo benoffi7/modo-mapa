@@ -8,9 +8,11 @@ import type { Feedback, FeedbackCategory } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
 
-function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'default' {
+function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'info' | 'warning' | 'default' {
   if (cat === 'bug') return 'error';
   if (cat === 'sugerencia') return 'primary';
+  if (cat === 'datos_usuario') return 'info';
+  if (cat === 'datos_comercio') return 'warning';
   return 'default';
 }
 

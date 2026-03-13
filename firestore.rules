@@ -128,7 +128,7 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
-        && request.resource.data.category in ['bug', 'sugerencia', 'otro']
+        && request.resource.data.category in ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro']
         && request.resource.data.createdAt == request.time;
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();

@@ -70,7 +70,7 @@ export interface Favorite {
   createdAt: Date;
 }
 
-export type FeedbackCategory = 'bug' | 'sugerencia' | 'otro';
+export type FeedbackCategory = 'bug' | 'sugerencia' | 'datos_usuario' | 'datos_comercio' | 'otro';
 
 export interface Feedback {
   id: string;
