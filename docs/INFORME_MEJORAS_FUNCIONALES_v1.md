@@ -15,13 +15,13 @@
 | F3 | Hub social (rankings de usuarios) | Media | Media | Alto | IMPLEMENTADO |
 | F4 | Notificaciones in-app | Media | Media | Medio | IMPLEMENTADO |
 | F5 | Respuestas a comentarios (threads) | Media | Media | Medio | PENDIENTE |
-| F6 | Perfil de usuario público | Baja | Baja | Medio | PARCIAL |
+| F6 | Perfil de usuario público | Baja | Baja | Medio | IMPLEMENTADO |
 | F7 | Reseñas detalladas (multi-criterio) | Baja | Media | Medio | PENDIENTE |
 | F8 | Compartir comercio | Baja | Baja | Bajo | IMPLEMENTADO |
 | F9 | Historial de visitas | Baja | Baja | Bajo | IMPLEMENTADO |
 | F10 | Sugerencias personalizadas | Baja | Alta | Alto | PENDIENTE |
 
-Progreso global: 7/10 features implementadas (+ 1 parcial)
+Progreso global: 8/10 features implementadas
 
 ---
 
@@ -174,19 +174,16 @@ parentId?: string     # ID del comentario padre (null = top-level)
 
 ---
 
-## F6 — Perfil de usuario público — PARCIAL
+## F6 — Perfil de usuario público — IMPLEMENTADO
 
 ### Implementado
 
 - `UserProfileSheet.tsx` — bottom sheet con perfil del usuario
 - Hook `useUserProfile()` con stats, actividad, comentarios recientes
 - Accesible al tocar nombre de usuario en comentarios/rankings
-
-### Pendiente
-
-- No existe como ruta pública (`/user/:id`)
-- Es un overlay (bottom sheet), no una página standalone
-- Falta badge de top 3 del ranking
+- Badge con medalla para usuarios top-3 del ranking mensual (junto al nombre)
+- Ranking mensual en sección de stats (posición + medalla)
+- `fetchUserProfile()` integra `fetchLatestRanking()` para obtener posición
 
 ---
 
@@ -303,7 +300,7 @@ score(business) =
 |---------|--------|
 | F3 Hub social / Rankings | Implementado |
 | F4 Notificaciones in-app | Implementado |
-| F6 Perfil de usuario público | Parcial (sheet, no ruta) |
+| F6 Perfil de usuario público | Implementado |
 
 ### Fase 4 — Profundidad (v2.3+) — PENDIENTE
 
