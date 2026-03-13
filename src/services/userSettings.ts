@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   notifyLikes: false,
   notifyPhotos: false,
   notifyRankings: false,
+  analyticsEnabled: false,
   updatedAt: new Date(),
 };
 
@@ -32,7 +33,7 @@ export async function updateUserSettings(
     await setDoc(ref, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
   } else {
     // First write — send all fields so Firestore rules pass validation
-    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings } = DEFAULT_SETTINGS;
-    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, ...updates, updatedAt: serverTimestamp() });
+    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, analyticsEnabled } = DEFAULT_SETTINGS;
+    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, analyticsEnabled, ...updates, updatedAt: serverTimestamp() });
   }
 }

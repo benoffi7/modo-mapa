@@ -101,6 +101,19 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyRankings', val)}
       />
+
+      <Divider sx={{ my: 1.5 }} />
+
+      {/* Analytics */}
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+        Datos de uso
+      </Typography>
+      <SettingRow
+        label="Enviar datos de uso"
+        description="Ayuda a mejorar la app enviando datos anónimos de uso"
+        checked={settings.analyticsEnabled}
+        onChange={(val) => updateSetting('analyticsEnabled', val)}
+      />
     </Box>
   );
 }
