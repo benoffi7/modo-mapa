@@ -2,6 +2,7 @@ import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/fire
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
+import { createNotification } from '../utils/notifications';
 
 export const onCommentLikeCreated = onDocumentCreated(
   'commentLikes/{docId}',
@@ -30,6 +31,30 @@ export const onCommentLikeCreated = onDocumentCreated(
     await db.doc(`comments/${commentId}`).update({
       likeCount: FieldValue.increment(1),
     });
+
+    // Create notification for comment author (don't notify self-likes)
+    const commentSnap = await db.doc(`comments/${commentId}`).get();
+    if (commentSnap.exists) {
+      const commentData = commentSnap.data()!;
+      const commentAuthorId = commentData.userId as string;
+      if (commentAuthorId !== userId) {
+        // Fetch liker's display name
+        const userSnap = await db.doc(`users/${userId}`).get();
+        const actorName = userSnap.exists
+          ? (userSnap.data()!.displayName as string)
+          : 'Alguien';
+
+        await createNotification(db, {
+          userId: commentAuthorId,
+          type: 'like',
+          message: `${actorName} le dio me gusta a tu comentario`,
+          actorId: userId,
+          actorName,
+          businessId: commentData.businessId as string,
+          referenceId: commentId,
+        });
+      }
+    }
 
     await incrementCounter(db, 'commentLikes', 1);
     await trackWrite(db, 'commentLikes');

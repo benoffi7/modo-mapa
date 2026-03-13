@@ -13,4 +13,5 @@ export const COLLECTIONS = {
   MENU_PHOTOS: 'menuPhotos',
   PRICE_LEVELS: 'priceLevels',
   USER_RANKINGS: 'userRankings',
+  NOTIFICATIONS: 'notifications',
 } as const;
