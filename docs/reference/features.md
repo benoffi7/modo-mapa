@@ -18,11 +18,11 @@
 - Boton favorito (toggle corazon)
 - Boton direcciones (abre Google Maps)
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
-- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio
+- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`
 - **Tags predefinidos**: vote count + toggle del usuario
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
-- **Comentarios**: lista + formulario + editar propios + undo delete (5s) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas"
-- **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Reset via `key={businessId}` en parent para forzar remount
+- **Comentarios**: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas". Replies usan `writeBatch` para crear respuesta + incrementar `replyCount` atomicamente. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root)
+- **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Toggle: click en el mismo nivel remueve el voto (`deletePriceLevel`). Reset via `key={businessId}` en parent para forzar remount
 - **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
 - Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL)
 - Race condition fix con `patchedRef` para evitar que full loads sobreescriban refetches parciales
@@ -36,7 +36,7 @@
 - Header con avatar, nombre, boton editar nombre
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
-  - **Sugeridos para vos**: sugerencias personalizadas basadas en favoritos, ratings, tags y ubicacion. Scoring client-side con chips de razon (categoria, tags, cercanía). Max 10 sugerencias
+  - **Sugeridos para vos**: sugerencias personalizadas via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Componente: `SuggestionsView.tsx`
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio
   - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio

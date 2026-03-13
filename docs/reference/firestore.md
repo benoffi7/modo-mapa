@@ -6,8 +6,8 @@
 |-----------|--------|--------|--------|
 | `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
 | `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
-| `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5 |
-| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged? | Read auth; create owner; update owner (text+updatedAt only); delete owner |
+| `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), criteria? (food/service/price/ambiance/speed, each 1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5, isValidCriteria validation |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged?, parentId?, replyCount? | Read auth; create owner (replyCount must be 0 or absent); update owner (text+updatedAt) or any auth user (replyCount +/-1); delete owner |
 | `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
@@ -16,7 +16,7 @@
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
-| `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3 |
+| `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
 
 ### Subcollections
@@ -50,6 +50,47 @@ PREDEFINED_TAGS: barato, apto_celiacos, apto_veganos, rapido, delivery, buena_at
 // Categorias con labels en espanol (7)
 CATEGORY_LABELS: restaurant→Restaurante, cafe→Cafe, bakery→Panaderia, bar→Bar,
                  fastfood→Comida rapida, icecream→Heladeria, pizza→Pizzeria
+
+// Rating with optional multi-criteria
+interface RatingCriteria {
+  food?: number;      // 1-5
+  service?: number;   // 1-5
+  price?: number;     // 1-5
+  ambiance?: number;  // 1-5
+  speed?: number;     // 1-5
+}
+
+interface Rating {
+  userId: string;
+  businessId: string;
+  score: number;       // 1-5 (global)
+  criteria?: RatingCriteria;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Comment with thread support
+interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  businessId: string;
+  text: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  likeCount: number;
+  flagged?: boolean;
+  parentId?: string;    // ID del comentario padre (threads, 1 nivel)
+  replyCount?: number;  // Cantidad de respuestas (solo en root comments)
+}
+
+// Suggestion types
+type SuggestionReason = 'category' | 'tags' | 'nearby';
+interface SuggestedBusiness {
+  business: Business;
+  score: number;
+  reasons: SuggestionReason[];
+}
 
 // Menu Photos & Price Levels
 type MenuPhotoStatus = 'pending' | 'approved' | 'rejected';
