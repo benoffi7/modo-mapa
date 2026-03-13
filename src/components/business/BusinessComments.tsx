@@ -528,7 +528,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
 
               {/* Thread: "Ver N respuestas" toggle + replies */}
               {replyCount > 0 && (
-                <Box sx={{ pl: 5.5 }}>
+                <Box sx={{ pl: 5.5, mt: 0.5 }}>
                   <Button
                     size="small"
                     onClick={() => toggleThread(comment.id)}
