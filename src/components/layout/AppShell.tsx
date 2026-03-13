@@ -9,13 +9,13 @@ import BusinessSheet from '../business/BusinessSheet';
 import NameDialog from '../auth/NameDialog';
 import SideMenu from './SideMenu';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 
 export default function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
 
   // Deep link: ?business=biz_001 opens the business sheet
   useEffect(() => {

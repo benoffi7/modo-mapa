@@ -13,7 +13,7 @@ import {
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useAuth } from '../../context/AuthContext';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, getCommentsCollection } from '../../services/comments';
@@ -26,7 +26,7 @@ interface Props {
 
 export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
 
   // Undo delete
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);

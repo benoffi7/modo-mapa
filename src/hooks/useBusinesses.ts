@@ -1,5 +1,5 @@
 import { useMemo, useDeferredValue } from 'react';
-import { useMapContext } from '../context/MapContext';
+import { useFilters } from '../context/MapContext';
 import { usePriceLevelFilter } from './usePriceLevelFilter';
 import type { Business } from '../types';
 import businessesData from '../data/businesses.json';
@@ -7,7 +7,7 @@ import businessesData from '../data/businesses.json';
 export const allBusinesses: Business[] = businessesData as Business[];
 
 export function useBusinesses() {
-  const { searchQuery, activeFilters, activePriceFilter } = useMapContext();
+  const { searchQuery, activeFilters, activePriceFilter } = useFilters();
   const deferredQuery = useDeferredValue(searchQuery);
   const priceMap = usePriceLevelFilter();
 

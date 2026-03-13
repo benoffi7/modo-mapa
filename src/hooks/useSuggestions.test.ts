@@ -16,7 +16,7 @@ vi.mock('../context/AuthContext', () => ({
 }));
 
 vi.mock('../context/MapContext', () => ({
-  useMapContext: vi.fn().mockReturnValue({ userLocation: null }),
+  useFilters: vi.fn().mockReturnValue({ userLocation: null }),
 }));
 
 vi.mock('../services/suggestions', () => ({
@@ -27,7 +27,7 @@ vi.mock('../services/suggestions', () => ({
 import { useSuggestions } from './useSuggestions';
 import { allBusinesses } from './useBusinesses';
 import { useAuth } from '../context/AuthContext';
-import { useMapContext } from '../context/MapContext';
+import { useFilters } from '../context/MapContext';
 import { fetchUserSuggestionData } from '../services/suggestions';
 import { SUGGESTION_WEIGHTS, MAX_SUGGESTIONS } from '../constants/suggestions';
 
@@ -48,7 +48,7 @@ describe('useSuggestions — scoring algorithm', () => {
     allBusinesses.length = 0;
     allBusinesses.push(...mockBusinesses);
     (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({ user: { uid: 'u1' } });
-    (useMapContext as ReturnType<typeof vi.fn>).mockReturnValue({ userLocation: null });
+    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({ userLocation: null });
   });
 
   it('returns empty suggestions when user has no activity', async () => {
@@ -129,7 +129,7 @@ describe('useSuggestions — scoring algorithm', () => {
 
   it('adds nearby bonus when user has location', async () => {
     // b1 is at -34.60, -58.38
-    (useMapContext as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({
       userLocation: { lat: -34.60, lng: -58.38 },
     });
     (fetchUserSuggestionData as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -154,7 +154,7 @@ describe('useSuggestions — scoring algorithm', () => {
   });
 
   it('combines multiple scoring factors', async () => {
-    (useMapContext as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({
       userLocation: { lat: -34.60, lng: -58.38 },
     });
     (fetchUserSuggestionData as ReturnType<typeof vi.fn>).mockResolvedValue({

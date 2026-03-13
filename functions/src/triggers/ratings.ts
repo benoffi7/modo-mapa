@@ -1,25 +1,42 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
+import { updateRatingAggregates } from '../utils/aggregates';
 
 export const onRatingWritten = onDocumentWritten(
   'ratings/{ratingId}',
   async (event) => {
     const db = getFirestore();
-    const before = event.data?.before?.exists;
-    const after = event.data?.after?.exists;
+    const before = event.data?.before;
+    const after = event.data?.after;
+    const beforeExists = before?.exists;
+    const afterExists = after?.exists;
 
-    if (!before && after) {
+    if (!beforeExists && afterExists) {
       // Create
+      const data = after!.data()!;
+      const businessId = data.businessId as string;
+      const score = data.score as number;
       await incrementCounter(db, 'ratings', 1);
       await trackWrite(db, 'ratings');
-    } else if (before && after) {
+      await updateRatingAggregates(db, businessId, 'add', score);
+    } else if (beforeExists && afterExists) {
       // Update (score change)
+      const oldScore = before!.data()!.score as number;
+      const newScore = after!.data()!.score as number;
+      const businessId = after!.data()!.businessId as string;
       await trackWrite(db, 'ratings');
-    } else if (before && !after) {
+      if (oldScore !== newScore) {
+        await updateRatingAggregates(db, businessId, 'add', newScore, oldScore);
+      }
+    } else if (beforeExists && !afterExists) {
       // Delete
+      const data = before!.data()!;
+      const businessId = data.businessId as string;
+      const score = data.score as number;
       await incrementCounter(db, 'ratings', -1);
       await trackDelete(db, 'ratings');
+      await updateRatingAggregates(db, businessId, 'remove', score);
     }
   },
 );
