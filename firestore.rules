@@ -238,6 +238,7 @@ service cloud.firestore {
         && request.resource.data.notifyLikes is bool
         && request.resource.data.notifyPhotos is bool
         && request.resource.data.notifyRankings is bool
+        && request.resource.data.analyticsEnabled is bool
         && request.resource.data.updatedAt == request.time;
     }
 

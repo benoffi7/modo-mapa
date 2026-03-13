@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
+import { setAnalyticsEnabled } from '../utils/analytics';
 import type { UserSettings } from '../types';
 
 type SettingKey = keyof Omit<UserSettings, 'updatedAt'>;
@@ -21,6 +22,11 @@ export function useUserSettings() {
     ...(data ?? DEFAULT_SETTINGS),
     ...optimistic,
   };
+
+  // Sync analytics enabled state with the SDK
+  useEffect(() => {
+    setAnalyticsEnabled(settings.analyticsEnabled);
+  }, [settings.analyticsEnabled]);
 
   const updateSetting = useCallback(
     (key: SettingKey, value: boolean) => {
