@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Drawer,
   Box,
@@ -18,6 +18,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
@@ -33,22 +34,32 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useAuth } from '../../context/AuthContext';
 import { useColorMode } from '../../hooks/useColorMode';
 import HistoryIcon from '@mui/icons-material/History';
-import FavoritesList from '../menu/FavoritesList';
-import RecentVisits from '../menu/RecentVisits';
-import CommentsList from '../menu/CommentsList';
-import RatingsList from '../menu/RatingsList';
-import FeedbackForm from '../menu/FeedbackForm';
-import StatsView from '../menu/StatsView';
-import RankingsView from '../menu/RankingsView';
-import SettingsPanel from '../menu/SettingsPanel';
-import PrivacyPolicy from '../menu/PrivacyPolicy';
-import SuggestionsView from '../menu/SuggestionsView';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { trackEvent } from '../../utils/analytics';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
+
+// Lazy-loaded section components (P1.3 — keeps them out of the main chunk)
+const FavoritesList = lazy(() => import('../menu/FavoritesList'));
+const RecentVisits = lazy(() => import('../menu/RecentVisits'));
+const CommentsList = lazy(() => import('../menu/CommentsList'));
+const RatingsList = lazy(() => import('../menu/RatingsList'));
+const FeedbackForm = lazy(() => import('../menu/FeedbackForm'));
+const StatsView = lazy(() => import('../menu/StatsView'));
+const RankingsView = lazy(() => import('../menu/RankingsView'));
+const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
+const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
+const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
+
+function SectionLoader() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <CircularProgress size={28} />
+    </Box>
+  );
+}
 
 declare const __APP_VERSION__: string;
 
@@ -289,18 +300,20 @@ export default function SideMenu({ open, onClose }: Props) {
               </Toolbar>
               <Divider />
 
-              {/* Section content */}
+              {/* Section content — lazy-loaded */}
               <Box sx={{ flex: 1, overflow: 'auto' }}>
-                {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
-                {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
-                {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
-                {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
-                {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
-                {activeSection === 'rankings' && <RankingsView />}
-                {activeSection === 'stats' && <StatsView />}
-                {activeSection === 'settings' && <SettingsPanel />}
-                {activeSection === 'privacy' && <PrivacyPolicy />}
+                <Suspense fallback={<SectionLoader />}>
+                  {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
+                  {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
+                  {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
+                  {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
+                  {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
+                  {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
+                  {activeSection === 'rankings' && <RankingsView />}
+                  {activeSection === 'stats' && <StatsView />}
+                  {activeSection === 'settings' && <SettingsPanel />}
+                  {activeSection === 'privacy' && <PrivacyPolicy />}
+                </Suspense>
               </Box>
             </>
           )}
