@@ -106,6 +106,7 @@ Script de gestion del entorno de desarrollo local. Maneja emuladores Firebase y 
 - `roles/serviceusage.serviceUsageConsumer` — para invocar APIs de Firebase
 - `roles/firebase.admin` — para deploy de rules/indexes
 - `roles/iam.serviceAccountUser` — **requerido** para deploy de Cloud Functions (`iam.serviceAccounts.ActAs`)
+- `roles/cloudscheduler.admin` — para crear/actualizar scheduled functions
 
 **Service account de Cloud Functions** (`591435782056-compute@developer.gserviceaccount.com`):
 
