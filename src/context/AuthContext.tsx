@@ -13,6 +13,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firest
 import { auth, db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
+import { setUserProperty } from '../utils/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        setUserProperty('auth_type', firebaseUser.isAnonymous ? 'anonymous' : 'google');
         const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
         if (userDoc.exists()) {
           setDisplayNameState(userDoc.data().displayName || null);

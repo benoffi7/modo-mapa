@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IconButton, Snackbar } from '@mui/material';
 import ShareIcon from '@mui/icons-material/Share';
+import { trackEvent } from '../../utils/analytics';
 import type { Business } from '../../types';
 
 interface Props {
@@ -17,12 +18,14 @@ export default function ShareButton({ business }: Props) {
     if (navigator.share) {
       try {
         await navigator.share({ title: business.name, text, url });
+        trackEvent('business_share', { business_id: business.id, method: 'share_api' });
       } catch {
         // User cancelled share — ignore
       }
     } else {
       await navigator.clipboard.writeText(url);
       setSnackOpen(true);
+      trackEvent('business_share', { business_id: business.id, method: 'clipboard' });
     }
   };
 

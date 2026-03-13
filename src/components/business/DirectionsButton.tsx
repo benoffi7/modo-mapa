@@ -1,5 +1,6 @@
 import { Button } from '@mui/material';
 import DirectionsIcon from '@mui/icons-material/Directions';
+import { trackEvent } from '../../utils/analytics';
 import type { Business } from '../../types';
 import { useMapContext } from '../../context/MapContext';
 
@@ -18,6 +19,7 @@ export default function DirectionsButton({ business }: Props) {
       url = `https://www.google.com/maps/dir/?api=1&destination=${business.lat},${business.lng}`;
     }
     window.open(url, '_blank');
+    trackEvent('business_directions', { business_id: business.id });
   };
 
   return (

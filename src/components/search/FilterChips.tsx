@@ -1,5 +1,6 @@
 import { Box, Chip, Divider } from '@mui/material';
 import { useMapContext } from '../../context/MapContext';
+import { trackEvent } from '../../utils/analytics';
 import { PREDEFINED_TAGS } from '../../types';
 
 const PRICE_CHIPS = [
@@ -46,7 +47,10 @@ export default function FilterChips() {
           <Chip
             key={tag.id}
             label={tag.label}
-            onClick={() => toggleFilter(tag.id)}
+            onClick={() => {
+              trackEvent('business_filter_tag', { tag_name: tag.id, active: !isActive });
+              toggleFilter(tag.id);
+            }}
             variant={isActive ? 'filled' : 'outlined'}
             color={isActive ? 'primary' : 'default'}
             sx={chipSx(isActive)}
@@ -62,7 +66,10 @@ export default function FilterChips() {
           <Chip
             key={`price-${chip.level}`}
             label={chip.label}
-            onClick={() => setPriceFilter(chip.level)}
+            onClick={() => {
+              trackEvent('business_filter_price', { price_level: chip.level, active: !isActive });
+              setPriceFilter(chip.level);
+            }}
             variant={isActive ? 'filled' : 'outlined'}
             color={isActive ? 'secondary' : 'default'}
             sx={chipSx(isActive)}

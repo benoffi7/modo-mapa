@@ -5,6 +5,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useMapContext } from '../../context/MapContext';
 import { useAuth } from '../../context/AuthContext';
+import { trackEvent } from '../../utils/analytics';
 import NotificationBell from '../notifications/NotificationBell';
 
 interface Props {
@@ -46,7 +47,12 @@ export default function SearchBar({ onMenuClick }: Props) {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onBlur={() => {
+          setFocused(false);
+          if (searchQuery.trim()) {
+            trackEvent('business_search', { query: searchQuery.trim() });
+          }
+        }}
         sx={{
           flex: 1,
           ml: 0.5,
