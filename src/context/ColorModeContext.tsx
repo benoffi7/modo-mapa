@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getDesignTokens } from '../theme';
+import { setUserProperty } from '../utils/analytics';
 
 type Mode = 'light' | 'dark';
 
@@ -31,6 +32,7 @@ export function ColorModeProvider({ children }: { children: ReactNode }) {
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
       localStorage.setItem(STORAGE_KEY, next);
+      setUserProperty('theme', next);
       return next;
     });
   }, []);

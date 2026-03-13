@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 import { MapProvider } from './context/MapContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import AppShell from './components/layout/AppShell';
+import { useScreenTracking } from './hooks/useScreenTracking';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ThemePlayground = lazy(() => import('./pages/ThemePlayground'));
@@ -23,6 +24,8 @@ function AdminFallback() {
 }
 
 function App() {
+  useScreenTracking();
+
   return (
     <ColorModeProvider>
       <ErrorBoundary>

@@ -9,6 +9,7 @@ import { db, storage } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { menuPhotoConverter } from '../config/converters';
 import { invalidateBusinessCache } from '../hooks/useBusinessDataCache';
+import { trackEvent } from '../utils/analytics';
 import type { MenuPhoto } from '../types';
 
 export function getMenuPhotosCollection(): CollectionReference<MenuPhoto> {
@@ -84,6 +85,7 @@ export async function uploadMenuPhoto(
             reportCount: 0,
           });
           invalidateBusinessCache(businessId);
+          trackEvent('menu_photo_upload', { business_id: businessId });
           resolve({ docId: docRef.id });
         } catch (err) {
           reject(err);

@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { trackEvent } from '../utils/analytics';
 import type { PredefinedTagId } from '../types';
 
 const VALID_TAG_IDS: readonly string[] = ['barato', 'apto_celiacos', 'apto_veganos', 'rapido', 'delivery', 'buena_atencion'];
@@ -34,6 +35,7 @@ export async function addUserTag(
     tagId,
     createdAt: serverTimestamp(),
   });
+  trackEvent('tag_vote', { business_id: businessId, tag_name: tagId });
 }
 
 export async function removeUserTag(
@@ -63,6 +65,7 @@ export async function createCustomTag(
     label,
     createdAt: serverTimestamp(),
   });
+  trackEvent('custom_tag_create', { business_id: businessId });
 }
 
 export async function updateCustomTag(tagId: string, label: string): Promise<void> {

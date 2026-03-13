@@ -10,6 +10,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { trackEvent } from '../utils/analytics';
 import type { Favorite } from '../types';
 
 export function getFavoritesCollection(): CollectionReference<Favorite> {
@@ -31,9 +32,11 @@ export async function addFavorite(userId: string, businessId: string): Promise<v
     createdAt: serverTimestamp(),
   });
   invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
+  trackEvent('favorite_toggle', { business_id: businessId, action: 'add' });
 }
 
 export async function removeFavorite(userId: string, businessId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)));
   invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
+  trackEvent('favorite_toggle', { business_id: businessId, action: 'remove' });
 }
