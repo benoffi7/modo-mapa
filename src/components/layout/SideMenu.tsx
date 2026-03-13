@@ -41,7 +41,9 @@ import FeedbackForm from '../menu/FeedbackForm';
 import StatsView from '../menu/StatsView';
 import RankingsView from '../menu/RankingsView';
 import SettingsPanel from '../menu/SettingsPanel';
+import PrivacyPolicy from '../menu/PrivacyPolicy';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { trackEvent } from '../../utils/analytics';
 
 declare const __APP_VERSION__: string;
@@ -54,7 +56,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings';
+type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -65,6 +67,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   stats: 'Estadísticas',
   rankings: 'Rankings',
   settings: 'Configuración',
+  privacy: 'Política de privacidad',
 };
 
 export default function SideMenu({ open, onClose }: Props) {
@@ -228,7 +231,16 @@ export default function SideMenu({ open, onClose }: Props) {
                   />
                 </ListItemButton>
                 <Divider />
-                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', py: 1.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  onClick={() => setActiveSection('privacy')}
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, py: 1, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  <PrivacyTipOutlinedIcon sx={{ fontSize: 14 }} />
+                  Política de privacidad
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', pb: 1.5 }}>
                   Versión {__APP_VERSION__}
                   {import.meta.env.DEV && (
                     <>
@@ -269,6 +281,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 {activeSection === 'rankings' && <RankingsView />}
                 {activeSection === 'stats' && <StatsView />}
                 {activeSection === 'settings' && <SettingsPanel />}
+                {activeSection === 'privacy' && <PrivacyPolicy />}
               </Box>
             </>
           )}
