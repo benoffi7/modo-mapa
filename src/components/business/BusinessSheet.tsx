@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { SwipeableDrawer, Box, Divider } from '@mui/material';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { trackEvent } from '../../utils/analytics';
@@ -14,7 +14,7 @@ import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 
 export default function BusinessSheet() {
-  const { selectedBusiness, setSelectedBusiness } = useMapContext();
+  const { selectedBusiness, setSelectedBusiness } = useSelection();
   const isOpen = selectedBusiness !== null;
   const businessId = selectedBusiness?.id ?? null;
   const data = useBusinessData(businessId);

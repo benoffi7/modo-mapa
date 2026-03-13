@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
-import { MapContext } from '../context/MapContext';
+import { FiltersContext } from '../context/MapContext';
 
 vi.mock('./usePriceLevelFilter', () => ({
   usePriceLevelFilter: () => new Map(),
@@ -12,8 +12,6 @@ import { useBusinesses } from './useBusinesses';
 
 function createWrapper(overrides: { searchQuery?: string; activeFilters?: string[] } = {}) {
   const value = {
-    selectedBusiness: null,
-    setSelectedBusiness: () => {},
     searchQuery: overrides.searchQuery ?? '',
     setSearchQuery: () => {},
     activeFilters: overrides.activeFilters ?? [],
@@ -24,7 +22,7 @@ function createWrapper(overrides: { searchQuery?: string; activeFilters?: string
     setUserLocation: () => {},
   };
   return ({ children }: { children: ReactNode }) =>
-    createElement(MapContext.Provider, { value }, children);
+    createElement(FiltersContext.Provider, { value }, children);
 }
 
 describe('useBusinesses', () => {

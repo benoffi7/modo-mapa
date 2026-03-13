@@ -2,14 +2,14 @@ import { Button } from '@mui/material';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import { trackEvent } from '../../utils/analytics';
 import type { Business } from '../../types';
-import { useMapContext } from '../../context/MapContext';
+import { useFilters } from '../../context/MapContext';
 
 interface Props {
   business: Business;
 }
 
 export default function DirectionsButton({ business }: Props) {
-  const { userLocation } = useMapContext();
+  const { userLocation } = useFilters();
 
   const handleClick = () => {
     let url: string;
