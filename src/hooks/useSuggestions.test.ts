@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
+// Mock Firebase config to prevent env var check in CI
+vi.mock('../config/firebase', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn(),
+  getDocs: vi.fn(),
+  query: vi.fn(),
+  limit: vi.fn(),
+}));
+
 // Mock dependencies
 vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn().mockReturnValue({ user: { uid: 'u1' } }),
