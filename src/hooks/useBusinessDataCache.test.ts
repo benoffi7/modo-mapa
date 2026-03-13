@@ -17,6 +17,9 @@ describe('useBusinessDataCache', () => {
     comments: [],
     userTags: [],
     customTags: [],
+    userCommentLikes: new Set<string>(),
+    priceLevels: [],
+    menuPhoto: null,
   };
 
   it('returns null for uncached business', () => {
