@@ -23,7 +23,7 @@
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
 - **Comentarios**: lista + formulario + editar propios + undo delete (5s) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)"
 - **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Reset via `key={businessId}` en parent para forzar remount
-- **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar
+- **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
 - Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL)
 - Race condition fix con `patchedRef` para evitar que full loads sobreescriban refetches parciales
 - Escrituras via service layer (`src/services/`)
@@ -65,7 +65,8 @@
 ## Perfil publico de usuario
 
 - Click en nombre de usuario en comentarios abre bottom sheet
-- Avatar, fecha de registro, stats (comentarios, ratings, favoritos, likes recibidos, tags, fotos aprobadas)
+- Avatar, fecha de registro, stats (comentarios, ratings, favoritos, likes recibidos, tags, fotos aprobadas, ranking mensual)
+- Badge con medalla para usuarios top-3 del ranking mensual (junto al nombre)
 - Ultimos 5 comentarios con link al comercio
 - Graceful handling cuando el doc del usuario no es accesible (rules restringen a owner/admin)
 - Fallback de nombre desde el comentario
@@ -79,7 +80,9 @@
 - Busqueda por nombre o valor
 - Filtro por modulo (chips toggle)
 - Cada constante muestra: nombre (monospace), tipo (badge), valor (formateado)
-- Boton "Copiar import" genera la linea de import correcta al clipboard
+- Edicion inline con validacion: JSON format, hex colors, numeros, booleanos
+- Color swatches para valores hex, ms→human-readable hints para tiempos
+- Botones separados: copiar nombre (gris) y copiar valor (morado)
 - Deteccion automatica de valores duplicados entre modulos (banner warning)
 - Stats footer: N de M constantes visibles, total modulos, duplicados
 - Registry auto-descubre constantes via `Object.entries` sobre cada modulo

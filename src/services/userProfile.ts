@@ -18,6 +18,7 @@ import {
   menuPhotoConverter,
 } from '../config/converters';
 import { getBusinessName } from '../utils/businessHelpers';
+import { fetchLatestRanking } from './rankings';
 
 export interface UserProfileData {
   displayName: string;
@@ -37,6 +38,7 @@ export interface UserProfileData {
     text: string;
     createdAt: Date;
   }>;
+  rankingPosition: number | null;
 }
 
 export async function fetchUserProfile(userId: string, fallbackName?: string): Promise<UserProfileData> {
@@ -72,8 +74,9 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
   // User doc may not be readable (rules restrict to owner/admin).
   // Fetch it best-effort; the rest of the data is public.
   const userDocPromise = getDoc(userDocRef).catch(() => null);
+  const rankingPromise = fetchLatestRanking('monthly').catch(() => null);
 
-  const [userSnap, commentsSnap, ratingsSnap, favoritesSnap, customTagsSnap, photosSnap] =
+  const [userSnap, commentsSnap, ratingsSnap, favoritesSnap, customTagsSnap, photosSnap, monthlyRanking] =
     await Promise.all([
       userDocPromise,
       getDocs(commentsQuery),
@@ -81,12 +84,16 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
       getDocs(favoritesQuery),
       getDocs(customTagsQuery),
       getDocs(photosQuery),
+      rankingPromise,
     ]);
 
   const userProfile = userSnap?.exists() ? userSnap.data() : null;
   const comments = commentsSnap.docs.map((d) => d.data());
 
   const likesReceived = comments.reduce((sum, c) => sum + c.likeCount, 0);
+
+  const rankingIdx = monthlyRanking?.rankings.findIndex((r) => r.userId === userId) ?? -1;
+  const rankingPosition = rankingIdx >= 0 ? rankingIdx + 1 : null;
 
   const recentComments = comments.slice(0, 5).map((c) => ({
     id: c.id,
@@ -108,5 +115,6 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
       photos: photosSnap.size,
     },
     recentComments,
+    rankingPosition,
   };
 }

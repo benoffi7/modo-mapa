@@ -39,6 +39,8 @@ src/
 │   ├── feedback.ts                  # sendFeedback
 │   ├── menuPhotos.ts                # uploadMenuPhoto (con AbortSignal), getUserPendingPhotos
 │   ├── priceLevels.ts               # upsertPriceLevel, getBusinessPriceLevels
+│   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
+│   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
@@ -59,7 +61,8 @@ src/
 │   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa
 │   ├── useVisitHistory.ts           # Historial de visitas en localStorage (ultimos 20)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
-│   └── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
+│   ├── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
+│   └── useUserProfile.ts           # Hook para perfil publico de usuario (stats + ranking)
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   └── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatDateFull (compartidos)
@@ -123,6 +126,9 @@ src/
 │   │   ├── FavoriteButton.tsx       # Corazon toggle (props-driven)
 │   │   ├── ShareButton.tsx          # Compartir comercio (Web Share API + clipboard fallback)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
+│   ├── user/
+│   │   ├── UserProfileSheet.tsx     # Bottom sheet perfil publico: stats, ranking badge, comentarios recientes
+│   │   └── UserStatsRow.tsx         # Fila individual de stats (icono + label + count)
 │   ├── ui/
 │   │   ├── OfflineIndicator.tsx     # Chip MUI offline (PWA)
 │   │   └── OfflineIndicator.test.tsx
@@ -155,9 +161,10 @@ src/
 | `functions/.env` | Variables de entorno de Cloud Functions (ADMIN_EMAIL) |
 | `scripts/dev-env.sh` | Gestion de entorno dev: status, start, stop, restart, seed, health, logs |
 | `scripts/seed-admin-data.mjs` | Seed de datos de prueba para emuladores |
+| `functions/seed-prod-ranking.mjs` | Script para computar y guardar ranking mensual en Firestore produccion |
 | `docs/CODING_STANDARDS.md` | Estandares de codigo: service layer, patrones de componentes, convenciones TS |
 | `docs/SECURITY_GUIDELINES.md` | Guia de seguridad: App Check, timestamps, converters, patrones |
 | `docs/INFORME_SEGURIDAD.md` | Informe de auditoria de seguridad |
-| `docs/INFORME_MEJORAS.md` | Informe de mejoras pendientes y resueltas |
+| `docs/INFORME_MEJORAS_FUNCIONALES_v1.md` | Informe de mejoras funcionales con estado de implementacion |
 | `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |
 | `docs/reports/architecture-audit-v1.4.md` | Auditoria de arquitectura v1.4 |
