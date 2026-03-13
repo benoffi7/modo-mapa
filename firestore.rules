@@ -226,6 +226,19 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Configuración de usuario — solo el owner puede leer/escribir.
+    // Validación de tipos booleanos y timestamp.
+    match /userSettings/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.profilePublic is bool
+        && request.resource.data.notificationsEnabled is bool
+        && request.resource.data.notifyLikes is bool
+        && request.resource.data.notifyPhotos is bool
+        && request.resource.data.notifyRankings is bool
+        && request.resource.data.updatedAt == request.time;
+    }
+
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_rateLimits/{docId} {
       allow read, write: if false;

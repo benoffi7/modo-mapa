@@ -40,6 +40,8 @@ import RatingsList from '../menu/RatingsList';
 import FeedbackForm from '../menu/FeedbackForm';
 import StatsView from '../menu/StatsView';
 import RankingsView from '../menu/RankingsView';
+import SettingsPanel from '../menu/SettingsPanel';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 declare const __APP_VERSION__: string;
 
@@ -51,7 +53,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings';
+type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -61,6 +63,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   feedback: 'Feedback',
   stats: 'Estadísticas',
   rankings: 'Rankings',
+  settings: 'Configuración',
 };
 
 export default function SideMenu({ open, onClose }: Props) {
@@ -187,6 +190,13 @@ export default function SideMenu({ open, onClose }: Props) {
                   </ListItemIcon>
                   <ListItemText primary="Agregar comercio" />
                 </ListItemButton>
+
+                <ListItemButton onClick={() => setActiveSection('settings')}>
+                  <ListItemIcon>
+                    <SettingsOutlinedIcon sx={{ color: '#5f6368' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Configuración" />
+                </ListItemButton>
               </List>
 
               {/* Version footer + dark mode toggle */}
@@ -246,6 +256,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
                 {activeSection === 'rankings' && <RankingsView />}
                 {activeSection === 'stats' && <StatsView />}
+                {activeSection === 'settings' && <SettingsPanel />}
               </Box>
             </>
           )}
