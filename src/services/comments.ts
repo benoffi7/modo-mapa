@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -20,6 +20,7 @@ export async function addComment(
   userName: string,
   businessId: string,
   text: string,
+  parentId?: string,
 ): Promise<void> {
   const trimmedText = text.trim();
   const trimmedName = userName.trim();
@@ -36,9 +37,18 @@ export async function addComment(
     businessId,
     text,
     createdAt: serverTimestamp(),
+    ...(parentId ? { parentId } : {}),
   });
+
+  // Increment parent's replyCount atomically
+  if (parentId) {
+    await updateDoc(doc(db, COLLECTIONS.COMMENTS, parentId), {
+      replyCount: increment(1),
+    });
+  }
+
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
-  trackEvent('comment_submit', { business_id: businessId, is_edit: false });
+  trackEvent('comment_submit', { business_id: businessId, is_edit: false, is_reply: !!parentId });
 }
 
 export async function editComment(commentId: string, userId: string, newText: string): Promise<void> {
@@ -54,8 +64,20 @@ export async function editComment(commentId: string, userId: string, newText: st
   trackEvent('comment_submit', { is_edit: true });
 }
 
-export async function deleteComment(commentId: string, userId: string): Promise<void> {
+export async function deleteComment(commentId: string, userId: string, parentId?: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
+
+  // Decrement parent's replyCount atomically
+  if (parentId) {
+    const parentRef = doc(db, COLLECTIONS.COMMENTS, parentId);
+    const parentSnap = await getDoc(parentRef);
+    if (parentSnap.exists()) {
+      await updateDoc(parentRef, {
+        replyCount: increment(-1),
+      });
+    }
+  }
+
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
 }
 

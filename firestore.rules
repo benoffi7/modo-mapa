@@ -46,6 +46,18 @@ service cloud.firestore {
     // Calificaciones — cualquier usuario autenticado puede leer.
     // Owner puede crear/actualizar con score 1-5.
     // create valida createdAt y updatedAt; update solo valida updatedAt.
+    // criteria es un mapa opcional con scores 1-5 por criterio.
+    function isValidCriteria(data) {
+      return !('criteria' in data)
+        || (data.criteria is map
+          && (!('food' in data.criteria) || (data.criteria.food is int && data.criteria.food >= 1 && data.criteria.food <= 5))
+          && (!('service' in data.criteria) || (data.criteria.service is int && data.criteria.service >= 1 && data.criteria.service <= 5))
+          && (!('price' in data.criteria) || (data.criteria.price is int && data.criteria.price >= 1 && data.criteria.price <= 5))
+          && (!('ambiance' in data.criteria) || (data.criteria.ambiance is int && data.criteria.ambiance >= 1 && data.criteria.ambiance <= 5))
+          && (!('speed' in data.criteria) || (data.criteria.speed is int && data.criteria.speed >= 1 && data.criteria.speed <= 5))
+        );
+    }
+
     match /ratings/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -55,20 +67,24 @@ service cloud.firestore {
         && request.resource.data.score >= 1
         && request.resource.data.score <= 5
         && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && isValidCriteria(request.resource.data);
       allow update: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.score is int
         && request.resource.data.score >= 1
         && request.resource.data.score <= 5
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && isValidCriteria(request.resource.data);
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
 
     // Comentarios — cualquier usuario autenticado puede leer.
     // Owner puede crear con userName (1-30), text (1-500) y timestamp validado.
+    // Puede incluir parentId opcional (para respuestas/threads).
     // Owner puede editar solo el texto (1-500) con updatedAt validado.
+    // Cualquier usuario autenticado puede incrementar/decrementar replyCount (para threads).
     // Owner puede eliminar sus propios comentarios.
     match /comments/{docId} {
       allow read: if request.auth != null;
@@ -81,14 +97,21 @@ service cloud.firestore {
         && request.resource.data.text.size() <= 500
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 500
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.userId == resource.data.userId
-        && request.resource.data.businessId == resource.data.businessId
-        && request.resource.data.userName == resource.data.userName
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && (
+          // Owner can edit text
+          (resource.data.userId == request.auth.uid
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 500
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.userId == resource.data.userId
+            && request.resource.data.businessId == resource.data.businessId
+            && request.resource.data.userName == resource.data.userName
+            && request.resource.data.createdAt == resource.data.createdAt)
+          ||
+          // Any authenticated user can update replyCount (for thread replies)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount'])
+            && request.resource.data.replyCount is int)
+        );
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }

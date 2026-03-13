@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -24,6 +24,7 @@ export const ratingConverter: FirestoreDataConverter<Rating> = {
       score: rating.score,
       createdAt: rating.createdAt,
       updatedAt: rating.updatedAt,
+      ...(rating.criteria != null && { criteria: rating.criteria }),
     };
   },
   fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): Rating {
@@ -34,6 +35,7 @@ export const ratingConverter: FirestoreDataConverter<Rating> = {
       score: d.score,
       createdAt: toDate(d.createdAt),
       updatedAt: toDate(d.updatedAt),
+      ...(d.criteria != null && { criteria: d.criteria as RatingCriteria }),
     };
   },
 };
@@ -60,6 +62,8 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       likeCount: (d.likeCount as number) ?? 0,
       ...(d.updatedAt ? { updatedAt: toDate(d.updatedAt) } : {}),
       ...(d.flagged === true ? { flagged: true } : {}),
+      ...(d.parentId != null && { parentId: d.parentId as string }),
+      ...(d.replyCount != null && { replyCount: d.replyCount as number }),
     };
   },
 };

@@ -88,11 +88,11 @@ async function seed() {
   await setDoc(doc(db, 'config', 'counters'), {
     comments: 60,
     ratings: 40,
-    favorites: 30,
+    favorites: 60,
     feedback: 8,
     users: 10,
     customTags: 15,
-    userTags: 50,
+    userTags: 80,
     commentLikes: 80,
     dailyReads: 342,
     dailyWrites: 87,
@@ -213,7 +213,42 @@ async function seed() {
     commentIds.push({ id: ref.id, userId });
   }
 
-  // 5b. Comment likes
+  // 5b. Reply comments (threads)
+  console.log('Creating reply comments...');
+  const REPLY_TEXTS = [
+    'Totalmente de acuerdo!',
+    'Yo también lo recomiendo',
+    'Probaste la napolitana? Es increíble',
+    'La próxima vez pedí el postre, no te vas a arrepentir',
+    'Coincido, muy buen lugar',
+    'A mí me pareció un poco caro',
+    'Gracias por la recomendación!',
+    'Voy a ir la semana que viene',
+  ];
+  const replyCommentIds = [];
+  // Add 2-3 replies to first 10 parent comments
+  const parentsForReplies = commentIds.slice(0, 10);
+  for (const parent of parentsForReplies) {
+    const numReplies = randomInt(1, 3);
+    for (let r = 0; r < numReplies; r++) {
+      const replyUserId = randomFrom(USER_IDS.filter((id) => id !== parent.userId));
+      const idx = USER_IDS.indexOf(replyUserId);
+      const ref = await addDoc(collection(db, 'comments'), {
+        userId: replyUserId,
+        userName: USER_NAMES[idx],
+        businessId: randomFrom(BUSINESS_IDS),
+        text: randomFrom(REPLY_TEXTS),
+        createdAt: daysAgo(randomInt(0, 10)),
+        likeCount: randomInt(0, 3),
+        parentId: parent.id,
+      });
+      replyCommentIds.push({ id: ref.id, userId: replyUserId });
+    }
+    // Update parent's replyCount
+    await db.collection('comments').doc(parent.id).update({ replyCount: numReplies });
+  }
+
+  // 5c. Comment likes
   console.log('Creating comment likes...');
   const likePairs = new Set();
   for (let i = 0; i < 80; i++) {
@@ -231,8 +266,9 @@ async function seed() {
     });
   }
 
-  // 6. Ratings
+  // 6. Ratings (some with multi-criteria)
   console.log('Creating ratings...');
+  const CRITERIA_KEYS = ['food', 'service', 'price', 'ambiance', 'speed'];
   const ratingPairs = new Set();
   for (let i = 0; i < 40; i++) {
     const userId = randomFrom(USER_IDS);
@@ -241,19 +277,31 @@ async function seed() {
     if (ratingPairs.has(key)) continue;
     ratingPairs.add(key);
     const now = daysAgo(randomInt(0, 25));
+    // ~50% of ratings have criteria data
+    const hasCriteria = i % 2 === 0;
+    const criteria = hasCriteria ? {} : undefined;
+    if (criteria) {
+      // Randomly fill 2-5 criteria
+      const numCriteria = randomInt(2, 5);
+      const shuffled = [...CRITERIA_KEYS].sort(() => Math.random() - 0.5);
+      for (let c = 0; c < numCriteria; c++) {
+        criteria[shuffled[c]] = randomInt(1, 5);
+      }
+    }
     await setDoc(doc(db, 'ratings', key), {
       userId,
       businessId,
       score: randomInt(1, 5),
       createdAt: now,
       updatedAt: now,
+      ...(criteria ? { criteria } : {}),
     });
   }
 
   // 7. Favorites
   console.log('Creating favorites...');
   const favPairs = new Set();
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     const userId = randomFrom(USER_IDS);
     const businessId = randomFrom(BUSINESS_IDS);
     const key = `${userId}__${businessId}`;
@@ -269,7 +317,7 @@ async function seed() {
   // 8. UserTags
   console.log('Creating user tags...');
   const tagTriples = new Set();
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 80; i++) {
     const userId = randomFrom(USER_IDS);
     const businessId = randomFrom(BUSINESS_IDS);
     const tagId = randomFrom(TAGS);
@@ -426,11 +474,11 @@ async function seed() {
 
   console.log('\n✅ Seed complete!');
   console.log('- 10 users');
-  console.log('- ~60 comments (4 flagged, ~6 edited, with likeCount)');
+  console.log('- ~60 comments (4 flagged, ~6 edited, with likeCount) + ~20 replies (threads)');
   console.log('- ~80 comment likes');
   console.log('- ~40 ratings');
-  console.log('- ~30 favorites');
-  console.log('- ~50 user tags');
+  console.log('- ~60 favorites');
+  console.log('- ~80 user tags');
   console.log('- 15 custom tags');
   console.log('- 8 feedback (1 flagged)');
   console.log('- 15 days of daily metrics');
