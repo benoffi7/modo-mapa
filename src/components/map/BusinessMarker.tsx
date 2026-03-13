@@ -1,16 +1,7 @@
 import { memo, useCallback } from 'react';
 import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-import type { Business, BusinessCategory } from '../../types';
-
-const CATEGORY_COLORS: Record<BusinessCategory, string> = {
-  restaurant: '#ea4335',
-  cafe: '#795548',
-  bakery: '#ff9800',
-  bar: '#9c27b0',
-  fastfood: '#f44336',
-  icecream: '#e91e63',
-  pizza: '#ff5722',
-};
+import { CATEGORY_COLORS } from '../../constants/map';
+import type { Business } from '../../types';
 
 interface Props {
   business: Business;

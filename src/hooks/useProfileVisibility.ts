@@ -2,14 +2,13 @@ import { useSyncExternalStore, useCallback } from 'react';
 import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { PROFILE_CACHE_TTL_MS } from '../constants/cache';
 
 // Cache entry with timestamp for TTL-based invalidation
 interface CacheEntry {
   value: boolean;
   fetchedAt: number;
 }
-
-const CACHE_TTL_MS = 60_000; // 60 seconds
 
 // Module-level cache and subscribers
 const visibilityCache = new Map<string, CacheEntry>();
@@ -33,7 +32,7 @@ function getSnapshot() {
 function isStale(uid: string): boolean {
   const entry = visibilityCache.get(uid);
   if (!entry) return true;
-  return Date.now() - entry.fetchedAt > CACHE_TTL_MS;
+  return Date.now() - entry.fetchedAt > PROFILE_CACHE_TTL_MS;
 }
 
 // Tracks in-flight fetches to avoid duplicate requests

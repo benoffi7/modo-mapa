@@ -2,16 +2,8 @@ import { collection, doc, getDoc, getDocs, getCountFromServer, query, where, ord
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userRankingConverter } from '../config/converters';
+import { SCORING } from '../constants/rankings';
 import type { UserRanking, UserRankingEntry } from '../types';
-
-const SCORING = {
-  comments: 3,
-  ratings: 2,
-  likes: 1,
-  tags: 1,
-  favorites: 1,
-  photos: 5,
-} as const;
 
 export async function fetchRanking(period: string): Promise<UserRanking | null> {
   const snap = await getDoc(

@@ -8,6 +8,7 @@ import { COLLECTIONS } from '../config/collections';
 import { commentConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
 import { trackEvent } from '../utils/analytics';
+import { MAX_COMMENT_LENGTH, MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import type { Comment } from '../types';
 
 export function getCommentsCollection(): CollectionReference<Comment> {
@@ -22,10 +23,10 @@ export async function addComment(
 ): Promise<void> {
   const trimmedText = text.trim();
   const trimmedName = userName.trim();
-  if (!trimmedText || trimmedText.length > 500) {
+  if (!trimmedText || trimmedText.length > MAX_COMMENT_LENGTH) {
     throw new Error('Comment text must be 1-500 characters');
   }
-  if (!trimmedName || trimmedName.length > 30) {
+  if (!trimmedName || trimmedName.length > MAX_DISPLAY_NAME_LENGTH) {
     throw new Error('User name must be 1-30 characters');
   }
 
@@ -42,7 +43,7 @@ export async function addComment(
 
 export async function editComment(commentId: string, userId: string, newText: string): Promise<void> {
   const trimmed = newText.trim();
-  if (!trimmed || trimmed.length > 500) {
+  if (!trimmed || trimmed.length > MAX_COMMENT_LENGTH) {
     throw new Error('Comment text must be 1-500 characters');
   }
   await updateDoc(doc(db, COLLECTIONS.COMMENTS, commentId), {

@@ -1,3 +1,4 @@
+import { BUSINESS_CACHE_TTL_MS } from '../constants/cache';
 import type { Rating, Comment, UserTag, CustomTag, MenuPhoto, PriceLevel } from '../types';
 
 export interface BusinessCacheEntry {
@@ -12,14 +13,12 @@ export interface BusinessCacheEntry {
   timestamp: number;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 const cache = new Map<string, BusinessCacheEntry>();
 
 export function getBusinessCache(businessId: string): BusinessCacheEntry | null {
   const entry = cache.get(businessId);
   if (!entry) return null;
-  if (Date.now() - entry.timestamp > CACHE_TTL) {
+  if (Date.now() - entry.timestamp > BUSINESS_CACHE_TTL_MS) {
     cache.delete(businessId);
     return null;
   }

@@ -4,9 +4,8 @@ import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { useMapContext } from '../../context/MapContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
+import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
-
-const BUENOS_AIRES_CENTER = { lat: -34.6037, lng: -58.3816 };
 
 export default function MapView() {
   const map = useMap();

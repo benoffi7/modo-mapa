@@ -17,10 +17,10 @@ export const ColorModeContext = createContext<ColorModeContextValue>({
   toggleColorMode: () => {},
 });
 
-const STORAGE_KEY = 'modo-mapa-color-mode';
+import { STORAGE_KEY_COLOR_MODE } from '../constants/storage';
 
 function getInitialMode(): Mode {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage.getItem(STORAGE_KEY_COLOR_MODE);
   if (stored === 'light' || stored === 'dark') return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
@@ -31,7 +31,7 @@ export function ColorModeProvider({ children }: { children: ReactNode }) {
   const toggleColorMode = useCallback(() => {
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(STORAGE_KEY_COLOR_MODE, next);
       setUserProperty('theme', next);
       return next;
     });

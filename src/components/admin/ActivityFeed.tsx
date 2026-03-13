@@ -14,10 +14,9 @@ import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { getBusinessName } from '../../utils/businessHelpers';
 import type { Comment, Rating, Favorite, UserTag, CustomTag } from '../../types';
+import { ADMIN_PAGE_SIZE } from '../../constants/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
-
-const PAGE_SIZE = 20;
 
 function FlaggedChip() {
   return <Chip label="Flagged" color="error" size="small" />;
@@ -36,11 +35,11 @@ export default function ActivityFeed() {
 
   const fetcher = useCallback(async (): Promise<ActivityData> => {
     const [comments, ratings, favorites, userTags, customTags] = await Promise.all([
-      fetchRecentComments(PAGE_SIZE),
-      fetchRecentRatings(PAGE_SIZE),
-      fetchRecentFavorites(PAGE_SIZE),
-      fetchRecentUserTags(PAGE_SIZE),
-      fetchRecentCustomTags(PAGE_SIZE),
+      fetchRecentComments(ADMIN_PAGE_SIZE),
+      fetchRecentRatings(ADMIN_PAGE_SIZE),
+      fetchRecentFavorites(ADMIN_PAGE_SIZE),
+      fetchRecentUserTags(ADMIN_PAGE_SIZE),
+      fetchRecentCustomTags(ADMIN_PAGE_SIZE),
     ]);
     return { comments, ratings, favorites, userTags, customTags };
   }, []);

@@ -6,13 +6,8 @@ import { httpsCallable } from 'firebase/functions';
 import { storage, functions } from '../../config/firebase';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
+import { STATUS_CHIP } from '../../constants/admin';
 import type { MenuPhoto } from '../../types';
-
-const STATUS_CHIP: Record<string, { label: string; color: 'warning' | 'success' | 'error' }> = {
-  pending: { label: 'Pendiente', color: 'warning' },
-  approved: { label: 'Aprobada', color: 'success' },
-  rejected: { label: 'Rechazada', color: 'error' },
-};
 
 interface Props {
   photo: MenuPhoto;

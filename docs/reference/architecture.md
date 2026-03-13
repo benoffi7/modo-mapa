@@ -10,6 +10,7 @@ main.tsx
             ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
             ├─ Routes
             ├─ [/dev/theme] ThemePlayground (lazy, DEV only)
+            ├─ [/dev/constants] ConstantsDashboard (lazy, DEV only)
             ├─ [/admin/*] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
        │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups, Fotos)
@@ -47,7 +48,7 @@ main.tsx
                       ├─ RatingsList + ListFilters
                       ├─ FeedbackForm
                       ├─ Dark mode toggle (switch + icon)
-                      └─ Footer (version + Theme link in DEV)
+                      └─ Footer (version + Theme/Constants links in DEV)
 ```
 
 ## Capas de la arquitectura
@@ -57,6 +58,7 @@ Components ──► Services ──► Firestore SDK ──► Cloud Firestore
      │              │
      │              └─ config/ (firebase.ts, collections.ts, converters)
      │
+     ├─ Constants (src/constants/ — valores centralizados por dominio)
      ├─ Hooks (useAsyncData, useBusinessData, usePaginatedQuery, etc.)
      ├─ Context (AuthContext, MapContext)
      └─ Utils (formatDate, businessHelpers)
@@ -120,3 +122,4 @@ functions/
 - **Estilo:** inspirado en Google Maps
 - **Toggle:** Switch en menu lateral, persiste en localStorage, respeta `prefers-color-scheme`
 - **Playground:** `/dev/theme` (solo DEV) — color pickers, palette generator, component preview, copyable output
+- **Constants Dashboard:** `/dev/constants` (solo DEV) — browser de todas las constantes centralizadas, busqueda, filtro por modulo, copy import, deteccion de duplicados

@@ -52,10 +52,7 @@ const listBackupsFn = httpsCallable<ListBackupsRequest, ListBackupsResponse>(fun
 const restoreBackupFn = httpsCallable<RestoreBackupRequest, SuccessResponse>(functions, 'restoreBackup');
 const deleteBackupFn = httpsCallable<DeleteBackupRequest, SuccessResponse>(functions, 'deleteBackup');
 
-// ── Constants ──────────────────────────────────────────────────────────
-
-const AUTO_DISMISS_MS = 5000;
-const PAGE_SIZE = 20;
+import { ADMIN_PAGE_SIZE, AUTO_DISMISS_MS } from '../../constants';
 
 // ── Component ──────────────────────────────────────────────────────────
 
@@ -91,9 +88,9 @@ export default function BackupsPanel() {
       setError(null);
       let result: HttpsCallableResult<ListBackupsResponse>;
       if (pageToken) {
-        result = await listBackupsFn({ pageSize: PAGE_SIZE, pageToken });
+        result = await listBackupsFn({ pageSize: ADMIN_PAGE_SIZE, pageToken });
       } else {
-        result = await listBackupsFn({ pageSize: PAGE_SIZE });
+        result = await listBackupsFn({ pageSize: ADMIN_PAGE_SIZE });
       }
       const { backups: newBackups, nextPageToken: token, totalCount: total } = result.data;
 

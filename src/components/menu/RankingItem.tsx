@@ -1,9 +1,8 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
+import { MEDALS } from '../../constants/rankings';
 import type { UserRankingEntry } from '../../types';
-
-const MEDALS = ['', '\u{1F947}', '\u{1F948}', '\u{1F949}'];
 
 interface Props {
   entry: UserRankingEntry;
