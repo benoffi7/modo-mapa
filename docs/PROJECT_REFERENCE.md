@@ -106,7 +106,7 @@ functions/
 │   ├── index.ts              → exports de todas las functions
 │   ├── admin/
 │   │   ├── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
-│   │   └── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto (callable, admin only)
+│   │   └── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto (callable)
 │   ├── triggers/
 │   │   ├── comments.ts       → rate limit + moderacion + counters + onUpdate re-moderation
 │   │   ├── commentLikes.ts   → likeCount increment/decrement + rate limit + counters
@@ -134,7 +134,7 @@ functions/
 ### Flujo de datos
 
 1. **Datos estaticos**: `businesses.json` (40 comercios) se carga como import estatico. No hay fetch.
-2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback, priceLevels, menuPhotos). El hook `useBusinessData` orquesta las 7 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion.
+2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback, priceLevels, menuPhotos). El hook `useBusinessData` orquesta las 7 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion sin incrementar `fetchIdRef`. `patchedRef` previene que full loads sobreescriban datos de refetches parciales.
 3. **Service layer**: Componentes llaman funciones de `src/services/` para operaciones CRUD. Los servicios encapsulan Firestore SDK e invalidan caches internamente.
 4. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, activePriceFilter, userLocation).
 5. **Estado local**: Cada seccion del menu carga sus datos al montarse y los filtra client-side con `useListFilters`.
@@ -169,9 +169,11 @@ src/
 │   ├── comments.ts                  # addComment, editComment, deleteComment, likeComment, unlikeComment
 │   ├── tags.ts                      # addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag
 │   ├── feedback.ts                  # sendFeedback
-│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs
+│   ├── menuPhotos.ts                # uploadMenuPhoto (con AbortSignal), getUserPendingPhotos
+│   ├── priceLevels.ts               # upsertPriceLevel, getBusinessPriceLevels
+│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback
+│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel, PRICE_LEVEL_LABELS
 │   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
@@ -181,11 +183,13 @@ src/
 ├── hooks/
 │   ├── useAsyncData.ts              # Hook generico para fetch async con loading/error states
 │   ├── useBusinesses.ts             # Filtra businesses por searchQuery + activeFilters
-│   ├── useBusinessData.ts           # Orquesta 5 queries del business view con Promise.all + cache
+│   ├── useBusinessData.ts           # Orquesta 7 queries del business view con Promise.all + cache + patchedRef race condition fix
 │   ├── useBusinessDataCache.ts      # Cache client-side para datos del business view (5 min TTL) + patchBusinessCache
 │   ├── useColorMode.ts              # Hook for dark/light mode toggle (consumes ColorModeContext)
 │   ├── useListFilters.ts            # Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento
 │   ├── usePaginatedQuery.ts         # Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL)
+│   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa
+│   ├── useVisitHistory.ts           # Historial de visitas en localStorage (ultimos 20)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
 │   └── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
 ├── utils/
@@ -197,7 +201,7 @@ src/
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email
-│   │   ├── AdminLayout.tsx          # AppBar + Tabs (8 secciones)
+│   │   ├── AdminLayout.tsx          # AppBar + Tabs (9 secciones)
 │   │   ├── AdminPanelWrapper.tsx    # Wrapper compartido loading/error/empty para paneles admin
 │   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists + Custom Tags ranking
 │   │   ├── ActivityFeed.tsx         # Tabs por coleccion (ultimos 20 items)
@@ -209,6 +213,8 @@ src/
 │   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (orquestacion)
 │   │   ├── BackupTable.tsx          # Tabla de backups (memoizada con React.memo)
 │   │   ├── BackupConfirmDialog.tsx  # Dialog de confirmacion restore/delete (memoizado)
+│   │   ├── PhotoReviewPanel.tsx     # Panel admin: filtro por status, lista de fotos
+│   │   ├── PhotoReviewCard.tsx      # Card individual: approve/reject/delete + revert actions + report count
 │   │   ├── backupTypes.ts           # Tipos: BackupEntry, ConfirmAction
 │   │   ├── backupUtils.ts           # formatBackupDate, extractErrorMessage, mapErrorToUserMessage
 │   │   ├── StatCard.tsx             # Card con numero grande
@@ -240,6 +246,10 @@ src/
 │   │   ├── CustomTagDialog.tsx      # Dialog crear/editar custom tag (memoizado)
 │   │   ├── DeleteTagDialog.tsx      # Dialog confirmacion eliminacion tag (memoizado)
 │   │   ├── BusinessComments.tsx     # Comentarios + formulario + editar + undo delete + likes + sorting (props-driven)
+│   │   ├── BusinessPriceLevel.tsx    # Nivel de gasto $/$$/$$$ con optimistic UI (pendingLevel + key remount)
+│   │   ├── MenuPhotoSection.tsx     # Foto de menu: preview, staleness chip, upload/viewer toggle
+│   │   ├── MenuPhotoUpload.tsx      # Dialog upload con preview, progress, AbortController cancel
+│   │   ├── MenuPhotoViewer.tsx      # Dialog fullscreen foto + report button
 │   │   ├── FavoriteButton.tsx       # Corazon toggle (props-driven)
 │   │   ├── ShareButton.tsx          # Compartir comercio (Web Share API + clipboard fallback)
 │   │   └── DirectionsButton.tsx     # Abre Google Maps Directions
@@ -250,6 +260,7 @@ src/
 │       ├── FavoritesList.tsx
 │       ├── CommentsList.tsx
 │       ├── RatingsList.tsx
+│       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)
 │       ├── FeedbackForm.tsx
 │       ├── StatsView.tsx            # Vista publica de estadisticas (usePublicMetrics)
 │       └── ListFilters.tsx
@@ -457,9 +468,9 @@ En CI/CD se inyectan como GitHub Secrets.
 
 ### App Check
 
-- **Obligatorio en Cloud Functions**: todas las funciones callable usan `enforceAppCheck: true`.
+- **Obligatorio en Cloud Functions (prod)**: todas las funciones callable usan `enforceAppCheck: !IS_EMULATOR` — habilitado en prod, deshabilitado en emuladores.
 - **Frontend**: se inicializa con `ReCaptchaEnterpriseProvider` solo en produccion (`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`).
-- **Emuladores**: no requieren App Check.
+- **Emuladores**: no requieren App Check (`IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true'`).
 
 ### Firestore rules
 
@@ -528,7 +539,7 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 |---------|-------------|
 | `npm run dev` | Vite dev server (sin emuladores) |
 | `npm run dev:full` | Dev + emuladores Firebase (auth, firestore, functions) |
-| `npm run emulators` | Solo emuladores (Auth :9099, Firestore :8080, Functions :5001, UI :4000) |
+| `npm run emulators` | Solo emuladores (Auth :9099, Firestore :8080, Functions :5001, Storage :9199, UI :4000) |
 | `npm run build` | tsc + vite build -> `dist/` |
 | `npm run lint` | ESLint check |
 | `npm run preview` | Preview del build de produccion |
@@ -536,6 +547,7 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | `npm run test:run` | Vitest single run |
 | `npm run seed` | Poblar emulador Firestore con datos de prueba (requiere emuladores corriendo) |
 | `npm run analyze` | Build + genera `dist/stats.html` con analisis del bundle |
+| `scripts/dev-env.sh` | Gestion de entorno dev: status, start, stop, restart, seed, health, logs. Auto-seed al iniciar. |
 
 ---
 
@@ -603,12 +615,15 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
 | **Admin panel pattern** | Todos los paneles admin usan `useAsyncData` + `AdminPanelWrapper` para estados loading/error. |
-| **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm al re-entrar a la seccion. |
+| **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm. `key={businessId}` en BusinessPriceLevel para reset de `pendingLevel`. |
+| **patchedRef race condition fix** | En `useBusinessData`, `patchedRef` trackea colecciones actualizadas por refetches parciales. Al completar full load, preserva esas colecciones del state actual. |
+| **AbortController for uploads** | `MenuPhotoUpload` usa `AbortController` para cancelar compression + Storage upload. Cancel siempre habilitado. |
+| **Photo reporting** | Usuarios reportan fotos via `reportMenuPhoto` callable. Subcollection `reports` bajo cada foto previene duplicados. `reportCount` incrementado atomicamente. |
 | **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
 | **import type** | Obligatorio por `verbatimModuleSyntax: true` en tsconfig. |
 | **Hook generico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
-| **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: true` en todas las Cloud Functions callable. |
+| **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
@@ -661,6 +676,9 @@ Antes de cada restore, se crea automaticamente un backup con prefijo `pre-restor
 | [#43](https://github.com/benoffi7/modo-mapa/issues/43) | feat | Dark mode + theme playground | — | Open | — |
 | [#45](https://github.com/benoffi7/modo-mapa/issues/45) | feat | Comentarios 2.0: editar, undo delete, likes, sorting | — | Open | `docs/feat-comments-2.0/` |
 | [#46](https://github.com/benoffi7/modo-mapa/issues/46) | feat | Compartir comercio (share + deep link) | — | Open | `docs/feat-comments-2.0/` |
+| [#48](https://github.com/benoffi7/modo-mapa/issues/48) | feat | Fotos de menu: upload, review, report, admin lifecycle | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
+| [#49](https://github.com/benoffi7/modo-mapa/issues/49) | feat | Historial de visitas recientes (localStorage) | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
+| [#50](https://github.com/benoffi7/modo-mapa/issues/50) | feat | Nivel de gasto ($/$$/$$) con filtro en mapa | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
 
 ---
 
@@ -706,13 +724,16 @@ Documentacion adicional:
 - Tags custom: crear, editar, eliminar (privados por usuario)
 - Comentarios: lista + formulario + editar propios + undo delete + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)"
 - Compartir: boton share (Web Share API con fallback a clipboard). Deep link via `?business={id}`
-- Datos cargados en paralelo (`Promise.all`) con cache client-side (5 min TTL)
+- Nivel de gasto: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel` + `key={businessId}` remount
+- Foto de menu: preview con staleness chip (>6 meses), upload con compression + cancel, viewer fullscreen con report
+- Datos cargados en paralelo (`Promise.all`) con cache client-side (5 min TTL). Race condition fix con `patchedRef`
 - Escrituras via service layer (`src/services/`)
 
 ### Menu lateral (SideMenu)
 
 - Header con avatar, nombre, boton editar nombre
 - Secciones:
+  - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio.
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio.
   - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio.
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio.
@@ -726,7 +747,7 @@ Documentacion adicional:
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificacion en frontend (AdminGuard) y server-side (Firestore rules)
-- 8 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
+- 9 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
   - **Overview**: totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover
   - **Actividad**: feed por seccion (comentarios, ratings, favoritos, tags) con ultimos 20 items, indicador de flagged
   - **Feedback**: tabla de feedback recibido con categoria (bug/sugerencia/otro), mensaje, estado flagged
@@ -734,24 +755,29 @@ Documentacion adicional:
   - **Usuarios**: rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones)
   - **Firebase Usage**: graficos lineales de reads/writes/deletes y usuarios activos (ultimos 30 dias), pie charts por coleccion, barras de cuota vs free tier
   - **Alertas**: logs de abuso (rate limit excedido, contenido flaggeado, top writers)
-  - **Backups**: crear backup manual, listar con paginacion (20 por pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable con `enforceAppCheck: true`
+  - **Backups**: crear backup manual, listar con paginacion (20 por pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable
+  - **Fotos**: panel de revision de fotos de menu. Filtro por status (todas/pendientes/aprobadas/rechazadas). Acciones: aprobar, rechazar (con razon), eliminar, revertir. Badge de reportes
 
 ### Cloud Functions (server-side)
 
-4 funciones admin callable + triggers + scheduled:
+8 funciones callable + triggers + scheduled:
 
 | Funcion | Tipo | Descripcion |
 |---------|------|-------------|
-| `createBackup` | callable | Firestore export -> GCS (`modo-mapa-app-backups`). Timeout 300s. |
-| `listBackups` | callable | Lista prefijos en GCS con paginacion (max 100/pagina). Timeout 60s. |
-| `restoreBackup` | callable | Crea backup de seguridad pre-restore + Firestore import <- GCS. Timeout 300s. |
-| `deleteBackup` | callable | Elimina todos los archivos del backup en GCS. Timeout 120s. |
+| `createBackup` | callable (admin) | Firestore export -> GCS (`modo-mapa-app-backups`). Timeout 300s. |
+| `listBackups` | callable (admin) | Lista prefijos en GCS con paginacion (max 100/pagina). Timeout 60s. |
+| `restoreBackup` | callable (admin) | Crea backup de seguridad pre-restore + Firestore import <- GCS. Timeout 300s. |
+| `deleteBackup` | callable (admin) | Elimina todos los archivos del backup en GCS. Timeout 120s. |
+| `approveMenuPhoto` | callable (admin) | Aprueba foto pendiente o rechazada. Timeout 30s. |
+| `rejectMenuPhoto` | callable (admin) | Rechaza foto con razon. Timeout 30s. |
+| `deleteMenuPhoto` | callable (admin) | Elimina foto de Storage + Firestore. Timeout 60s. |
+| `reportMenuPhoto` | callable (auth) | Reporta foto (usuario). Previene duplicados via subcollection `reports`. Timeout 30s. |
 
-Todas las funciones callable:
+Funciones callable admin:
 
 - Verifican admin (email + `email_verified`)
 - Rate limit: 5 llamadas/minuto por usuario
-- `enforceAppCheck: true`
+- `enforceAppCheck: !IS_EMULATOR` (deshabilitado en emuladores)
 - Validan input (backupId con regex `^[\w.-]+$`)
 - Logging con email enmascarado
 
