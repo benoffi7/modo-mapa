@@ -176,9 +176,9 @@ export const menuPhotoConverter: FirestoreDataConverter<MenuPhoto> = {
       storagePath: d.storagePath ?? '',
       thumbnailPath: d.thumbnailPath ?? '',
       status: d.status ?? 'pending',
-      rejectionReason: d.rejectionReason,
-      reviewedBy: d.reviewedBy,
-      reviewedAt: d.reviewedAt ? toDate(d.reviewedAt) : undefined,
+      ...(d.rejectionReason != null && { rejectionReason: d.rejectionReason as string }),
+      ...(d.reviewedBy != null && { reviewedBy: d.reviewedBy as string }),
+      ...(d.reviewedAt != null && { reviewedAt: toDate(d.reviewedAt) }),
       createdAt: toDate(d.createdAt),
       reportCount: (d.reportCount as number) ?? 0,
     };
