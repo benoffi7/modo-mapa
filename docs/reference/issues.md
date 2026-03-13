@@ -26,12 +26,13 @@
 | [#38](https://github.com/benoffi7/modo-mapa/issues/38) | feat | Preview environments para PRs | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
 | [#39](https://github.com/benoffi7/modo-mapa/issues/39) | feat | Sentry error tracking | [#40](https://github.com/benoffi7/modo-mapa/pull/40) | Merged | — |
 | [#41](https://github.com/benoffi7/modo-mapa/issues/41) | fix | Tags reload on any action + rating flicker | [#42](https://github.com/benoffi7/modo-mapa/pull/42) | Merged | — |
-| [#43](https://github.com/benoffi7/modo-mapa/issues/43) | feat | Dark mode + theme playground | — | Open | — |
-| [#45](https://github.com/benoffi7/modo-mapa/issues/45) | feat | Comentarios 2.0: editar, undo delete, likes, sorting | — | Open | `docs/feat-comments-2.0/` |
-| [#46](https://github.com/benoffi7/modo-mapa/issues/46) | feat | Compartir comercio (share + deep link) | — | Open | `docs/feat-comments-2.0/` |
+| [#43](https://github.com/benoffi7/modo-mapa/issues/43) | feat | Dark mode + theme playground | [#44](https://github.com/benoffi7/modo-mapa/pull/44) | Merged | — |
+| [#45](https://github.com/benoffi7/modo-mapa/issues/45) | feat | Comentarios 2.0: editar, undo delete, likes, sorting | [#47](https://github.com/benoffi7/modo-mapa/pull/47) | Merged | `docs/feat-comments-2.0/` |
+| [#46](https://github.com/benoffi7/modo-mapa/issues/46) | feat | Compartir comercio (share + deep link) | [#47](https://github.com/benoffi7/modo-mapa/pull/47) | Merged | `docs/feat-comments-2.0/` |
 | [#48](https://github.com/benoffi7/modo-mapa/issues/48) | feat | Fotos de menu: upload, review, report, admin lifecycle | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
 | [#49](https://github.com/benoffi7/modo-mapa/issues/49) | feat | Historial de visitas recientes (localStorage) | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
 | [#50](https://github.com/benoffi7/modo-mapa/issues/50) | feat | Nivel de gasto ($/$$/$$) con filtro en mapa | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
+| — | fix | CI: test isolation, TS build errors, preview deploy permissions | [#52](https://github.com/benoffi7/modo-mapa/pull/52) | Merged | — |
 
 ---
 
