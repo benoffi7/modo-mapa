@@ -35,8 +35,10 @@ export default function FilterChips() {
         gap: 1,
         px: 2,
         overflowX: 'auto',
+        pointerEvents: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
         scrollbarWidth: 'none',
+        '& > *': { pointerEvents: 'auto' },
       }}
     >
       {PREDEFINED_TAGS.map((tag) => {

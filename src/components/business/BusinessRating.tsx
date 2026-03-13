@@ -1,7 +1,8 @@
 import { useMemo, useState, memo } from 'react';
-import { Box, Typography, Rating } from '@mui/material';
+import { Box, Typography, Rating, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
-import { upsertRating } from '../../services/ratings';
+import { upsertRating, deleteRating } from '../../services/ratings';
 import type { Rating as RatingType } from '../../types';
 
 interface Props {
@@ -30,9 +31,11 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     };
   }, [ratings, user]);
 
+  // Optimistic rating: 1-5 = pending score, 0 = pending delete, null = no pending change.
+  // Never cleared automatically — resets when component unmounts (business sheet closes).
   const [pendingRating, setPendingRating] = useState<number | null>(null);
 
-  const myRating = pendingRating ?? serverMyRating;
+  const myRating = pendingRating === 0 ? null : (pendingRating ?? serverMyRating);
 
   const handleRate = async (_: unknown, value: number | null) => {
     if (!user || !value) return;
@@ -40,7 +43,18 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     try {
       await upsertRating(user.uid, businessId, value);
       onRatingChange();
-    } finally {
+    } catch {
+      setPendingRating(null);
+    }
+  };
+
+  const handleDeleteRating = async () => {
+    if (!user) return;
+    setPendingRating(0);
+    try {
+      await deleteRating(user.uid, businessId);
+      onRatingChange();
+    } catch {
       setPendingRating(null);
     }
   };
@@ -74,6 +88,11 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
             onChange={handleRate}
             size="medium"
           />
+          {myRating != null && (
+            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', p: 0.25 }} aria-label="Borrar calificación">
+              <CloseIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          )}
         </Box>
       )}
     </Box>

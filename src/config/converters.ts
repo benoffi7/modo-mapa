@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType } from '../types';
+import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -255,6 +255,30 @@ export const notificationConverter: FirestoreDataConverter<AppNotification> = {
       read: d.read ?? false,
       createdAt: toDate(d.createdAt),
       expiresAt: toDate(d.expiresAt),
+    };
+  },
+};
+
+export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
+  toFirestore(settings: UserSettings) {
+    return {
+      profilePublic: settings.profilePublic,
+      notificationsEnabled: settings.notificationsEnabled,
+      notifyLikes: settings.notifyLikes,
+      notifyPhotos: settings.notifyPhotos,
+      notifyRankings: settings.notifyRankings,
+      updatedAt: settings.updatedAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): UserSettings {
+    const d = snapshot.data(options);
+    return {
+      profilePublic: d.profilePublic ?? false,
+      notificationsEnabled: d.notificationsEnabled ?? false,
+      notifyLikes: d.notifyLikes ?? false,
+      notifyPhotos: d.notifyPhotos ?? false,
+      notifyRankings: d.notifyRankings ?? false,
+      updatedAt: toDate(d.updatedAt),
     };
   },
 };
