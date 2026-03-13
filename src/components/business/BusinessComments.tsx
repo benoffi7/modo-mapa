@@ -23,6 +23,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import { formatDateMedium } from '../../utils/formatDate';
+import UserProfileSheet from '../user/UserProfileSheet';
 import type { Comment } from '../../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -39,6 +40,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const { user, displayName } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   // Sort
   const [sortMode, setSortMode] = useState<SortMode>('recent');
@@ -258,7 +260,12 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{ fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                    onClick={() => setProfileUserId(comment.userId)}
+                  >
                     {comment.userName || 'Anónimo'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -376,6 +383,8 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
           </Button>
         }
       />
+
+      <UserProfileSheet userId={profileUserId} onClose={() => setProfileUserId(null)} />
     </Box>
   );
 });
