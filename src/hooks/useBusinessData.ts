@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, documentId } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter } from '../config/converters';
@@ -39,17 +39,28 @@ const EMPTY: UseBusinessDataReturn = {
 
 type CollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
 
-/** Fetch user's likes for a set of comment IDs using individual getDoc calls. */
+/** Fetch user's likes for a set of comment IDs using batched documentId() queries. */
 async function fetchUserLikes(uid: string, commentIds: string[]): Promise<Set<string>> {
   if (commentIds.length === 0) return new Set();
-  const checks = commentIds.map((cId) =>
-    getDoc(doc(db, COLLECTIONS.COMMENT_LIKES, `${uid}__${cId}`)),
-  );
-  const snaps = await Promise.all(checks);
+
+  // Firestore 'in' queries support max 30 values per batch
+  const docIds = commentIds.map((cId) => `${uid}__${cId}`);
+  const BATCH_SIZE = 30;
   const liked = new Set<string>();
-  snaps.forEach((s, i) => {
-    if (s.exists()) liked.add(commentIds[i]);
-  });
+
+  for (let i = 0; i < docIds.length; i += BATCH_SIZE) {
+    const batch = docIds.slice(i, i + BATCH_SIZE);
+    const snap = await getDocs(query(
+      collection(db, COLLECTIONS.COMMENT_LIKES),
+      where(documentId(), 'in', batch),
+    ));
+    for (const d of snap.docs) {
+      // Doc ID format: {userId}__{commentId} — extract commentId
+      const commentId = d.id.split('__')[1];
+      liked.add(commentId);
+    }
+  }
+
   return liked;
 }
 
