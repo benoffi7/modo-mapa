@@ -42,7 +42,9 @@ import StatsView from '../menu/StatsView';
 import RankingsView from '../menu/RankingsView';
 import SettingsPanel from '../menu/SettingsPanel';
 import PrivacyPolicy from '../menu/PrivacyPolicy';
+import SuggestionsView from '../menu/SuggestionsView';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { trackEvent } from '../../utils/analytics';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
@@ -55,11 +57,12 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'privacy';
+type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
   recent: 'Recientes',
+  suggestions: 'Sugeridos para vos',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
@@ -157,6 +160,13 @@ export default function SideMenu({ open, onClose }: Props) {
                     <HistoryIcon sx={{ color: '#ff9800' }} />
                   </ListItemIcon>
                   <ListItemText primary="Recientes" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => setActiveSection('suggestions')}>
+                  <ListItemIcon>
+                    <LightbulbOutlinedIcon sx={{ color: '#fbc02d' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Sugeridos" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('comments')}>
@@ -283,6 +293,7 @@ export default function SideMenu({ open, onClose }: Props) {
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
                 {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
+                {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                 {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                 {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
                 {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}

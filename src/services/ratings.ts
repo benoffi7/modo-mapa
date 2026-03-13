@@ -8,7 +8,7 @@ import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
 import { trackEvent } from '../utils/analytics';
-import type { Rating } from '../types';
+import type { Rating, RatingCriteria } from '../types';
 
 export function getRatingsCollection(): CollectionReference<Rating> {
   return collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter) as CollectionReference<Rating>;
@@ -18,6 +18,7 @@ export async function upsertRating(
   userId: string,
   businessId: string,
   score: number,
+  criteria?: RatingCriteria,
 ): Promise<void> {
   if (!Number.isInteger(score) || score < 1 || score > 5) {
     throw new Error('Score must be an integer between 1 and 5');
@@ -27,9 +28,12 @@ export async function upsertRating(
   const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
   const existing = await getDoc(ratingRef);
 
+  const criteriaField = criteria != null ? { criteria } : {};
+
   if (existing.exists()) {
     await updateDoc(ratingRef, {
       score,
+      ...criteriaField,
       updatedAt: serverTimestamp(),
     });
   } else {
@@ -37,6 +41,7 @@ export async function upsertRating(
       userId,
       businessId,
       score,
+      ...criteriaField,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -44,6 +49,46 @@ export async function upsertRating(
 
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
   trackEvent('rating_submit', { business_id: businessId, score });
+}
+
+export async function upsertCriteriaRating(
+  userId: string,
+  businessId: string,
+  criteria: RatingCriteria,
+): Promise<void> {
+  // Validate each criterion score
+  for (const [, value] of Object.entries(criteria)) {
+    if (value != null && (!Number.isInteger(value) || value < 1 || value > 5)) {
+      throw new Error('Criteria scores must be integers between 1 and 5');
+    }
+  }
+
+  const docId = `${userId}__${businessId}`;
+  const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
+  const existing = await getDoc(ratingRef);
+
+  if (existing.exists()) {
+    // Merge criteria with existing criteria
+    const existingData = existing.data();
+    const mergedCriteria = { ...(existingData?.criteria ?? {}), ...criteria };
+    await updateDoc(ratingRef, {
+      criteria: mergedCriteria,
+      updatedAt: serverTimestamp(),
+    });
+  } else {
+    // If no global rating exists yet, default score to 3 (middle value)
+    await setDoc(ratingRef, {
+      userId,
+      businessId,
+      score: 3,
+      criteria,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  invalidateQueryCache(COLLECTIONS.RATINGS, userId);
+  trackEvent('criteria_rating_submit', { business_id: businessId });
 }
 
 export async function deleteRating(

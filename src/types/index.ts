@@ -23,10 +23,21 @@ export interface UserProfile {
   createdAt: Date;
 }
 
+export interface RatingCriteria {
+  food?: number;      // 1-5
+  service?: number;   // 1-5
+  price?: number;     // 1-5
+  ambiance?: number;  // 1-5
+  speed?: number;     // 1-5
+}
+
+export type RatingCriterionId = keyof RatingCriteria;
+
 export interface Rating {
   userId: string;
   businessId: string;
   score: number;
+  criteria?: RatingCriteria;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +52,8 @@ export interface Comment {
   updatedAt?: Date;
   likeCount: number;
   flagged?: boolean;
+  parentId?: string;
+  replyCount?: number;
 }
 
 export interface CommentLike {
