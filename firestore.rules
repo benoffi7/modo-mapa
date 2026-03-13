@@ -210,6 +210,22 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    // Rankings de usuarios — cualquier usuario autenticado puede leer.
+    // Cloud Functions escribe con admin SDK.
+    match /userRankings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Notificaciones — solo el destinatario puede leer y marcar como leída.
+    // Solo Cloud Functions (admin SDK) puede crear y eliminar.
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false;
+    }
+
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_rateLimits/{docId} {
       allow read, write: if false;

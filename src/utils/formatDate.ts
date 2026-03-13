@@ -32,6 +32,23 @@ export function formatDateMedium(date: Date): string {
   });
 }
 
+/** Format a Date as relative time in Spanish: "hace 2 min", "hace 1h", "hace 3 días", "12 mar". */
+export function formatRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMin < 1) return 'hace un momento';
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  if (diffHours < 24) return `hace ${diffHours}h`;
+  if (diffDays === 1) return 'ayer';
+  if (diffDays < 7) return `hace ${diffDays} días`;
+  return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+}
+
 /** Format a date string (ISO) to Argentine locale with full date+time. */
 export function formatDateFull(dateStr: string): string {
   try {

@@ -55,6 +55,30 @@
         { "fieldPath": "businessId", "order": "ASCENDING" },
         { "fieldPath": "level", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "read", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+    {
+      "collectionGroup": "userRankings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "period", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

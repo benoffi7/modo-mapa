@@ -12,7 +12,7 @@ export default function FilterChips() {
   const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useMapContext();
 
   const chipSx = (isActive: boolean) => ({
-    backgroundColor: isActive ? undefined : '#fff',
+    backgroundColor: isActive ? undefined : 'background.paper',
     boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
     flexShrink: 0,
     '&:hover': {

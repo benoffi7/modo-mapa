@@ -27,6 +27,7 @@ import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useAuth } from '../../context/AuthContext';
@@ -38,6 +39,7 @@ import CommentsList from '../menu/CommentsList';
 import RatingsList from '../menu/RatingsList';
 import FeedbackForm from '../menu/FeedbackForm';
 import StatsView from '../menu/StatsView';
+import RankingsView from '../menu/RankingsView';
 
 declare const __APP_VERSION__: string;
 
@@ -49,7 +51,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats';
+type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -58,6 +60,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   ratings: 'Calificaciones',
   feedback: 'Feedback',
   stats: 'Estadísticas',
+  rankings: 'Rankings',
 };
 
 export default function SideMenu({ open, onClose }: Props) {
@@ -160,6 +163,13 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Feedback" />
                 </ListItemButton>
 
+                <ListItemButton onClick={() => setActiveSection('rankings')}>
+                  <ListItemIcon>
+                    <LeaderboardIcon sx={{ color: '#e65100' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Rankings" />
+                </ListItemButton>
+
                 <ListItemButton onClick={() => setActiveSection('stats')}>
                   <ListItemIcon>
                     <BarChartIcon sx={{ color: '#7b1fa2' }} />
@@ -234,6 +244,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                 {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
                 {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
+                {activeSection === 'rankings' && <RankingsView />}
                 {activeSection === 'stats' && <StatsView />}
               </Box>
             </>
