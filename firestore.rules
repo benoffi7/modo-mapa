@@ -240,6 +240,8 @@ service cloud.firestore {
         && request.resource.data.level >= 1
         && request.resource.data.level <= 3
         && request.resource.data.updatedAt == request.time;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
     // Rankings de usuarios — cualquier usuario autenticado puede leer.
