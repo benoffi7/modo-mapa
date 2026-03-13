@@ -22,25 +22,9 @@ interface UsePaginatedQueryReturn<T> {
   reload: () => Promise<void>;
 }
 
-import { QUERY_CACHE_TTL_MS } from '../constants/cache';
+import { invalidateQueryCache, getQueryCache, setQueryCache } from '../services/queryCache';
 
-interface CacheEntry {
-  items: unknown[];
-  lastDoc: unknown;
-  hasMore: boolean;
-  timestamp: number;
-}
-
-const queryCache = new Map<string, CacheEntry>();
-
-function getCacheKey(collectionPath: string, userId: string): string {
-  return `${collectionPath}__${userId}`;
-}
-
-/** Invalidate the first-page cache for a given collection + user. */
-export function invalidateQueryCache(collectionPath: string, userId: string): void {
-  queryCache.delete(getCacheKey(collectionPath, userId));
-}
+export { invalidateQueryCache } from '../services/queryCache';
 
 /**
  * Paginated Firestore query hook with "Load more" pattern.
@@ -72,9 +56,8 @@ export function usePaginatedQuery<T>(
 
     // Check cache for first page only
     if (isFirstPage && !skipCache) {
-      const cacheKey = getCacheKey(stableRef.path, userId);
-      const cached = queryCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < QUERY_CACHE_TTL_MS) {
+      const cached = getQueryCache(stableRef.path, userId);
+      if (cached) {
         setItems(cached.items as T[]);
         setHasMore(cached.hasMore);
         lastDocRef.current = cached.lastDoc as QueryDocumentSnapshot<T> | null;
@@ -112,8 +95,7 @@ export function usePaginatedQuery<T>(
         setItems(pageItems);
 
         // Cache first page
-        const cacheKey = getCacheKey(stableRef.path, userId);
-        queryCache.set(cacheKey, {
+        setQueryCache(stableRef.path, userId, {
           items: pageItems,
           lastDoc: lastDocRef.current,
           hasMore: hasMoreResults,

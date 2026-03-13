@@ -18,70 +18,17 @@ interface BusinessAvg {
   count: number;
 }
 
-async function getTopByBusiness(
-  db: FirebaseFirestore.Firestore,
-  collectionName: string,
-  limit: number,
-): Promise<BusinessCount[]> {
-  const snapshot = await db.collection(collectionName).get();
-  const counts = new Map<string, number>();
-
-  for (const doc of snapshot.docs) {
-    const bid = doc.data().businessId as string;
-    counts.set(bid, (counts.get(bid) ?? 0) + 1);
-  }
-
-  return [...counts.entries()]
-    .map(([businessId, count]) => ({ businessId, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
-}
-
-async function getRatingDistribution(
-  db: FirebaseFirestore.Firestore,
-): Promise<Record<string, number>> {
-  const snapshot = await db.collection('ratings').get();
-  const dist: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
-
-  for (const doc of snapshot.docs) {
-    const score = String(doc.data().score as number);
-    if (score in dist) {
-      dist[score]++;
-    }
-  }
-
-  return dist;
-}
-
-async function getTopRated(
-  db: FirebaseFirestore.Firestore,
-  limit: number,
-): Promise<BusinessAvg[]> {
-  const snapshot = await db.collection('ratings').get();
-  const scores = new Map<string, number[]>();
-
-  for (const doc of snapshot.docs) {
-    const bid = doc.data().businessId as string;
-    const score = doc.data().score as number;
-    const existing = scores.get(bid) ?? [];
-    existing.push(score);
-    scores.set(bid, existing);
-  }
-
-  return [...scores.entries()]
-    .map(([businessId, arr]) => ({
-      businessId,
-      avgScore: Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10,
-      count: arr.length,
-    }))
-    .sort((a, b) => b.avgScore - a.avgScore)
-    .slice(0, limit);
+function topN<T>(entries: [string, T][], getCount: (v: T) => number, n: number): { id: string; value: T }[] {
+  return entries
+    .sort(([, a], [, b]) => getCount(b) - getCount(a))
+    .slice(0, n)
+    .map(([id, value]) => ({ id, value }));
 }
 
 async function getTopTags(
   db: FirebaseFirestore.Firestore,
 ): Promise<Array<{ tagId: string; count: number }>> {
-  const snapshot = await db.collection('userTags').get();
+  const snapshot = await db.collection('userTags').select('tagId').get();
   const counts = new Map<string, number>();
 
   for (const doc of snapshot.docs) {
@@ -126,26 +73,52 @@ export const dailyMetrics = onSchedule(
     const today = new Date().toISOString().slice(0, 10);
     const startOfDay = getStartOfDay();
 
-    // Run all aggregations
-    const [
-      ratingDistribution,
-      topFavorited,
-      topCommented,
-      topRated,
-      topTags,
-      activeUsers,
-      countersSnap,
-    ] = await Promise.all([
-      getRatingDistribution(db),
-      getTopByBusiness(db, 'favorites', 10),
-      getTopByBusiness(db, 'comments', 10),
-      getTopRated(db, 10),
+    // Read pre-aggregated data (1 read instead of 3 full collection scans)
+    const [aggregatesSnap, countersSnap, topTags, activeUsers] = await Promise.all([
+      db.doc('config/aggregates').get(),
+      db.doc('config/counters').get(),
       getTopTags(db),
       countActiveUsers(db, startOfDay),
-      db.doc('config/counters').get(),
     ]);
 
+    const agg = aggregatesSnap.data() ?? {};
     const counters = countersSnap.data() ?? {};
+
+    // Extract rating distribution from aggregates (pre-computed by triggers)
+    const ratingDistribution: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+    const aggDist = (agg.ratingDistribution ?? {}) as Record<string, number>;
+    for (const key of Object.keys(ratingDistribution)) {
+      ratingDistribution[key] = Math.max(0, aggDist[key] ?? 0);
+    }
+
+    // Top favorited from pre-aggregated businessFavorites map
+    const businessFavorites = (agg.businessFavorites ?? {}) as Record<string, number>;
+    const topFavorited: BusinessCount[] = topN(
+      Object.entries(businessFavorites),
+      (v) => v,
+      10,
+    ).map(({ id, value }) => ({ businessId: id, count: Math.max(0, value) }));
+
+    // Top commented from pre-aggregated businessComments map
+    const businessComments = (agg.businessComments ?? {}) as Record<string, number>;
+    const topCommented: BusinessCount[] = topN(
+      Object.entries(businessComments),
+      (v) => v,
+      10,
+    ).map(({ id, value }) => ({ businessId: id, count: Math.max(0, value) }));
+
+    // Top rated from pre-aggregated businessRatingCount + businessRatingSum
+    const ratingCounts = (agg.businessRatingCount ?? {}) as Record<string, number>;
+    const ratingSums = (agg.businessRatingSum ?? {}) as Record<string, number>;
+    const topRated: BusinessAvg[] = Object.keys(ratingCounts)
+      .filter((bid) => (ratingCounts[bid] ?? 0) > 0)
+      .map((bid) => ({
+        businessId: bid,
+        avgScore: Math.round(((ratingSums[bid] ?? 0) / ratingCounts[bid]) * 10) / 10,
+        count: ratingCounts[bid],
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 10);
 
     // Write daily metrics doc
     await db.doc(`dailyMetrics/${today}`).set(

@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { CATEGORY_LABELS } from '../../types';
 import type { Business, SuggestionReason } from '../../types';
@@ -31,7 +31,7 @@ interface Props {
 }
 
 export default function SuggestionsView({ onNavigate }: Props) {
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
   const { suggestions, isLoading, error } = useSuggestions();
 
   const handleSelectBusiness = (business: Business) => {

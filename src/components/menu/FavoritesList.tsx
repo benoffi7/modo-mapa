@@ -13,7 +13,7 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
@@ -34,7 +34,7 @@ interface Props {
 
 export default function FavoritesList({ onNavigate }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
 

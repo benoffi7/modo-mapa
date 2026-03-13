@@ -55,6 +55,7 @@ vi.mock('../../utils/counters', () => ({
   trackDelete: (...args: unknown[]) => mockTrackDelete(...args),
 }));
 vi.mock('../../utils/abuseLogger', () => ({ logAbuse: (...args: unknown[]) => mockLogAbuse(...args) }));
+vi.mock('../../utils/aggregates', () => ({ incrementBusinessCount: vi.fn().mockResolvedValue(undefined) }));
 
 // --- Firestore mock helpers ---
 

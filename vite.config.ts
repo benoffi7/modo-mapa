@@ -104,6 +104,15 @@ export default defineConfig({
   ],
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          recharts: ['recharts'],
+        },
+      },
+    },
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),

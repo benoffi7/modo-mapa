@@ -2,7 +2,7 @@ import { Drawer, Box, Typography, Button, List, Divider, CircularProgress, IconB
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NotificationItem from './NotificationItem';
-import { useMapContext } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import type { AppNotification } from '../../types';
 
@@ -23,7 +23,7 @@ export default function NotificationList({
   onMarkRead,
   onMarkAllRead,
 }: Props) {
-  const { setSelectedBusiness } = useMapContext();
+  const { setSelectedBusiness } = useSelection();
 
   const handleClick = async (notification: AppNotification) => {
     if (!notification.read) {
