@@ -174,3 +174,11 @@ export interface UserSettings {
   analyticsEnabled: boolean;
   updatedAt: Date;
 }
+
+export type SuggestionReason = 'category' | 'tags' | 'nearby';
+
+export interface SuggestedBusiness {
+  business: Business;
+  score: number;
+  reasons: SuggestionReason[];
+}

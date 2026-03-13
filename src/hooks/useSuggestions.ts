@@ -1,27 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
-import { favoriteConverter } from '../config/converters';
-import { ratingConverter } from '../config/converters';
-import { userTagConverter } from '../config/converters';
-import { allBusinesses } from './useBusinesses';
 import { useAuth } from '../context/AuthContext';
 import { useMapContext } from '../context/MapContext';
+import { allBusinesses } from './useBusinesses';
+import { fetchUserSuggestionData } from '../services/suggestions';
 import {
   SUGGESTION_WEIGHTS,
   MAX_SUGGESTIONS,
   NEARBY_RADIUS_KM,
 } from '../constants/suggestions';
-import type { Business, Favorite, Rating, UserTag, BusinessCategory } from '../types';
-
-export type SuggestionReason = 'category' | 'tags' | 'nearby';
-
-export interface SuggestedBusiness {
-  business: Business;
-  score: number;
-  reasons: SuggestionReason[];
-}
+import type { Business, Favorite, Rating, UserTag, BusinessCategory, SuggestedBusiness, SuggestionReason } from '../types';
 
 /** Haversine distance in km between two lat/lng points. */
 function distanceKm(
@@ -44,6 +31,7 @@ function distanceKm(
 export function useSuggestions(): {
   suggestions: SuggestedBusiness[];
   isLoading: boolean;
+  error: boolean;
 } {
   const { user } = useAuth();
   const { userLocation } = useMapContext();
@@ -52,55 +40,34 @@ export function useSuggestions(): {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [userTags, setUserTags] = useState<UserTag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  // Fetch user activity data from Firestore
   useEffect(() => {
     if (!user) {
       setFavorites([]);
       setRatings([]);
       setUserTags([]);
+      setError(false);
       return;
     }
 
     let cancelled = false;
     setIsLoading(true);
+    setError(false);
 
-    const fetchData = async () => {
-      try {
-        const [favsSnap, ratingsSnap, tagsSnap] = await Promise.all([
-          getDocs(
-            query(
-              collection(db, COLLECTIONS.FAVORITES).withConverter(favoriteConverter),
-              where('userId', '==', user.uid),
-            ),
-          ),
-          getDocs(
-            query(
-              collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
-              where('userId', '==', user.uid),
-            ),
-          ),
-          getDocs(
-            query(
-              collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
-              where('userId', '==', user.uid),
-            ),
-          ),
-        ]);
-
+    fetchUserSuggestionData(user.uid)
+      .then((data) => {
         if (cancelled) return;
-
-        setFavorites(favsSnap.docs.map((d) => d.data()));
-        setRatings(ratingsSnap.docs.map((d) => d.data()));
-        setUserTags(tagsSnap.docs.map((d) => d.data()));
-      } catch (err) {
-        if (import.meta.env.DEV) console.error('Error fetching suggestion data:', err);
-      } finally {
+        setFavorites(data.favorites);
+        setRatings(data.ratings);
+        setUserTags(data.userTags);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
         if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchData();
+      });
 
     return () => {
       cancelled = true;
@@ -108,7 +75,6 @@ export function useSuggestions(): {
   }, [user]);
 
   const suggestions = useMemo(() => {
-    // Need at least some activity to generate suggestions
     if (favorites.length === 0 && ratings.length === 0 && userTags.length === 0) {
       return [];
     }
@@ -119,7 +85,7 @@ export function useSuggestions(): {
     const ratedBusinessIds = new Set(ratings.map((r) => r.businessId));
 
     for (const fav of favorites) {
-      const biz = allBusinesses.find((b) => b.id === fav.businessId);
+      const biz = allBusinesses.find((b: Business) => b.id === fav.businessId);
       if (biz) {
         categoryCount.set(biz.category, (categoryCount.get(biz.category) ?? 0) + 1);
       }
@@ -144,8 +110,8 @@ export function useSuggestions(): {
         reasons.push('category');
       }
 
-      // Tag match: check if business has tags the user frequently votes for
-      const matchingTags = business.tags.filter((t) => tagCount.has(t));
+      // Tag match
+      const matchingTags = business.tags.filter((t: string) => tagCount.has(t));
       if (matchingTags.length > 0) {
         score += SUGGESTION_WEIGHTS.tagMatch;
         reasons.push('tags');
@@ -173,17 +139,14 @@ export function useSuggestions(): {
         score += SUGGESTION_WEIGHTS.alreadyRated;
       }
 
-      // Only include businesses with a positive score
       if (score > 0) {
         scored.push({ business, score, reasons });
       }
     }
 
-    // Sort by score descending, then by name for stable ordering
     scored.sort((a, b) => b.score - a.score || a.business.name.localeCompare(b.business.name));
-
     return scored.slice(0, MAX_SUGGESTIONS);
   }, [favorites, ratings, userTags, userLocation]);
 
-  return { suggestions, isLoading };
+  return { suggestions, isLoading, error };
 }

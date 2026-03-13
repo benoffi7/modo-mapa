@@ -8,11 +8,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useMapContext } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { CATEGORY_LABELS } from '../../types';
-import type { Business } from '../../types';
-import type { SuggestionReason } from '../../hooks/useSuggestions';
+import type { Business, SuggestionReason } from '../../types';
 
 const REASON_LABELS: Record<SuggestionReason, string> = {
   category: 'Te gusta esta categoría',
@@ -32,7 +32,7 @@ interface Props {
 
 export default function SuggestionsView({ onNavigate }: Props) {
   const { setSelectedBusiness } = useMapContext();
-  const { suggestions, isLoading } = useSuggestions();
+  const { suggestions, isLoading, error } = useSuggestions();
 
   const handleSelectBusiness = (business: Business) => {
     setSelectedBusiness(business);
@@ -45,6 +45,17 @@ export default function SuggestionsView({ onNavigate }: Props) {
         <CircularProgress size={24} sx={{ mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
           Cargando...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+        <Typography variant="body2" color="text.secondary">
+          No se pudieron cargar las sugerencias
         </Typography>
       </Box>
     );

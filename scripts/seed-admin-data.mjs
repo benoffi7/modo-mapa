@@ -462,6 +462,7 @@ async function seed() {
       notifyLikes: i % 3 === 0,
       notifyPhotos: i % 3 === 0,
       notifyRankings: i % 3 === 0,
+      analyticsEnabled: true,
       updatedAt: new Date(),
     });
   }
