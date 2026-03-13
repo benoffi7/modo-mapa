@@ -27,6 +27,9 @@ const BUSINESS_IDS = [
   'biz_001', 'biz_002', 'biz_003', 'biz_004', 'biz_005',
   'biz_006', 'biz_007', 'biz_008', 'biz_009', 'biz_010',
   'biz_011', 'biz_012', 'biz_013', 'biz_014', 'biz_015',
+  'biz_016', 'biz_017', 'biz_018', 'biz_019', 'biz_020',
+  'biz_021', 'biz_022', 'biz_023', 'biz_024', 'biz_025',
+  'biz_026', 'biz_027', 'biz_028', 'biz_029', 'biz_030',
 ];
 
 const USER_IDS = [
