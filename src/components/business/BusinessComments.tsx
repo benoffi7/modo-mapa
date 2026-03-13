@@ -177,7 +177,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     const timer = setTimeout(async () => {
       if (!user) return;
       try {
-        await deleteComment(comment.id, user.uid, comment.parentId);
+        await deleteComment(comment.id, user.uid);
         onCommentsChange();
       } catch (error) {
         if (import.meta.env.DEV) console.error('Error deleting comment:', error);
