@@ -177,5 +177,6 @@ export interface UserSettings {
   notifyLikes: boolean;
   notifyPhotos: boolean;
   notifyRankings: boolean;
+  analyticsEnabled: boolean;
   updatedAt: Date;
 }

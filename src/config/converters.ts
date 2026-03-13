@@ -267,6 +267,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyLikes: settings.notifyLikes,
       notifyPhotos: settings.notifyPhotos,
       notifyRankings: settings.notifyRankings,
+      analyticsEnabled: settings.analyticsEnabled,
       updatedAt: settings.updatedAt,
     };
   },
@@ -278,6 +279,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyLikes: d.notifyLikes ?? false,
       notifyPhotos: d.notifyPhotos ?? false,
       notifyRankings: d.notifyRankings ?? false,
+      analyticsEnabled: d.analyticsEnabled ?? false,
       updatedAt: toDate(d.updatedAt),
     };
   },
