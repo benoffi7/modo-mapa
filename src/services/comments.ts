@@ -7,6 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { commentConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { trackEvent } from '../utils/analytics';
 import type { Comment } from '../types';
 
 export function getCommentsCollection(): CollectionReference<Comment> {
@@ -36,6 +37,7 @@ export async function addComment(
     createdAt: serverTimestamp(),
   });
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+  trackEvent('comment_submit', { business_id: businessId, is_edit: false });
 }
 
 export async function editComment(commentId: string, userId: string, newText: string): Promise<void> {
@@ -48,6 +50,7 @@ export async function editComment(commentId: string, userId: string, newText: st
     updatedAt: serverTimestamp(),
   });
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+  trackEvent('comment_submit', { is_edit: true });
 }
 
 export async function deleteComment(commentId: string, userId: string): Promise<void> {
@@ -62,6 +65,7 @@ export async function likeComment(userId: string, commentId: string): Promise<vo
     commentId,
     createdAt: serverTimestamp(),
   });
+  trackEvent('comment_like', { comment_id: commentId });
 }
 
 export async function unlikeComment(userId: string, commentId: string): Promise<void> {

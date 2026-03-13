@@ -3,6 +3,7 @@ import { SwipeableDrawer, Box, Divider } from '@mui/material';
 import { useMapContext } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
+import { trackEvent } from '../../utils/analytics';
 import BusinessHeader from './BusinessHeader';
 import BusinessRating from './BusinessRating';
 import BusinessPriceLevel from './BusinessPriceLevel';
@@ -22,6 +23,11 @@ export default function BusinessSheet() {
   useEffect(() => {
     if (selectedBusiness) {
       recordVisit(selectedBusiness.id);
+      trackEvent('business_view', {
+        business_id: selectedBusiness.id,
+        business_name: selectedBusiness.name,
+        category: selectedBusiness.category,
+      });
     }
   }, [selectedBusiness, recordVisit]);
 

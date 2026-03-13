@@ -7,6 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { priceLevelConverter } from '../config/converters';
 import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { trackEvent } from '../utils/analytics';
 import type { PriceLevel } from '../types';
 
 export function getPriceLevelsCollection(): CollectionReference<PriceLevel> {
@@ -43,4 +44,5 @@ export async function upsertPriceLevel(
   }
 
   invalidateQueryCache(COLLECTIONS.PRICE_LEVELS, userId);
+  trackEvent('price_level_vote', { business_id: businessId, level });
 }

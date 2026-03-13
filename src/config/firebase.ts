@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { initAnalytics } from '../utils/analytics';
 import {
   getFirestore,
   connectFirestoreEmulator,
@@ -67,3 +68,5 @@ if (import.meta.env.DEV) {
     isTokenAutoRefreshEnabled: true,
   });
 }
+
+initAnalytics(app);

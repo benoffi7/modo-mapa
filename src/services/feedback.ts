@@ -4,6 +4,7 @@
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { trackEvent } from '../utils/analytics';
 import type { FeedbackCategory } from '../types';
 
 const VALID_CATEGORIES: FeedbackCategory[] = ['bug', 'sugerencia', 'otro'];
@@ -27,4 +28,5 @@ export async function sendFeedback(
     category,
     createdAt: serverTimestamp(),
   });
+  trackEvent('feedback_submit', { category });
 }
