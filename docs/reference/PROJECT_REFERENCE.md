@@ -67,7 +67,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback, tendencias, usuarios, Firebase usage, alertas, backups, fotos
 - **Cloud Functions**: 8 callable + 14 triggers + 5 scheduled
-- **Seguridad**: App Check, Firestore rules, rate limiting (3 capas), moderacion, CSP
+- **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave
 
