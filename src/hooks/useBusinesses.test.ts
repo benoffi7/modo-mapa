@@ -1,7 +1,13 @@
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
+import { vi } from 'vitest';
 import { MapContext } from '../context/MapContext';
+
+vi.mock('./usePriceLevelFilter', () => ({
+  usePriceLevelFilter: () => new Map(),
+}));
+
 import { useBusinesses } from './useBusinesses';
 
 function createWrapper(overrides: { searchQuery?: string; activeFilters?: string[] } = {}) {
@@ -12,6 +18,8 @@ function createWrapper(overrides: { searchQuery?: string; activeFilters?: string
     setSearchQuery: () => {},
     activeFilters: overrides.activeFilters ?? [],
     toggleFilter: () => {},
+    activePriceFilter: null,
+    setPriceFilter: () => {},
     userLocation: null,
     setUserLocation: () => {},
   };
