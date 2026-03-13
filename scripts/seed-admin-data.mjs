@@ -314,6 +314,55 @@ async function seed() {
     });
   }
 
+  // 12. PriceLevels
+  console.log('Creating price levels...');
+  const plPairs = new Set();
+  for (let i = 0; i < 35; i++) {
+    const userId = randomFrom(USER_IDS);
+    const businessId = randomFrom(BUSINESS_IDS);
+    const key = `${userId}__${businessId}`;
+    if (plPairs.has(key)) continue;
+    plPairs.add(key);
+    const now = daysAgo(randomInt(0, 20));
+    await setDoc(doc(db, 'priceLevels', key), {
+      userId,
+      businessId,
+      level: randomInt(1, 3),
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 13. MenuPhotos (pending, approved, rejected)
+  console.log('Creating menu photos...');
+  const statuses = ['pending', 'pending', 'approved', 'approved', 'rejected'];
+  for (let i = 0; i < 5; i++) {
+    const status = statuses[i];
+    const data = {
+      userId: randomFrom(USER_IDS),
+      businessId: BUSINESS_IDS[i],
+      storagePath: `menus/${BUSINESS_IDS[i]}/seed_${i}_original`,
+      thumbnailPath: `menus/${BUSINESS_IDS[i]}/seed_${i}_thumb.jpg`,
+      status,
+      createdAt: daysAgo(randomInt(1, 15)),
+      reportCount: 0,
+    };
+    if (status === 'approved' || status === 'rejected') {
+      data.reviewedBy = 'admin_seed';
+      data.reviewedAt = daysAgo(randomInt(0, 5));
+    }
+    if (status === 'rejected') {
+      data.rejectionReason = 'Foto borrosa o de baja calidad';
+    }
+    await addDoc(collection(db, 'menuPhotos'), data);
+  }
+
+  // Update counters with new collections
+  await db.doc('config/counters').set({
+    priceLevels: plPairs.size,
+    menuPhotos: 5,
+  }, { merge: true });
+
   console.log('\n✅ Seed complete!');
   console.log('- 10 users');
   console.log('- ~60 comments (4 flagged, ~6 edited, with likeCount)');
@@ -325,6 +374,8 @@ async function seed() {
   console.log('- 8 feedback (1 flagged)');
   console.log('- 15 days of daily metrics');
   console.log('- 12 abuse logs');
+  console.log(`- ${plPairs.size} price levels`);
+  console.log('- 5 menu photos (2 pending, 2 approved, 1 rejected)');
   console.log('- Counters and moderation config');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');
   console.log('Open http://localhost:5173/admin to see the dashboard');

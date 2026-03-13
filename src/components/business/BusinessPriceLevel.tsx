@@ -1,0 +1,100 @@
+import { useMemo, useState, memo } from 'react';
+import { Box, Typography, Button } from '@mui/material';
+import { useAuth } from '../../context/AuthContext';
+import { upsertPriceLevel } from '../../services/priceLevels';
+import { PRICE_LEVEL_LABELS } from '../../types';
+import type { PriceLevel } from '../../types';
+
+interface Props {
+  businessId: string;
+  priceLevels: PriceLevel[];
+  isLoading: boolean;
+  onPriceLevelChange: () => void;
+}
+
+const LEVELS = [1, 2, 3] as const;
+const LEVEL_SYMBOLS: Record<number, string> = { 1: '$', 2: '$$', 3: '$$$' };
+
+export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoading, onPriceLevelChange }: Props) {
+  const { user } = useAuth();
+
+  const { averageLevel, totalVotes, serverMyLevel } = useMemo(() => {
+    let sum = 0;
+    let myLevel: number | null = null;
+    for (const pl of priceLevels) {
+      sum += pl.level;
+      if (user && pl.userId === user.uid) {
+        myLevel = pl.level;
+      }
+    }
+    return {
+      averageLevel: priceLevels.length > 0 ? Math.round(sum / priceLevels.length) : 0,
+      totalVotes: priceLevels.length,
+      serverMyLevel: myLevel,
+    };
+  }, [priceLevels, user]);
+
+  const [pendingLevel, setPendingLevel] = useState<number | null>(null);
+  const myLevel = pendingLevel ?? serverMyLevel;
+
+  const handleVote = async (level: number) => {
+    if (!user) return;
+    setPendingLevel(level);
+    try {
+      await upsertPriceLevel(user.uid, businessId, level);
+      onPriceLevelChange();
+    } catch {
+      // Revert optimistic update on failure
+      setPendingLevel(null);
+    }
+  };
+
+  if (!isLoading && priceLevels.length === 0 && !user) {
+    return (
+      <Box sx={{ py: 1 }}>
+        <Typography variant="body2" color="text.secondary">Sin votos de nivel de gasto</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ py: 1 }}>
+      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Nivel de gasto</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        {averageLevel > 0 ? (
+          <>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+              {LEVEL_SYMBOLS[averageLevel]}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {PRICE_LEVEL_LABELS[averageLevel]}
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="body2" color="text.secondary">{'\u2014'}</Typography>
+        )}
+        <Typography variant="body2">
+          ({totalVotes} {totalVotes === 1 ? 'voto' : 'votos'})
+        </Typography>
+      </Box>
+      {user && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Tu voto:
+          </Typography>
+          {LEVELS.map((level) => (
+            <Button
+              key={level}
+              size="small"
+              variant={myLevel === level ? 'contained' : 'outlined'}
+              onClick={() => handleVote(level)}
+              sx={{ minWidth: 'auto', px: 1.5 }}
+            >
+              {LEVEL_SYMBOLS[level]}
+            </Button>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+});

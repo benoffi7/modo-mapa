@@ -7,6 +7,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
 
+const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+
 // ── Constants ──────────────────────────────────────────────────────────
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
@@ -161,7 +163,7 @@ function clampPageSize(requested: unknown): number {
 export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   timeoutSeconds: 300,
   memory: '256MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
   await verifyAdmin(request);
 
@@ -193,7 +195,7 @@ export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
 export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsResponse>>({
   timeoutSeconds: 60,
   memory: '256MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
   await verifyAdmin(request);
 
@@ -246,7 +248,7 @@ export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsRespons
 export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: true; safetyBackupId: string }>>({
   timeoutSeconds: 300,
   memory: '256MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
   await verifyAdmin(request);
 
@@ -290,7 +292,7 @@ export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: tru
 export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true }>>({
   timeoutSeconds: 120,
   memory: '256MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
   await verifyAdmin(request);
 

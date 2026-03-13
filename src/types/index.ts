@@ -92,6 +92,36 @@ export const PREDEFINED_TAGS = [
 
 export type PredefinedTagId = (typeof PREDEFINED_TAGS)[number]['id'];
 
+export type MenuPhotoStatus = 'pending' | 'approved' | 'rejected';
+
+export interface MenuPhoto {
+  id: string;
+  userId: string;
+  businessId: string;
+  storagePath: string;
+  thumbnailPath: string;
+  status: MenuPhotoStatus;
+  rejectionReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  createdAt: Date;
+  reportCount: number;
+}
+
+export interface PriceLevel {
+  userId: string;
+  businessId: string;
+  level: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const PRICE_LEVEL_LABELS: Record<number, string> = {
+  1: 'Económico',
+  2: 'Moderado',
+  3: 'Caro',
+};
+
 export const CATEGORY_LABELS: Record<BusinessCategory, string> = {
   restaurant: 'Restaurante',
   cafe: 'Café',
