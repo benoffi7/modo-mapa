@@ -60,8 +60,8 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating (global + multi-criterio), tags (predefinidos + custom), comentarios (editar/likes/sorting/threads), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
-- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback, estadisticas
-- **Notificaciones**: campana con badge, drawer, polling 60s, triggers automaticos (likes, fotos, rankings)
+- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
+- **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Configuracion de usuario**: panel lateral con perfil publico/privado + preferencias de notificaciones (master + granulares)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
@@ -79,3 +79,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Optimistic UI**: pendingRating, pendingLevel, optimistic comments/likes
 - **`key={id}` remount**: evita useEffect/refs para reset de estado, compatible con strict lint
 - **`enforceAppCheck: !IS_EMULATOR`**: App Check solo en prod, deshabilitado en emuladores
+- **Lazy Sentry**: `@sentry/react` cargado via dynamic `import()` (no en main chunk)
+- **Batched likes**: `fetchUserLikes` usa `documentId('in')` con batches de 30 (no N+1 getDoc)
+- **Price level cache**: `usePriceLevelFilter` con `limit(20K)` safety bound + TTL 5min
+- **Tests**: 161 tests (111 frontend + 50 backend) cubriendo triggers, services, hooks, contexts
