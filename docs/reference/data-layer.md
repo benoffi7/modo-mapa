@@ -16,8 +16,10 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 | `tags.ts` | Tags predefinidos, IDs validos |
 | `rankings.ts` | Scoring, medallas, labels de acciones, opciones de periodo |
 | `business.ts` | Niveles de precio, simbolos, chips, labels de categoria |
+| `criteria.ts` | Configuracion de criterios multi-rating (`RATING_CRITERIA`: food, service, price, ambiance, speed) |
+| `suggestions.ts` | Pesos del algoritmo de sugerencias (`SUGGESTION_WEIGHTS`), `MAX_SUGGESTIONS`, `NEARBY_RADIUS_KM` |
 | `admin.ts` | Email admin, page size, status chips/labels, abuse type labels/colors |
-| `index.ts` | Barrel re-export de todos los modulos + COLLECTIONS de config |
+| `index.ts` | Barrel re-export de todos los modulos (14) + COLLECTIONS de config |
 
 `types/index.ts` re-exporta `PREDEFINED_TAGS`, `PRICE_LEVEL_LABELS` y `CATEGORY_LABELS` desde constants para backwards compatibility.
 
@@ -35,8 +37,9 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
 | `feedback.ts` | `feedback` | `sendFeedback` |
 | `menuPhotos.ts` | `menuPhotos` | `uploadMenuPhoto` (con AbortSignal + progress callback), `getUserPendingPhotos` |
-| `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `getBusinessPriceLevels` |
+| `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
+| `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
 | `admin.ts` | Todas (read-only) | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos` |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
@@ -78,6 +81,7 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useUserSettings` | Settings del usuario (perfil publico, notificaciones). Optimistic UI con revert on error. Retorna `{ settings, loading, updateSetting }`. |
 | `useProfileVisibility` | Cache module-level con TTL 60s para `profilePublic` de otros usuarios. Batch fetch con `documentId() in`. Retorna `Map<string, boolean>`. Usa `useSyncExternalStore`. |
 | `useNotifications` | Polling cada 60s de notificaciones no leidas. Retorna `{ notifications, unreadCount, loading, markRead, markAllRead, refresh }`. |
+| `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags del usuario via `services/suggestions.ts`, scoring client-side con Haversine para cercania. Retorna `{ suggestions, isLoading, error }`. Max 10 resultados. |
 
 ### `useBusinessData` — Race condition fix
 

@@ -13,7 +13,7 @@
 - **Auth requerida**: todas las colecciones requieren `request.auth != null`.
 - **Ownership**: escrituras validan `request.resource.data.userId == request.auth.uid`.
 - **Timestamps server-side**: todas las reglas de `create` validan `createdAt == request.time`.
-- **Validacion de campos**: longitudes maximas (displayName 30, text 500, message 1000, label 30), score 1-5.
+- **Validacion de campos**: longitudes maximas (displayName 30, text 500, message 1000, label 30), score 1-5, `isValidCriteria` para multi-criterio ratings (each 1-5 int).
 - **Admin check**: `isAdmin()` verifica `request.auth.token.email == 'benoffi11@gmail.com'`.
 - **Metricas publicas**: `dailyMetrics` es legible por cualquier usuario autenticado (estadisticas publicas).
 
@@ -23,14 +23,14 @@
 |-----------|------|--------|--------|--------|
 | `users` | owner + admin | owner | owner (displayName only) | — |
 | `favorites` | auth | owner | — | owner |
-| `ratings` | auth | owner (score 1-5) | owner (score + updatedAt) | — |
-| `comments` | auth | owner (text 1-500) | owner (text + updatedAt only) | owner |
+| `ratings` | auth | owner (score 1-5, isValidCriteria) | owner (score + updatedAt + criteria, isValidCriteria) | owner |
+| `comments` | auth | owner (text 1-500, replyCount must be 0 or absent) | owner (text + updatedAt) OR any auth (replyCount +/-1 only) | owner |
 | `commentLikes` | auth | owner | — | owner |
 | `userTags` | auth | owner | — | owner |
 | `customTags` | auth | owner (label 1-30) | owner | owner |
 | `feedback` | owner + admin | owner (message 1-1000) | — | owner |
 | `menuPhotos` | auth | owner (pending only) | Functions only | Functions only |
-| `priceLevels` | auth | owner (level 1-3) | owner (level + updatedAt) | — |
+| `priceLevels` | auth | owner (level 1-3) | owner (level + updatedAt) | owner |
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
 | `abuseLogs` | admin | Functions | — | — |

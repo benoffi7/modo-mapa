@@ -71,7 +71,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 ### Patrones clave
 
-- **Constantes centralizadas**: `src/constants/` con 14 modulos por dominio, barrel re-export, sin magic numbers
+- **Constantes centralizadas**: `src/constants/` con 14 modulos por dominio (incl. criteria, suggestions), barrel re-export, sin magic numbers
 - **Constants Dashboard**: `/dev/constants` (DEV only) — browser, busqueda, filtro, edicion inline con validacion, color swatches, copy nombre/valor, duplicados
 - **Service layer**: componentes → `src/services/` → Firestore SDK (nunca directo)
 - **Cache**: business data cache (5 min TTL) + paginated query cache (2 min TTL) + persistent cache (prod)

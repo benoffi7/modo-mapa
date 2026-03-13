@@ -25,6 +25,8 @@ src/
 │   ├── tags.ts                     # PREDEFINED_TAGS, VALID_TAG_IDS
 │   ├── rankings.ts                 # SCORING, MEDALS, ACTION_LABELS, PERIOD_OPTIONS
 │   ├── business.ts                 # LEVELS, LEVEL_SYMBOLS, PRICE_CHIPS, PRICE_LEVEL_LABELS, CATEGORY_LABELS
+│   ├── criteria.ts                 # RATING_CRITERIA (CriterionConfig[] con id y label para multi-criterio)
+│   ├── suggestions.ts              # SUGGESTION_WEIGHTS, MAX_SUGGESTIONS, NEARBY_RADIUS_KM
 │   └── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
@@ -38,7 +40,7 @@ src/
 │   ├── tags.ts                      # addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag
 │   ├── feedback.ts                  # sendFeedback
 │   ├── menuPhotos.ts                # uploadMenuPhoto (con AbortSignal), getUserPendingPhotos
-│   ├── priceLevels.ts               # upsertPriceLevel, getBusinessPriceLevels
+│   ├── priceLevels.ts               # upsertPriceLevel, deletePriceLevel, getBusinessPriceLevels
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
 │   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
@@ -139,6 +141,7 @@ src/
 │       ├── CommentsList.tsx
 │       ├── RatingsList.tsx
 │       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)
+│       ├── SuggestionsView.tsx       # Sugerencias personalizadas (useSuggestions)
 │       ├── FeedbackForm.tsx
 │       ├── StatsView.tsx            # Vista publica de estadisticas (usePublicMetrics)
 │       └── ListFilters.tsx
@@ -148,7 +151,7 @@ src/
 
 | Archivo | Descripcion |
 |---------|-------------|
-| `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check), timestamps server-side |
+| `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check), timestamps server-side, isValidCriteria, replyCount rules (threads), priceLevels delete rule |
 | `storage.rules` | Reglas de Firebase Storage para fotos de menu |
 | `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
@@ -170,3 +173,4 @@ src/
 | `docs/INFORME_MEJORAS_FUNCIONALES_v1.md` | Informe de mejoras funcionales con estado de implementacion |
 | `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |
 | `docs/reports/architecture-audit-v1.4.md` | Auditoria de arquitectura v1.4 |
+| `docs/reports/audit-phase4-v1.md` | Auditoria de seguridad y arquitectura post-phase4 (threads, criteria, suggestions) |
