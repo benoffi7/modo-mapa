@@ -11,6 +11,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
 } from 'firebase/firestore';
 import type { QueryConstraint } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -23,10 +24,11 @@ import {
   customTagConverter,
   feedbackConverter,
   userProfileConverter,
+  menuPhotoConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter } from '../config/adminConverters';
 import type { AdminCounters, DailyMetrics, AbuseLog } from '../types/admin';
-import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile } from '../types';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto } from '../types';
 
 // ── Counters ───────────────────────────────────────────────────────────
 
@@ -167,6 +169,29 @@ export async function fetchDailyMetrics(order: 'asc' | 'desc', maxDocs?: number)
     query(
       collection(db, COLLECTIONS.DAILY_METRICS).withConverter(dailyMetricsConverter),
       ...constraints,
+    ),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+// ── Menu Photos ───────────────────────────────────────────────────────
+
+export async function fetchPendingPhotos(): Promise<MenuPhoto[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'asc'),
+    ),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+export async function fetchAllPhotos(): Promise<MenuPhoto[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
+      orderBy('createdAt', 'desc'),
     ),
   );
   return snap.docs.map((d) => d.data());

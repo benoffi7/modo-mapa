@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
-import { ratingConverter, commentConverter, userTagConverter, customTagConverter } from '../config/converters';
+import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter } from '../config/converters';
 import { useAuth } from '../context/AuthContext';
 import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
-import type { Rating, Comment, UserTag, CustomTag } from '../types';
+import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
 
 interface UseBusinessDataReturn {
   isFavorite: boolean;
@@ -14,6 +14,8 @@ interface UseBusinessDataReturn {
   userTags: UserTag[];
   customTags: CustomTag[];
   userCommentLikes: Set<string>;
+  priceLevels: PriceLevel[];
+  menuPhoto: MenuPhoto | null;
   isLoading: boolean;
   error: boolean;
   refetch: (collectionName?: CollectionName) => void;
@@ -28,12 +30,14 @@ const EMPTY: UseBusinessDataReturn = {
   userTags: [],
   customTags: [],
   userCommentLikes: EMPTY_LIKES,
+  priceLevels: [],
+  menuPhoto: null,
   isLoading: false,
   error: false,
   refetch: () => {},
 };
 
-type CollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags';
+type CollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
 
 /** Fetch user's likes for a set of comment IDs using individual getDoc calls. */
 async function fetchUserLikes(uid: string, commentIds: string[]): Promise<Set<string>> {
@@ -89,13 +93,28 @@ async function fetchSingleCollection(bId: string, uid: string, col: CollectionNa
       result.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       return { customTags: result };
     }
+    case 'priceLevels': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
+        where('businessId', '==', bId),
+      ));
+      return { priceLevels: snap.docs.map((d) => d.data()) };
+    }
+    case 'menuPhotos': {
+      const snap = await getDocs(query(
+        collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
+        where('businessId', '==', bId),
+        where('status', '==', 'approved'),
+      ));
+      return { menuPhoto: snap.empty ? null : snap.docs[0].data() };
+    }
   }
 }
 
 async function fetchBusinessData(bId: string, uid: string) {
   const favDocId = `${uid}__${bId}`;
 
-  const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap] = await Promise.all([
+  const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
     getDoc(doc(db, COLLECTIONS.FAVORITES, favDocId)),
     getDocs(query(
       collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
@@ -114,6 +133,15 @@ async function fetchBusinessData(bId: string, uid: string) {
       where('userId', '==', uid),
       where('businessId', '==', bId),
     )),
+    getDocs(query(
+      collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
+      where('businessId', '==', bId),
+    )),
+    getDocs(query(
+      collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
+      where('businessId', '==', bId),
+      where('status', '==', 'approved'),
+    )),
   ]);
 
   const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
@@ -131,6 +159,8 @@ async function fetchBusinessData(bId: string, uid: string) {
     userTags: userTagsSnap.docs.map((d) => d.data()),
     customTags: customTagsResult,
     userCommentLikes,
+    priceLevels: priceLevelsSnap.docs.map((d) => d.data()),
+    menuPhoto: menuPhotoSnap.empty ? null : menuPhotoSnap.docs[0].data(),
   };
 }
 
@@ -143,13 +173,20 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     userTags: UserTag[];
     customTags: CustomTag[];
     userCommentLikes: Set<string>;
-  }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [], userCommentLikes: EMPTY_LIKES });
+    priceLevels: PriceLevel[];
+    menuPhoto: MenuPhoto | null;
+  }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [], userCommentLikes: EMPTY_LIKES, priceLevels: [], menuPhoto: null });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
   const fetchIdRef = useRef(0);
+  // Collections patched by partial refetches while a full load is in-flight.
+  // When the full load completes, these fields are kept from prev state
+  // instead of being overwritten with stale full-load data.
+  const patchedRef = useRef(new Set<string>());
 
   const load = useCallback(async (bId: string, uid: string) => {
     const id = ++fetchIdRef.current;
+    patchedRef.current.clear();
 
     const cached = getBusinessCache(bId);
     if (cached) {
@@ -165,7 +202,23 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     try {
       const result = await fetchBusinessData(bId, uid);
       if (fetchIdRef.current !== id) return; // stale
-      setData(result);
+      // Merge: keep fields that were patched by partial refetches during this load
+      const patched = patchedRef.current;
+      if (patched.size > 0) {
+        setData((prev) => {
+          const merged = { ...result };
+          if (patched.has('isFavorite')) merged.isFavorite = prev.isFavorite;
+          if (patched.has('ratings')) merged.ratings = prev.ratings;
+          if (patched.has('comments')) { merged.comments = prev.comments; merged.userCommentLikes = prev.userCommentLikes; }
+          if (patched.has('userTags')) merged.userTags = prev.userTags;
+          if (patched.has('customTags')) merged.customTags = prev.customTags;
+          if (patched.has('priceLevels')) merged.priceLevels = prev.priceLevels;
+          if (patched.has('menuPhoto')) merged.menuPhoto = prev.menuPhoto;
+          return merged;
+        });
+      } else {
+        setData(result);
+      }
       setBusinessCache(bId, result);
     } catch (err) {
       if (fetchIdRef.current !== id) return;
@@ -193,15 +246,17 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       return;
     }
 
-    const id = ++fetchIdRef.current;
+    // Don't increment fetchIdRef for partial refetches — a single-collection
+    // refresh must not cancel a pending full load (race condition: user votes
+    // on price level while initial data is still loading).
+    // Track the patched collection so the full load won't overwrite it.
+    patchedRef.current.add(collectionName);
     fetchSingleCollection(businessId, user.uid, collectionName)
       .then((patch) => {
-        if (fetchIdRef.current !== id) return;
         setData((prev) => ({ ...prev, ...patch }));
         patchBusinessCache(businessId, patch);
       })
       .catch((err) => {
-        if (fetchIdRef.current !== id) return;
         if (import.meta.env.DEV) console.error(`Error refetching ${collectionName}:`, err);
       });
   }, [businessId, user, load]);

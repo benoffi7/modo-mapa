@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia completa del proyecto
 
-**Version:** 2.0.0
+**Version:** 2.1.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-12
@@ -46,7 +46,7 @@ main.tsx
             ├─ [/dev/theme] ThemePlayground (lazy, DEV only)
             ├─ [/admin/*] AdminDashboard (lazy loaded)
        │    ├─ AdminGuard (Google Sign-In + email verification)
-       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups)
+       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups, Fotos)
        │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
        │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
        │         ├─ FeedbackList (tabla de feedback con categoria y estado)
@@ -54,25 +54,29 @@ main.tsx
        │         ├─ UsersPanel (rankings por usuario + stats)
        │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
        │         ├─ AbuseAlerts (tabla de logs de abuso)
-       │         └─ BackupsPanel (crear, listar, restaurar, eliminar backups Firestore)
+       │         ├─ BackupsPanel (crear, listar, restaurar, eliminar backups Firestore)
+       │         └─ PhotoReviewPanel (revisar, aprobar, rechazar fotos de menu)
        └─ [/*] MapProvider + APIProvider
             └─ AppShell.tsx
                  ├─ OfflineIndicator (chip offline, PWA)
                  ├─ SearchBar (busqueda + menu hamburguesa)
-                 ├─ FilterChips (tags predefinidos)
+                 ├─ FilterChips (tags predefinidos + nivel de gasto $/$$/$$)
                  ├─ MapView (Google Maps + markers)
                  ├─ LocationFAB (geolocalizacion)
                  ├─ BusinessSheet (bottom sheet con detalle)
                  │    ├─ BusinessHeader (nombre, direccion, favorito, share, direcciones)
                  │    ├─ BusinessRating (estrellas promedio + calificar)
+                 │    ├─ BusinessPriceLevel (nivel de gasto $/$$/$$$ + votar)
                  │    ├─ BusinessTags (tags predefinidos + custom)
+                 │    ├─ MenuPhotoSection (foto de menu + upload + viewer)
                  │    ├─ BusinessComments (lista + formulario + editar + undo delete + likes + sorting)
                  │    └─ ShareButton (Web Share API + clipboard fallback)
                  ├─ NameDialog (nombre de usuario, primera visita)
                  └─ SideMenu (drawer lateral)
                       ├─ Header (avatar + nombre + editar)
-                      ├─ Nav (Favoritos, Comentarios, Calificaciones, Feedback, Agregar comercio)
+                      ├─ Nav (Favoritos, Recientes, Comentarios, Calificaciones, Feedback, Agregar comercio)
                       ├─ FavoritesList + ListFilters
+                      ├─ RecentVisits (historial localStorage)
                       ├─ CommentsList
                       ├─ RatingsList + ListFilters
                       ├─ FeedbackForm
@@ -101,7 +105,8 @@ functions/
 ├── src/
 │   ├── index.ts              → exports de todas las functions
 │   ├── admin/
-│   │   └── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
+│   │   ├── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
+│   │   └── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto (callable, admin only)
 │   ├── triggers/
 │   │   ├── comments.ts       → rate limit + moderacion + counters + onUpdate re-moderation
 │   │   ├── commentLikes.ts   → likeCount increment/decrement + rate limit + counters
@@ -109,9 +114,12 @@ functions/
 │   │   ├── feedback.ts       → rate limit + moderacion + counters
 │   │   ├── ratings.ts        → counters (create/update/delete)
 │   │   ├── favorites.ts      → counters (create/delete)
-│   │   └── users.ts          → counters (create)
+│   │   ├── users.ts          → counters (create)
+│   │   ├── menuPhotos.ts     → thumbnail generation con sharp + counters
+│   │   └── priceLevels.ts    → counters (create/update)
 │   ├── scheduled/
-│   │   └── dailyMetrics.ts   → cron diario: distribucion, tops, active users
+│   │   ├── dailyMetrics.ts   → cron diario: distribucion, tops, active users
+│   │   └── cleanupPhotos.ts  → cron diario: elimina fotos rechazadas > 7 dias
 │   └── utils/
 │       ├── rateLimiter.ts    → rate limiting (daily/per-entity)
 │       ├── moderator.ts      → filtro de palabras prohibidas (cache 5 min)
@@ -126,9 +134,9 @@ functions/
 ### Flujo de datos
 
 1. **Datos estaticos**: `businesses.json` (40 comercios) se carga como import estatico. No hay fetch.
-2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback). El hook `useBusinessData` orquesta las 5 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion.
+2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback, priceLevels, menuPhotos). El hook `useBusinessData` orquesta las 7 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion.
 3. **Service layer**: Componentes llaman funciones de `src/services/` para operaciones CRUD. Los servicios encapsulan Firestore SDK e invalidan caches internamente.
-4. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, userLocation).
+4. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, activePriceFilter, userLocation).
 5. **Estado local**: Cada seccion del menu carga sus datos al montarse y los filtra client-side con `useListFilters`.
 6. **Cache de datos**: Dos capas de cache client-side reducen lecturas Firestore:
    - `useBusinessDataCache`: cache de vista de negocio (5 min TTL) para las 5 queries del bottom sheet.
@@ -373,6 +381,8 @@ return (
 | `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
+| `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status (pending/approved/rejected), rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
+| `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3 |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
 
 ---
@@ -401,8 +411,14 @@ PREDEFINED_TAGS: barato, apto_celiacos, apto_veganos, rapido, delivery, buena_at
 CATEGORY_LABELS: restaurant→Restaurante, cafe→Cafe, bakery→Panaderia, bar→Bar,
                  fastfood→Comida rapida, icecream→Heladeria, pizza→Pizzeria
 
+// Menu Photos & Price Levels
+type MenuPhotoStatus = 'pending' | 'approved' | 'rejected';
+interface MenuPhoto { id, userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount }
+interface PriceLevel { userId, businessId, level (1-3), createdAt, updatedAt }
+PRICE_LEVEL_LABELS: 1→Economico, 2→Moderado, 3→Caro
+
 // Admin types
-interface AdminCounters { comments, ratings, favorites, feedback, users, customTags, userTags, commentLikes, dailyReads, dailyWrites, dailyDeletes }
+interface AdminCounters { comments, ratings, favorites, feedback, users, customTags, userTags, commentLikes, priceLevels, menuPhotos, dailyReads, dailyWrites, dailyDeletes }
 interface DailyMetrics { date, ratingDistribution, topFavorited, topCommented, topRated, topTags, dailyReads/Writes/Deletes, byCollection, activeUsers }
 interface AbuseLog { id, userId, type, collection, detail, timestamp }
 ```

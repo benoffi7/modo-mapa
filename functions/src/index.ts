@@ -12,9 +12,13 @@ export { onFeedbackCreated } from './triggers/feedback';
 export { onRatingWritten } from './triggers/ratings';
 export { onFavoriteCreated, onFavoriteDeleted } from './triggers/favorites';
 export { onUserCreated } from './triggers/users';
+export { onMenuPhotoCreated } from './triggers/menuPhotos';
+export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';
+export { cleanupRejectedPhotos } from './scheduled/cleanupPhotos';
 
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';
+export { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto } from './admin/menuPhotos';

@@ -31,7 +31,9 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useAuth } from '../../context/AuthContext';
 import { useColorMode } from '../../hooks/useColorMode';
+import HistoryIcon from '@mui/icons-material/History';
 import FavoritesList from '../menu/FavoritesList';
+import RecentVisits from '../menu/RecentVisits';
 import CommentsList from '../menu/CommentsList';
 import RatingsList from '../menu/RatingsList';
 import FeedbackForm from '../menu/FeedbackForm';
@@ -47,10 +49,11 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'comments' | 'ratings' | 'feedback' | 'stats';
+type Section = 'nav' | 'favorites' | 'recent' | 'comments' | 'ratings' | 'feedback' | 'stats';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
+  recent: 'Recientes',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
@@ -127,6 +130,13 @@ export default function SideMenu({ open, onClose }: Props) {
                     <FavoriteIcon sx={{ color: '#ea4335' }} />
                   </ListItemIcon>
                   <ListItemText primary="Favoritos" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => setActiveSection('recent')}>
+                  <ListItemIcon>
+                    <HistoryIcon sx={{ color: '#ff9800' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Recientes" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('comments')}>
@@ -220,6 +230,7 @@ export default function SideMenu({ open, onClose }: Props) {
               {/* Section content */}
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
+                {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                 {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                 {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
                 {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}

@@ -1,9 +1,24 @@
-import { Box, Chip } from '@mui/material';
+import { Box, Chip, Divider } from '@mui/material';
 import { useMapContext } from '../../context/MapContext';
 import { PREDEFINED_TAGS } from '../../types';
 
+const PRICE_CHIPS = [
+  { level: 1, label: '$' },
+  { level: 2, label: '$$' },
+  { level: 3, label: '$$$' },
+] as const;
+
 export default function FilterChips() {
-  const { activeFilters, toggleFilter } = useMapContext();
+  const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useMapContext();
+
+  const chipSx = (isActive: boolean) => ({
+    backgroundColor: isActive ? undefined : '#fff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+    flexShrink: 0,
+    '&:hover': {
+      boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+    },
+  });
 
   return (
     <Box
@@ -32,14 +47,23 @@ export default function FilterChips() {
             onClick={() => toggleFilter(tag.id)}
             variant={isActive ? 'filled' : 'outlined'}
             color={isActive ? 'primary' : 'default'}
-            sx={{
-              backgroundColor: isActive ? undefined : '#fff',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-              flexShrink: 0,
-              '&:hover': {
-                boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-              },
-            }}
+            sx={chipSx(isActive)}
+          />
+        );
+      })}
+
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+      {PRICE_CHIPS.map((chip) => {
+        const isActive = activePriceFilter === chip.level;
+        return (
+          <Chip
+            key={`price-${chip.level}`}
+            label={chip.label}
+            onClick={() => setPriceFilter(chip.level)}
+            variant={isActive ? 'filled' : 'outlined'}
+            color={isActive ? 'secondary' : 'default'}
+            sx={chipSx(isActive)}
           />
         );
       })}
