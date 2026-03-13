@@ -215,7 +215,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       </Box>
 
       {user && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <TextField
             fullWidth
             size="small"
@@ -236,14 +236,22 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               },
             }}
           />
-          <Button
-            variant="contained"
+          <IconButton
+            color="primary"
             onClick={handleSubmit}
             disabled={isSubmitting || !newComment.trim()}
-            sx={{ borderRadius: '20px', minWidth: 'auto', px: 2 }}
+            sx={{
+              bgcolor: 'primary.main',
+              color: '#fff',
+              width: 40,
+              height: 40,
+              flexShrink: 0,
+              '&:hover': { bgcolor: 'primary.dark' },
+              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+            }}
           >
-            <SendIcon fontSize="small" />
-          </Button>
+            <SendIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         </Box>
       )}
 

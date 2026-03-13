@@ -95,7 +95,7 @@ export default function BusinessSheet() {
               userTags={data.userTags}
               customTags={data.customTags}
               isLoading={data.isLoading}
-              onTagsChange={() => data.refetch('userTags')}
+              onTagsChange={() => { data.refetch('userTags'); data.refetch('customTags'); }}
             />
             <Divider sx={{ my: 1.5 }} />
             <MenuPhotoSection

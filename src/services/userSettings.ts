@@ -24,9 +24,15 @@ export async function updateUserSettings(
   userId: string,
   updates: Partial<Omit<UserSettings, 'updatedAt'>>,
 ): Promise<void> {
-  await setDoc(
-    doc(db, COLLECTIONS.USER_SETTINGS, userId),
-    { ...updates, updatedAt: serverTimestamp() },
-    { merge: true },
-  );
+  const ref = doc(db, COLLECTIONS.USER_SETTINGS, userId);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    // Document exists — merge only the changed fields
+    await setDoc(ref, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+  } else {
+    // First write — send all fields so Firestore rules pass validation
+    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings } = DEFAULT_SETTINGS;
+    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, ...updates, updatedAt: serverTimestamp() });
+  }
 }

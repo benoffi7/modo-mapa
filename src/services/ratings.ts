@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `ratings` collection.
  */
-import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -41,5 +41,14 @@ export async function upsertRating(
     });
   }
 
+  invalidateQueryCache(COLLECTIONS.RATINGS, userId);
+}
+
+export async function deleteRating(
+  userId: string,
+  businessId: string,
+): Promise<void> {
+  const docId = `${userId}__${businessId}`;
+  await deleteDoc(doc(db, COLLECTIONS.RATINGS, docId));
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
 }
