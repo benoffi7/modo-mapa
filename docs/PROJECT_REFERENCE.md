@@ -62,7 +62,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Business Sheet**: rating, tags (predefinidos + custom), comentarios (editar/likes/sorting), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
 - **Menu lateral**: recientes (localStorage), favoritos, comentarios, calificaciones, rankings, feedback, estadisticas
 - **Notificaciones**: campana con badge, drawer, polling 60s, triggers automaticos (likes, fotos, rankings)
-- **Perfil publico**: click en nombre de usuario → drawer con stats y comentarios recientes
+- **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Configuracion de usuario**: panel lateral con perfil publico/privado + preferencias de notificaciones (master + granulares)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback, tendencias, usuarios, Firebase usage, alertas, backups, fotos
@@ -72,7 +72,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 ### Patrones clave
 
 - **Constantes centralizadas**: `src/constants/` con 12 modulos por dominio, barrel re-export, sin magic numbers
-- **Constants Dashboard**: `/dev/constants` (DEV only) — browser, busqueda, filtro, copy import, duplicados
+- **Constants Dashboard**: `/dev/constants` (DEV only) — browser, busqueda, filtro, edicion inline con validacion, color swatches, copy nombre/valor, duplicados
 - **Service layer**: componentes → `src/services/` → Firestore SDK (nunca directo)
 - **Cache**: business data cache (5 min TTL) + paginated query cache (2 min TTL) + persistent cache (prod)
 - **Race condition fix**: `patchedRef` en `useBusinessData` previene sobreescritura de refetches parciales
