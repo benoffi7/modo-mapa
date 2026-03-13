@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.1.0
+**Version:** 2.2.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-13
@@ -59,9 +59,11 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating, tags (predefinidos + custom), comentarios (editar/likes/sorting), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
-- **Menu lateral**: recientes (localStorage), favoritos, comentarios, calificaciones, feedback, estadisticas
+- **Menu lateral**: recientes (localStorage), favoritos, comentarios, calificaciones, rankings, feedback, estadisticas
+- **Notificaciones**: campana con badge, drawer, polling 60s, triggers automaticos (likes, fotos, rankings)
+- **Perfil publico**: click en nombre de usuario → drawer con stats y comentarios recientes
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback, tendencias, usuarios, Firebase usage, alertas, backups, fotos
-- **Cloud Functions**: 8 callable + 13 triggers + 2 scheduled
+- **Cloud Functions**: 8 callable + 14 triggers + 5 scheduled
 - **Seguridad**: App Check, Firestore rules, rate limiting (3 capas), moderacion, CSP
 
 ### Patrones clave

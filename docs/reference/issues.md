@@ -33,6 +33,9 @@
 | [#49](https://github.com/benoffi7/modo-mapa/issues/49) | feat | Historial de visitas recientes (localStorage) | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
 | [#50](https://github.com/benoffi7/modo-mapa/issues/50) | feat | Nivel de gasto ($/$$/$$) con filtro en mapa | [#51](https://github.com/benoffi7/modo-mapa/pull/51) | Merged | `docs/feat-menu-photos-history/` |
 | — | fix | CI: test isolation, TS build errors, preview deploy permissions | [#52](https://github.com/benoffi7/modo-mapa/pull/52) | Merged | — |
+| [#53](https://github.com/benoffi7/modo-mapa/issues/53) | feat | Rankings de usuarios (hub social) | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
+| [#54](https://github.com/benoffi7/modo-mapa/issues/54) | feat | Notificaciones in-app | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
+| [#55](https://github.com/benoffi7/modo-mapa/issues/55) | feat | Perfil publico de usuario | [#58](https://github.com/benoffi7/modo-mapa/pull/58) | Merged | — |
 
 ---
 

@@ -39,11 +39,35 @@
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio
   - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio
+  - **Rankings**: ranking semanal/mensual con scoring por actividad. Cards con medallas y barra de progreso. "Tu actividad" con desglose de puntos (en vivo si no estas en ranking pre-computado)
   - **Feedback**: formulario con categoria (bug/sugerencia/otro) + mensaje (max 1000). Estado de exito
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
 - Footer con version de la app (+ link a Theme Playground en DEV)
+
+---
+
+## Notificaciones in-app
+
+- Campana con badge (unread count) en la barra de busqueda
+- Drawer con lista de notificaciones, tiempo relativo ("hace 2 min", "ayer")
+- Marcar como leida individual o todas a la vez
+- Click en notificacion navega al comercio relacionado
+- Polling cada 60s para unread count
+- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`
+- Generadas automaticamente por Cloud Functions triggers
+- Expiran a los 30 dias (cleanup diario)
+
+---
+
+## Perfil publico de usuario
+
+- Click en nombre de usuario en comentarios abre bottom sheet
+- Avatar, fecha de registro, stats (comentarios, ratings, favoritos, likes recibidos, tags, fotos aprobadas)
+- Ultimos 5 comentarios con link al comercio
+- Graceful handling cuando el doc del usuario no es accesible (rules restringen a owner/admin)
+- Fallback de nombre desde el comentario
 
 ---
 
@@ -96,7 +120,7 @@ Todas las callable admin:
 | `onCommentCreated` | `comments` | Rate limit (20/dia) + moderacion + counters |
 | `onCommentUpdated` | `comments` | Re-moderacion del texto editado |
 | `onCommentDeleted` | `comments` | Decrement counters |
-| `onCommentLikeCreated` | `commentLikes` | Increment likeCount + rate limit (50/dia) + counters |
+| `onCommentLikeCreated` | `commentLikes` | Increment likeCount + rate limit (50/dia) + counters + notificacion al autor (si no es self-like) |
 | `onCommentLikeDeleted` | `commentLikes` | Decrement likeCount + counters |
 | `onCustomTagCreated` | `customTags` | Rate limit (10/business) + moderacion + counters |
 | `onCustomTagDeleted` | `customTags` | Decrement counters |
@@ -113,3 +137,6 @@ Todas las callable admin:
 |---------|----------|-------------|
 | `dailyMetrics` | 3:00 AM | Calcula distribucion, tops, active users. Reset daily counters |
 | `cleanupRejectedPhotos` | Diario | Elimina fotos rechazadas con mas de 7 dias (Storage + Firestore) |
+| `computeWeeklyRanking` | Lunes 4:00 AM | Calcula ranking semanal. Scoring: Comment=3, Rating=2, Like/Tag/Favorite=1, Photo=5 |
+| `computeMonthlyRanking` | 1ro de mes 4:00 AM | Calcula ranking mensual con misma formula |
+| `cleanupExpiredNotifications` | 5:00 AM | Elimina notificaciones expiradas (>30 dias) |
