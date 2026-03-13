@@ -5,3 +5,4 @@ export { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCust
 export { sendFeedback } from './feedback';
 export { uploadMenuPhoto, getApprovedMenuPhoto, getUserPendingPhotos } from './menuPhotos';
 export { upsertPriceLevel, getPriceLevelsCollection } from './priceLevels';
+export { fetchUserNotifications, markNotificationRead, markAllNotificationsRead, getUnreadCount } from './notifications';

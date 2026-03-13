@@ -272,6 +272,99 @@ async function seed() {
     });
   }
 
+  // 12. User Rankings (weekly + monthly)
+  console.log('Creating user rankings...');
+  const now = new Date();
+
+  // Current weekly ranking
+  const weekD = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const dayNum = weekD.getUTCDay() || 7;
+  weekD.setUTCDate(weekD.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(weekD.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((weekD.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  const weeklyKey = `weekly_${weekD.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+
+  const weekStart = new Date(now);
+  const weekDay = weekStart.getDay() || 7;
+  weekStart.setDate(weekStart.getDate() - weekDay + 1);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  // Current monthly ranking
+  const monthKey = `monthly_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  // Generate ranking entries from seeded users
+  const rankingEntries = USER_IDS.map((userId, idx) => {
+    const breakdown = {
+      comments: randomInt(0, 8),
+      ratings: randomInt(0, 5),
+      likes: randomInt(0, 10),
+      tags: randomInt(0, 6),
+      favorites: randomInt(0, 4),
+      photos: randomInt(0, 2),
+    };
+    const score =
+      breakdown.comments * 3 +
+      breakdown.ratings * 2 +
+      breakdown.likes * 1 +
+      breakdown.tags * 1 +
+      breakdown.favorites * 1 +
+      breakdown.photos * 5;
+    return { userId, displayName: USER_NAMES[idx], score, breakdown };
+  })
+    .filter((e) => e.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  await db.doc(`userRankings/${weeklyKey}`).set({
+    period: weeklyKey,
+    startDate: weekStart,
+    endDate: weekEnd,
+    rankings: rankingEntries,
+    totalParticipants: rankingEntries.length,
+  });
+
+  await db.doc(`userRankings/${monthKey}`).set({
+    period: monthKey,
+    startDate: monthStart,
+    endDate: monthEnd,
+    rankings: rankingEntries.map((e) => ({
+      ...e,
+      score: e.score + randomInt(5, 20),
+    })),
+    totalParticipants: rankingEntries.length,
+  });
+
+  // 13. Notifications
+  console.log('Creating notifications...');
+  const notifTypes = ['like', 'photo_approved', 'photo_rejected', 'ranking'] as const;
+  for (let i = 0; i < 12; i++) {
+    const userId = USER_IDS[i % USER_IDS.length];
+    const type = notifTypes[i % notifTypes.length];
+    const actorIdx = (USER_IDS.indexOf(userId) + 1) % USER_IDS.length;
+    const expiresAt = new Date(now);
+    expiresAt.setDate(expiresAt.getDate() + 30);
+    await db.collection('notifications').add({
+      userId,
+      type,
+      message:
+        type === 'like'
+          ? `${USER_NAMES[actorIdx]} le dio like a tu comentario`
+          : type === 'photo_approved'
+            ? 'Tu foto de menú fue aprobada'
+            : type === 'photo_rejected'
+              ? 'Tu foto de menú fue rechazada'
+              : 'Se publicó el ranking semanal',
+      read: i % 3 === 0,
+      createdAt: daysAgo(randomInt(0, 7)),
+      expiresAt,
+      ...(type === 'like' ? { actorId: USER_IDS[actorIdx], actorName: USER_NAMES[actorIdx] } : {}),
+      ...(type !== 'ranking' ? { businessId: randomFrom(BUSINESS_IDS), businessName: `Comercio ${randomInt(1, 15)}` } : {}),
+    });
+  }
+
   console.log('\nSeed complete!');
   console.log('- 10 users');
   console.log('- 60 comments (4 flagged)');
@@ -282,6 +375,8 @@ async function seed() {
   console.log('- 8 feedback (1 flagged)');
   console.log('- 15 days of daily metrics');
   console.log('- 12 abuse logs');
+  console.log('- 2 user rankings (weekly + monthly)');
+  console.log('- 12 notifications');
   console.log('- Counters and moderation config');
 
   process.exit(0);

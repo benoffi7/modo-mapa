@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel } from '../types';
+import type { UserProfile, Rating, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -203,6 +203,58 @@ export const priceLevelConverter: FirestoreDataConverter<PriceLevel> = {
       level: d.level,
       createdAt: toDate(d.createdAt),
       updatedAt: toDate(d.updatedAt),
+    };
+  },
+};
+
+export const userRankingConverter: FirestoreDataConverter<UserRanking> = {
+  toFirestore(ranking: UserRanking) {
+    return {
+      period: ranking.period,
+      startDate: ranking.startDate,
+      endDate: ranking.endDate,
+      rankings: ranking.rankings,
+      totalParticipants: ranking.totalParticipants,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): UserRanking {
+    const d = snapshot.data(options);
+    return {
+      period: d.period,
+      startDate: toDate(d.startDate),
+      endDate: toDate(d.endDate),
+      rankings: (d.rankings as UserRankingEntry[]) ?? [],
+      totalParticipants: (d.totalParticipants as number) ?? 0,
+    };
+  },
+};
+
+export const notificationConverter: FirestoreDataConverter<AppNotification> = {
+  toFirestore(notif: AppNotification) {
+    return {
+      userId: notif.userId,
+      type: notif.type,
+      message: notif.message,
+      read: notif.read,
+      createdAt: notif.createdAt,
+      expiresAt: notif.expiresAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): AppNotification {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      userId: d.userId,
+      type: d.type as NotificationType,
+      ...(d.actorId != null && { actorId: d.actorId as string }),
+      ...(d.actorName != null && { actorName: d.actorName as string }),
+      ...(d.businessId != null && { businessId: d.businessId as string }),
+      ...(d.businessName != null && { businessName: d.businessName as string }),
+      ...(d.referenceId != null && { referenceId: d.referenceId as string }),
+      message: d.message ?? '',
+      read: d.read ?? false,
+      createdAt: toDate(d.createdAt),
+      expiresAt: toDate(d.expiresAt),
     };
   },
 };

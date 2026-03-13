@@ -116,6 +116,23 @@ export interface PriceLevel {
   updatedAt: Date;
 }
 
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking';
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  actorId?: string | undefined;
+  actorName?: string | undefined;
+  businessId?: string | undefined;
+  businessName?: string | undefined;
+  referenceId?: string | undefined;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 export const PRICE_LEVEL_LABELS: Record<number, string> = {
   1: 'Económico',
   2: 'Moderado',
@@ -131,3 +148,25 @@ export const CATEGORY_LABELS: Record<BusinessCategory, string> = {
   icecream: 'Heladería',
   pizza: 'Pizzería',
 };
+
+export interface UserRankingEntry {
+  userId: string;
+  displayName: string;
+  score: number;
+  breakdown: {
+    comments: number;
+    ratings: number;
+    likes: number;
+    tags: number;
+    favorites: number;
+    photos: number;
+  };
+}
+
+export interface UserRanking {
+  period: string;
+  startDate: Date;
+  endDate: Date;
+  rankings: UserRankingEntry[];
+  totalParticipants: number;
+}
