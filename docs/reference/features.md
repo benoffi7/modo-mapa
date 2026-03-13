@@ -21,10 +21,10 @@
 - **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`
 - **Tags predefinidos**: vote count + toggle del usuario
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
-- **Comentarios**: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas". Replies usan `writeBatch` para crear respuesta + incrementar `replyCount` atomicamente. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root)
+- **Comentarios**: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas". `replyCount` gestionado exclusivamente por Cloud Functions (increment en create, decrement con floor en 0 en delete). Cascade delete de replies huerfanas en `onCommentDeleted`. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root, server-managed)
 - **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Toggle: click en el mismo nivel remueve el voto (`deletePriceLevel`). Reset via `key={businessId}` en parent para forzar remount
 - **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
-- Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL)
+- Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL). User likes fetched via batched `documentId('in')` queries (30 per batch, not individual getDoc per comment)
 - Race condition fix con `patchedRef` para evitar que full loads sobreescriban refetches parciales
 - Escrituras via service layer (`src/services/`)
 - Visita registrada automaticamente en localStorage al abrir
@@ -34,6 +34,7 @@
 ## Menu lateral (SideMenu)
 
 - Header con avatar, nombre, boton editar nombre
+- Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
   - **Sugeridos para vos**: sugerencias personalizadas via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Componente: `SuggestionsView.tsx`
@@ -56,7 +57,7 @@
 - Drawer con lista de notificaciones, tiempo relativo ("hace 2 min", "ayer")
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
-- Polling cada 60s para unread count
+- Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
 - Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`
 - Generadas automaticamente por Cloud Functions triggers
 - Expiran a los 30 dias (cleanup diario)
@@ -153,9 +154,9 @@ Todas las callable admin:
 
 | Trigger | Coleccion | Acciones |
 |---------|-----------|----------|
-| `onCommentCreated` | `comments` | Rate limit (20/dia) + moderacion + counters |
-| `onCommentUpdated` | `comments` | Re-moderacion del texto editado |
-| `onCommentDeleted` | `comments` | Decrement counters |
+| `onCommentCreated` | `comments` | Rate limit (20/dia) + moderacion + increment parent `replyCount` (si es reply) + counters |
+| `onCommentUpdated` | `comments` | Re-moderacion del texto editado (flag/unflag) |
+| `onCommentDeleted` | `comments` | Decrement parent `replyCount` (floor 0) + cascade delete orphaned replies + decrement counters |
 | `onCommentLikeCreated` | `commentLikes` | Increment likeCount + rate limit (50/dia) + counters + notificacion al autor (si no es self-like) |
 | `onCommentLikeDeleted` | `commentLikes` | Decrement likeCount + counters |
 | `onCustomTagCreated` | `customTags` | Rate limit (10/business) + moderacion + counters |

@@ -61,7 +61,9 @@ src/
 │   ├── useColorMode.ts              # Hook for dark/light mode toggle (consumes ColorModeContext)
 │   ├── useListFilters.ts            # Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento
 │   ├── usePaginatedQuery.ts         # Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL)
-│   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa
+│   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa (limit 20K + TTL 5min)
+│   ├── useNotifications.ts          # Hook para notificaciones in-app con polling visibility-aware
+│   ├── useProfileVisibility.ts      # Hook para visibilidad de perfil publico (cache TTL 60s)
 │   ├── useVisitHistory.ts           # Historial de visitas en localStorage (ultimos 20)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
 │   ├── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
@@ -144,6 +146,9 @@ src/
 │       ├── SuggestionsView.tsx       # Sugerencias personalizadas (useSuggestions)
 │       ├── FeedbackForm.tsx
 │       ├── StatsView.tsx            # Vista publica de estadisticas (usePublicMetrics)
+│       ├── RankingsView.tsx         # Rankings semanal/mensual con medallas
+│       ├── SettingsPanel.tsx        # Configuracion de usuario (privacidad, notificaciones)
+│       ├── PrivacyPolicy.tsx        # Politica de privacidad
 │       └── ListFilters.tsx
 ```
 
@@ -156,7 +161,7 @@ src/
 | `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
 | `vite.config.ts` | Plugin React + VitePWA + Sentry + `__APP_VERSION__` desde package.json |
-| `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend) |
+| `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend, lazy-loaded via dynamic import) |
 | `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |
 | `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites por userId+timestamp) |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
@@ -174,3 +179,4 @@ src/
 | `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |
 | `docs/reports/architecture-audit-v1.4.md` | Auditoria de arquitectura v1.4 |
 | `docs/reports/audit-phase4-v1.md` | Auditoria de seguridad y arquitectura post-phase4 (threads, criteria, suggestions) |
+| `docs/reports/pre-launch-audit.md` | Auditoria pre-lanzamiento: seguridad, arquitectura, performance, tests, recomendaciones |
