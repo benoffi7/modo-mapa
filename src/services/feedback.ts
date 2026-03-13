@@ -7,7 +7,7 @@ import { COLLECTIONS } from '../config/collections';
 import { trackEvent } from '../utils/analytics';
 import type { FeedbackCategory } from '../types';
 
-const VALID_CATEGORIES: FeedbackCategory[] = ['bug', 'sugerencia', 'otro'];
+const VALID_CATEGORIES: FeedbackCategory[] = ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro'];
 
 export async function sendFeedback(
   userId: string,

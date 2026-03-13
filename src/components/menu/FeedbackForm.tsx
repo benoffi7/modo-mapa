@@ -48,15 +48,21 @@ export default function FeedbackForm() {
         Contanos cómo podemos mejorar la app
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 0.75, mb: 2 }}>
-        {(['bug', 'sugerencia', 'otro'] as FeedbackCategory[]).map((cat) => (
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
+        {([
+          { value: 'bug', label: 'Bug' },
+          { value: 'sugerencia', label: 'Sugerencia' },
+          { value: 'datos_usuario', label: 'Datos de usuario' },
+          { value: 'datos_comercio', label: 'Datos de comercio' },
+          { value: 'otro', label: 'Otro' },
+        ] as { value: FeedbackCategory; label: string }[]).map(({ value, label }) => (
           <Chip
-            key={cat}
-            label={cat === 'bug' ? 'Bug' : cat === 'sugerencia' ? 'Sugerencia' : 'Otro'}
+            key={value}
+            label={label}
             size="small"
-            onClick={() => setCategory(cat)}
-            variant={category === cat ? 'filled' : 'outlined'}
-            color={category === cat ? 'primary' : 'default'}
+            onClick={() => setCategory(value)}
+            variant={category === value ? 'filled' : 'outlined'}
+            color={category === value ? 'primary' : 'default'}
           />
         ))}
       </Box>
