@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { createNotification } from '../utils/notifications';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
@@ -49,6 +50,19 @@ export const approveMenuPhoto = onCall(
     });
 
     await batch.commit();
+
+    // Notify photo uploader
+    const businessName = data.businessName as string | undefined;
+    await createNotification(db, {
+      userId: data.userId as string,
+      type: 'photo_approved',
+      message: businessName
+        ? `Tu foto del menú de ${businessName} fue aprobada`
+        : 'Tu foto del menú fue aprobada',
+      businessId: data.businessId as string,
+      referenceId: photoId,
+    });
+
     return { success: true };
   },
 );
@@ -73,11 +87,25 @@ export const rejectMenuPhoto = onCall(
       throw new HttpsError('not-found', 'Photo not found');
     }
 
+    const data = photoSnap.data()!;
+
     await photoRef.update({
       status: 'rejected',
       rejectionReason: reason || '',
       reviewedBy: auth.uid,
       reviewedAt: FieldValue.serverTimestamp(),
+    });
+
+    // Notify photo uploader
+    const rejectionMsg = reason
+      ? `Tu foto del menú fue rechazada: ${reason}`
+      : 'Tu foto del menú fue rechazada';
+    await createNotification(db, {
+      userId: data.userId as string,
+      type: 'photo_rejected',
+      message: rejectionMsg,
+      businessId: data.businessId as string,
+      referenceId: photoId,
     });
 
     return { success: true };

@@ -116,6 +116,23 @@ export interface PriceLevel {
   updatedAt: Date;
 }
 
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking';
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  actorId?: string | undefined;
+  actorName?: string | undefined;
+  businessId?: string | undefined;
+  businessName?: string | undefined;
+  referenceId?: string | undefined;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 export const PRICE_LEVEL_LABELS: Record<number, string> = {
   1: 'Económico',
   2: 'Moderado',
