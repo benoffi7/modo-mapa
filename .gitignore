@@ -32,7 +32,9 @@ dist-ssr
 .firebase/
 functions/lib/
 
-# Claude (keep agents and skills tracked, ignore local settings)
+# Claude (keep agents, skills, commands, and README tracked, ignore local settings)
 .claude/*
 !.claude/agents/
 !.claude/skills/
+!.claude/commands/
+!.claude/README.md
