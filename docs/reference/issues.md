@@ -142,9 +142,8 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 |---------|-----------|
 | `docs/reference/CODING_STANDARDS.md` | Estandares de codigo, service layer, patrones de componentes, convenciones TS, SOLID |
 | `docs/reference/PROJECT_REFERENCE.md` | Referencia completa del proyecto (arquitectura, archivos, tipos, patrones) |
-| `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |
-| `docs/reports/architecture-audit-v1.4.md` | Auditoria de arquitectura v1.4 |
-| `docs/reports/INFORME_MEJORAS.md` | Informe de mejoras tecnicas |
-| `docs/reports/INFORME_MEJORAS_FUNCIONALES_v1.md` | Informe de mejoras funcionales con estado de implementacion |
-| `docs/reports/INFORME_SEGURIDAD.md` | Informe de seguridad |
 | `docs/reference/SECURITY_GUIDELINES.md` | Guias de seguridad |
+| `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.5.1 (baseline de compliance) |
+| `docs/reports/pre-launch-audit.md` | Auditoria pre-lanzamiento v2.3.0 |
+| `docs/reports/audit-phase4-v1.md` | Auditoria de seguridad Phase 4 |
+| `docs/reports/usability-report-2026-03-14.md` | Informe de usabilidad y mejoras pendientes |
