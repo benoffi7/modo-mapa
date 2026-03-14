@@ -36,42 +36,42 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <StorefrontOutlinedIcon color="primary" />,
     title: 'Comercio',
     description:
-      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar (con respuestas), marcar favorito, compartir, ver o subir foto de menú, y votar el nivel de gasto.',
+      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar (con respuestas y likes), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados.',
   },
   {
     id: 'menu',
     icon: <MenuOutlinedIcon color="primary" />,
     title: 'Menú lateral',
     description:
-      'Accedé a favoritos, recientes, sugeridos para vos, comentarios, calificaciones, feedback, rankings y estadísticas.',
+      'Accedé a favoritos, recientes, sugeridos, comentarios, calificaciones, feedback, mis envíos, rankings, estadísticas, agregar comercio y configuración. Cambiá el modo oscuro desde el footer del menú.',
   },
   {
     id: 'notificaciones',
     icon: <NotificationsOutlinedIcon color="primary" />,
     title: 'Notificaciones',
     description:
-      'Campana en la barra de búsqueda. Recibís avisos de likes en comentarios, fotos aprobadas o rechazadas y cambios en rankings.',
+      'Campana en la barra de búsqueda. Recibís avisos de likes en comentarios, fotos aprobadas o rechazadas, cambios en rankings y respuestas a tu feedback. Tocá para ir al comercio o marcá como leídas.',
   },
   {
     id: 'perfil',
     icon: <PersonOutlinedIcon color="primary" />,
     title: 'Perfil',
     description:
-      'Tocá el nombre de cualquier usuario para ver su perfil público con actividad, medallas top-3 y estadísticas.',
+      'Tocá el nombre de cualquier usuario para ver su perfil público con actividad, medallas top-3 y estadísticas. Podés hacer tu perfil público o privado desde Configuración.',
   },
   {
     id: 'configuracion',
     icon: <SettingsOutlinedIcon color="primary" />,
     title: 'Configuración',
     description:
-      'Perfil público o privado, preferencias de notificaciones y modo oscuro.',
+      'Perfil público o privado y preferencias de notificaciones (likes, fotos, rankings, feedback). El toggle de modo oscuro está en el footer del menú lateral.',
   },
   {
     id: 'feedback',
     icon: <FeedbackOutlinedIcon color="primary" />,
     title: 'Feedback',
     description:
-      'Enviá sugerencias, reportá bugs o dejá tu opinión desde el menú lateral.',
+      'Enviá sugerencias, reportá bugs o dejá tu opinión desde el menú lateral. En "Mis envíos" podés ver el estado de cada envío y las respuestas del equipo.',
   },
 ];
 
