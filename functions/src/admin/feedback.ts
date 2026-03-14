@@ -1,5 +1,4 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createNotification } from '../utils/notifications';
 
@@ -7,7 +6,6 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_RESPONSE_LENGTH = 500;
 
-const GITHUB_TOKEN = defineSecret('GITHUB_TOKEN');
 const GITHUB_OWNER = 'benoffi7';
 const GITHUB_REPO = 'modo-mapa';
 
@@ -91,7 +89,7 @@ export const resolveFeedback = onCall(
 );
 
 export const createGithubIssueFromFeedback = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30, ...(IS_EMULATOR ? {} : { secrets: [GITHUB_TOKEN] }) },
+  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30 },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -137,7 +135,7 @@ export const createGithubIssueFromFeedback = onCall(
     };
     const labels = [labelMap[category] ?? 'feedback'];
 
-    const token = IS_EMULATOR ? process.env.GITHUB_TOKEN : GITHUB_TOKEN.value();
+    const token = process.env.GITHUB_TOKEN;
     if (!token) {
       throw new HttpsError('failed-precondition', 'GITHUB_TOKEN not configured');
     }
