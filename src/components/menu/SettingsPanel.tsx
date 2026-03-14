@@ -101,6 +101,13 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyRankings', val)}
       />
+      <SettingRow
+        label="Respuestas a feedback"
+        checked={settings.notifyFeedback}
+        disabled={!settings.notificationsEnabled}
+        indented
+        onChange={(val) => updateSetting('notifyFeedback', val)}
+      />
 
       <Divider sx={{ my: 1.5 }} />
 

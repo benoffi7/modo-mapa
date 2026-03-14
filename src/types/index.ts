@@ -85,13 +85,20 @@ export interface Favorite {
 
 export type FeedbackCategory = 'bug' | 'sugerencia' | 'datos_usuario' | 'datos_comercio' | 'otro';
 
+export type FeedbackStatus = 'pending' | 'viewed' | 'responded' | 'resolved';
+
 export interface Feedback {
   id: string;
   userId: string;
   message: string;
   category: FeedbackCategory;
+  status: FeedbackStatus;
   createdAt: Date;
   flagged?: boolean;
+  adminResponse?: string;
+  respondedAt?: Date;
+  respondedBy?: string;
+  viewedByUser?: boolean;
 }
 
 import { PREDEFINED_TAGS } from '../constants/tags';
@@ -125,7 +132,7 @@ export interface PriceLevel {
   updatedAt: Date;
 }
 
-export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking';
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
 
 export interface AppNotification {
   id: string;
@@ -171,6 +178,7 @@ export interface UserSettings {
   notifyLikes: boolean;
   notifyPhotos: boolean;
   notifyRankings: boolean;
+  notifyFeedback: boolean;
   analyticsEnabled: boolean;
   updatedAt: Date;
 }
