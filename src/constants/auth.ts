@@ -1,7 +1,7 @@
 export const PASSWORD_MIN_LENGTH = 8;
 
 export const AUTH_ERRORS: Record<string, string> = {
-  'auth/email-already-in-use': 'Este email ya tiene una cuenta.',
+  'auth/email-already-in-use': 'No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.',
   'auth/invalid-email': 'El formato del email no es válido.',
   'auth/weak-password': 'La contraseña debe tener al menos 8 caracteres.',
   'auth/wrong-password': 'Email o contraseña incorrectos.',

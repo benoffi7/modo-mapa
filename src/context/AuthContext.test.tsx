@@ -62,7 +62,7 @@ vi.mock('../services/emailAuth', () => ({
   getAuthErrorMessage: (error: unknown) => {
     if (error instanceof Error && 'code' in error) {
       const code = (error as { code: string }).code;
-      if (code === 'auth/email-already-in-use') return 'Este email ya tiene una cuenta.';
+      if (code === 'auth/email-already-in-use') return 'No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.';
       if (code === 'auth/invalid-credential') return 'Email o contraseña incorrectos.';
       if (code === 'auth/wrong-password') return 'Contraseña actual incorrecta.';
     }
@@ -247,7 +247,7 @@ describe('AuthContext', () => {
           .rejects.toThrow('fail');
       });
 
-      expect(result.current.authError).toBe('Este email ya tiene una cuenta.');
+      expect(result.current.authError).toBe('No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.');
     });
   });
 

@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Box,
   Typography,
@@ -70,6 +70,19 @@ export default function SettingsPanel() {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verificationCooldown, setVerificationCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (verificationCooldown <= 0) {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      return;
+    }
+    cooldownRef.current = setInterval(() => {
+      setVerificationCooldown((c) => c - 1);
+    }, 1000);
+    return () => { if (cooldownRef.current) clearInterval(cooldownRef.current); };
+  }, [verificationCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = async () => {
     await signOut();
@@ -81,6 +94,7 @@ export default function SettingsPanel() {
     try {
       await resendVerification();
       setVerificationSent(true);
+      setVerificationCooldown(60);
     } catch {
       // error handled by context
     } finally {
@@ -149,16 +163,16 @@ export default function SettingsPanel() {
           </Box>
           {!emailVerified && (
             <Box sx={{ mb: 1 }}>
-              {verificationSent ? (
+              {verificationSent && verificationCooldown > 0 ? (
                 <Typography variant="caption" color="success.main">
-                  Email de verificación enviado.
+                  Email enviado. Podés re-enviar en {verificationCooldown}s.
                 </Typography>
               ) : (
                 <Button
                   variant="text"
                   size="small"
                   onClick={handleResendVerification}
-                  disabled={verificationLoading}
+                  disabled={verificationLoading || verificationCooldown > 0}
                   sx={{ textTransform: 'none' }}
                 >
                   Re-enviar email de verificación

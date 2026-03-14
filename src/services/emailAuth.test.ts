@@ -32,7 +32,7 @@ vi.mock('../config/firebase', () => ({
 describe('getAuthErrorMessage', () => {
   it('maps known Firebase error codes to Spanish messages', () => {
     const error = Object.assign(new Error('test'), { code: 'auth/email-already-in-use' });
-    expect(getAuthErrorMessage(error)).toBe('Este email ya tiene una cuenta.');
+    expect(getAuthErrorMessage(error)).toBe('No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.');
   });
 
   it('maps wrong-password to generic credentials message', () => {
