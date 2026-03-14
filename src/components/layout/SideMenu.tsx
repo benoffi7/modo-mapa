@@ -26,7 +26,6 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
@@ -53,7 +52,6 @@ const StatsView = lazy(() => import('../menu/StatsView'));
 const RankingsView = lazy(() => import('../menu/RankingsView'));
 const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
 const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
-const MyFeedbackList = lazy(() => import('../menu/MyFeedbackList'));
 const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
 
@@ -72,7 +70,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'my-feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -81,7 +79,6 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
-  'my-feedback': 'Mis envíos',
   stats: 'Estadísticas',
   rankings: 'Rankings',
   settings: 'Configuración',
@@ -207,13 +204,6 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Feedback" />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => setActiveSection('my-feedback')}>
-                  <ListItemIcon>
-                    <InboxOutlinedIcon sx={{ color: '#1565c0' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Mis envíos" />
-                </ListItemButton>
-
                 <ListItemButton onClick={() => setActiveSection('rankings')}>
                   <ListItemIcon>
                     <LeaderboardIcon sx={{ color: '#e65100' }} />
@@ -329,7 +319,6 @@ export default function SideMenu({ open, onClose }: Props) {
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                   {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
                   {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
-                  {activeSection === 'my-feedback' && <MyFeedbackList />}
                   {activeSection === 'rankings' && <RankingsView />}
                   {activeSection === 'stats' && <StatsView />}
                   {activeSection === 'settings' && <SettingsPanel />}

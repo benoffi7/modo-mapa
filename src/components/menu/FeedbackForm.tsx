@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import {
   Box,
   Typography,
   TextField,
   Button,
   Chip,
+  Tab,
+  Tabs,
+  CircularProgress,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
@@ -12,7 +15,9 @@ import { useAuth } from '../../context/AuthContext';
 import { sendFeedback } from '../../services/feedback';
 import type { FeedbackCategory } from '../../types';
 
-export default function FeedbackForm() {
+const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
+
+function FeedbackSender() {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<FeedbackCategory>('sugerencia');
@@ -87,6 +92,27 @@ export default function FeedbackForm() {
       >
         Enviar
       </Button>
+    </Box>
+  );
+}
+
+export default function FeedbackForm() {
+  const [tab, setTab] = useState(0);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth">
+        <Tab label="Enviar" />
+        <Tab label="Mis envíos" />
+      </Tabs>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {tab === 0 && <FeedbackSender />}
+        {tab === 1 && (
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={28} /></Box>}>
+            <MyFeedbackList />
+          </Suspense>
+        )}
+      </Box>
     </Box>
   );
 }
