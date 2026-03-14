@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import { fetchUsersPanelData } from '../../services/admin';
+import Typography from '@mui/material/Typography';
+import { fetchUsersPanelData, fetchAuthStats, fetchSettingsAggregates } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { TopList } from '../stats';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
+import type { AuthStats, SettingsAggregates } from '../../types/admin';
 
 interface UserStats {
   comments: number;
@@ -14,6 +16,8 @@ interface UserStats {
   tags: number;
   feedback: number;
   total: number;
+  authMethod?: 'anonymous' | 'email';
+  emailVerified?: boolean;
 }
 
 interface ProcessedData {
@@ -21,9 +25,15 @@ interface ProcessedData {
   totalUsers: number;
   activeUsers: number;
   avgActions: number;
+  authStats: AuthStats | null;
+  settingsAggregates: SettingsAggregates | null;
 }
 
-function processData(raw: Awaited<ReturnType<typeof fetchUsersPanelData>>): ProcessedData {
+function processData(
+  raw: Awaited<ReturnType<typeof fetchUsersPanelData>>,
+  authStats: AuthStats | null,
+  settingsAggregates: SettingsAggregates | null,
+): ProcessedData {
   const map = new Map<string, { name: string; stats: UserStats }>();
 
   const emptyStats = (): UserStats => ({ comments: 0, ratings: 0, favorites: 0, tags: 0, feedback: 0, total: 0 });
@@ -80,6 +90,18 @@ function processData(raw: Awaited<ReturnType<typeof fetchUsersPanelData>>): Proc
     entry.stats.total++;
   }
 
+  // Enrich with auth info
+  if (authStats) {
+    const authMap = new Map(authStats.users.map((u) => [u.uid, u]));
+    for (const [id, entry] of map) {
+      const authUser = authMap.get(id);
+      if (authUser) {
+        entry.stats.authMethod = authUser.authMethod;
+        entry.stats.emailVerified = authUser.emailVerified;
+      }
+    }
+  }
+
   const users = [...map.entries()].map(([id, { name, stats }]) => ({ id, name, ...stats }));
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.total > 0).length;
@@ -87,22 +109,35 @@ function processData(raw: Awaited<ReturnType<typeof fetchUsersPanelData>>): Proc
     ? Math.round(users.reduce((s, u) => s + u.total, 0) / totalUsers)
     : 0;
 
-  return { users, totalUsers, activeUsers, avgActions };
+  return { users, totalUsers, activeUsers, avgActions, authStats, settingsAggregates };
 }
 
 export default function UsersPanel() {
-  const fetcher = useCallback(() => fetchUsersPanelData(500), []);
-  const { data: raw, loading, error } = useAsyncData(fetcher);
+  const fetcher = useCallback(async () => {
+    const [raw, authStats, settingsAggregates] = await Promise.all([
+      fetchUsersPanelData(500),
+      fetchAuthStats().catch(() => null),
+      fetchSettingsAggregates().catch(() => null),
+    ]);
+    return { raw, authStats, settingsAggregates };
+  }, []);
 
-  const processed = raw ? processData(raw) : null;
+  const { data, loading, error } = useAsyncData(fetcher);
+
+  const processed = data ? processData(data.raw, data.authStats, data.settingsAggregates) : null;
   const users = processed?.users ?? [];
+  const authStats = processed?.authStats;
+  const settings = processed?.settingsAggregates;
 
   const topBy = (key: keyof UserStats, limit = 10) =>
     [...users]
-      .sort((a, b) => b[key] - a[key])
-      .filter((u) => u[key] > 0)
+      .sort((a, b) => (b[key] as number) - (a[key] as number))
+      .filter((u) => (u[key] as number) > 0)
       .slice(0, limit)
-      .map((u) => ({ label: u.name, value: u[key] }));
+      .map((u) => {
+        const authSuffix = u.authMethod === 'email' ? ' ✉' : '';
+        return { label: `${u.name}${authSuffix}`, value: u[key] as number };
+      });
 
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando datos de usuarios.">
@@ -118,6 +153,43 @@ export default function UsersPanel() {
             <StatCard label="Promedio acciones/usuario" value={processed?.avgActions ?? 0} />
           </Grid>
         </Grid>
+
+        {authStats && (
+          <>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Autenticación</Typography>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Email" value={authStats.byMethod.email} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Anónimos" value={authStats.byMethod.anonymous} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Verificados" value={authStats.emailVerification.verified} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Sin verificar" value={authStats.emailVerification.unverified} />
+              </Grid>
+            </Grid>
+          </>
+        )}
+
+        {settings && (
+          <>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Preferencias de usuarios</Typography>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Perfiles públicos" value={settings.publicProfiles} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Notificaciones activas" value={settings.notificationsEnabled} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+                <StatCard label="Analytics activo" value={settings.analyticsEnabled} />
+              </Grid>
+            </Grid>
+          </>
+        )}
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
