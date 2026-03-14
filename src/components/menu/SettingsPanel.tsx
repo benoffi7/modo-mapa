@@ -17,6 +17,7 @@ import { useUserSettings } from '../../hooks/useUserSettings';
 import { useAuth } from '../../context/AuthContext';
 
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
+const ChangePasswordDialog = lazy(() => import('../auth/ChangePasswordDialog'));
 
 interface SettingRowProps {
   label: string;
@@ -61,15 +62,34 @@ function SettingRow({ label, description, checked, disabled, indented, onChange 
 
 export default function SettingsPanel() {
   const { settings, loading, updateSetting } = useUserSettings();
-  const { authMethod, emailVerified, user, signOut } = useAuth();
+  const { authMethod, emailVerified, user, signOut, resendVerification, refreshEmailVerified } = useAuth();
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     setLogoutDialogOpen(false);
+  };
+
+  const handleResendVerification = async () => {
+    setVerificationLoading(true);
+    try {
+      await resendVerification();
+      setVerificationSent(true);
+    } catch {
+      // error handled by context
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  const handleRefreshVerified = async () => {
+    await refreshEmailVerified();
   };
 
   if (loading) {
@@ -124,16 +144,47 @@ export default function SettingsPanel() {
               size="small"
               color={emailVerified ? 'success' : 'warning'}
               variant="outlined"
+              onClick={emailVerified ? undefined : handleRefreshVerified}
             />
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            onClick={() => setLogoutDialogOpen(true)}
-          >
-            Cerrar sesión
-          </Button>
+          {!emailVerified && (
+            <Box sx={{ mb: 1 }}>
+              {verificationSent ? (
+                <Typography variant="caption" color="success.main">
+                  Email de verificación enviado.
+                </Typography>
+              ) : (
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={handleResendVerification}
+                  disabled={verificationLoading}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Re-enviar email de verificación
+                </Button>
+              )}
+            </Box>
+          )}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {authMethod === 'email' && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setChangePasswordOpen(true)}
+              >
+                Cambiar contraseña
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              size="small"
+              color="error"
+              onClick={() => setLogoutDialogOpen(true)}
+            >
+              Cerrar sesión
+            </Button>
+          </Box>
         </Box>
       )}
 
@@ -211,6 +262,16 @@ export default function SettingsPanel() {
             open={emailDialogOpen}
             onClose={() => setEmailDialogOpen(false)}
             initialTab={emailDialogTab}
+          />
+        )}
+      </Suspense>
+
+      {/* Change password dialog */}
+      <Suspense fallback={null}>
+        {changePasswordOpen && (
+          <ChangePasswordDialog
+            open={changePasswordOpen}
+            onClose={() => setChangePasswordOpen(false)}
           />
         )}
       </Suspense>
