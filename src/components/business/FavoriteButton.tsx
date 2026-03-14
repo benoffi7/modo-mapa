@@ -37,7 +37,7 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
       aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
       disabled={isLoading || isToggling || !user}
-      sx={{ color: isFavorite ? '#ea4335' : '#5f6368' }}
+      sx={{ color: isFavorite ? '#ea4335' : 'text.secondary' }}
     >
       {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
     </IconButton>

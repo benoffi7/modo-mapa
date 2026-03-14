@@ -38,7 +38,7 @@ export default function SearchBar({ onMenuClick }: Props) {
         transition: 'box-shadow 0.2s',
       }}
     >
-      <IconButton size="small" aria-label="Menú" onClick={onMenuClick} sx={{ p: 1, color: '#5f6368' }}>
+      <IconButton size="small" aria-label="Menú" onClick={onMenuClick} sx={{ p: 1, color: 'text.secondary' }}>
         <MenuIcon />
       </IconButton>
       <InputBase
@@ -61,11 +61,11 @@ export default function SearchBar({ onMenuClick }: Props) {
         }}
       />
       {searchQuery ? (
-        <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ p: 1, color: '#5f6368' }}>
+        <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ p: 1, color: 'text.secondary' }}>
           <ClearIcon />
         </IconButton>
       ) : (
-        <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: '#5f6368' }}>
+        <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: 'text.secondary' }}>
           <SearchIcon />
         </IconButton>
       )}
