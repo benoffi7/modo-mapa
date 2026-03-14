@@ -43,7 +43,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <MenuOutlinedIcon color="primary" />,
     title: 'Menú lateral',
     description:
-      'Accedé a favoritos, recientes, sugeridos, comentarios, calificaciones, feedback, mis envíos, rankings, estadísticas, agregar comercio y configuración. Cambiá el modo oscuro desde el footer del menú.',
+      'Accedé a favoritos, recientes, sugeridos para vos, comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings, estadísticas, agregar comercio, configuración y ayuda. Cambiá el modo oscuro desde el footer del menú.',
   },
   {
     id: 'notificaciones',
@@ -71,7 +71,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <FeedbackOutlinedIcon color="primary" />,
     title: 'Feedback',
     description:
-      'Enviá sugerencias, reportá bugs o dejá tu opinión desde el menú lateral. En "Mis envíos" podés ver el estado de cada envío y las respuestas del equipo.',
+      'Enviá sugerencias, reportá bugs o dejá tu opinión desde el menú lateral. Podés adjuntar una imagen al envío. En "Mis envíos" podés seguir el estado (pendiente, visto, respondido, resuelto), ver las respuestas del equipo y un indicador verde cuando hay una respuesta nueva.',
   },
 ];
 

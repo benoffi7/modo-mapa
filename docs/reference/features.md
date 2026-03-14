@@ -42,9 +42,10 @@
   - **Comentarios**: lista con texto truncado. Eliminar con undo (5s). Click navega al comercio
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio
   - **Rankings**: ranking semanal/mensual con scoring por actividad. Cards con medallas y barra de progreso. "Tu actividad" con desglose de puntos (en vivo si no estas en ranking pre-computado)
-  - **Feedback**: formulario con categoria (bug/sugerencia/otro) + mensaje (max 1000). Estado de exito
+  - **Feedback**: formulario con 2 tabs (Enviar / Mis envios). Enviar: categoria (bug/sugerencia/datos_usuario/datos_comercio/otro) + mensaje (max 1000) + imagen adjunta opcional (max 10MB, JPG/PNG/WebP). Mis envios: `MyFeedbackList` muestra feedback del usuario con chips de status (pending/viewed/responded/resolved), respuestas del admin colapsables, indicador de nueva respuesta (dot verde), imagen adjunta inline. Al expandir un feedback respondido se marca como visto (`markFeedbackViewed`)
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
-  - **Configuracion**: panel con toggles de privacidad (perfil publico/privado) y notificaciones (master + likes/fotos/rankings). Defaults todos en false. Optimistic UI con revert on error
+  - **Configuracion**: panel con toggles de privacidad (perfil publico/privado) y notificaciones (master + likes/fotos/rankings/feedback). Defaults todos en false. Optimistic UI con revert on error
+  - **Ayuda**: seccion colapsable con 7 topics en formato Accordion (mapa, comercio, menu lateral, notificaciones, perfil, configuracion, feedback). Lazy-loaded via `React.lazy()`. Componente: `HelpSection.tsx`
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
 - Footer con version de la app (+ links a Theme Playground y Constants Dashboard en DEV)
@@ -58,7 +59,7 @@
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
 - Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
-- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`
+- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`
 - Generadas automaticamente por Cloud Functions triggers
 - Expiran a los 30 dias (cleanup diario)
 
@@ -118,7 +119,7 @@
 |-----|-------------|
 | **Overview** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover |
 | **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags) con ultimos 20 items, indicador de flagged |
-| **Feedback** | Tabla de feedback recibido con categoria (bug/sugerencia/otro), mensaje, estado flagged |
+| **Feedback** | Tabla de feedback con categoria, mensaje, status (pending/viewed/responded/resolved), filtro por status. Acciones admin: responder (respondToFeedback callable), resolver (resolveFeedback callable), crear issue en GitHub (createGithubIssueFromFeedback callable). Link a GitHub issue si existe |
 | **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo, usuarios activos, total escrituras. Click en leyenda para mostrar/ocultar series |
 | **Usuarios** | Rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones) |
 | **Firebase Usage** | Graficos lineales de reads/writes/deletes y usuarios activos (ultimos 30 dias), pie charts por coleccion, barras de cuota vs free tier |
@@ -142,6 +143,9 @@
 | `rejectMenuPhoto` | admin | Rechaza foto con razon obligatoria. Cambia status a `rejected` | 30s |
 | `deleteMenuPhoto` | admin | Elimina archivos de Storage (original + thumbnail) y documento de Firestore | 60s |
 | `reportMenuPhoto` | auth | Reporta foto. Crea doc en subcollection `reports/{userId}` (previene duplicados). Incrementa `reportCount` atomicamente | 30s |
+| `respondToFeedback` | admin | Responde a feedback de usuario. Actualiza status a `responded`, guarda `adminResponse`/`respondedAt`/`respondedBy`. Crea notificacion `feedback_response` | 60s |
+| `resolveFeedback` | admin | Marca feedback como resuelto. Actualiza status a `resolved`. Crea notificacion `feedback_response` | 60s |
+| `createGithubIssueFromFeedback` | admin | Crea issue en GitHub desde feedback. Usa `@octokit/rest` + `GITHUB_TOKEN` secret. Mapea categoria a label (bug/enhancement/feedback). Guarda `githubIssueUrl` en doc. Previene duplicados | 30s |
 
 Todas las callable admin:
 
