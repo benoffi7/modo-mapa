@@ -443,7 +443,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
             <IconButton
               size="small"
               onClick={() => handleStartEdit(comment)}
-              sx={{ color: '#5f6368' }}
+              sx={{ color: 'text.secondary' }}
               aria-label="Editar comentario"
             >
               <EditOutlinedIcon sx={{ fontSize: 18 }} />
@@ -451,7 +451,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
             <IconButton
               size="small"
               onClick={() => handleDelete(comment)}
-              sx={{ color: '#5f6368' }}
+              sx={{ color: 'text.secondary' }}
               aria-label="Eliminar comentario"
             >
               <DeleteOutlineIcon sx={{ fontSize: 18 }} />
@@ -629,7 +629,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                     <IconButton
                       size="small"
                       onClick={handleCancelReply}
-                      sx={{ color: '#5f6368', width: 32, height: 32, flexShrink: 0 }}
+                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
                       aria-label="Cancelar respuesta"
                     >
                       <CloseIcon sx={{ fontSize: 16 }} />
