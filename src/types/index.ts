@@ -165,6 +165,8 @@ export interface UserRankingEntry {
     favorites: number;
     photos: number;
   };
+  /** Consecutive days with activity (computed by Cloud Function, optional) */
+  streak?: number;
 }
 
 export interface UserRanking {
