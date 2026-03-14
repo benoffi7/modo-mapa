@@ -21,6 +21,7 @@ interface AggregatedPoint {
   tags: number;
   activeUsers: number;
   totalWrites: number;
+  newAccounts: number;
 }
 
 function getWeekKey(dateStr: string): string {
@@ -71,6 +72,7 @@ function aggregate(metrics: DailyMetrics[], granularity: Granularity): Aggregate
         ? points[0].activeUsers
         : Math.round(points.reduce((s, p) => s + p.activeUsers, 0) / points.length),
       totalWrites: points.reduce((s, p) => s + p.dailyWrites, 0),
+      newAccounts: points.reduce((s, p) => s + (p.newAccounts ?? 0), 0),
     }));
 }
 
@@ -130,6 +132,15 @@ export default function TrendsPanel() {
               data={data}
               xAxisKey="label"
               lines={[{ dataKey: 'totalWrites', color: '#388e3c', label: 'Writes totales' }]}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <LineChartCard
+              title="Nuevos registros"
+              data={data}
+              xAxisKey="label"
+              lines={[{ dataKey: 'newAccounts', color: '#e91e63', label: 'Nuevas cuentas' }]}
             />
           </Grid>
         </Grid>
