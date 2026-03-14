@@ -3,5 +3,9 @@ export const CHART_COLORS = [
   '#7b1fa2', '#0097a7', '#455a64', '#c2185b',
 ];
 
+export const LIKE_COLOR = '#e91e63';
+export const RANKINGS_COLOR = '#e65100';
+export const STATS_COLOR = '#7b1fa2';
+
 export const ADD_BUSINESS_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSdCclz8fH1OQj-McD_xEsXAwP6umIcNVsudS3ZiYBXqBqoaRg/viewform';

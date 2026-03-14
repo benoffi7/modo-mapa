@@ -21,7 +21,7 @@ function getIcon(type: AppNotification['type']) {
     case 'ranking':
       return <LeaderboardIcon color="warning" fontSize="small" />;
     case 'feedback_response':
-      return <FeedbackOutlinedIcon sx={{ color: '#34a853' }} fontSize="small" />;
+      return <FeedbackOutlinedIcon sx={{ color: 'success.main' }} fontSize="small" />;
   }
 }
 

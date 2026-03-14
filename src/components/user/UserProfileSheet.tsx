@@ -11,6 +11,7 @@ import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateMedium } from '../../utils/formatDate';
 import { MEDALS } from '../../constants/rankings';
+import { truncate } from '../../utils/text';
 import UserStatsRow from './UserStatsRow';
 import type { Business } from '../../types';
 
@@ -34,9 +35,6 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
       setSelectedBusiness(business);
     }
   };
-
-  const truncate = (text: string, max: number) =>
-    text.length > max ? text.slice(0, max) + '...' : text;
 
   return (
     <SwipeableDrawer
@@ -64,7 +62,7 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
               width: 40,
               height: 4,
               borderRadius: 2,
-              backgroundColor: '#dadce0',
+              backgroundColor: 'divider',
             }}
           />
         </Box>
@@ -81,7 +79,7 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
                     width: 48,
                     height: 48,
                     fontSize: '1.2rem',
-                    bgcolor: '#1a73e8',
+                    bgcolor: 'primary.main',
                   }}
                 >
                   {profile.displayName.charAt(0).toUpperCase()}

@@ -68,7 +68,7 @@ function FeedbackSender() {
   if (sent) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <CheckCircleIcon sx={{ fontSize: 48, color: '#34a853', mb: 1 }} />
+        <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
         <Typography variant="body1" sx={{ fontWeight: 500 }}>
           Gracias por tu feedback
         </Typography>
