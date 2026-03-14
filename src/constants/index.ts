@@ -11,6 +11,7 @@ export * from './admin';
 export * from './timing';
 export * from './criteria';
 export * from './suggestions';
+export * from './auth';
 
 // Re-export from existing location (already centralized)
 export { COLLECTIONS } from '../config/collections';

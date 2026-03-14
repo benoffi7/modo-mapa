@@ -1,4 +1,5 @@
 export const PASSWORD_MIN_LENGTH = 8;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const AUTH_ERRORS: Record<string, string> = {
   'auth/email-already-in-use': 'No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.',

@@ -13,14 +13,13 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { PASSWORD_MIN_LENGTH } from '../../constants/auth';
+import { PASSWORD_MIN_LENGTH, EMAIL_REGEX } from '../../constants/auth';
 import { sendResetEmail, getAuthErrorMessage } from '../../services/emailAuth';
 
 interface EmailPasswordDialogProps {
   open: boolean;
   onClose: () => void;
   initialTab?: 'register' | 'login';
-  hasAnonymousData?: boolean;
 }
 
 type TabValue = 'register' | 'login';
@@ -29,7 +28,6 @@ export default function EmailPasswordDialog({
   open,
   onClose,
   initialTab = 'register',
-  hasAnonymousData = false,
 }: EmailPasswordDialogProps) {
   const { linkEmailPassword, signInWithEmail, authError } = useAuth();
   const [tab, setTab] = useState<TabValue>(initialTab);
@@ -58,7 +56,7 @@ export default function EmailPasswordDialog({
     onClose();
   };
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailValid = EMAIL_REGEX.test(email);
   const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
   const confirmValid = tab === 'login' || password === confirmPassword;
 
@@ -132,9 +130,9 @@ export default function EmailPasswordDialog({
           </Alert>
         )}
 
-        {tab === 'login' && hasAnonymousData && (
+        {tab === 'login' && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Si tenés datos en esta sesión, se van a perder al iniciar sesión con otra cuenta.
+            Si tenés datos en esta sesión anónima, se van a perder al iniciar sesión con otra cuenta.
           </Alert>
         )}
 

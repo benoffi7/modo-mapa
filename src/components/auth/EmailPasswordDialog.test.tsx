@@ -100,13 +100,13 @@ describe('EmailPasswordDialog', () => {
     });
   });
 
-  it('shows anonymous data warning on login tab when hasAnonymousData', () => {
-    render(<EmailPasswordDialog {...defaultProps} initialTab="login" hasAnonymousData />);
+  it('shows anonymous data warning on login tab', () => {
+    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
     expect(screen.getByText(/se van a perder/)).toBeInTheDocument();
   });
 
-  it('does not show warning when no anonymous data', () => {
-    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
+  it('does not show warning on register tab', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
     expect(screen.queryByText(/se van a perder/)).not.toBeInTheDocument();
   });
 
