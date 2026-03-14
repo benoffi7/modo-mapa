@@ -18,8 +18,9 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 | `business.ts` | Niveles de precio, simbolos, chips, labels de categoria |
 | `criteria.ts` | Configuracion de criterios multi-rating (`RATING_CRITERIA`: food, service, price, ambiance, speed) |
 | `suggestions.ts` | Pesos del algoritmo de sugerencias (`SUGGESTION_WEIGHTS`), `MAX_SUGGESTIONS`, `NEARBY_RADIUS_KM` |
+| `auth.ts` | PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS (en espanol) |
 | `admin.ts` | Email admin, page size, status chips/labels, abuse type labels/colors |
-| `index.ts` | Barrel re-export de todos los modulos (14) + COLLECTIONS de config |
+| `index.ts` | Barrel re-export de todos los modulos (15) + COLLECTIONS de config |
 
 `types/index.ts` re-exporta `PREDEFINED_TAGS`, `PRICE_LEVEL_LABELS` y `CATEGORY_LABELS` desde constants para backwards compatibility.
 
@@ -41,6 +42,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
+| `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
 | `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats` |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
