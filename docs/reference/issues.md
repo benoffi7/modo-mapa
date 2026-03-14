@@ -47,8 +47,25 @@
 | — | feat | Pre-launch optimizations: critical tests + query fixes + lazy Sentry | [#75](https://github.com/benoffi7/modo-mapa/pull/75) | Merged | — |
 | — | feat | Lazy-load SideMenu + should-have tests (#5-#7) | [#76](https://github.com/benoffi7/modo-mapa/pull/76) | Merged | — |
 | — | feat | Nice-to-have optimizations (P3.1, DT-1, P1.4, DT-4) | [#78](https://github.com/benoffi7/modo-mapa/pull/78) | Merged | — |
-| [#79](https://github.com/benoffi7/modo-mapa/issues/79) | feat | Help section in SideMenu (7 Accordion topics) | — | In Progress | `docs/feat/content/help-section/` |
-| [#73](https://github.com/benoffi7/modo-mapa/issues/73) | feat | Feedback status tracking + admin respond/resolve/create-issue + media attachments + "Mis envios" tab | — | In Progress | `docs/feat/content/help-section/` |
+| [#56](https://github.com/benoffi7/modo-mapa/issues/56) | feat | Politica de privacidad | [#65](https://github.com/benoffi7/modo-mapa/pull/65) | Merged | `docs/feat/security/privacy-policy/` |
+| [#61](https://github.com/benoffi7/modo-mapa/issues/61) | feat | Configuracion de privacidad: opt-out de Analytics | [#63](https://github.com/benoffi7/modo-mapa/pull/63) | Merged | `docs/feat/security/analytics-optout/` |
+| [#73](https://github.com/benoffi7/modo-mapa/issues/73) | feat | Feedback status tracking + admin respond/resolve/create-issue + media attachments + "Mis envios" tab | [#82](https://github.com/benoffi7/modo-mapa/pull/82) | Merged | `docs/feat/content/help-section/` |
+| [#79](https://github.com/benoffi7/modo-mapa/issues/79) | feat | Help section in SideMenu (7 Accordion topics) | [#82](https://github.com/benoffi7/modo-mapa/pull/82) | Merged | `docs/feat/content/help-section/` |
+| [#80](https://github.com/benoffi7/modo-mapa/issues/80) | feat | Cross-device sync con autenticacion por email/password | [#83](https://github.com/benoffi7/modo-mapa/pull/83) | Merged | `docs/feat/security/email-password-auth/` |
+| [#84](https://github.com/benoffi7/modo-mapa/issues/84) | feat | Admin auth metrics: auth method breakdown, notification stats, settings aggregates, price level/comment like activity | — | Merged | `docs/feat/admin/auth-metrics/` |
+| [#86](https://github.com/benoffi7/modo-mapa/issues/86) | feat | Rankings: indicador de tendencia (subio/bajo posiciones) | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#87](https://github.com/benoffi7/modo-mapa/issues/87) | feat | Rankings: agregar periodo All-time | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#88](https://github.com/benoffi7/modo-mapa/issues/88) | feat | Rankings: mejorar empty state | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#89](https://github.com/benoffi7/modo-mapa/issues/89) | feat | Rankings: desglose visual con mini bar chart | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#90](https://github.com/benoffi7/modo-mapa/issues/90) | feat | Rankings: sistema de badges/logros | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#91](https://github.com/benoffi7/modo-mapa/issues/91) | feat | Rankings: animaciones de entrada | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#93](https://github.com/benoffi7/modo-mapa/issues/93) | feat | Rankings: racha (streak) de actividad | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#94](https://github.com/benoffi7/modo-mapa/issues/94) | feat | Rankings: niveles/tiers (Bronce, Plata, Oro, Diamante) | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#95](https://github.com/benoffi7/modo-mapa/issues/95) | feat | Rankings: filtro por zona/ciudad | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#96](https://github.com/benoffi7/modo-mapa/issues/96) | feat | Rankings: perfil publico de usuario | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#97](https://github.com/benoffi7/modo-mapa/issues/97) | feat | Rankings: compartir logro en redes sociales | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#98](https://github.com/benoffi7/modo-mapa/issues/98) | feat | Rankings: grafico de evolucion del score | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#99](https://github.com/benoffi7/modo-mapa/issues/99) | feat | Rankings: pull-to-refresh | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
 
 ---
 
@@ -81,6 +98,7 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 | `docs/feat/content/menu-feedback-ratings-version/` | Feedback, Ratings, Version (#11) |
 | `docs/feat/content/menu-photos-history/` | Fotos de menu + Visitas + Precio (#48/#49/#50) |
 | `docs/feat/content/help-section/` | Help section (#79) + Feedback status tracking (#73) |
+| `docs/feat/content/rankings-improvements/` | Rankings improvements (#86-#99) |
 
 #### Infra (`docs/feat/infra/`)
 
@@ -102,12 +120,14 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 | `docs/feat/security/privacy-policy/` | Politica de privacidad |
 | `docs/feat/security/analytics-optout/` | Analytics opt-out |
 | `docs/feat/security/user-settings/` | Panel de configuracion de usuario (#59) |
+| `docs/feat/security/email-password-auth/` | Autenticacion email/password (#80) |
 
 #### Admin (`docs/feat/admin/`)
 
 | Carpeta | Feature |
 |---------|---------|
 | `docs/feat/admin/admin-backups/` | Gestion de backups (#34) |
+| `docs/feat/admin/auth-metrics/` | Admin auth metrics (#84) |
 
 #### Fix (`docs/fix/`)
 
