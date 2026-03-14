@@ -11,14 +11,17 @@ const GITHUB_TOKEN = defineSecret('GITHUB_TOKEN');
 const GITHUB_OWNER = 'benoffi7';
 const GITHUB_REPO = 'modo-mapa';
 
+function assertAdmin(auth: { token: { email?: string; email_verified?: boolean } } | undefined): void {
+  if (IS_EMULATOR) return; // Skip all auth checks in emulator
+  if (!auth?.token.email_verified || auth?.token.email !== ADMIN_EMAIL) {
+    throw new HttpsError('permission-denied', 'Admin only');
+  }
+}
+
 export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    const { auth } = request;
-    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
-    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { feedbackId, response } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {
@@ -41,7 +44,7 @@ export const respondToFeedback = onCall(
       status: 'responded',
       adminResponse: response,
       respondedAt: FieldValue.serverTimestamp(),
-      respondedBy: auth.token.email,
+      respondedBy: request.auth?.token.email ?? 'admin',
     });
 
     await createNotification(db, {
@@ -58,11 +61,7 @@ export const respondToFeedback = onCall(
 export const resolveFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    const { auth } = request;
-    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
-    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { feedbackId } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {
@@ -76,7 +75,16 @@ export const resolveFeedback = onCall(
       throw new HttpsError('not-found', 'Feedback not found');
     }
 
+    const data = feedbackSnap.data()!;
+
     await feedbackRef.update({ status: 'resolved' });
+
+    await createNotification(db, {
+      userId: data.userId as string,
+      type: 'feedback_response',
+      message: 'Tu feedback fue marcado como resuelto',
+      referenceId: feedbackId,
+    });
 
     return { success: true };
   },
@@ -85,11 +93,7 @@ export const resolveFeedback = onCall(
 export const createGithubIssueFromFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30, ...(IS_EMULATOR ? {} : { secrets: [GITHUB_TOKEN] }) },
   async (request) => {
-    const { auth } = request;
-    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
-    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { feedbackId } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {

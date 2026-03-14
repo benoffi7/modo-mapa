@@ -46,16 +46,19 @@ async function shouldNotify(
   const settingsDoc = await db.doc(`userSettings/${userId}`).get();
 
   const data = settingsDoc.exists ? settingsDoc.data()! : DEFAULT_SETTINGS;
+  console.log('[shouldNotify] userId:', userId, 'type:', type, 'settingsExists:', settingsDoc.exists, 'data:', JSON.stringify(data));
 
   // Master toggle — feedback_response bypasses this because it defaults
   // to enabled and is a direct response from the admin team.
   if (!BYPASS_MASTER_TOGGLE.has(type) && data.notificationsEnabled !== true) {
+    console.log('[shouldNotify] BLOCKED by master toggle');
     return false;
   }
 
   // Per-type toggle (use default if field is missing)
   const settingKey = TYPE_TO_SETTING[type];
   const value = data[settingKey] ?? DEFAULT_SETTINGS[settingKey] ?? false;
+  console.log('[shouldNotify] settingKey:', settingKey, 'value:', value, 'result:', value === true);
   return value === true;
 }
 
@@ -64,7 +67,9 @@ export async function createNotification(
   data: CreateNotificationData,
 ): Promise<void> {
   // Check user notification preferences
+  console.log('[createNotification] called for userId:', data.userId, 'type:', data.type);
   const allowed = await shouldNotify(db, data.userId, data.type);
+  console.log('[createNotification] shouldNotify result:', allowed);
   if (!allowed) return;
 
   const expiresAt = new Date();
