@@ -1,26 +1,39 @@
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
-import { fetchCounters, fetchAllCustomTags } from '../../services/admin';
+import Typography from '@mui/material/Typography';
+import { fetchCounters, fetchAllCustomTags, fetchAuthStats, fetchNotificationStats } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
 import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
-import type { AdminCounters } from '../../types/admin';
+import type { AdminCounters, AuthStats, NotificationStats } from '../../types/admin';
 import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
 
+const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
+  like: 'Like',
+  photo_approved: 'Foto aprobada',
+  photo_rejected: 'Foto rechazada',
+  ranking: 'Ranking',
+  feedback_response: 'Respuesta feedback',
+};
+
 interface DashboardData {
   counters: AdminCounters | null;
   customTagCounts: Array<{ label: string; value: number }>;
+  authStats: AuthStats | null;
+  notificationStats: NotificationStats | null;
 }
 
 export default function DashboardOverview() {
   const fetcher = useCallback(async (): Promise<DashboardData> => {
-    const [counters, customTags] = await Promise.all([
+    const [counters, customTags, authStats, notificationStats] = await Promise.all([
       fetchCounters(),
       fetchAllCustomTags(),
+      fetchAuthStats().catch(() => null),
+      fetchNotificationStats().catch(() => null),
     ]);
 
     const labelMap = new Map<string, number>();
@@ -31,7 +44,7 @@ export default function DashboardOverview() {
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
 
-    return { counters, customTagCounts };
+    return { counters, customTagCounts, authStats, notificationStats };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -42,6 +55,8 @@ export default function DashboardOverview() {
 
   const counters = data?.counters;
   const customTagCounts = data?.customTagCounts ?? [];
+  const authStats = data?.authStats;
+  const notifStats = data?.notificationStats;
 
   const ratingPieData = metrics
     ? Object.entries(metrics.ratingDistribution).map(([key, value]) => ({
@@ -53,6 +68,24 @@ export default function DashboardOverview() {
   const tagsPieData = metrics
     ? metrics.topTags.map((t) => ({ name: getTagLabel(t.tagId), value: t.count }))
     : [];
+
+  const authPieData = authStats
+    ? [
+        { name: 'Email', value: authStats.byMethod.email },
+        { name: 'Anónimo', value: authStats.byMethod.anonymous },
+      ]
+    : [];
+
+  const notifPieData = notifStats
+    ? Object.entries(notifStats.byType).map(([type, count]) => ({
+        name: NOTIFICATION_TYPE_LABELS[type] ?? type,
+        value: count,
+      }))
+    : [];
+
+  const readRate = notifStats && notifStats.total > 0
+    ? Math.round((notifStats.read / notifStats.total) * 100)
+    : 0;
 
   return (
     <AdminPanelWrapper
@@ -80,12 +113,61 @@ export default function DashboardOverview() {
           <StatCard label="Feedback" value={counters?.feedback ?? 0} />
         </Grid>
 
+        {authStats && (
+          <>
+            <Grid size={12}>
+              <Typography variant="subtitle1" sx={{ mt: 1 }}>Autenticación</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Email" value={authStats.byMethod.email} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Anónimos" value={authStats.byMethod.anonymous} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Verificados" value={authStats.emailVerification.verified} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Sin verificar" value={authStats.emailVerification.unverified} />
+            </Grid>
+          </>
+        )}
+
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChartCard title="Distribución de Ratings" data={ratingPieData} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChartCard title="Tags más usados" data={tagsPieData} />
         </Grid>
+
+        {authStats && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <PieChartCard title="Usuarios por método de auth" data={authPieData} />
+          </Grid>
+        )}
+
+        {notifStats && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <PieChartCard title="Notificaciones por tipo" data={notifPieData} />
+          </Grid>
+        )}
+
+        {notifStats && (
+          <>
+            <Grid size={12}>
+              <Typography variant="subtitle1" sx={{ mt: 1 }}>Notificaciones</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Total enviadas" value={notifStats.total} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label={`Leídas (${readRate}%)`} value={notifStats.read} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="No leídas" value={notifStats.unread} />
+            </Grid>
+          </>
+        )}
 
         <Grid size={{ xs: 12, md: 4 }}>
           <TopList

@@ -1,4 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
+
+const mockIncrement = vi.hoisted(() => vi.fn((n: number) => ({ __increment: n })));
+
+vi.mock('firebase-admin/firestore', () => ({
+  FieldValue: { increment: mockIncrement },
+}));
+
 import { incrementCounter, trackWrite, trackDelete } from '../../utils/counters';
 
 function mockDb() {
