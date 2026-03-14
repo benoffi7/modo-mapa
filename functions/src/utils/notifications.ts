@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
-type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking';
+type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
 
 interface CreateNotificationData {
   userId: string;
@@ -21,7 +21,22 @@ const TYPE_TO_SETTING: Record<NotificationType, string> = {
   photo_approved: 'notifyPhotos',
   photo_rejected: 'notifyPhotos',
   ranking: 'notifyRankings',
+  feedback_response: 'notifyFeedback',
 };
+
+// Must match DEFAULT_SETTINGS in src/services/userSettings.ts
+const DEFAULT_SETTINGS: Record<string, boolean> = {
+  notificationsEnabled: false,
+  notifyLikes: false,
+  notifyPhotos: false,
+  notifyRankings: false,
+  notifyFeedback: true,
+};
+
+// Types that bypass the master toggle — these are direct admin-to-user
+// communications that should work even if the user hasn't enabled the
+// master notifications toggle (as long as the per-type toggle is on).
+const BYPASS_MASTER_TOGGLE: Set<NotificationType> = new Set(['feedback_response']);
 
 async function shouldNotify(
   db: Firestore,
@@ -30,19 +45,18 @@ async function shouldNotify(
 ): Promise<boolean> {
   const settingsDoc = await db.doc(`userSettings/${userId}`).get();
 
-  if (!settingsDoc.exists) {
-    // No settings doc → defaults are all false (notifications off)
+  const data = settingsDoc.exists ? settingsDoc.data()! : DEFAULT_SETTINGS;
+
+  // Master toggle — feedback_response bypasses this because it defaults
+  // to enabled and is a direct response from the admin team.
+  if (!BYPASS_MASTER_TOGGLE.has(type) && data.notificationsEnabled !== true) {
     return false;
   }
 
-  const data = settingsDoc.data()!;
-
-  // Master toggle
-  if (data.notificationsEnabled !== true) return false;
-
-  // Per-type toggle
+  // Per-type toggle (use default if field is missing)
   const settingKey = TYPE_TO_SETTING[type];
-  return data[settingKey] === true;
+  const value = data[settingKey] ?? DEFAULT_SETTINGS[settingKey] ?? false;
+  return value === true;
 }
 
 export async function createNotification(

@@ -24,3 +24,4 @@ export { cleanupExpiredNotifications } from './scheduled/cleanupNotifications';
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';
 export { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto } from './admin/menuPhotos';
+export { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from './admin/feedback';

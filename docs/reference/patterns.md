@@ -61,6 +61,17 @@
 | **AbortController for uploads** | `MenuPhotoUpload` usa `AbortController` para cancelar compression + Storage upload en cualquier punto de la cadena. Boton cancel siempre habilitado durante upload. |
 | **Photo reporting** | Usuarios reportan fotos via `reportMenuPhoto` callable. Subcollection `reports` bajo cada foto previene duplicados (doc ID = userId). `reportCount` incrementado atomicamente con `FieldValue.increment(1)`. |
 | **Photo staleness** | Si la foto fue revisada hace mas de 6 meses, se muestra un chip "Posiblemente desactualizado" (warning). |
+| **Feedback media upload** | `sendFeedback` acepta un `File` opcional. Valida tipo (JPG/PNG/WebP) y tamanio (max 10MB). Sube a `feedback-media/{feedbackId}/{fileName}`, obtiene download URL y actualiza el doc con `mediaUrl` y `mediaType`. |
+
+## Feedback status tracking
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Status state machine** | `pending` → `viewed` → `responded` → `resolved`. Admin avanza status via Cloud Functions callable (`respondToFeedback`, `resolveFeedback`). |
+| **Admin actions** | Responder (guarda `adminResponse` + crea notificacion), resolver (marca resuelto + notificacion), crear GitHub issue (`createGithubIssueFromFeedback` usa `@octokit/rest` + `GITHUB_TOKEN` secret, mapea categoria a label). |
+| **User "Mis envios"** | Tab dentro de `FeedbackForm` (no item de menu separado). `MyFeedbackList` muestra feedback propio con chips de status (colores: pending=warning, viewed=info, responded=success, resolved=secondary), respuestas colapsables, indicador de nueva respuesta (dot verde). |
+| **viewedByUser tracking** | Al expandir un feedback respondido, se marca `viewedByUser: true` via `markFeedbackViewed`. El dot verde desaparece. |
+| **BYPASS_MASTER_TOGGLE** | Las notificaciones de `feedback_response` ignoran el toggle master de notificaciones — siempre se envian si `notifyFeedback` esta habilitado. |
 
 ## Server-side
 

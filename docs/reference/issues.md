@@ -46,6 +46,9 @@
 | — | chore | Pre-launch prep: docs update, coding standards, pre-launch audit report | [#74](https://github.com/benoffi7/modo-mapa/pull/74) | Merged | `docs/reports/pre-launch-audit.md` |
 | — | feat | Pre-launch optimizations: critical tests + query fixes + lazy Sentry | [#75](https://github.com/benoffi7/modo-mapa/pull/75) | Merged | — |
 | — | feat | Lazy-load SideMenu + should-have tests (#5-#7) | [#76](https://github.com/benoffi7/modo-mapa/pull/76) | Merged | — |
+| — | feat | Nice-to-have optimizations (P3.1, DT-1, P1.4, DT-4) | [#78](https://github.com/benoffi7/modo-mapa/pull/78) | Merged | — |
+| [#79](https://github.com/benoffi7/modo-mapa/issues/79) | feat | Help section in SideMenu (7 Accordion topics) | — | In Progress | `docs/feat/content/help-section/` |
+| [#73](https://github.com/benoffi7/modo-mapa/issues/73) | feat | Feedback status tracking + admin respond/resolve/create-issue + media attachments + "Mis envios" tab | — | In Progress | `docs/feat/content/help-section/` |
 
 ---
 
@@ -77,6 +80,7 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 |---------|---------|
 | `docs/feat/content/menu-feedback-ratings-version/` | Feedback, Ratings, Version (#11) |
 | `docs/feat/content/menu-photos-history/` | Fotos de menu + Visitas + Precio (#48/#49/#50) |
+| `docs/feat/content/help-section/` | Help section (#79) + Feedback status tracking (#73) |
 
 #### Infra (`docs/feat/infra/`)
 

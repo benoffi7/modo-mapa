@@ -36,6 +36,7 @@ import { useColorMode } from '../../hooks/useColorMode';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { trackEvent } from '../../utils/analytics';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
@@ -52,6 +53,7 @@ const RankingsView = lazy(() => import('../menu/RankingsView'));
 const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
 const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
 const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
+const HelpSection = lazy(() => import('../menu/HelpSection'));
 
 function SectionLoader() {
   return (
@@ -68,7 +70,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'privacy';
+type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -80,6 +82,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   stats: 'Estadísticas',
   rankings: 'Rankings',
   settings: 'Configuración',
+  help: 'Ayuda',
   privacy: 'Política de privacidad',
 };
 
@@ -232,6 +235,13 @@ export default function SideMenu({ open, onClose }: Props) {
                   </ListItemIcon>
                   <ListItemText primary="Configuración" />
                 </ListItemButton>
+
+                <ListItemButton onClick={() => setActiveSection('help')}>
+                  <ListItemIcon>
+                    <HelpOutlineIcon sx={{ color: '#5f6368' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Ayuda" />
+                </ListItemButton>
               </List>
 
               {/* Version footer + dark mode toggle */}
@@ -312,6 +322,7 @@ export default function SideMenu({ open, onClose }: Props) {
                   {activeSection === 'rankings' && <RankingsView />}
                   {activeSection === 'stats' && <StatsView />}
                   {activeSection === 'settings' && <SettingsPanel />}
+                  {activeSection === 'help' && <HelpSection />}
                   {activeSection === 'privacy' && <PrivacyPolicy />}
                 </Suspense>
               </Box>
