@@ -51,12 +51,14 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 
 ### Agents (`.claude/agents/`)
 
-| Agent | Type | Description |
-|-------|------|-------------|
-| `dark-mode-auditor` | Read-only | Scans for hardcoded colors that break dark mode |
-| `seed-manager` | Read/Write | Keeps seed data in sync with schema changes |
-| `changelog-writer` | Read/Write | Maintains CHANGELOG.md |
-| `continuous-improvement` | Read/Write | Analyzes workflow, proposes improvements |
+| Agent | Type | Model | Description |
+|-------|------|-------|-------------|
+| `ci-guardian` | Read/Write | Opus | Diagnoses and fixes CI/CD failures. Has solution matrix |
+| `admin-metrics-auditor` | Read/Write | Opus | Audits admin dashboard completeness vs all data/events |
+| `dark-mode-auditor` | Read-only | Default | Scans for hardcoded colors that break dark mode |
+| `seed-manager` | Read/Write | Default | Keeps seed data in sync with schema changes |
+| `changelog-writer` | Read/Write | Default | Maintains CHANGELOG.md |
+| `continuous-improvement` | Read/Write | Default | Analyzes workflow, proposes improvements |
 
 ### Skills (`.claude/skills/`)
 
@@ -67,30 +69,15 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 
 ## What's NOT in the repo (per-user config)
 
-These files live in your local Claude config directory and need to be set up manually on a new machine:
+These files live in your local Claude config directory (`~/.claude/projects/<project-hash>/`) and need to be set up manually on a new machine:
 
-### Memory (`~/.claude/projects/<project-hash>/memory/`)
+### Memory (`memory/`)
 
-Memory files persist learnings across conversations. They are NOT in the repo because they contain user-specific preferences. On a fresh clone, Claude will rebuild memory over time, but you can bootstrap it:
+Memory files persist learnings across conversations. They are NOT in the repo because they contain user-specific preferences. On a fresh clone, Claude will rebuild memory over time as you work:
 
-```bash
-# The memory directory is auto-created by Claude Code
-# Key files that Claude will recreate as you work:
-# - MEMORY.md (index of all memories)
-# - feedback_*.md (your workflow preferences)
-# - reference_*.md (external system pointers)
-```
-
-### Additional agents in memory (`~/.claude/projects/<project-hash>/agents/`)
-
-Two powerful agents live in the per-user config because they use the `model: opus` directive:
-
-| Agent | Description |
-|-------|-------------|
-| `ci-guardian` | Diagnoses and fixes CI/CD failures. Has solution matrix. |
-| `admin-metrics-auditor` | Audits admin dashboard completeness vs all data. |
-
-To set these up on a new machine, copy them from another machine or let Claude recreate them when needed.
+- `MEMORY.md` — Index of all memories
+- `feedback_*.md` — Your workflow preferences (branch rules, commit style, etc.)
+- `reference_*.md` — Pointers to external systems (CI matrix, etc.)
 
 ### Settings files
 
@@ -127,8 +114,8 @@ To set these up on a new machine, copy them from another machine or let Claude r
 
 When Claude needs specialized help, it delegates to agents:
 
-- **Read-only agents** (report only): `dark-mode-auditor`, `architecture`, `security`, `ui-reviewer`, `pr-reviewer`, `help-docs-reviewer`
-- **Implementation agents**: `testing`, `documentation`, `performance`, `ui-ux-accessibility`, `seed-manager`, `changelog-writer`, `continuous-improvement`
+- **Read-only agents** (report only): `dark-mode-auditor`, `architecture`, `security`, `ui-reviewer`, `pr-reviewer`, `help-docs-reviewer`, `admin-metrics-auditor`
+- **Implementation agents**: `testing`, `documentation`, `performance`, `ui-ux-accessibility`, `seed-manager`, `changelog-writer`, `continuous-improvement`, `ci-guardian`
 - **Exclusive agents**: `git-expert` (only agent allowed to run git commands)
 - **Coordinator**: `orchestrator` (delegates to the right specialist)
 
