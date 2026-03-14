@@ -23,7 +23,7 @@ export default function NotificationBell() {
         size="small"
         aria-label="Notificaciones"
         onClick={handleOpen}
-        sx={{ p: 1, color: '#5f6368' }}
+        sx={{ p: 1, color: 'text.secondary' }}
       >
         <Badge badgeContent={unreadCount} color="error" max={99}>
           <NotificationsIcon />
