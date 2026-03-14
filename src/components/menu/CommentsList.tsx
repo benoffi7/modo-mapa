@@ -142,7 +142,7 @@ export default function CommentsList({ onNavigate }: Props) {
                 e.stopPropagation();
                 handleDelete(comment.id);
               }}
-              sx={{ color: '#5f6368' }}
+              sx={{ color: 'text.secondary' }}
               aria-label="Eliminar comentario"
             >
               <DeleteOutlineIcon fontSize="small" />

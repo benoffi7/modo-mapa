@@ -272,21 +272,21 @@ export default function SideMenu({ open, onClose }: Props) {
               <List>
                 <ListItemButton onClick={() => window.open(ADD_BUSINESS_URL, '_blank')}>
                   <ListItemIcon>
-                    <AddBusinessIcon sx={{ color: '#5f6368' }} />
+                    <AddBusinessIcon sx={{ color: 'text.secondary' }} />
                   </ListItemIcon>
                   <ListItemText primary="Agregar comercio" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('settings')}>
                   <ListItemIcon>
-                    <SettingsOutlinedIcon sx={{ color: '#5f6368' }} />
+                    <SettingsOutlinedIcon sx={{ color: 'text.secondary' }} />
                   </ListItemIcon>
                   <ListItemText primary="Configuración" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('help')}>
                   <ListItemIcon>
-                    <HelpOutlineIcon sx={{ color: '#5f6368' }} />
+                    <HelpOutlineIcon sx={{ color: 'text.secondary' }} />
                   </ListItemIcon>
                   <ListItemText primary="Ayuda" />
                 </ListItemButton>
