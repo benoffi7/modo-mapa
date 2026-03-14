@@ -61,6 +61,7 @@ export const dailyMetricsConverter: FirestoreDataConverter<DailyMetrics> = {
       readsByCollection: asRecord(d.readsByCollection),
       deletesByCollection: asRecord(d.deletesByCollection),
       activeUsers: asNumber(d.activeUsers),
+      newAccounts: asNumber(d.newAccounts),
     };
   },
 };

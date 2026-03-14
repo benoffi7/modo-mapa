@@ -21,6 +21,35 @@ export interface DailyMetrics extends PublicMetrics {
   readsByCollection: Record<string, number>;
   deletesByCollection: Record<string, number>;
   activeUsers: number;
+  newAccounts?: number;
+}
+
+export interface AuthUserInfo {
+  uid: string;
+  displayName: string | null;
+  authMethod: 'anonymous' | 'email';
+  emailVerified: boolean;
+  createdAt: string;
+}
+
+export interface AuthStats {
+  byMethod: { anonymous: number; email: number };
+  emailVerification: { verified: number; unverified: number };
+  users: AuthUserInfo[];
+}
+
+export interface NotificationStats {
+  total: number;
+  read: number;
+  unread: number;
+  byType: Record<string, number>;
+}
+
+export interface SettingsAggregates {
+  totalSettings: number;
+  publicProfiles: number;
+  notificationsEnabled: number;
+  analyticsEnabled: number;
 }
 
 export interface AbuseLog {
