@@ -41,7 +41,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
-| `admin.ts` | Todas (read-only) | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos` |
+| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats` |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
 ### Reglas del service layer
