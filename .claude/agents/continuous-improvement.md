@@ -57,7 +57,27 @@ Check that these stay accurate:
 - `docs/reference/firestore.md` — matches actual types and collections
 - Memory `MEMORY.md` — version, test count, feature list
 
-### 5. Workflow optimization proposals
+### 5. Permission friction audit
+
+Analyze which tool calls require user confirmation and cause unnecessary friction:
+
+- Read `.claude/settings.json` and `.claude/settings.local.json`
+- Identify patterns where the user repeatedly approves the same operations
+- Check git history for commands that are always safe (no security risk, no data loss):
+  - File edits in `docs/`, `.claude/`, `src/`, `functions/`
+  - Read operations on any project file
+  - npm/vitest/tsc commands
+  - Non-destructive git operations
+
+**Rule**: Only propose adding permissions for operations that:
+
+1. Have NO security risk (never auto-allow `.env` access, credential files, or destructive git)
+2. Have NO data loss risk (never auto-allow `rm -rf`, `git reset --hard`, force push)
+3. Are frequently used in the normal workflow
+
+Propose additions to `settings.json` or `settings.local.json` with justification.
+
+### 6. Workflow optimization proposals
 
 Based on analysis, propose concrete improvements:
 
@@ -91,10 +111,17 @@ Based on analysis, propose concrete improvements:
 | PROJECT_REFERENCE.md | Current | today |
 | features.md | Stale (missing X) | — |
 
+### Permission Friction
+| Operation | Frequency | Risk | Recommendation |
+|-----------|-----------|------|----------------|
+| Edit docs/**/*.md | Every merge | None | Add to settings.json allow list |
+| Edit .claude/agents/*.md | Weekly | None | Add to settings.json allow list |
+
 ### Proposed Improvements
 1. **[command]** Add /X command for Y
 2. **[agent]** Update Z agent to handle W
 3. **[memory]** Add feedback rule for Q
+4. **[permissions]** Add X to settings.json (safe, frequent)
 
 ### Actions Taken
 - Updated X file with Y

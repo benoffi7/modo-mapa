@@ -42,6 +42,7 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 
 | Command | Description | When to use |
 |---------|-------------|-------------|
+| `/start` | Create worktree + branch + verify env | **First command** when starting any task |
 | `/bump` | Semantic version bump | After merging features/fixes |
 | `/merge` | Full pre-merge checklist | When ready to merge a branch to main |
 | `/release` | Git tag + CHANGELOG + GitHub Release | For formal releases |
@@ -89,9 +90,9 @@ Memory files persist learnings across conversations. They are NOT in the repo be
 ### Feature development
 
 ```
-1. Create branch: git checkout -b feat/<name>
-2. Work: implement feature with small commits
-3. Merge: /merge  ← runs full checklist automatically:
+1. /start 123        ← creates worktree + branch + installs deps + verifies env
+2. Work              ← implement feature with small commits
+3. /merge            ← runs full checklist automatically:
    - Quality gates (tsc, lint, tests, build)
    - Automated audits (dark-mode, help-docs)
    - Doc updates (PROJECT_REFERENCE, seed, privacy)
@@ -99,7 +100,10 @@ Memory files persist learnings across conversations. They are NOT in the repo be
    - Version bump (semver)
    - Push + CI verify
    - Branch cleanup + issue close
+4. /release          ← (optional) tag + CHANGELOG + GitHub Release
 ```
+
+**Rule: NEVER work directly on main.** Always `/start` first.
 
 ### Version convention
 
