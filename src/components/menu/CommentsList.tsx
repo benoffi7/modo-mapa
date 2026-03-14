@@ -18,6 +18,7 @@ import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, getCommentsCollection } from '../../services/comments';
 import { formatDateMedium } from '../../utils/formatDate';
+import { truncate } from '../../utils/text';
 import type { Business, Comment } from '../../types';
 
 interface Props {
@@ -76,10 +77,6 @@ export default function CommentsList({ onNavigate }: Props) {
     onNavigate();
   };
 
-  const truncate = (text: string, max: number) => {
-    return text.length > max ? text.slice(0, max) + '...' : text;
-  };
-
   if (isLoading) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -104,7 +101,7 @@ export default function CommentsList({ onNavigate }: Props) {
   if (comments.length === 0 && !pendingDeleteId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+        <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
           No dejaste comentarios todavía
         </Typography>

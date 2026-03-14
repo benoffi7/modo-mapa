@@ -29,6 +29,7 @@ import { formatDateMedium } from '../../utils/formatDate';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { LIKE_COLOR } from '../../constants/ui';
 import type { Comment } from '../../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -308,7 +309,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
             mr: 1.5,
             mt: 0.5,
             fontSize: isReply ? '0.75rem' : '0.85rem',
-            bgcolor: '#1a73e8',
+            bgcolor: 'primary.main',
           }}
         >
           {(comment.userName || 'A').charAt(0).toUpperCase()}
@@ -384,7 +385,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                   <IconButton
                     size="small"
                     onClick={() => handleToggleLike(comment.id)}
-                    sx={{ color: isLiked(comment.id) ? '#e91e63' : 'text.secondary', p: 0.5 }}
+                    sx={{ color: isLiked(comment.id) ? LIKE_COLOR : 'text.secondary', p: 0.5 }}
                     aria-label={isLiked(comment.id) ? 'Quitar like' : 'Dar like'}
                   >
                     {isLiked(comment.id) ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
@@ -516,7 +517,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
             disabled={isSubmitting || !newComment.trim()}
             sx={{
               bgcolor: 'primary.main',
-              color: '#fff',
+              color: 'primary.contrastText',
               width: 40,
               height: 40,
               flexShrink: 0,
@@ -616,7 +617,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                       disabled={isSubmitting || !replyText.trim()}
                       sx={{
                         bgcolor: 'primary.main',
-                        color: '#fff',
+                        color: 'primary.contrastText',
                         width: 32,
                         height: 32,
                         flexShrink: 0,
