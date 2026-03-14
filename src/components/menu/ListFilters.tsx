@@ -43,7 +43,7 @@ export default function ListFilters({
   const hasActiveFilters = resultCount !== totalCount;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, px: 2, py: 1.5 }}>
       <TextField
         size="small"
         placeholder="Buscar..."
@@ -60,7 +60,7 @@ export default function ListFilters({
         }}
       />
 
-      <Box sx={{ display: 'flex', gap: 0.5, overflowX: 'auto', flexWrap: 'nowrap', pb: 0.5 }}>
+      <Box sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', flexWrap: 'nowrap', pb: 0.5 }}>
         {(Object.entries(CATEGORY_LABELS) as [BusinessCategory, string][]).map(([key, label]) => (
           <Chip
             key={key}
