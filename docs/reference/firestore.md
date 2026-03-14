@@ -11,13 +11,13 @@
 | `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
-| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/otro), createdAt, flagged? | Create auth+owner; read/delete owner; admin read |
+| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/datos_usuario/datos_comercio/otro), status (pending/viewed/responded/resolved), createdAt, flagged?, adminResponse?, respondedAt?, respondedBy?, viewedByUser?, mediaUrl?, mediaType? (image/video), githubIssueUrl? | Create auth+owner; read/delete owner; admin read+update (respond/resolve); user update (viewedByUser) |
 | `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
-| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
@@ -121,6 +121,45 @@ interface PriceLevel {
 
 PRICE_LEVEL_LABELS: 1→Economico ($), 2→Moderado ($$), 3→Caro ($$$)
 
+// Feedback with status tracking
+type FeedbackCategory = 'bug' | 'sugerencia' | 'datos_usuario' | 'datos_comercio' | 'otro';
+type FeedbackStatus = 'pending' | 'viewed' | 'responded' | 'resolved';
+
+interface Feedback {
+  id: string;
+  userId: string;
+  message: string;
+  category: FeedbackCategory;
+  status: FeedbackStatus;
+  createdAt: Date;
+  flagged?: boolean;
+  adminResponse?: string;
+  respondedAt?: Date;
+  respondedBy?: string;
+  viewedByUser?: boolean;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  githubIssueUrl?: string;
+}
+
+// Feedback status colors (constants/feedback.ts)
+// pending=warning, viewed=info, responded=success, resolved=secondary
+
+// Notification types
+type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
+
+// User settings (includes notifyFeedback)
+interface UserSettings {
+  profilePublic: boolean;
+  notificationsEnabled: boolean;
+  notifyLikes: boolean;
+  notifyPhotos: boolean;
+  notifyRankings: boolean;
+  notifyFeedback: boolean;
+  analyticsEnabled: boolean;
+  updatedAt: Date;
+}
+
 // Admin types
 interface AdminCounters {
   comments, ratings, favorites, feedback, users, customTags, userTags,
@@ -174,6 +213,24 @@ menu-photos/
 - **Upload**: solo usuarios autenticados, a su propio path (`menu-photos/{userId}/`), maximo 5MB, solo imagenes (`image/*`).
 - **Read**: cualquier usuario autenticado puede leer.
 - **Delete**: solo Cloud Functions (admin SDK).
+
+---
+
+## Cloud Storage — Feedback media
+
+### Estructura
+
+```text
+feedback-media/
+└── {feedbackId}/
+    └── {fileName}    # Imagen adjunta al feedback
+```
+
+### Reglas (`storage.rules`)
+
+- **Upload**: usuarios autenticados, maximo 10MB, solo imagenes (`image/jpeg`, `image/png`, `image/webp`).
+- **Read**: cualquier usuario autenticado.
+- **Delete**: cualquier usuario autenticado.
 
 ---
 

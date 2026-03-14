@@ -14,7 +14,7 @@
 - **Ownership**: escrituras validan `request.resource.data.userId == request.auth.uid`.
 - **Timestamps server-side**: todas las reglas de `create` validan `createdAt == request.time`.
 - **Validacion de campos**: longitudes maximas (displayName 30, text 500, message 1000, label 30), score 1-5, `isValidCriteria` para multi-criterio ratings (each 1-5 int).
-- **Admin check**: `isAdmin()` verifica `request.auth.token.email == 'benoffi11@gmail.com'`.
+- **Admin check**: `isAdmin()` verifica `request.auth.token.email == 'benoffi11@gmail.com'`. Tolerante a campos faltantes en `request.auth.token`.
 - **Metricas publicas**: `dailyMetrics` es legible por cualquier usuario autenticado (estadisticas publicas).
 
 ### Reglas por coleccion
@@ -28,7 +28,7 @@
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
 | `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner (userId immutability) | owner |
-| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000 | — | owner |
+| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000 | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser only) | owner |
 | `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner (userId immutability, level + updatedAt) | owner |
 | `config` | admin | Functions | Functions | — |
@@ -97,8 +97,13 @@ Configurado en `firebase.json` headers:
 ## Storage rules (`storage.rules`)
 
 ```text
-menu-photos/{userId}/{fileName}:
+menus/{businessId}/{fileName}:
   read:   auth != null
-  create: auth.uid == userId && size < 5MB && contentType.matches('image/.*')
-  delete: (nunca desde client — solo admin SDK desde Cloud Functions)
+  create: auth != null && size < 5MB && contentType.matches('image/(jpeg|png|webp)')
+  delete: false (solo admin SDK desde Cloud Functions)
+
+feedback-media/{feedbackId}/{fileName}:
+  read:   auth != null
+  create: auth != null && size < 10MB && contentType.matches('image/(jpeg|png|webp)')
+  delete: auth != null
 ```

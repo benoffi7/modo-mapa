@@ -16,7 +16,7 @@ main.tsx
        │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups, Fotos)
        │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
        │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
-       │         ├─ FeedbackList (tabla de feedback con categoria y estado)
+       │         ├─ FeedbackList (feedback con status filters, respond/resolve/create-issue actions)
        │         ├─ TrendsPanel (graficos evolucion + selector dia/semana/mes/ano)
        │         ├─ UsersPanel (rankings por usuario + stats)
        │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
@@ -46,7 +46,9 @@ main.tsx
                       ├─ RecentVisits (historial localStorage)
                       ├─ CommentsList
                       ├─ RatingsList + ListFilters
-                      ├─ FeedbackForm
+                      ├─ FeedbackForm (Tabs: Enviar / Mis envíos)
+                      │    └─ MyFeedbackList (status chips, admin responses, nueva respuesta indicator)
+                      ├─ HelpSection (7 Accordion topics, lazy-loaded)
                       ├─ Dark mode toggle (switch + icon)
                       └─ Footer (version + Theme/Constants links in DEV)
 ```
@@ -74,7 +76,8 @@ functions/
 │   ├── index.ts              → exports de todas las functions
 │   ├── admin/
 │   │   ├── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
-│   │   └── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto (callable)
+│   │   ├── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto (callable)
+│   │   └── feedback.ts       → respondToFeedback, resolveFeedback, createGithubIssueFromFeedback (callable)
 │   ├── triggers/
 │   │   ├── comments.ts       → rate limit + moderacion + counters + onUpdate re-moderation
 │   │   ├── commentLikes.ts   → likeCount increment/decrement + rate limit + counters
@@ -92,6 +95,7 @@ functions/
 │       ├── rateLimiter.ts    → rate limiting (daily/per-entity)
 │       ├── moderator.ts      → filtro de palabras prohibidas (cache 5 min)
 │       ├── counters.ts       → helpers increment/trackWrite/trackDelete
+│       ├── notifications.ts  → createNotification helper (feedback_response type, BYPASS_MASTER_TOGGLE, DEFAULT_SETTINGS)
 │       └── abuseLogger.ts    → logger a coleccion abuseLogs
 ├── .env                       → ADMIN_EMAIL (parametrizado con defineString)
 ├── package.json               → Node 22, firebase-admin, firebase-functions, @google-cloud/firestore, @google-cloud/storage
