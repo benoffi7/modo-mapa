@@ -99,6 +99,9 @@ export interface Feedback {
   respondedAt?: Date;
   respondedBy?: string;
   viewedByUser?: boolean;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  githubIssueUrl?: string;
 }
 
 import { PREDEFINED_TAGS } from '../constants/tags';

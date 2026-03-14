@@ -4,8 +4,11 @@ import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Link from '@mui/material/Link';
+import Dialog from '@mui/material/Dialog';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { fetchRecentFeedback } from '../../services/admin';
-import { respondToFeedback, resolveFeedback } from '../../services/adminFeedback';
+import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from '../../services/adminFeedback';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { FEEDBACK_STATUSES, MAX_ADMIN_RESPONSE_LENGTH } from '../../constants/feedback';
@@ -39,6 +42,7 @@ export default function FeedbackList() {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState<string | null>(null);
 
   const filtered = feedback?.filter((f) => statusFilter === 'all' || f.status === statusFilter) ?? [];
 
@@ -67,6 +71,17 @@ export default function FeedbackList() {
     }
   };
 
+  const handleCreateIssue = async (feedbackId: string) => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await createGithubIssueFromFeedback({ feedbackId });
+      refetch();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando feedback.">
       <Box>
@@ -87,7 +102,23 @@ export default function FeedbackList() {
           columns={[
             { label: 'Usuario', render: (f) => f.userId.slice(0, 8) },
             { label: 'Categoría', render: (f) => <Chip label={f.category} size="small" color={categoryColor(f.category)} /> },
-            { label: 'Mensaje', render: (f) => f.message },
+            {
+              label: 'Mensaje',
+              render: (f) => (
+                <Box>
+                  <Typography variant="body2">{f.message}</Typography>
+                  {f.mediaUrl && (
+                    <Box
+                      component="img"
+                      src={f.mediaUrl}
+                      alt="Adjunto"
+                      onClick={() => setMediaOpen(f.mediaUrl!)}
+                      sx={{ maxHeight: 60, borderRadius: 0.5, mt: 0.5, cursor: 'pointer', objectFit: 'cover' }}
+                    />
+                  )}
+                </Box>
+              ),
+            },
             { label: 'Fecha', render: (f) => formatDateShort(f.createdAt) },
             {
               label: 'Estado',
@@ -137,7 +168,7 @@ export default function FeedbackList() {
                       </Box>
                     </Box>
                   ) : (
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                       {f.status !== 'resolved' && (
                         <Button
                           size="small"
@@ -158,6 +189,28 @@ export default function FeedbackList() {
                           Resolver
                         </Button>
                       )}
+                      {f.githubIssueUrl ? (
+                        <Link
+                          href={f.githubIssueUrl}
+                          target="_blank"
+                          rel="noopener"
+                          sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.8125rem' }}
+                        >
+                          <GitHubIcon fontSize="small" />
+                          Ver Issue
+                        </Link>
+                      ) : (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          startIcon={<GitHubIcon />}
+                          disabled={submitting}
+                          onClick={() => handleCreateIssue(f.id)}
+                        >
+                          Crear Issue
+                        </Button>
+                      )}
                     </Box>
                   )}
                 </Box>
@@ -165,6 +218,16 @@ export default function FeedbackList() {
             },
           ]}
         />
+        <Dialog open={!!mediaOpen} onClose={() => setMediaOpen(null)} maxWidth="md">
+          {mediaOpen && (
+            <Box
+              component="img"
+              src={mediaOpen}
+              alt="Adjunto ampliado"
+              sx={{ maxWidth: '100%', maxHeight: '80vh', display: 'block' }}
+            />
+          )}
+        </Dialog>
       </Box>
     </AdminPanelWrapper>
   );

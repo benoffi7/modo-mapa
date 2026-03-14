@@ -112,6 +112,14 @@ export default function MyFeedbackList() {
               <Typography variant="body2" sx={{ mb: 1, whiteSpace: 'pre-wrap' }}>
                 {fb.message}
               </Typography>
+              {fb.mediaUrl && (
+                <Box
+                  component="img"
+                  src={fb.mediaUrl}
+                  alt="Adjunto"
+                  sx={{ maxHeight: 150, maxWidth: '100%', borderRadius: 1, objectFit: 'cover', mb: 1, display: 'block' }}
+                />
+              )}
               {fb.adminResponse && (
                 <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5, mt: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
