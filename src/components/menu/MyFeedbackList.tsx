@@ -89,7 +89,7 @@ export default function MyFeedbackList() {
               primary={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                   <Chip label={fb.category} size="small" color={categoryColor(fb.category)} />
-                  <Chip label={statusLabel(fb.status)} size="small" variant="outlined" color={statusColor(fb.status)} />
+                  <Chip label={statusLabel(fb.status)} size="small" color={statusColor(fb.status)} />
                   {fb.adminResponse && !fb.viewedByUser && (
                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
                   )}

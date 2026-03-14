@@ -15,7 +15,8 @@ export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
     const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
+    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
+    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
       throw new HttpsError('permission-denied', 'Admin only');
     }
 
@@ -58,7 +59,8 @@ export const resolveFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
     const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
+    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
+    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
       throw new HttpsError('permission-denied', 'Admin only');
     }
 
@@ -81,10 +83,11 @@ export const resolveFeedback = onCall(
 );
 
 export const createGithubIssueFromFeedback = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30, secrets: [GITHUB_TOKEN] },
+  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30, ...(IS_EMULATOR ? {} : { secrets: [GITHUB_TOKEN] }) },
   async (request) => {
     const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
+    const emailVerified = IS_EMULATOR || auth?.token.email_verified;
+    if (!emailVerified || auth?.token.email !== ADMIN_EMAIL) {
       throw new HttpsError('permission-denied', 'Admin only');
     }
 
@@ -130,7 +133,10 @@ export const createGithubIssueFromFeedback = onCall(
     };
     const labels = [labelMap[category] ?? 'feedback'];
 
-    const token = GITHUB_TOKEN.value();
+    const token = IS_EMULATOR ? process.env.GITHUB_TOKEN : GITHUB_TOKEN.value();
+    if (!token) {
+      throw new HttpsError('failed-precondition', 'GITHUB_TOKEN not configured');
+    }
     const { Octokit } = await import('@octokit/rest');
     const octokit = new Octokit({ auth: token });
 
