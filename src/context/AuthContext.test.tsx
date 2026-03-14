@@ -13,6 +13,8 @@ const mockUpdateDoc = vi.fn();
 const mockLinkAnonymousWithEmail = vi.fn();
 const mockSignInWithEmailService = vi.fn();
 const mockSignOutAndReset = vi.fn();
+const mockResendVerificationEmail = vi.fn();
+const mockChangePasswordService = vi.fn();
 
 vi.mock('firebase/auth', () => ({
   signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args),
@@ -55,11 +57,14 @@ vi.mock('../services/emailAuth', () => ({
   linkAnonymousWithEmail: (...args: unknown[]) => mockLinkAnonymousWithEmail(...args),
   signInWithEmail: (...args: unknown[]) => mockSignInWithEmailService(...args),
   signOutAndReset: (...args: unknown[]) => mockSignOutAndReset(...args),
+  resendVerificationEmail: (...args: unknown[]) => mockResendVerificationEmail(...args),
+  changePassword: (...args: unknown[]) => mockChangePasswordService(...args),
   getAuthErrorMessage: (error: unknown) => {
     if (error instanceof Error && 'code' in error) {
       const code = (error as { code: string }).code;
       if (code === 'auth/email-already-in-use') return 'Este email ya tiene una cuenta.';
       if (code === 'auth/invalid-credential') return 'Email o contraseña incorrectos.';
+      if (code === 'auth/wrong-password') return 'Contraseña actual incorrecta.';
     }
     return 'Ocurrió un error. Intentá de nuevo.';
   },
@@ -84,6 +89,8 @@ describe('AuthContext', () => {
     mockLinkAnonymousWithEmail.mockResolvedValue(undefined);
     mockSignInWithEmailService.mockResolvedValue({ user: { uid: 'email-uid' } });
     mockSignOutAndReset.mockResolvedValue(undefined);
+    mockResendVerificationEmail.mockResolvedValue(undefined);
+    mockChangePasswordService.mockResolvedValue(undefined);
     mockUser.reload.mockResolvedValue(undefined);
   });
 
@@ -366,6 +373,80 @@ describe('AuthContext', () => {
 
       expect(mockSetDoc).not.toHaveBeenCalled();
       expect(mockUpdateDoc).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('calls resendVerificationEmail', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.resendVerification();
+      });
+
+      expect(mockResendVerificationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ uid: 'test-uid-123' }),
+      );
+    });
+  });
+
+  describe('refreshEmailVerified', () => {
+    it('reloads user and returns emailVerified status', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        const verified = await result.current.refreshEmailVerified();
+        expect(verified).toBe(false);
+      });
+
+      expect(mockUser.reload).toHaveBeenCalled();
+    });
+  });
+
+  describe('changePassword', () => {
+    it('calls changePassword service', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.changePassword('oldpass', 'newpass123');
+      });
+
+      expect(mockChangePasswordService).toHaveBeenCalledWith(
+        expect.objectContaining({ uid: 'test-uid-123' }),
+        'oldpass',
+        'newpass123',
+      );
+    });
+
+    it('sets authError on wrong current password', async () => {
+      mockChangePasswordService.mockRejectedValue(
+        Object.assign(new Error('fail'), { code: 'auth/wrong-password' }),
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await expect(result.current.changePassword('wrong', 'newpass'))
+          .rejects.toThrow('fail');
+      });
+
+      expect(result.current.authError).toBe('Contraseña actual incorrecta.');
     });
   });
 });

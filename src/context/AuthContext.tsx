@@ -19,6 +19,8 @@ import {
   signInWithEmail as signInWithEmailService,
   signOutAndReset,
   getAuthErrorMessage,
+  resendVerificationEmail,
+  changePassword as changePasswordService,
 } from '../services/emailAuth';
 
 export type AuthMethod = 'anonymous' | 'email' | 'google';
@@ -43,6 +45,9 @@ interface AuthContextType {
   emailVerified: boolean;
   linkEmailPassword: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
+  refreshEmailVerified: () => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -57,6 +62,9 @@ const AuthContext = createContext<AuthContextType>({
   emailVerified: false,
   linkEmailPassword: async () => {},
   signInWithEmail: async () => {},
+  resendVerification: async () => {},
+  refreshEmailVerified: async () => false,
+  changePassword: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -160,6 +168,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const resendVerification = useCallback(async (): Promise<void> => {
+    if (!user) throw new Error('No user');
+    try {
+      await resendVerificationEmail(user);
+    } catch (error) {
+      const message = getAuthErrorMessage(error);
+      setAuthError(message);
+      throw error;
+    }
+  }, [user]);
+
+  const refreshEmailVerified = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    await user.reload();
+    const refreshed = auth.currentUser;
+    const verified = refreshed?.emailVerified ?? false;
+    setEmailVerified(verified);
+    return verified;
+  }, [user]);
+
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<void> => {
+    if (!user) throw new Error('No user');
+    setAuthError(null);
+    try {
+      await changePasswordService(user, currentPassword, newPassword);
+      trackEvent('password_changed');
+    } catch (error) {
+      const message = getAuthErrorMessage(error);
+      setAuthError(message);
+      throw error;
+    }
+  }, [user]);
+
   const signOut = useCallback(async (): Promise<void> => {
     const previousMethod = authMethod;
     try {
@@ -173,8 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextType>(() => ({
     user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
     authMethod, emailVerified, linkEmailPassword, signInWithEmail,
+    resendVerification, refreshEmailVerified, changePassword,
   }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
-    authMethod, emailVerified, linkEmailPassword, signInWithEmail]);
+    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
+    resendVerification, refreshEmailVerified, changePassword]);
 
   return (
     <AuthContext.Provider value={value}>
