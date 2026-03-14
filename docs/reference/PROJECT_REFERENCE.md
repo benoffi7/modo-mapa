@@ -23,7 +23,7 @@ App web mobile-first para empleados que necesitan encontrar comercios gastronomi
 | UI | Material UI (MUI) | 7.3 |
 | Mapa | @vis.gl/react-google-maps | 1.7 |
 | Graficos | recharts | 3.8 |
-| Auth | Firebase Anonymous Auth + Google Sign-In | 12.10 |
+| Auth | Firebase Anonymous Auth + Email/Password + Google Sign-In (admin) | 12.10 |
 | Base de datos | Cloud Firestore | 12.10 |
 | Storage | Firebase Storage | 12.10 |
 | Cloud Functions | Firebase Functions v2 | 6.3 |
@@ -63,7 +63,8 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback (enviar + mis envios), ayuda, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
 - **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
-- **Configuracion de usuario**: panel lateral con perfil publico/privado + preferencias de notificaciones (master + granulares)
+- **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
+- **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas, backups, fotos
 - **Cloud Functions**: 11 callable + 14 triggers + 5 scheduled
@@ -71,7 +72,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 ### Patrones clave
 
-- **Constantes centralizadas**: `src/constants/` con 14 modulos por dominio (incl. criteria, suggestions, feedback statuses), barrel re-export, sin magic numbers
+- **Constantes centralizadas**: `src/constants/` con 15 modulos por dominio (incl. criteria, suggestions, feedback statuses, auth), barrel re-export, sin magic numbers
 - **Constants Dashboard**: `/dev/constants` (DEV only) — browser, busqueda, filtro, edicion inline con validacion, color swatches, copy nombre/valor, duplicados
 - **Service layer**: componentes → `src/services/` → Firestore SDK (nunca directo)
 - **Cache**: business data cache (5 min TTL) + paginated query cache (2 min TTL) + persistent cache (prod)
@@ -82,4 +83,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Lazy Sentry**: `@sentry/react` cargado via dynamic `import()` (no en main chunk)
 - **Batched likes**: `fetchUserLikes` usa `documentId('in')` con batches de 30 (no N+1 getDoc)
 - **Price level cache**: `usePriceLevelFilter` con `limit(20K)` safety bound + TTL 5min
-- **Tests**: 161 tests (111 frontend + 50 backend) cubriendo triggers, services, hooks, contexts
+- **Tests**: 162+ tests (frontend + backend) cubriendo triggers, services, hooks, contexts, auth components
