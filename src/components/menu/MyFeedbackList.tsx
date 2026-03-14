@@ -109,9 +109,6 @@ export default function MyFeedbackList() {
           </ListItemButton>
           <Collapse in={expandedId === fb.id}>
             <Box sx={{ px: 2, pb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1, whiteSpace: 'pre-wrap' }}>
-                {fb.message}
-              </Typography>
               {fb.mediaUrl && (
                 <Box
                   component="img"

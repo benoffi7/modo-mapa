@@ -5,6 +5,7 @@ service cloud.firestore {
     // Helper: verifica si el usuario es admin (requiere email verificado)
     function isAdmin() {
       return request.auth != null
+        && ('email_verified' in request.auth.token)
         && request.auth.token.email_verified == true
         && request.auth.token.email == 'benoffi11@gmail.com';
     }
