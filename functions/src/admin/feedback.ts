@@ -1,10 +1,15 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createNotification } from '../utils/notifications';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_RESPONSE_LENGTH = 500;
+
+const GITHUB_TOKEN = defineSecret('GITHUB_TOKEN');
+const GITHUB_OWNER = 'benoffi7';
+const GITHUB_REPO = 'modo-mapa';
 
 export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
@@ -72,5 +77,73 @@ export const resolveFeedback = onCall(
     await feedbackRef.update({ status: 'resolved' });
 
     return { success: true };
+  },
+);
+
+export const createGithubIssueFromFeedback = onCall(
+  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30, secrets: [GITHUB_TOKEN] },
+  async (request) => {
+    const { auth } = request;
+    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
+      throw new HttpsError('permission-denied', 'Admin only');
+    }
+
+    const { feedbackId } = request.data;
+    if (!feedbackId || typeof feedbackId !== 'string') {
+      throw new HttpsError('invalid-argument', 'feedbackId required');
+    }
+
+    const db = getFirestore();
+    const feedbackRef = db.collection('feedback').doc(feedbackId);
+    const feedbackSnap = await feedbackRef.get();
+    if (!feedbackSnap.exists) {
+      throw new HttpsError('not-found', 'Feedback not found');
+    }
+
+    const data = feedbackSnap.data()!;
+
+    if (data.githubIssueUrl) {
+      throw new HttpsError('already-exists', 'GitHub issue already created');
+    }
+
+    const category = (data.category as string) ?? 'otro';
+    const message = (data.message as string) ?? '';
+    const createdAt = data.createdAt?.toDate?.() ?? new Date();
+    const mediaUrl = data.mediaUrl as string | undefined;
+
+    const title = `[Feedback/${category}] ${message.substring(0, 80)}`;
+    const bodyParts = [
+      `**Categoría:** ${category}`,
+      `**Fecha:** ${createdAt.toISOString()}`,
+      '',
+      '**Mensaje:**',
+      message,
+    ];
+    if (mediaUrl) {
+      bodyParts.push('', `**Media:** ${mediaUrl}`);
+    }
+    bodyParts.push('', `---`, `Feedback ID: \`${feedbackId}\``);
+
+    const labelMap: Record<string, string> = {
+      bug: 'bug',
+      sugerencia: 'enhancement',
+    };
+    const labels = [labelMap[category] ?? 'feedback'];
+
+    const token = GITHUB_TOKEN.value();
+    const { Octokit } = await import('@octokit/rest');
+    const octokit = new Octokit({ auth: token });
+
+    const { data: issue } = await octokit.issues.create({
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+      title,
+      body: bodyParts.join('\n'),
+      labels,
+    });
+
+    await feedbackRef.update({ githubIssueUrl: issue.html_url });
+
+    return { success: true, issueUrl: issue.html_url };
   },
 );

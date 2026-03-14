@@ -10,3 +10,5 @@ export const FEEDBACK_STATUSES = {
 };
 
 export const MAX_ADMIN_RESPONSE_LENGTH = 500;
+
+export const MAX_FEEDBACK_MEDIA_SIZE = 10 * 1024 * 1024;

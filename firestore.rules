@@ -153,7 +153,7 @@ service cloud.firestore {
     // category debe ser uno de: bug, sugerencia, otro.
     match /feedback/{docId} {
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating'])
+        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
@@ -162,11 +162,14 @@ service cloud.firestore {
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
       allow update: if isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy', 'githubIssueUrl'])
         || (request.auth != null
           && resource.data.userId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedByUser'])
-          && request.resource.data.viewedByUser == true);
+          && request.resource.data.viewedByUser == true)
+        || (request.auth != null
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mediaUrl', 'mediaType']));
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }

@@ -143,6 +143,9 @@ export const feedbackConverter: FirestoreDataConverter<Feedback> = {
       ...(d.respondedAt != null && { respondedAt: toDate(d.respondedAt) }),
       ...(d.respondedBy != null && { respondedBy: d.respondedBy as string }),
       ...(d.viewedByUser === true && { viewedByUser: true }),
+      ...(d.mediaUrl != null && { mediaUrl: d.mediaUrl as string }),
+      ...(d.mediaType != null && { mediaType: d.mediaType as 'image' | 'video' }),
+      ...(d.githubIssueUrl != null && { githubIssueUrl: d.githubIssueUrl as string }),
     };
   },
 };
