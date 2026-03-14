@@ -50,7 +50,14 @@ export default function PrivacyPolicy() {
         <Box component="ul" sx={{ pl: 1, mt: 0 }}>
           <Li>
             <strong>Identificación anónima:</strong> se genera un identificador único (UID)
-            automáticamente al ingresar. No se solicita nombre real ni email.
+            automáticamente al ingresar. Opcionalmente, podés crear una cuenta con email y
+            contraseña para mantener tu sesión entre dispositivos.
+          </Li>
+          <Li>
+            <strong>Email y contraseña (opcional):</strong> si elegís crear una cuenta, tu
+            dirección de email se almacena en Firebase Authentication. La contraseña es
+            hasheada por Firebase y nunca es accesible desde la app. También se registra
+            el estado de verificación del email.
           </Li>
           <Li>
             <strong>Nombre de usuario:</strong> un alias que elegís al registrarte (puede
@@ -71,8 +78,10 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Datos de uso (opcional):</strong> si activás &quot;Enviar datos de uso&quot;
             en Configuración, Firebase Analytics (GA4) recopila eventos anónimos de
-            navegación y uso (ej: vistas de comercios, búsquedas). Estos datos no
-            identifican a personas individuales.
+            navegación y uso (ej: vistas de comercios, búsquedas). También se registran
+            eventos relacionados con la autenticación (account_created, email_sign_in,
+            sign_out, password_changed) y la propiedad de usuario auth_type. Estos eventos
+            se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
         </Box>
       </Section>
@@ -118,6 +127,10 @@ export default function PrivacyPolicy() {
             <strong>Moderación automática:</strong> el contenido se revisa automáticamente
             para detectar lenguaje inapropiado.
           </Li>
+          <Li>
+            <strong>Contraseñas seguras:</strong> las contraseñas de las cuentas con email
+            son hasheadas por Firebase Authentication y nunca se almacenan en texto plano.
+          </Li>
         </Box>
       </Section>
 
@@ -152,6 +165,10 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Controlar notificaciones:</strong> podés activar o desactivar las
             notificaciones (likes, fotos, rankings, feedback) desde Configuración.
+          </Li>
+          <Li>
+            <strong>Cerrar sesión:</strong> podés cerrar tu sesión en cualquier momento.
+            Al hacerlo, se genera una nueva cuenta anónima en el dispositivo.
           </Li>
         </Box>
       </Section>

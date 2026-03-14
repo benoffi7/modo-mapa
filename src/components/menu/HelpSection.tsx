@@ -14,6 +14,7 @@ import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 
 interface HelpItem {
@@ -64,7 +65,14 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <SettingsOutlinedIcon color="primary" />,
     title: 'Configuración',
     description:
-      'Perfil público o privado y preferencias de notificaciones (likes, fotos, rankings, feedback). El toggle de modo oscuro está en el footer del menú lateral.',
+      'La primera sección es Cuenta: si sos anónimo, podés crear una cuenta o iniciar sesión; si ya tenés cuenta con email, podés ver el estado de verificación, cambiar contraseña o cerrar sesión. Debajo, perfil público o privado, datos de uso (analytics) y preferencias de notificaciones (likes, fotos, rankings, feedback). El toggle de modo oscuro está en el footer del menú lateral.',
+  },
+  {
+    id: 'cuenta',
+    icon: <AccountCircleOutlinedIcon color="primary" />,
+    title: 'Cuenta',
+    description:
+      'Por defecto tu cuenta es temporal (anónima). Podés crear una cuenta con email y contraseña para sincronizar tus datos entre dispositivos desde el menú lateral o Configuración. Para iniciar sesión en otro dispositivo, usá tu email y contraseña. Después de registrarte, verificá tu email: vas a ver un badge en el menú y podés reenviar el correo desde Configuración. Podés cambiar tu contraseña desde Configuración. Si olvidaste tu contraseña, tocá "Olvidé mi contraseña" en el diálogo de inicio de sesión. Al cerrar sesión se crea una nueva cuenta anónima; necesitás tu email y contraseña para volver a ingresar.',
   },
   {
     id: 'feedback',

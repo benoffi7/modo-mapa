@@ -38,6 +38,8 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { trackEvent } from '../../utils/analytics';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
@@ -54,6 +56,7 @@ const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
 const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
 const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
+const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 
 function SectionLoader() {
   return (
@@ -87,7 +90,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
 };
 
 export default function SideMenu({ open, onClose }: Props) {
-  const { displayName, setDisplayName } = useAuth();
+  const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   useEffect(() => {
     if (open) trackEvent('side_menu_open');
@@ -107,6 +110,10 @@ export default function SideMenu({ open, onClose }: Props) {
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Email auth dialog
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
 
   const handleClose = () => {
     onClose();
@@ -152,11 +159,52 @@ export default function SideMenu({ open, onClose }: Props) {
                     <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>
                       {userName}
                     </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: authMethod === 'anonymous' ? 'warning.main' : 'success.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {authMethod === 'anonymous' ? (
+                        'Cuenta temporal'
+                      ) : (
+                        <>
+                          {user?.email}
+                          {emailVerified
+                            ? <VerifiedIcon sx={{ fontSize: 14 }} />
+                            : <ErrorOutlineIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
+                        </>
+                      )}
+                    </Typography>
                   </Box>
                   <IconButton size="small" onClick={handleOpenNameDialog}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Box>
+                {authMethod === 'anonymous' && (
+                  <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      fullWidth
+                      onClick={() => { setEmailDialogTab('register'); setEmailDialogOpen(true); }}
+                    >
+                      Crear cuenta
+                    </Button>
+                    <Button
+                      variant="text"
+                      size="small"
+                      fullWidth
+                      onClick={() => { setEmailDialogTab('login'); setEmailDialogOpen(true); }}
+                    >
+                      Ya tengo cuenta
+                    </Button>
+                  </Box>
+                )}
               </Box>
               <Divider />
 
@@ -330,6 +378,17 @@ export default function SideMenu({ open, onClose }: Props) {
           )}
         </Box>
       </Drawer>
+
+      {/* Email auth dialog */}
+      <Suspense fallback={null}>
+        {emailDialogOpen && (
+          <EmailPasswordDialog
+            open={emailDialogOpen}
+            onClose={() => setEmailDialogOpen(false)}
+            initialTab={emailDialogTab}
+          />
+        )}
+      </Suspense>
 
       {/* Edit name dialog */}
       <Dialog open={nameDialogOpen} onClose={() => setNameDialogOpen(false)} maxWidth="xs" fullWidth>
