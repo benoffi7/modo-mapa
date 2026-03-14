@@ -67,7 +67,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 9 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas, backups, fotos
-- **Cloud Functions**: 11 callable + 14 triggers + 5 scheduled
+- **Cloud Functions**: 11 callable + 14 triggers + 6 scheduled
 - **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave

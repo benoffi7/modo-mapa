@@ -437,6 +437,91 @@ async function seed() {
     totalParticipants: rankingEntries.length,
   });
 
+  // Weekly ranking (current week)
+  console.log('Creating weekly ranking (current week)...');
+  const weekD = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const weekDayNum = weekD.getUTCDay() || 7;
+  weekD.setUTCDate(weekD.getUTCDate() + 4 - weekDayNum);
+  const weekYearStart = new Date(Date.UTC(weekD.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((weekD.getTime() - weekYearStart.getTime()) / 86400000 + 1) / 7);
+  const weekKey = `weekly_${weekD.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+  const weekStart = new Date(now);
+  const weekDay = weekStart.getDay() || 7;
+  weekStart.setDate(weekStart.getDate() - weekDay + 1);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const weeklyEntries = USER_IDS.map((userId, i) => ({
+    userId,
+    displayName: USER_NAMES[i],
+    score: 80 - i * 6 + randomInt(0, 5),
+    breakdown: {
+      comments: randomInt(3, 12),
+      ratings: randomInt(2, 8),
+      likes: randomInt(1, 6),
+      tags: randomInt(0, 3),
+      favorites: randomInt(1, 5),
+      photos: randomInt(0, 2),
+    },
+  })).sort((a, b) => b.score - a.score);
+
+  await setDoc(doc(db, 'userRankings', weekKey), {
+    period: weekKey,
+    startDate: weekStart,
+    endDate: weekEnd,
+    rankings: weeklyEntries,
+    totalParticipants: weeklyEntries.length,
+  });
+
+  // Previous week ranking (for trend indicators)
+  console.log('Creating weekly ranking (previous week)...');
+  const prevWeekStart = new Date(weekStart);
+  prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+  const prevWeekD = new Date(Date.UTC(prevWeekStart.getFullYear(), prevWeekStart.getMonth(), prevWeekStart.getDate()));
+  const prevDayNum = prevWeekD.getUTCDay() || 7;
+  prevWeekD.setUTCDate(prevWeekD.getUTCDate() + 4 - prevDayNum);
+  const prevYearStart = new Date(Date.UTC(prevWeekD.getUTCFullYear(), 0, 1));
+  const prevWeekNum = Math.ceil(((prevWeekD.getTime() - prevYearStart.getTime()) / 86400000 + 1) / 7);
+  const prevWeekKey = `weekly_${prevWeekD.getUTCFullYear()}-W${String(prevWeekNum).padStart(2, '0')}`;
+
+  // Shuffle positions vs current week to show trend arrows
+  const prevWeeklyEntries = [...weeklyEntries]
+    .map((e) => ({ ...e, score: e.score + randomInt(-15, 15) }))
+    .sort((a, b) => b.score - a.score);
+
+  await setDoc(doc(db, 'userRankings', prevWeekKey), {
+    period: prevWeekKey,
+    startDate: prevWeekStart,
+    endDate: weekStart,
+    rankings: prevWeeklyEntries,
+    totalParticipants: prevWeeklyEntries.length,
+  });
+
+  // All-time ranking
+  console.log('Creating all-time ranking...');
+  const alltimeEntries = USER_IDS.map((userId, i) => ({
+    userId,
+    displayName: USER_NAMES[i],
+    score: 200 - i * 15 + randomInt(0, 10),
+    breakdown: {
+      comments: randomInt(10, 40),
+      ratings: randomInt(5, 25),
+      likes: randomInt(5, 20),
+      tags: randomInt(2, 10),
+      favorites: randomInt(5, 15),
+      photos: randomInt(1, 8),
+    },
+  })).sort((a, b) => b.score - a.score);
+
+  await setDoc(doc(db, 'userRankings', 'alltime'), {
+    period: 'alltime',
+    startDate: new Date(2020, 0, 1),
+    endDate: now,
+    rankings: alltimeEntries,
+    totalParticipants: alltimeEntries.length,
+  });
+
   // Ensure every business has a comment from a top-3 user
   console.log('Creating top-user comments for all businesses...');
   const TOP_3_IDS = rankingEntries.slice(0, 3).map((r) => r.userId);
@@ -537,6 +622,8 @@ async function seed() {
   console.log(`- ${plPairs.size} price levels`);
   console.log('- 5 menu photos (2 pending, 2 approved, 1 rejected)');
   console.log('- 1 monthly ranking (10 users, top 3 with badges)');
+  console.log('- 2 weekly rankings (current + previous, for trend arrows)');
+  console.log('- 1 all-time ranking');
   console.log('- 30 top-user comments (1 per business from top 3)');
   console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
