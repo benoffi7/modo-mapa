@@ -13,7 +13,7 @@
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
 | `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/datos_usuario/datos_comercio/otro), status (pending/viewed/responded/resolved), createdAt, flagged?, adminResponse?, respondedAt?, respondedBy?, viewedByUser?, mediaUrl?, mediaType? (image/video), githubIssueUrl? | Create auth+owner; read/delete owner; admin read+update (respond/resolve); user update (viewedByUser) |
 | `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
-| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, daily ops, byCollection | Auth read; Functions write |
+| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, newAccounts, daily ops, byCollection | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
@@ -169,7 +169,44 @@ interface AdminCounters {
 
 interface DailyMetrics {
   date, ratingDistribution, topFavorited, topCommented, topRated, topTags,
-  dailyReads, dailyWrites, dailyDeletes, byCollection, activeUsers
+  dailyReads, dailyWrites, dailyDeletes, byCollection, activeUsers, newAccounts
+}
+
+// Auth metrics (from getAuthStats callable)
+interface AuthStats {
+  total: number;
+  anonymous: number;
+  email: number;
+  emailVerified: number;
+  emailUnverified: number;
+}
+
+// Notification stats (from fetchNotificationStats)
+interface NotificationStats {
+  total: number;
+  read: number;
+  unread: number;
+  readRate: number;
+}
+
+// Settings aggregates (from fetchSettingsAggregates)
+interface SettingsAggregates {
+  total: number;
+  profilePublic: number;
+  notificationsEnabled: number;
+  analyticsEnabled: number;
+}
+
+// Price level stats (from fetchPriceLevelStats)
+interface PriceLevelStats {
+  total: number;
+  byLevel: Record<number, number>;
+}
+
+// Comment like stats (from fetchCommentLikeStats)
+interface CommentLikeStats {
+  total: number;
+  recent: Array<{ id: string; userId: string; commentId: string; createdAt: Date }>;
 }
 
 interface AbuseLog { id, userId, type, collection, detail, timestamp }
@@ -189,7 +226,7 @@ Converters disponibles:
 
 Admin converters (`src/config/adminConverters.ts`):
 
-- `adminCountersConverter`, `dailyMetricsConverter`, `abuseLogConverter`
+- `adminCountersConverter`, `dailyMetricsConverter` (includes `newAccounts` field), `abuseLogConverter`
 
 Metrics converter (`src/config/metricsConverter.ts`):
 

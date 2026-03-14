@@ -134,11 +134,11 @@
 
 | Tab | Descripcion |
 |-----|-------------|
-| **Overview** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover |
-| **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags) con ultimos 20 items, indicador de flagged |
+| **Overview** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard) |
+| **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags, price levels, comment likes) con ultimos 20 items, indicador de flagged |
 | **Feedback** | Tabla de feedback con categoria, mensaje, status (pending/viewed/responded/resolved), filtro por status. Acciones admin: responder (respondToFeedback callable), resolver (resolveFeedback callable), crear issue en GitHub (createGithubIssueFromFeedback callable). Link a GitHub issue si existe |
-| **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo, usuarios activos, total escrituras. Click en leyenda para mostrar/ocultar series |
-| **Usuarios** | Rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones) |
+| **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo, usuarios activos, total escrituras, new accounts trend. Click en leyenda para mostrar/ocultar series |
+| **Usuarios** | Rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones), auth method breakdown (anonimos vs email), email verified stats, settings aggregates (privacidad, notificaciones, analytics) |
 | **Firebase Usage** | Graficos lineales de reads/writes/deletes y usuarios activos (ultimos 30 dias), pie charts por coleccion, barras de cuota vs free tier |
 | **Alertas** | Logs de abuso (rate limit excedido, contenido flaggeado, top writers) |
 | **Backups** | Crear backup manual, listar con paginacion (20/pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable |
@@ -163,6 +163,7 @@
 | `respondToFeedback` | admin | Responde a feedback de usuario. Actualiza status a `responded`, guarda `adminResponse`/`respondedAt`/`respondedBy`. Crea notificacion `feedback_response` | 60s |
 | `resolveFeedback` | admin | Marca feedback como resuelto. Actualiza status a `resolved`. Crea notificacion `feedback_response` | 60s |
 | `createGithubIssueFromFeedback` | admin | Crea issue en GitHub desde feedback. Usa `@octokit/rest` + `GITHUB_TOKEN` secret. Mapea categoria a label (bug/enhancement/feedback). Guarda `githubIssueUrl` en doc. Previene duplicados | 30s |
+| `getAuthStats` | admin | Consulta Firebase Auth para devolver breakdown de metodos de autenticacion (anonimos vs email) y stats de verificacion de email | 30s |
 
 Todas las callable admin:
 
@@ -193,7 +194,7 @@ Todas las callable admin:
 
 | Funcion | Schedule | Descripcion |
 |---------|----------|-------------|
-| `dailyMetrics` | 3:00 AM | Calcula distribucion, tops, active users. Reset daily counters |
+| `dailyMetrics` | 3:00 AM | Calcula distribucion, tops, active users, newAccounts. Reset daily counters |
 | `cleanupRejectedPhotos` | Diario | Elimina fotos rechazadas con mas de 7 dias (Storage + Firestore) |
 | `computeWeeklyRanking` | Lunes 4:00 AM | Calcula ranking semanal. Scoring: Comment=3, Rating=2, Like/Tag/Favorite=1, Photo=5 |
 | `computeMonthlyRanking` | 1ro de mes 4:00 AM | Calcula ranking mensual con misma formula |

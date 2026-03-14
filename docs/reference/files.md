@@ -45,10 +45,10 @@ src/
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
 │   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
-│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
+│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response), UserSettings (incl. notifyFeedback) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
-│   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
+│   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog, AuthStats, NotificationStats, SettingsAggregates, PriceLevelStats, CommentLikeStats
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
 │   └── index.ts                     # MUI theme with getDesignTokens(mode) for light/dark
@@ -165,6 +165,8 @@ src/
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
 | `vite.config.ts` | Plugin React + VitePWA + Sentry + `__APP_VERSION__` desde package.json |
 | `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend, lazy-loaded via dynamic import) |
+| `functions/src/admin/authStats.ts` | Cloud Function callable `getAuthStats`: consulta Firebase Auth para auth method breakdown y email verification stats |
+| `functions/src/__tests__/admin/authStats.test.ts` | Tests unitarios para `getAuthStats` |
 | `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |
 | `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites, feedback por userId+timestamp) |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
