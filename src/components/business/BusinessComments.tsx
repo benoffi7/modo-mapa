@@ -28,6 +28,7 @@ import { addComment, editComment, deleteComment, likeComment, unlikeComment } fr
 import { formatDateMedium } from '../../utils/formatDate';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
+import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { LIKE_COLOR } from '../../constants/ui';
 import type { Comment } from '../../types';
@@ -61,8 +62,18 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Undo delete
-  const [pendingDeletes, setPendingDeletes] = useState<Map<string, Comment>>(new Map());
-  const deleteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const onConfirmDeleteComment = useCallback(
+    async (comment: Comment) => {
+      if (!user) return;
+      await deleteComment(comment.id, user.uid);
+    },
+    [user],
+  );
+  const { isPendingDelete, markForDelete: markCommentForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
+    onConfirmDelete: onConfirmDeleteComment,
+    onDeleteComplete: onCommentsChange,
+    message: 'Comentario eliminado',
+  });
 
   // Optimistic likes
   const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
@@ -105,9 +116,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
 
   // Sorted top-level comments only
   const sortedTopLevel = useMemo(() => {
-    const visible = pendingDeletes.size > 0
-      ? topLevelComments.filter((c) => !pendingDeletes.has(c.id))
-      : topLevelComments;
+    const visible = topLevelComments.filter((c) => !isPendingDelete(c.id));
 
     return [...visible].sort((a, b) => {
       switch (sortMode) {
@@ -116,7 +125,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         case 'useful': return b.likeCount - a.likeCount;
       }
     });
-  }, [topLevelComments, sortMode, pendingDeletes]);
+  }, [topLevelComments, sortMode, isPendingDelete]);
 
   // Helpers for optimistic likes
   const isLiked = useCallback((commentId: string) => {
@@ -170,38 +179,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   };
 
   const handleDelete = (comment: Comment) => {
-    // Cancel existing timer for this comment if any
-    const existingTimer = deleteTimersRef.current.get(comment.id);
-    if (existingTimer) clearTimeout(existingTimer);
-
-    setPendingDeletes((prev) => new Map(prev).set(comment.id, comment));
-    const timer = setTimeout(async () => {
-      if (!user) return;
-      try {
-        await deleteComment(comment.id, user.uid);
-        onCommentsChange();
-      } catch (error) {
-        if (import.meta.env.DEV) console.error('Error deleting comment:', error);
-      }
-      deleteTimersRef.current.delete(comment.id);
-      setPendingDeletes((prev) => {
-        const next = new Map(prev);
-        next.delete(comment.id);
-        return next;
-      });
-    }, 5000);
-    deleteTimersRef.current.set(comment.id, timer);
-  };
-
-  const handleUndoDelete = (commentId: string) => {
-    const timer = deleteTimersRef.current.get(commentId);
-    if (timer) clearTimeout(timer);
-    deleteTimersRef.current.delete(commentId);
-    setPendingDeletes((prev) => {
-      const next = new Map(prev);
-      next.delete(commentId);
-      return next;
-    });
+    markCommentForDelete(comment.id, comment);
   };
 
   const handleToggleLike = async (commentId: string) => {
@@ -287,7 +265,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   // Render a single comment row (used for both top-level and replies)
   const renderComment = (comment: Comment, isReply: boolean) => {
     // If this comment is pending delete, skip rendering
-    if (pendingDeletes.has(comment.id)) return null;
+    if (isPendingDelete(comment.id)) return null;
 
     // Deleted parent placeholder
     const isDeletedParent = !comment.text && !comment.userName;
@@ -533,8 +511,8 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       <List disablePadding>
         {sortedTopLevel.map((comment, index) => {
           const replies = repliesByParent.get(comment.id) ?? [];
-          const visibleReplies = replies.filter((r) => !pendingDeletes.has(r.id));
-          const pendingReplyDeletes = replies.filter((r) => pendingDeletes.has(r.id)).length;
+          const visibleReplies = replies.filter((r) => !isPendingDelete(r.id));
+          const pendingReplyDeletes = replies.filter((r) => isPendingDelete(r.id)).length;
           const replyCount = getReplyCount(comment) - pendingReplyDeletes;
           const isExpanded = expandedThreads.has(comment.id);
 
@@ -651,13 +629,12 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       </List>
 
       <Snackbar
-        open={pendingDeletes.size > 0}
-        message="Comentario eliminado"
+        open={deleteSnackbarProps.open}
+        message={deleteSnackbarProps.message}
+        autoHideDuration={deleteSnackbarProps.autoHideDuration}
+        onClose={deleteSnackbarProps.onClose}
         action={
-          <Button color="primary" size="small" onClick={() => {
-            const lastKey = [...pendingDeletes.keys()].pop();
-            if (lastKey) handleUndoDelete(lastKey);
-          }}>
+          <Button color="primary" size="small" onClick={deleteSnackbarProps.onUndo}>
             Deshacer
           </Button>
         }
