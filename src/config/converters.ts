@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -125,6 +125,7 @@ export const feedbackConverter: FirestoreDataConverter<Feedback> = {
       userId: fb.userId,
       message: fb.message,
       category: fb.category,
+      status: fb.status,
       createdAt: fb.createdAt,
     };
   },
@@ -135,8 +136,16 @@ export const feedbackConverter: FirestoreDataConverter<Feedback> = {
       userId: d.userId,
       message: d.message ?? '',
       category: (d.category as FeedbackCategory) ?? 'otro',
+      status: (d.status as FeedbackStatus) ?? 'pending',
       createdAt: toDate(d.createdAt),
       ...(d.flagged === true ? { flagged: true } : {}),
+      ...(d.adminResponse != null && { adminResponse: d.adminResponse as string }),
+      ...(d.respondedAt != null && { respondedAt: toDate(d.respondedAt) }),
+      ...(d.respondedBy != null && { respondedBy: d.respondedBy as string }),
+      ...(d.viewedByUser === true && { viewedByUser: true }),
+      ...(d.mediaUrl != null && { mediaUrl: d.mediaUrl as string }),
+      ...(d.mediaType != null && { mediaType: d.mediaType as 'image' | 'video' }),
+      ...(d.githubIssueUrl != null && { githubIssueUrl: d.githubIssueUrl as string }),
     };
   },
 };
@@ -271,6 +280,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyLikes: settings.notifyLikes,
       notifyPhotos: settings.notifyPhotos,
       notifyRankings: settings.notifyRankings,
+      notifyFeedback: settings.notifyFeedback,
       analyticsEnabled: settings.analyticsEnabled,
       updatedAt: settings.updatedAt,
     };
@@ -283,6 +293,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyLikes: d.notifyLikes ?? false,
       notifyPhotos: d.notifyPhotos ?? false,
       notifyRankings: d.notifyRankings ?? false,
+      notifyFeedback: d.notifyFeedback ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
       updatedAt: toDate(d.updatedAt),
     };

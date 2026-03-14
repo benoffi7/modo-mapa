@@ -2,6 +2,7 @@ import { ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/mat
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import { formatRelativeTime } from '../../utils/formatDate';
 import type { AppNotification } from '../../types';
 
@@ -19,6 +20,8 @@ function getIcon(type: AppNotification['type']) {
       return <CameraAltIcon color="primary" fontSize="small" />;
     case 'ranking':
       return <LeaderboardIcon color="warning" fontSize="small" />;
+    case 'feedback_response':
+      return <FeedbackOutlinedIcon sx={{ color: '#34a853' }} fontSize="small" />;
   }
 }
 

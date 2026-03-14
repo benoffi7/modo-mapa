@@ -4,18 +4,22 @@
  * Eliminates the duplicated loading/error/ignore pattern found across
  * all admin panel components.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface UseAsyncDataReturn<T> {
   data: T | null;
   loading: boolean;
   error: boolean;
+  refetch: () => void;
 }
 
 export function useAsyncData<T>(fetcher: () => Promise<T>): UseAsyncDataReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     let ignore = false;
@@ -40,7 +44,7 @@ export function useAsyncData<T>(fetcher: () => Promise<T>): UseAsyncDataReturn<T
     return () => {
       ignore = true;
     };
-  }, [fetcher]);
+  }, [fetcher, tick]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 }

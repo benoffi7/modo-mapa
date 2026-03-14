@@ -10,7 +10,7 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 | `cache.ts` | TTLs de cache (business 5min, query 2min, profile 60s) |
 | `storage.ts` | Keys de localStorage (colorMode, visits, analyticsConsent) |
 | `timing.ts` | Intervalos (poll 60s, auto-dismiss 5s, six months) |
-| `feedback.ts` | Categorias validas de feedback |
+| `feedback.ts` | Categorias validas, `FEEDBACK_STATUSES` (label+color por status), `MAX_ADMIN_RESPONSE_LENGTH` (500), `MAX_FEEDBACK_MEDIA_SIZE` (10MB) |
 | `ui.ts` | Colores de graficos, URL agregar comercio |
 | `map.ts` | Centro de Buenos Aires, colores por categoria |
 | `tags.ts` | Tags predefinidos, IDs validos |
@@ -35,7 +35,8 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `ratings.ts` | `ratings` | `upsertRating`, `deleteRating`, `getRatingsCollection` |
 | `comments.ts` | `comments`, `commentLikes` | `addComment`, `editComment`, `deleteComment`, `likeComment`, `unlikeComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
-| `feedback.ts` | `feedback` | `sendFeedback` |
+| `feedback.ts` | `feedback` + `feedback-media` (Storage) | `sendFeedback` (with optional media upload to Firebase Storage), `fetchUserFeedback`, `markFeedbackViewed` |
+| `adminFeedback.ts` | `feedback` (via callable) | `respondToFeedback`, `resolveFeedback`, `createGithubIssueFromFeedback` (wrappers for Cloud Functions callable) |
 | `menuPhotos.ts` | `menuPhotos` | `uploadMenuPhoto` (con AbortSignal + progress callback), `getUserPendingPhotos` |
 | `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |

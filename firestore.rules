@@ -5,6 +5,7 @@ service cloud.firestore {
     // Helper: verifica si el usuario es admin (requiere email verificado)
     function isAdmin() {
       return request.auth != null
+        && ('email_verified' in request.auth.token)
         && request.auth.token.email_verified == true
         && request.auth.token.email == 'benoffi11@gmail.com';
     }
@@ -153,7 +154,7 @@ service cloud.firestore {
     // category debe ser uno de: bug, sugerencia, otro.
     match /feedback/{docId} {
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating'])
+        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
@@ -161,6 +162,15 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
+      allow update: if isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy', 'githubIssueUrl'])
+        || (request.auth != null
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedByUser'])
+          && request.resource.data.viewedByUser == true)
+        || (request.auth != null
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mediaUrl', 'mediaType']));
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
@@ -269,12 +279,13 @@ service cloud.firestore {
     match /userSettings/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'analyticsEnabled', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'analyticsEnabled', 'updatedAt'])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
         && request.resource.data.notifyPhotos is bool
         && request.resource.data.notifyRankings is bool
+        && request.resource.data.notifyFeedback is bool
         && request.resource.data.analyticsEnabled is bool
         && request.resource.data.updatedAt == request.time;
     }

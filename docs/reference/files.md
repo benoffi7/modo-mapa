@@ -19,7 +19,7 @@ src/
 │   ├── cache.ts                    # BUSINESS_CACHE_TTL_MS, QUERY_CACHE_TTL_MS, PROFILE_CACHE_TTL_MS
 │   ├── storage.ts                  # STORAGE_KEY_COLOR_MODE, STORAGE_KEY_VISITS, STORAGE_KEY_ANALYTICS_CONSENT
 │   ├── timing.ts                   # POLL_INTERVAL_MS, AUTO_DISMISS_MS, SIX_MONTHS_MS
-│   ├── feedback.ts                 # VALID_CATEGORIES
+│   ├── feedback.ts                 # VALID_CATEGORIES, FEEDBACK_STATUSES (label+color), MAX_ADMIN_RESPONSE_LENGTH, MAX_FEEDBACK_MEDIA_SIZE
 │   ├── ui.ts                       # CHART_COLORS, ADD_BUSINESS_URL
 │   ├── map.ts                      # BUENOS_AIRES_CENTER, CATEGORY_COLORS
 │   ├── tags.ts                     # PREDEFINED_TAGS, VALID_TAG_IDS
@@ -38,7 +38,8 @@ src/
 │   ├── ratings.ts                   # upsertRating
 │   ├── comments.ts                  # addComment, editComment, deleteComment, likeComment, unlikeComment
 │   ├── tags.ts                      # addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag
-│   ├── feedback.ts                  # sendFeedback
+│   ├── feedback.ts                  # sendFeedback (with media upload), fetchUserFeedback, markFeedbackViewed
+│   ├── adminFeedback.ts             # respondToFeedback, resolveFeedback, createGithubIssueFromFeedback (callable wrappers)
 │   ├── menuPhotos.ts                # uploadMenuPhoto (con AbortSignal), getUserPendingPhotos
 │   ├── priceLevels.ts               # upsertPriceLevel, deletePriceLevel, getBusinessPriceLevels
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
@@ -46,7 +47,7 @@ src/
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, MenuPhoto, MenuPhotoStatus, PriceLevel + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
+│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response), UserSettings (incl. notifyFeedback) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
 │   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
@@ -79,12 +80,12 @@ src/
 │   └── constantsRegistry.ts        # Auto-discovers all constants modules via Object.entries
 ├── components/
 │   ├── admin/
-│   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email
+│   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email + dev auto-login in emulator
 │   │   ├── AdminLayout.tsx          # AppBar + Tabs (9 secciones)
 │   │   ├── AdminPanelWrapper.tsx    # Wrapper compartido loading/error/empty para paneles admin
 │   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists + Custom Tags ranking
 │   │   ├── ActivityFeed.tsx         # Tabs por coleccion (ultimos 20 items)
-│   │   ├── FeedbackList.tsx         # Tabla de feedback con categoria y flagged
+│   │   ├── FeedbackList.tsx         # Tabla de feedback: status filters, respond/resolve/create-issue actions, GitHub issue link
 │   │   ├── TrendsPanel.tsx          # Graficos evolucion + selector dia/semana/mes/ano
 │   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback)
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
@@ -144,7 +145,9 @@ src/
 │       ├── RatingsList.tsx
 │       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)
 │       ├── SuggestionsView.tsx       # Sugerencias personalizadas (useSuggestions)
-│       ├── FeedbackForm.tsx
+│       ├── FeedbackForm.tsx          # Tabs: Enviar (form + media upload) / Mis envíos (MyFeedbackList)
+│       ├── MyFeedbackList.tsx       # Lista de feedback del usuario con status chips, respuestas admin, indicador nueva respuesta
+│       ├── HelpSection.tsx          # 7 topics de ayuda en Accordion colapsable (mapa, comercio, menu, notificaciones, perfil, config, feedback)
 │       ├── StatsView.tsx            # Vista publica de estadisticas (usePublicMetrics)
 │       ├── RankingsView.tsx         # Rankings semanal/mensual con medallas
 │       ├── SettingsPanel.tsx        # Configuracion de usuario (privacidad, notificaciones)
@@ -156,14 +159,14 @@ src/
 
 | Archivo | Descripcion |
 |---------|-------------|
-| `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check), timestamps server-side, isValidCriteria, replyCount rules (threads), priceLevels delete rule |
-| `storage.rules` | Reglas de Firebase Storage para fotos de menu |
+| `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check, tolerant to missing fields), timestamps server-side, isValidCriteria, replyCount rules (threads), priceLevels delete rule, feedback update rules (admin respond + user viewedByUser) |
+| `storage.rules` | Reglas de Firebase Storage para fotos de menu + feedback media (10MB, image/*) |
 | `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas |
 | `.firebaserc` | Proyecto: `modo-mapa-app` |
 | `vite.config.ts` | Plugin React + VitePWA + Sentry + `__APP_VERSION__` desde package.json |
 | `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend, lazy-loaded via dynamic import) |
 | `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |
-| `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites por userId+timestamp) |
+| `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites, feedback por userId+timestamp) |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
 | `.github/workflows/preview.yml` | CI: lint + test + build + deploy preview channel en PRs |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD -> specs -> plan -> implementar) |

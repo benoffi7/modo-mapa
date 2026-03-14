@@ -59,7 +59,8 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Contenido generado:</strong> comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
-            favoritos, etiquetas, fotos de menú, feedback y votos de nivel de gasto.
+            favoritos, etiquetas, fotos de menú, feedback (incluyendo imágenes adjuntas
+            opcionales) y votos de nivel de gasto.
           </Li>
           <Li>
             <strong>Datos de comportamiento (local):</strong> para las sugerencias
@@ -85,7 +86,8 @@ export default function PrivacyPolicy() {
             calificaciones, favoritos, etc.) en servidores de Google Cloud.
           </Li>
           <Li>
-            <strong>Firebase Storage:</strong> almacena fotos de menú subidas por los usuarios.
+            <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
+            feedback subidas por los usuarios.
           </Li>
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu navegador
@@ -121,6 +123,17 @@ export default function PrivacyPolicy() {
 
       <Divider sx={{ mb: 2.5 }} />
 
+      <Section title="Compartición con terceros">
+        <P>
+          El contenido de tu feedback (mensaje, categoría e imagen adjunta si la hay)
+          puede ser compartido con GitHub para la gestión interna de mejoras y
+          corrección de errores. No se comparte tu identidad ni tu UID; solo el
+          contenido del mensaje. Ningún otro dato personal se comparte con terceros.
+        </P>
+      </Section>
+
+      <Divider sx={{ mb: 2.5 }} />
+
       <Section title="Tus derechos">
         <P>Como usuario, podés:</P>
         <Box component="ul" sx={{ pl: 1, mt: 0 }}>
@@ -135,6 +148,10 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Controlar tu perfil:</strong> podés elegir si tu perfil es público
             o privado desde Configuración.
+          </Li>
+          <Li>
+            <strong>Controlar notificaciones:</strong> podés activar o desactivar las
+            notificaciones (likes, fotos, rankings, feedback) desde Configuración.
           </Li>
         </Box>
       </Section>

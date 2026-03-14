@@ -462,8 +462,40 @@ async function seed() {
       notifyLikes: i % 3 === 0,
       notifyPhotos: i % 3 === 0,
       notifyRankings: i % 3 === 0,
+      notifyFeedback: true,
       analyticsEnabled: true,
       updatedAt: new Date(),
+    });
+  }
+
+  // Notifications (including feedback_response)
+  console.log('Creating notifications...');
+  const notifTypes = ['like', 'photo_approved', 'photo_rejected', 'ranking', 'feedback_response'];
+  for (let i = 0; i < 15; i++) {
+    const userId = USER_IDS[i % USER_IDS.length];
+    const type = notifTypes[i % notifTypes.length];
+    const actorIdx = (USER_IDS.indexOf(userId) + 1) % USER_IDS.length;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+    await addDoc(collection(db, 'notifications'), {
+      userId,
+      type,
+      message:
+        type === 'like'
+          ? `${USER_NAMES[actorIdx]} le dio like a tu comentario`
+          : type === 'photo_approved'
+            ? 'Tu foto de menú fue aprobada'
+            : type === 'photo_rejected'
+              ? 'Tu foto de menú fue rechazada'
+              : type === 'feedback_response'
+                ? 'Tu feedback recibió una respuesta del equipo'
+                : 'Se publicó el ranking semanal',
+      read: i % 3 === 0,
+      createdAt: daysAgo(randomInt(0, 7)),
+      expiresAt,
+      ...(type === 'like' ? { actorId: USER_IDS[actorIdx], actorName: USER_NAMES[actorIdx] } : {}),
+      ...(type !== 'ranking' && type !== 'feedback_response' ? { businessId: randomFrom(BUSINESS_IDS), businessName: `Comercio ${randomInt(1, 15)}` } : {}),
+      ...(type === 'feedback_response' ? { referenceId: `seed_feedback_${i}` } : {}),
     });
   }
 
@@ -506,6 +538,7 @@ async function seed() {
   console.log('- 5 menu photos (2 pending, 2 approved, 1 rejected)');
   console.log('- 1 monthly ranking (10 users, top 3 with badges)');
   console.log('- 30 top-user comments (1 per business from top 3)');
+  console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
   console.log('- Counters and moderation config');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');

@@ -3,7 +3,7 @@
 **Version:** 2.3.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-13
+**Ultima actualizacion:** 2026-03-14
 
 ---
 
@@ -60,18 +60,18 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating (global + multi-criterio), tags (predefinidos + custom), comentarios (editar/likes/sorting/threads), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
-- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
-- **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings)
+- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback (enviar + mis envios), ayuda, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
+- **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Configuracion de usuario**: panel lateral con perfil publico/privado + preferencias de notificaciones (master + granulares)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
-- **Admin** (`/admin`): 9 tabs — overview, actividad, feedback, tendencias, usuarios, Firebase usage, alertas, backups, fotos
-- **Cloud Functions**: 8 callable + 14 triggers + 5 scheduled
-- **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
+- **Admin** (`/admin`): 9 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas, backups, fotos
+- **Cloud Functions**: 11 callable + 14 triggers + 5 scheduled
+- **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave
 
-- **Constantes centralizadas**: `src/constants/` con 14 modulos por dominio (incl. criteria, suggestions), barrel re-export, sin magic numbers
+- **Constantes centralizadas**: `src/constants/` con 14 modulos por dominio (incl. criteria, suggestions, feedback statuses), barrel re-export, sin magic numbers
 - **Constants Dashboard**: `/dev/constants` (DEV only) — browser, busqueda, filtro, edicion inline con validacion, color swatches, copy nombre/valor, duplicados
 - **Service layer**: componentes → `src/services/` → Firestore SDK (nunca directo)
 - **Cache**: business data cache (5 min TTL) + paginated query cache (2 min TTL) + persistent cache (prod)
