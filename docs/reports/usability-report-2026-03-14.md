@@ -38,10 +38,9 @@
 
 ### C. Mejoras de datos/contenido
 
-9. **Horarios de comercios** — Campo de horarios de atención (abierto/cerrado ahora)
-10. **Fotos del local** (no solo menú) — Galería colaborativa de fotos del lugar
-11. **Distancia al usuario** — Mostrar "a 300m" debajo de cada comercio en búsqueda/favoritos
-12. **Ordenar comercios por cercanía** — Opción en la lista de favoritos y sugerencias
+9. **Fotos del local** (no solo menú) — Galería colaborativa de fotos del lugar
+10. **Distancia al usuario** — Mostrar "a 300m" debajo de cada comercio en búsqueda/favoritos
+11. **Ordenar comercios por cercanía** — Opción en la lista de favoritos y sugerencias
 
 ---
 
@@ -57,8 +56,6 @@
 ### Descubrimiento
 
 - **"Sorprendeme"** — Botón random que abre un comercio al azar que el usuario NO visitó
-- **Filtro por "abierto ahora"** (requiere horarios)
-- **Búsqueda por zona/barrio** — Filtrar por Palermo, Recoleta, San Telmo, etc.
 - **"Trending"** — Comercios con más actividad esta semana (más ratings/comments recientes)
 
 ### Contenido
@@ -70,17 +67,7 @@
 ### Infraestructura/UX
 
 - **Modo offline mejorado** — Cola de acciones pendientes que se sincronizan al reconectar
-- **Notificaciones push** (FCM) — Además del polling actual, push real para mobile
-- **Idioma** — i18n básico español/inglés para turistas
 - **Widget de resumen** — En la home screen del teléfono, mostrar "comercio sugerido del día"
-
----
-
-## 4. CROSS-DEVICE SYNC
-
-Issue [#80](https://github.com/benoffi7/modo-mapa/issues/80) — Autenticación por email/contraseña con verificación, cambio de contraseña y logout.
-
----
 
 ## 5. Resumen de priorización sugerida
 
@@ -89,4 +76,4 @@ Issue [#80](https://github.com/benoffi7/modo-mapa/issues/80) — Autenticación 
 | **P0 — Crítico** | Toast de errores, cross-device sync (#80) |
 | **P1 — Alta** | Pre-check rate limit, onboarding gamificado, distancia al usuario |
 | **P2 — Media** | Horarios, fotos del local, "Sorprendeme", listas compartidas |
-| **P3 — Nice to have** | Trending, Q&A, reviews largos, push notifications, i18n |
+| **P3 — Nice to have** | Trending, Q&A, reviews largos |

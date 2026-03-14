@@ -74,12 +74,15 @@ export const dailyMetrics = onSchedule(
     const startOfDay = getStartOfDay();
 
     // Read pre-aggregated data (1 read instead of 3 full collection scans)
-    const [aggregatesSnap, countersSnap, topTags, activeUsers] = await Promise.all([
+    const [aggregatesSnap, countersSnap, topTags, activeUsers, newAccountsSnap] = await Promise.all([
       db.doc('config/aggregates').get(),
       db.doc('config/counters').get(),
       getTopTags(db),
       countActiveUsers(db, startOfDay),
+      db.collection('users').where('createdAt', '>=', startOfDay).select('createdAt').get(),
     ]);
+
+    const newAccounts = newAccountsSnap.size;
 
     const agg = aggregatesSnap.data() ?? {};
     const counters = countersSnap.data() ?? {};
@@ -130,6 +133,7 @@ export const dailyMetrics = onSchedule(
         topRated,
         topTags,
         activeUsers,
+        newAccounts,
         dailyReads: counters.dailyReads ?? 0,
         dailyWrites: counters.dailyWrites ?? 0,
         dailyDeletes: counters.dailyDeletes ?? 0,
