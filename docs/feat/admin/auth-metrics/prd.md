@@ -9,7 +9,7 @@
 ## 1. Contexto
 
 Con la incorporacion de email/password auth (issue #80), el sistema ahora maneja
-tres metodos de autenticacion (anonymous, email, google), verificacion de email,
+dos metodos de autenticacion para usuarios regulares (anonymous, email), verificacion de email,
 y nuevos eventos de analytics. Este documento audita la cobertura completa del
 Admin Dashboard versus todos los datos que la app recolecta.
 
@@ -71,7 +71,7 @@ Admin Dashboard versus todos los datos que la app recolecta.
 
 | Propiedad | Fuente |
 |---|---|
-| `auth_type` | setUserProperty en AuthContext (anonymous/email/google) |
+| `auth_type` | setUserProperty en AuthContext (anonymous/email) — google es solo admin |
 
 ### 2.4 Cloud Functions (30)
 
@@ -133,9 +133,9 @@ Admin Dashboard versus todos los datos que la app recolecta.
 | 30 | Abuse logs | abuseLogs collection | YES | Alerts tab | - |
 | 31 | Menu photos (all statuses) | menuPhotos collection | YES | Photos tab | - |
 | 32 | Backups CRUD | Cloud Storage via callable | YES | Backups tab | - |
-| 33 | **Auth method per user** | Firebase Auth providerData | **NO** | - | **GAP** |
+| 33 | **Auth method per user (anonymous/email)** | Firebase Auth providerData | **NO** | - | **GAP** |
 | 34 | **Email verified status per user** | Firebase Auth emailVerified | **NO** | - | **GAP** |
-| 35 | **Users by auth method breakdown** | Firebase Auth (aggregate) | **NO** | - | **GAP** |
+| 35 | **Users by auth method breakdown (anonymous vs email)** | Firebase Auth (aggregate) | **NO** | - | **GAP** |
 | 36 | **account_created events** | GA4 analytics | **NO** | - | **GAP** |
 | 37 | **email_sign_in events** | GA4 analytics | **NO** | - | **GAP** |
 | 38 | **sign_out events** | GA4 analytics | **NO** | - | **GAP** |
@@ -164,9 +164,9 @@ Admin Dashboard versus todos los datos que la app recolecta.
 
 | Gap | Description | Impact |
 |---|---|---|
-| Auth method per user | UsersPanel no muestra si un user es anonymous/email/google | No se puede saber cuantos users migraron de anonymous a email/google |
+| Auth method per user | UsersPanel no muestra si un user es anonymous/email | No se puede saber cuantos users migraron de anonymous a email |
 | Email verification status | No hay forma de ver que users verificaron su email | No se puede detectar cuentas email sin verificar |
-| Auth method breakdown | No hay pie chart ni counter de users por metodo | No hay visibilidad del adoption rate de email auth |
+| Auth method breakdown | No hay pie chart ni counter de users por metodo (anonymous vs email) | No hay visibilidad del adoption rate de email auth |
 | Auth analytics events | account_created, email_sign_in, sign_out, password_changed solo van a GA4 | Admin tiene que ir a Firebase Console para ver auth activity |
 | Registration/login trends | No se trackea en dailyMetrics | No hay historico de registros/logins en el admin propio |
 
@@ -189,7 +189,8 @@ Admin Dashboard versus todos los datos que la app recolecta.
 **R1 — Auth method breakdown en Overview**
 
 Agregar al DashboardOverview un PieChartCard con la distribucion de usuarios por
-auth method (anonymous vs email vs google). Requiere que el `users` doc en
+auth method (anonymous vs email). Google Sign-In es exclusivo para admin y no se
+cuenta como metodo de usuario. Requiere que el `users` doc en
 Firestore almacene el `authMethod` y `emailVerified`, o que se consulte Firebase
 Auth Admin SDK via Cloud Function.
 
@@ -267,7 +268,7 @@ password_changed con userId + timestamp. Un trigger o callable lo registraria.
 ```text
 Cloud Function (callable):
   getAuthStats() -> {
-    byMethod: { anonymous: N, email: N, google: N },
+    byMethod: { anonymous: N, email: N },
     emailVerified: { verified: N, unverified: N },
     users: [{ uid, displayName, authMethod, emailVerified, createdAt }]
   }
