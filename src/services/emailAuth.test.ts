@@ -1,10 +1,13 @@
-import { getAuthErrorMessage, linkAnonymousWithEmail, signOutAndReset } from './emailAuth';
+import { getAuthErrorMessage, linkAnonymousWithEmail, signOutAndReset, resendVerificationEmail, sendResetEmail, changePassword } from './emailAuth';
 import { STORAGE_KEY_VISITS } from '../constants/storage';
 
 const mockLinkWithCredential = vi.fn();
 const mockSendEmailVerification = vi.fn();
 const mockSignInWithEmailAndPassword = vi.fn();
 const mockSignOut = vi.fn();
+const mockSendPasswordResetEmail = vi.fn();
+const mockReauthenticateWithCredential = vi.fn();
+const mockUpdatePassword = vi.fn();
 const mockCredential = { providerId: 'password' };
 
 vi.mock('firebase/auth', () => ({
@@ -15,6 +18,9 @@ vi.mock('firebase/auth', () => ({
   sendEmailVerification: (...args: unknown[]) => mockSendEmailVerification(...args),
   signInWithEmailAndPassword: (...args: unknown[]) => mockSignInWithEmailAndPassword(...args),
   signOut: (...args: unknown[]) => mockSignOut(...args),
+  sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
+  reauthenticateWithCredential: (...args: unknown[]) => mockReauthenticateWithCredential(...args),
+  updatePassword: (...args: unknown[]) => mockUpdatePassword(...args),
   getAuth: vi.fn(),
   connectAuthEmulator: vi.fn(),
 }));
@@ -44,6 +50,11 @@ describe('getAuthErrorMessage', () => {
     expect(getAuthErrorMessage(null)).toBe('Ocurrió un error. Intentá de nuevo.');
     expect(getAuthErrorMessage(42)).toBe('Ocurrió un error. Intentá de nuevo.');
   });
+
+  it('maps requires-recent-login to Spanish message', () => {
+    const error = Object.assign(new Error('test'), { code: 'auth/requires-recent-login' });
+    expect(getAuthErrorMessage(error)).toBe('Tu sesión expiró. Volvé a ingresar tu contraseña actual.');
+  });
 });
 
 describe('linkAnonymousWithEmail', () => {
@@ -71,6 +82,57 @@ describe('linkAnonymousWithEmail', () => {
     await expect(linkAnonymousWithEmail(mockUser, 'test@example.com', 'pass'))
       .rejects.toThrow('fail');
     expect(mockSendEmailVerification).not.toHaveBeenCalled();
+  });
+});
+
+describe('resendVerificationEmail', () => {
+  const mockUser = { uid: 'test-uid' } as never;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendEmailVerification.mockResolvedValue(undefined);
+  });
+
+  it('calls sendEmailVerification', async () => {
+    await resendVerificationEmail(mockUser);
+    expect(mockSendEmailVerification).toHaveBeenCalledWith(mockUser);
+  });
+});
+
+describe('sendResetEmail', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendPasswordResetEmail.mockResolvedValue(undefined);
+  });
+
+  it('calls sendPasswordResetEmail', async () => {
+    await sendResetEmail('test@example.com');
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith({}, 'test@example.com');
+  });
+});
+
+describe('changePassword', () => {
+  const mockUser = { uid: 'test-uid', email: 'test@example.com' } as never;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReauthenticateWithCredential.mockResolvedValue(undefined);
+    mockUpdatePassword.mockResolvedValue(undefined);
+  });
+
+  it('re-authenticates then updates password', async () => {
+    await changePassword(mockUser, 'oldpass', 'newpass123');
+    expect(mockReauthenticateWithCredential).toHaveBeenCalledWith(mockUser, mockCredential);
+    expect(mockUpdatePassword).toHaveBeenCalledWith(mockUser, 'newpass123');
+  });
+
+  it('throws on re-auth failure without calling updatePassword', async () => {
+    mockReauthenticateWithCredential.mockRejectedValue(
+      Object.assign(new Error('fail'), { code: 'auth/wrong-password' }),
+    );
+
+    await expect(changePassword(mockUser, 'wrong', 'newpass123')).rejects.toThrow('fail');
+    expect(mockUpdatePassword).not.toHaveBeenCalled();
   });
 });
 

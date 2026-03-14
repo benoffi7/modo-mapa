@@ -9,5 +9,6 @@ export const AUTH_ERRORS: Record<string, string> = {
   'auth/invalid-credential': 'Email o contraseña incorrectos.',
   'auth/too-many-requests': 'Demasiados intentos. Intentá de nuevo más tarde.',
   'auth/network-request-failed': 'Error de conexión. Verificá tu internet.',
+  'auth/requires-recent-login': 'Tu sesión expiró. Volvé a ingresar tu contraseña actual.',
   default: 'Ocurrió un error. Intentá de nuevo.',
 };

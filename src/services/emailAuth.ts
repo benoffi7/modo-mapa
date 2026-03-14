@@ -3,6 +3,9 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
   sendEmailVerification,
+  sendPasswordResetEmail,
+  reauthenticateWithCredential,
+  updatePassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
@@ -43,6 +46,34 @@ export async function signInWithEmail(
 ): Promise<User> {
   const result = await signInWithEmailAndPassword(auth, email, password);
   return result.user;
+}
+
+/**
+ * Re-envía el email de verificación al usuario actual.
+ */
+export async function resendVerificationEmail(currentUser: User): Promise<void> {
+  await sendEmailVerification(currentUser);
+}
+
+/**
+ * Envía un email para restablecer la contraseña.
+ */
+export async function sendResetEmail(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
+}
+
+/**
+ * Cambia la contraseña del usuario.
+ * Requiere re-autenticación con la contraseña actual.
+ */
+export async function changePassword(
+  currentUser: User,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const credential = EmailAuthProvider.credential(currentUser.email!, currentPassword);
+  await reauthenticateWithCredential(currentUser, credential);
+  await updatePassword(currentUser, newPassword);
 }
 
 /**
