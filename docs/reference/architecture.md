@@ -39,8 +39,10 @@ main.tsx
                  │    ├─ BusinessComments (lista + formulario + editar + undo delete + likes + sorting)
                  │    └─ ShareButton (Web Share API + clipboard fallback)
                  ├─ NameDialog (nombre de usuario, primera visita)
+                 ├─ EmailPasswordDialog (registro/login con tabs, forgot password)
+                 ├─ ChangePasswordDialog (cambio de contrasena con re-auth)
                  └─ SideMenu (drawer lateral)
-                      ├─ Header (avatar + nombre + editar)
+                      ├─ Header (avatar + nombre + editar + badge tipo cuenta + botones auth)
                       ├─ Nav (Favoritos, Recientes, Comentarios, Calificaciones, Feedback, Agregar comercio)
                       ├─ FavoritesList + ListFilters
                       ├─ RecentVisits (historial localStorage)

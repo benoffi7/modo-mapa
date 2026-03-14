@@ -8,6 +8,21 @@
 
 ---
 
+## Autenticacion email/password (#80)
+
+- **Providers**: Anonymous (default) + Email/Password (opcional, via `linkWithCredential`). Google solo para admin.
+- **UID preservado**: `linkWithCredential` mantiene el UID anonimo, todos los datos del usuario se preservan.
+- **Passwords**: hasheados por Firebase Auth, nunca accesibles desde la app. Campos de password limpios al cerrar dialogs.
+- **Email enumeration prevention**: `auth/email-already-in-use` mapeado a mensaje generico. Habilitar "Email Enumeration Protection" en Firebase Console.
+- **Re-auth obligatoria**: cambio de contrasena requiere `reauthenticateWithCredential()` con contrasena actual.
+- **Verificacion de email**: no bloqueante. Badge visual. Re-envio con cooldown 60s para prevenir abuso.
+- **Error handling**: todos los errores de Firebase Auth mapeados a mensajes en espanol via `getAuthErrorMessage()`. Mensajes de login/password genericos para evitar info leakage.
+- **Logout**: `signOut()` + limpieza de `STORAGE_KEY_VISITS`. Color mode y analytics consent se preservan (preferencias de dispositivo).
+- **Firestore rules**: no requieren cambios. `request.auth.uid` funciona identicamente para anonimos y email/password.
+- **Sin XSS**: email del usuario renderizado via JSX escaping (`{user?.email}`), sin `dangerouslySetInnerHTML`.
+
+---
+
 ## Firestore rules
 
 - **Auth requerida**: todas las colecciones requieren `request.auth != null`.

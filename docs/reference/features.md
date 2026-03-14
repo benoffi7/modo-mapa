@@ -33,7 +33,7 @@
 
 ## Menu lateral (SideMenu)
 
-- Header con avatar, nombre, boton editar nombre
+- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos)
 - Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
@@ -44,7 +44,7 @@
   - **Rankings**: ranking semanal/mensual con scoring por actividad. Cards con medallas y barra de progreso. "Tu actividad" con desglose de puntos (en vivo si no estas en ranking pre-computado)
   - **Feedback**: formulario con 2 tabs (Enviar / Mis envios). Enviar: categoria (bug/sugerencia/datos_usuario/datos_comercio/otro) + mensaje (max 1000) + imagen adjunta opcional (max 10MB, JPG/PNG/WebP). Mis envios: `MyFeedbackList` muestra feedback del usuario con chips de status (pending/viewed/responded/resolved), respuestas del admin colapsables, indicador de nueva respuesta (dot verde), imagen adjunta inline. Al expandir un feedback respondido se marca como visto (`markFeedbackViewed`)
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
-  - **Configuracion**: panel con toggles de privacidad (perfil publico/privado) y notificaciones (master + likes/fotos/rankings/feedback). Defaults todos en false. Optimistic UI con revert on error
+  - **Configuracion**: seccion Cuenta (primera): anonimos ven crear cuenta/login, usuarios email ven email + badge verificacion + re-enviar verificacion (con cooldown 60s) + cambiar contrasena + cerrar sesion con confirmacion. Toggles de privacidad (perfil publico/privado), notificaciones (master + likes/fotos/rankings/feedback), y datos de uso (analytics). Defaults todos en false. Optimistic UI con revert on error
   - **Ayuda**: seccion colapsable con 7 topics en formato Accordion (mapa, comercio, menu lateral, notificaciones, perfil, configuracion, feedback). Lazy-loaded via `React.lazy()`. Componente: `HelpSection.tsx`
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
@@ -62,6 +62,23 @@
 - Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`
 - Generadas automaticamente por Cloud Functions triggers
 - Expiran a los 30 dias (cleanup diario)
+
+---
+
+## Autenticacion por email/password (#80)
+
+- **Cuenta anonima por defecto**: UID generado automaticamente al ingresar. Sin email ni contrasena
+- **Registro (upgrade anonimo → email/password)**: `linkWithCredential(EmailAuthProvider)` preserva UID y todos los datos. Post-registro: `sendEmailVerification()` automatico
+- **Login cross-device**: `signInWithEmailAndPassword()` desde otro dispositivo. Warning de perdida de datos anonimos
+- **Verificacion de email**: no bloqueante. Badge en SideMenu y SettingsPanel. Re-enviar con cooldown 60s. Refresh via `user.reload()`
+- **Recuperacion de contrasena**: `sendPasswordResetEmail()` desde dialog de login ("Olvide mi contrasena")
+- **Cambio de contrasena**: `reauthenticateWithCredential()` + `updatePassword()` desde SettingsPanel
+- **Logout**: `signOut()` + limpieza localStorage (visitas). Crea nueva cuenta anonima automaticamente
+- **Componentes**: `EmailPasswordDialog` (registro/login con tabs), `ChangePasswordDialog`, seccion Cuenta en SettingsPanel
+- **Service layer**: `services/emailAuth.ts` (link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage)
+- **Constantes**: `constants/auth.ts` (PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS en espanol)
+- **Analytics**: `account_created`, `email_sign_in`, `sign_out`, `password_changed`, user property `auth_type`
+- **Seguridad**: mensajes genericos para prevenir email enumeration, cooldown en re-envio verificacion, re-auth antes de cambio de contrasena
 
 ---
 
