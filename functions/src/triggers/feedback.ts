@@ -45,7 +45,10 @@ export const onFeedbackCreated = onDocumentCreated(
       });
     }
 
-    // 3. Counters
+    // 3. Set initial status
+    await snap.ref.update({ status: 'pending' });
+
+    // 4. Counters
     await incrementCounter(db, 'feedback', 1);
     await trackWrite(db, 'feedback');
   },

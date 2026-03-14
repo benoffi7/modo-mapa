@@ -1,13 +1,14 @@
 /**
  * Firestore service for the `feedback` collection.
  */
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { feedbackConverter } from '../config/converters';
 import { trackEvent } from '../utils/analytics';
 import { VALID_CATEGORIES } from '../constants/feedback';
 import { MAX_FEEDBACK_LENGTH } from '../constants/validation';
-import type { FeedbackCategory } from '../types';
+import type { FeedbackCategory, Feedback } from '../types';
 
 export async function sendFeedback(
   userId: string,
@@ -29,4 +30,16 @@ export async function sendFeedback(
     createdAt: serverTimestamp(),
   });
   trackEvent('feedback_submit', { category });
+}
+
+export async function fetchUserFeedback(userId: string): Promise<Feedback[]> {
+  const ref = collection(db, COLLECTIONS.FEEDBACK).withConverter(feedbackConverter);
+  const q = query(ref, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data());
+}
+
+export async function markFeedbackViewed(feedbackId: string): Promise<void> {
+  const ref = doc(db, COLLECTIONS.FEEDBACK, feedbackId);
+  await updateDoc(ref, { viewedByUser: true });
 }

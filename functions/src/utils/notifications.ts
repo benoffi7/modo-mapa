@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
-type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking';
+type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
 
 interface CreateNotificationData {
   userId: string;
@@ -21,6 +21,7 @@ const TYPE_TO_SETTING: Record<NotificationType, string> = {
   photo_approved: 'notifyPhotos',
   photo_rejected: 'notifyPhotos',
   ranking: 'notifyRankings',
+  feedback_response: 'notifyFeedback',
 };
 
 async function shouldNotify(
