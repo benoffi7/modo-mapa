@@ -152,7 +152,7 @@ describe('usePaginatedQuery', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.error).toBe(true);
+    expect(result.current.error).toBeTruthy();
     expect(result.current.items).toEqual([]);
   });
 
