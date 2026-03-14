@@ -27,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
+import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { PaginatedListShell } from './PaginatedListShell';
@@ -81,6 +82,9 @@ export default function CommentsList({ onNavigate }: Props) {
 
   // Stats (#107)
   const [statsExpanded, setStatsExpanded] = useState(false);
+
+  // Swipe actions (#109)
+  const swipe = useSwipeActions();
 
   // "Load all" when search is active
   useEffect(() => {
@@ -344,112 +348,171 @@ export default function CommentsList({ onNavigate }: Props) {
 
       {filteredComments.length > 0 && (
         <List disablePadding>
-          {filteredComments.map(({ id, comment, business }) => (
-            <ListItemButton
-              key={id}
-              onClick={() => editingId !== id && handleSelectBusiness(business)}
-              disabled={!business && editingId !== id}
-              sx={{ pr: 1, alignItems: 'flex-start' }}
-            >
-              <ListItemText
-                primary={business?.name || 'Comercio desconocido'}
-                secondary={
-                  editingId === id ? (
-                    // #106: Edit inline
-                    <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        multiline
-                        maxRows={4}
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        disabled={isSavingEdit}
-                        slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                        helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+          {filteredComments.map(({ id, comment, business }) => {
+            const handlers = swipe.getHandlers(id);
+            const style = swipe.getStyle(id);
+            const isSwiped = swipe.swipedId === id;
+
+            return (
+              <Box
+                key={id}
+                sx={{ position: 'relative', overflow: 'hidden' }}
+                onClick={() => isSwiped && swipe.reset()}
+              >
+                {/* #109: Revealed swipe actions behind the item */}
+                {isSwiped && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      ...(swipe.direction === 'left'
+                        ? { right: 0, bgcolor: 'error.main' }
+                        : { left: 0, bgcolor: 'primary.main' }),
+                      width: 80,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <IconButton
+                      sx={{ color: '#fff' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (swipe.direction === 'left') {
+                          markForDelete(id, comment);
+                        } else {
+                          handleStartEdit(comment);
+                        }
+                        swipe.reset();
+                      }}
+                      aria-label={swipe.direction === 'left' ? 'Eliminar' : 'Editar'}
+                    >
+                      {swipe.direction === 'left'
+                        ? <DeleteOutlineIcon />
+                        : <EditOutlinedIcon />}
+                    </IconButton>
+                  </Box>
+                )}
+
+                {/* Swipeable list item */}
+                <Box
+                  {...handlers}
+                  sx={{
+                    position: 'relative',
+                    bgcolor: 'background.paper',
+                    zIndex: 1,
+                    '@media (pointer: fine)': { touchAction: 'none' },
+                  }}
+                  style={style}
+                >
+                  <ListItemButton
+                    onClick={() => editingId !== id && !isSwiped && handleSelectBusiness(business)}
+                    disabled={!business && editingId !== id}
+                    sx={{ pr: 1, alignItems: 'flex-start' }}
+                  >
+                    <ListItemText
+                      primary={business?.name || 'Comercio desconocido'}
+                      secondary={
+                        editingId === id ? (
+                          // #106: Edit inline
+                          <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              multiline
+                              maxRows={4}
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              disabled={isSavingEdit}
+                              slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+                              helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
+                                disabled={isSavingEdit || !editText.trim()}
+                                aria-label="Guardar edición"
+                              >
+                                <CheckIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
+                                disabled={isSavingEdit}
+                                aria-label="Cancelar edición"
+                              >
+                                <CloseIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <>
+                            {/* Comment text */}
+                            <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
+                              {truncate(comment.text, 80)}
+                            </Typography>
+                            {/* #108 + #104: Metadata row */}
+                            <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.25, flexWrap: 'wrap' }}>
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                {formatRelativeTime(comment.createdAt)}
+                              </Typography>
+                              {comment.updatedAt && (
+                                <Typography component="span" variant="caption" color="text.disabled">
+                                  (editado)
+                                </Typography>
+                              )}
+                              {comment.likeCount > 0 && (
+                                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                                  <FavoriteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                  <Typography component="span" variant="caption" color="text.disabled">
+                                    {comment.likeCount}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {(comment.replyCount ?? 0) > 0 && (
+                                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                                  <ChatBubbleOutlineIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
+                                  <Typography component="span" variant="caption" color="text.secondary">
+                                    {comment.replyCount}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
+                          </>
+                        )
+                      }
+                      primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+                    />
+                    {/* Action buttons: edit + delete (visible fallback for accessibility) */}
+                    {editingId !== id && (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
                         <IconButton
                           size="small"
-                          color="primary"
-                          onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
-                          disabled={isSavingEdit || !editText.trim()}
-                          aria-label="Guardar edición"
+                          onClick={(e) => { e.stopPropagation(); handleStartEdit(comment); }}
+                          sx={{ color: 'text.secondary' }}
+                          aria-label="Editar comentario"
                         >
-                          <CheckIcon fontSize="small" />
+                          <EditOutlinedIcon sx={{ fontSize: 18 }} />
                         </IconButton>
                         <IconButton
                           size="small"
-                          onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
-                          disabled={isSavingEdit}
-                          aria-label="Cancelar edición"
+                          onClick={(e) => { e.stopPropagation(); markForDelete(id, comment); }}
+                          sx={{ color: 'text.secondary' }}
+                          aria-label="Eliminar comentario"
                         >
-                          <CloseIcon fontSize="small" />
+                          <DeleteOutlineIcon sx={{ fontSize: 18 }} />
                         </IconButton>
                       </Box>
-                    </Box>
-                  ) : (
-                    <>
-                      {/* Comment text */}
-                      <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
-                        {truncate(comment.text, 80)}
-                      </Typography>
-                      {/* #108 + #104: Metadata row */}
-                      <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.25, flexWrap: 'wrap' }}>
-                        <Typography component="span" variant="caption" color="text.secondary">
-                          {formatRelativeTime(comment.createdAt)}
-                        </Typography>
-                        {comment.updatedAt && (
-                          <Typography component="span" variant="caption" color="text.disabled">
-                            (editado)
-                          </Typography>
-                        )}
-                        {comment.likeCount > 0 && (
-                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                            <FavoriteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                            <Typography component="span" variant="caption" color="text.disabled">
-                              {comment.likeCount}
-                            </Typography>
-                          </Box>
-                        )}
-                        {(comment.replyCount ?? 0) > 0 && (
-                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                            <ChatBubbleOutlineIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
-                            <Typography component="span" variant="caption" color="text.secondary">
-                              {comment.replyCount}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    </>
-                  )
-                }
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-              />
-              {/* Action buttons: edit + delete */}
-              {editingId !== id && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => { e.stopPropagation(); handleStartEdit(comment); }}
-                    sx={{ color: 'text.secondary' }}
-                    aria-label="Editar comentario"
-                  >
-                    <EditOutlinedIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => { e.stopPropagation(); markForDelete(id, comment); }}
-                    sx={{ color: 'text.secondary' }}
-                    aria-label="Eliminar comentario"
-                  >
-                    <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
+                    )}
+                  </ListItemButton>
                 </Box>
-              )}
-            </ListItemButton>
-          ))}
+              </Box>
+            );
+          })}
         </List>
       )}
 
