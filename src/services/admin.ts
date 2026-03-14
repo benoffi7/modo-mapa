@@ -14,7 +14,8 @@ import {
   where,
 } from 'firebase/firestore';
 import type { QueryConstraint } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import {
   commentConverter,
@@ -27,8 +28,8 @@ import {
   menuPhotoConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog } from '../types/admin';
-import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto } from '../types';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates } from '../types/admin';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel } from '../types';
 
 // ── Counters ───────────────────────────────────────────────────────────
 
@@ -208,4 +209,85 @@ export async function fetchAbuseLogs(count: number): Promise<AbuseLog[]> {
     ),
   );
   return snap.docs.map((d) => d.data());
+}
+
+// ── Auth Stats (callable) ─────────────────────────────────────────────
+
+export async function fetchAuthStats(): Promise<AuthStats> {
+  const fn = httpsCallable<void, AuthStats>(functions, 'getAuthStats');
+  const result = await fn();
+  return result.data;
+}
+
+// ── Notification Stats ────────────────────────────────────────────────
+
+export async function fetchNotificationStats(): Promise<NotificationStats> {
+  const snap = await getDocs(collection(db, COLLECTIONS.NOTIFICATIONS));
+  let read = 0;
+  const byType: Record<string, number> = {};
+  for (const d of snap.docs) {
+    const data = d.data();
+    if (data.read) read++;
+    const type = String(data.type ?? 'unknown');
+    byType[type] = (byType[type] ?? 0) + 1;
+  }
+  return { total: snap.size, read, unread: snap.size - read, byType };
+}
+
+// ── Settings Aggregates ───────────────────────────────────────────────
+
+export async function fetchSettingsAggregates(): Promise<SettingsAggregates> {
+  const snap = await getDocs(collection(db, COLLECTIONS.USER_SETTINGS));
+  let publicProfiles = 0;
+  let notificationsEnabled = 0;
+  let analyticsEnabled = 0;
+  for (const d of snap.docs) {
+    const data = d.data();
+    if (data.profilePublic) publicProfiles++;
+    if (data.notificationsEnabled) notificationsEnabled++;
+    if (data.analyticsEnabled) analyticsEnabled++;
+  }
+  return { totalSettings: snap.size, publicProfiles, notificationsEnabled, analyticsEnabled };
+}
+
+// ── Recent Price Levels ───────────────────────────────────────────────
+
+export async function fetchRecentPriceLevels(count: number): Promise<PriceLevel[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.PRICE_LEVELS),
+      orderBy('createdAt', 'desc'),
+      limit(count),
+    ),
+  );
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      userId: String(data.userId ?? ''),
+      businessId: String(data.businessId ?? ''),
+      level: Number(data.level ?? 0),
+      createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
+      updatedAt: data.updatedAt?.toDate?.() ?? new Date(data.updatedAt),
+    };
+  });
+}
+
+// ── Recent Comment Likes ──────────────────────────────────────────────
+
+export async function fetchRecentCommentLikes(count: number): Promise<CommentLike[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.COMMENT_LIKES),
+      orderBy('createdAt', 'desc'),
+      limit(count),
+    ),
+  );
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      userId: String(data.userId ?? ''),
+      commentId: String(data.commentId ?? ''),
+      createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
+    };
+  });
 }
