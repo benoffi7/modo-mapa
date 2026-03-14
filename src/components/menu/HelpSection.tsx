@@ -44,7 +44,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <MenuOutlinedIcon color="primary" />,
     title: 'Menú lateral',
     description:
-      'Accedé a favoritos, recientes, sugeridos para vos, comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings, estadísticas, agregar comercio, configuración y ayuda. Cambiá el modo oscuro desde el footer del menú.',
+      'Accedé a favoritos, recientes, sugeridos para vos, comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings (semanal, mensual, anual e histórico con tendencia, tiers, badges, gráfico de evolución y perfil público al tocar un usuario), estadísticas, agregar comercio, configuración y ayuda. Cambiá el modo oscuro desde el footer del menú.',
   },
   {
     id: 'notificaciones',

@@ -29,7 +29,7 @@ interface UserScore {
 async function getUserDisplayNames(
   db: FirebaseFirestore.Firestore,
 ): Promise<Map<string, string>> {
-  const snap = await db.collection('users').get();
+  const snap = await db.collection('users').select('displayName').get();
   const names = new Map<string, string>();
   for (const doc of snap.docs) {
     names.set(doc.id, (doc.data().displayName as string) || 'Anonimo');
@@ -201,6 +201,31 @@ export const computeMonthlyRanking = onSchedule(
       period: periodKey,
       startDate: Timestamp.fromDate(startOfLastMonth),
       endDate: Timestamp.fromDate(startOfThisMonth),
+      rankings: scores,
+      totalParticipants,
+    });
+  },
+);
+
+export const computeAlltimeRanking = onSchedule(
+  {
+    schedule: '0 5 * * 1', // every Monday at 5am
+    timeZone: 'America/Argentina/Buenos_Aires',
+    memory: '1GiB',
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const db = getFirestore();
+    const allTimeStart = new Date(2020, 0, 1);
+    const now = new Date();
+    const endDate = new Date(now.getFullYear() + 1, 0, 1);
+
+    const { scores, totalParticipants } = await computeRanking(db, allTimeStart, endDate);
+
+    await db.doc('userRankings/alltime').set({
+      period: 'alltime',
+      startDate: Timestamp.fromDate(allTimeStart),
+      endDate: Timestamp.fromDate(now),
       rankings: scores,
       totalParticipants,
     });
