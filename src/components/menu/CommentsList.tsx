@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Box,
   List,
@@ -15,6 +15,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
+import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, getCommentsCollection } from '../../services/comments';
 import { formatDateMedium } from '../../utils/formatDate';
@@ -29,47 +30,34 @@ export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
 
-  // Undo delete
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const collectionRef = useMemo(() => getCommentsCollection(), []);
 
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
     usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
 
+  const onConfirmDelete = useCallback(
+    async (comment: Comment) => {
+      if (!user) return;
+      await deleteComment(comment.id, user.uid);
+    },
+    [user],
+  );
+
+  const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
+    onConfirmDelete,
+    onDeleteComplete: reload,
+    message: 'Comentario eliminado',
+  });
+
   const comments = useMemo(() => {
     return rawItems
-      .filter((data) => data.id !== pendingDeleteId)
+      .filter((data) => !isPendingDelete(data.id))
       .map((data) => ({
         id: data.id,
-        businessId: data.businessId,
+        comment: data,
         business: allBusinesses.find((b) => b.id === data.businessId) || null,
-        text: data.text,
-        createdAt: data.createdAt,
       }));
-  }, [rawItems, pendingDeleteId]);
-
-  const handleDelete = (commentId: string) => {
-    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-
-    setPendingDeleteId(commentId);
-    deleteTimerRef.current = setTimeout(async () => {
-      if (!user) return;
-      try {
-        await deleteComment(commentId, user.uid);
-        reload();
-      } catch (err) {
-        if (import.meta.env.DEV) console.error('Error deleting comment:', err);
-      }
-      setPendingDeleteId(null);
-    }, 5000);
-  };
-
-  const handleUndoDelete = () => {
-    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-    setPendingDeleteId(null);
-  };
+  }, [rawItems, isPendingDelete]);
 
   const handleSelectBusiness = (business: Business | null) => {
     if (!business) return;
@@ -98,7 +86,7 @@ export default function CommentsList({ onNavigate }: Props) {
     );
   }
 
-  if (comments.length === 0 && !pendingDeleteId) {
+  if (comments.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
@@ -112,15 +100,15 @@ export default function CommentsList({ onNavigate }: Props) {
   return (
     <>
       <List disablePadding>
-        {comments.map((comment) => (
+        {comments.map(({ id, comment, business }) => (
           <ListItemButton
-            key={comment.id}
-            onClick={() => handleSelectBusiness(comment.business)}
-            disabled={!comment.business}
+            key={id}
+            onClick={() => handleSelectBusiness(business)}
+            disabled={!business}
             sx={{ pr: 1 }}
           >
             <ListItemText
-              primary={comment.business?.name || 'Comercio desconocido'}
+              primary={business?.name || 'Comercio desconocido'}
               secondary={
                 <>
                   <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
@@ -137,7 +125,7 @@ export default function CommentsList({ onNavigate }: Props) {
               edge="end"
               onClick={(e) => {
                 e.stopPropagation();
-                handleDelete(comment.id);
+                markForDelete(id, comment);
               }}
               sx={{ color: 'text.secondary' }}
               aria-label="Eliminar comentario"
@@ -150,7 +138,7 @@ export default function CommentsList({ onNavigate }: Props) {
 
       {hasMore && (
         <Box sx={{ p: 2, textAlign: 'center' }}>
-          <Button size="small" onClick={loadMore} disabled={isLoadingMore}>
+          <Button size="small" onClick={loadMore} disabled={isLoadingMore} aria-label="Cargar más comentarios">
             {isLoadingMore ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
             Cargar más
           </Button>
@@ -158,10 +146,12 @@ export default function CommentsList({ onNavigate }: Props) {
       )}
 
       <Snackbar
-        open={pendingDeleteId !== null}
-        message="Comentario eliminado"
+        open={snackbarProps.open}
+        message={snackbarProps.message}
+        autoHideDuration={snackbarProps.autoHideDuration}
+        onClose={snackbarProps.onClose}
         action={
-          <Button color="primary" size="small" onClick={handleUndoDelete}>
+          <Button color="primary" size="small" onClick={snackbarProps.onUndo}>
             Deshacer
           </Button>
         }
