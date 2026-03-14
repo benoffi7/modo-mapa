@@ -3,13 +3,16 @@ import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 
-const mockUser = { uid: 'test-uid-123' };
+const mockUser = { uid: 'test-uid-123', isAnonymous: true, providerData: [], emailVerified: false, reload: vi.fn() };
 
 let authStateCallback: ((user: unknown) => void) | null = null;
 const mockSignInAnonymously = vi.fn();
 const mockGetDoc = vi.fn();
 const mockSetDoc = vi.fn();
 const mockUpdateDoc = vi.fn();
+const mockLinkAnonymousWithEmail = vi.fn();
+const mockSignInWithEmailService = vi.fn();
+const mockSignOutAndReset = vi.fn();
 
 vi.mock('firebase/auth', () => ({
   signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args),
@@ -36,7 +39,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('../config/firebase', () => ({
-  auth: {},
+  auth: { currentUser: null },
   db: {},
 }));
 
@@ -46,6 +49,20 @@ vi.mock('../config/collections', () => ({
 
 vi.mock('../config/converters', () => ({
   userProfileConverter: {},
+}));
+
+vi.mock('../services/emailAuth', () => ({
+  linkAnonymousWithEmail: (...args: unknown[]) => mockLinkAnonymousWithEmail(...args),
+  signInWithEmail: (...args: unknown[]) => mockSignInWithEmailService(...args),
+  signOutAndReset: (...args: unknown[]) => mockSignOutAndReset(...args),
+  getAuthErrorMessage: (error: unknown) => {
+    if (error instanceof Error && 'code' in error) {
+      const code = (error as { code: string }).code;
+      if (code === 'auth/email-already-in-use') return 'Este email ya tiene una cuenta.';
+      if (code === 'auth/invalid-credential') return 'Email o contraseña incorrectos.';
+    }
+    return 'Ocurrió un error. Intentá de nuevo.';
+  },
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -64,6 +81,10 @@ describe('AuthContext', () => {
     mockSetDoc.mockResolvedValue(undefined);
     mockUpdateDoc.mockResolvedValue(undefined);
     mockSignInAnonymously.mockResolvedValue({ user: mockUser });
+    mockLinkAnonymousWithEmail.mockResolvedValue(undefined);
+    mockSignInWithEmailService.mockResolvedValue({ user: { uid: 'email-uid' } });
+    mockSignOutAndReset.mockResolvedValue(undefined);
+    mockUser.reload.mockResolvedValue(undefined);
   });
 
   describe('initial state', () => {
@@ -72,6 +93,8 @@ describe('AuthContext', () => {
       expect(result.current.isLoading).toBe(true);
       expect(result.current.user).toBeNull();
       expect(result.current.displayName).toBeNull();
+      expect(result.current.authMethod).toBe('anonymous');
+      expect(result.current.emailVerified).toBe(false);
     });
   });
 
@@ -130,6 +153,133 @@ describe('AuthContext', () => {
       await waitFor(() => {
         expect(result.current.displayName).toBeNull();
       });
+    });
+  });
+
+  describe('authMethod', () => {
+    it('returns "anonymous" for anonymous user', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.({ ...mockUser, isAnonymous: true, providerData: [] });
+      });
+
+      await waitFor(() => {
+        expect(result.current.authMethod).toBe('anonymous');
+      });
+    });
+
+    it('returns "email" for email/password user', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.({
+          uid: 'email-uid',
+          isAnonymous: false,
+          providerData: [{ providerId: 'password' }],
+          emailVerified: true,
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.authMethod).toBe('email');
+        expect(result.current.emailVerified).toBe(true);
+      });
+    });
+
+    it('returns "google" for google user', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.({
+          uid: 'google-uid',
+          isAnonymous: false,
+          providerData: [{ providerId: 'google.com' }],
+          emailVerified: true,
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.authMethod).toBe('google');
+      });
+    });
+  });
+
+  describe('linkEmailPassword', () => {
+    it('links anonymous user with email/password', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.linkEmailPassword('test@example.com', 'password123');
+      });
+
+      expect(mockLinkAnonymousWithEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ uid: 'test-uid-123' }),
+        'test@example.com',
+        'password123',
+      );
+    });
+
+    it('sets authError on failure', async () => {
+      mockLinkAnonymousWithEmail.mockRejectedValue(
+        Object.assign(new Error('fail'), { code: 'auth/email-already-in-use' }),
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await expect(result.current.linkEmailPassword('test@example.com', 'pass'))
+          .rejects.toThrow('fail');
+      });
+
+      expect(result.current.authError).toBe('Este email ya tiene una cuenta.');
+    });
+  });
+
+  describe('signInWithEmail', () => {
+    it('signs in with email/password', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        await result.current.signInWithEmail('test@example.com', 'password123');
+      });
+
+      expect(mockSignInWithEmailService).toHaveBeenCalledWith('test@example.com', 'password123');
+    });
+
+    it('sets authError on wrong credentials', async () => {
+      mockSignInWithEmailService.mockRejectedValue(
+        Object.assign(new Error('fail'), { code: 'auth/invalid-credential' }),
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        await expect(result.current.signInWithEmail('test@example.com', 'wrong'))
+          .rejects.toThrow('fail');
+      });
+
+      expect(result.current.authError).toBe('Email o contraseña incorrectos.');
+    });
+  });
+
+  describe('signOut', () => {
+    it('calls signOutAndReset', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        await result.current.signOut();
+      });
+
+      expect(mockSignOutAndReset).toHaveBeenCalled();
     });
   });
 

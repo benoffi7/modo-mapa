@@ -6,7 +6,6 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut as firebaseSignOut,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -15,6 +14,22 @@ import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
 import { setUserProperty } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
+import {
+  linkAnonymousWithEmail,
+  signInWithEmail as signInWithEmailService,
+  signOutAndReset,
+  getAuthErrorMessage,
+} from '../services/emailAuth';
+
+export type AuthMethod = 'anonymous' | 'email' | 'google';
+
+function getAuthMethod(user: User | null): AuthMethod {
+  if (!user || user.isAnonymous) return 'anonymous';
+  const providers = user.providerData.map((p) => p.providerId);
+  if (providers.includes('password')) return 'email';
+  if (providers.includes('google.com')) return 'google';
+  return 'anonymous';
+}
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +39,10 @@ interface AuthContextType {
   authError: string | null;
   signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
+  authMethod: AuthMethod;
+  emailVerified: boolean;
+  linkEmailPassword: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -34,6 +53,10 @@ const AuthContext = createContext<AuthContextType>({
   authError: null,
   signInWithGoogle: async () => null,
   signOut: async () => {},
+  authMethod: 'anonymous',
+  emailVerified: false,
+  linkEmailPassword: async () => {},
+  signInWithEmail: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -41,13 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [displayName, setDisplayNameState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('anonymous');
+  const [emailVerified, setEmailVerified] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        setUserProperty('auth_type', firebaseUser.isAnonymous ? 'anonymous' : 'google');
+        const method = getAuthMethod(firebaseUser);
+        setAuthMethod(method);
+        setEmailVerified(firebaseUser.emailVerified);
+        setUserProperty('auth_type', method);
         const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
         if (userDoc.exists()) {
           setDisplayNameState(userDoc.data().displayName || null);
@@ -76,10 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
-      // Update: only change displayName, preserve original createdAt
       await updateDoc(userRef, { displayName: trimmed });
     } else {
-      // Create: set both displayName and createdAt
       await setDoc(userRef, {
         displayName: trimmed,
         createdAt: serverTimestamp(),
@@ -102,9 +128,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const linkEmailPassword = useCallback(async (email: string, password: string): Promise<void> => {
+    if (!user) throw new Error('No user');
+    setAuthError(null);
+    try {
+      await linkAnonymousWithEmail(user, email, password);
+      await user.reload();
+      const refreshed = auth.currentUser;
+      if (refreshed) {
+        setUser(refreshed);
+        setAuthMethod(getAuthMethod(refreshed));
+        setEmailVerified(refreshed.emailVerified);
+      }
+    } catch (error) {
+      const message = getAuthErrorMessage(error);
+      setAuthError(message);
+      throw error;
+    }
+  }, [user]);
+
+  const signInWithEmail = useCallback(async (email: string, password: string): Promise<void> => {
+    setAuthError(null);
+    try {
+      await signInWithEmailService(email, password);
+    } catch (error) {
+      const message = getAuthErrorMessage(error);
+      setAuthError(message);
+      throw error;
+    }
+  }, []);
+
   const signOut = useCallback(async (): Promise<void> => {
     try {
-      await firebaseSignOut(auth);
+      await signOutAndReset();
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error signing out:', error);
     }
@@ -112,7 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextType>(() => ({
     user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
-  }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut]);
+    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
+  }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
+    authMethod, emailVerified, linkEmailPassword, signInWithEmail]);
 
   return (
     <AuthContext.Provider value={value}>
