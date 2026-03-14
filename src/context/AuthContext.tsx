@@ -12,7 +12,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firest
 import { auth, db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
-import { setUserProperty } from '../utils/analytics';
+import { setUserProperty, trackEvent } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import {
   linkAnonymousWithEmail,
@@ -140,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthMethod(getAuthMethod(refreshed));
         setEmailVerified(refreshed.emailVerified);
       }
+      trackEvent('account_created', { method: 'email' });
     } catch (error) {
       const message = getAuthErrorMessage(error);
       setAuthError(message);
@@ -151,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
     try {
       await signInWithEmailService(email, password);
+      trackEvent('email_sign_in');
     } catch (error) {
       const message = getAuthErrorMessage(error);
       setAuthError(message);
@@ -159,12 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async (): Promise<void> => {
+    const previousMethod = authMethod;
     try {
       await signOutAndReset();
+      trackEvent('sign_out', { method: previousMethod });
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error signing out:', error);
     }
-  }, []);
+  }, [authMethod]);
 
   const value = useMemo<AuthContextType>(() => ({
     user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
