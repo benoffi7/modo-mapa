@@ -4,6 +4,7 @@ export * from './storage';
 export * from './map';
 export * from './business';
 export * from './tags';
+export * from './badges';
 export * from './rankings';
 export * from './feedback';
 export * from './ui';

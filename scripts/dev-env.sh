@@ -17,6 +17,15 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# Use Java 21+ if available (required by firebase-tools 15+)
+if [ -d "/opt/homebrew/Cellar/openjdk@21" ]; then
+  JAVA21_HOME="$(find /opt/homebrew/Cellar/openjdk@21 -maxdepth 1 -type d | sort -V | tail -1)/libexec/openjdk.jdk/Contents/Home"
+  if [ -d "$JAVA21_HOME" ]; then
+    export JAVA_HOME="$JAVA21_HOME"
+    export PATH="$JAVA_HOME/bin:$PATH"
+  fi
+fi
+
 # Ports used by the dev environment
 PORT_VITE=5173
 PORT_FIRESTORE=8080

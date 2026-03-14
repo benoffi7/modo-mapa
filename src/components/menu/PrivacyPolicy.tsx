@@ -66,8 +66,16 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Contenido generado:</strong> comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
-            favoritos, etiquetas, fotos de menú, feedback (incluyendo imágenes adjuntas
-            opcionales) y votos de nivel de gasto.
+            favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
+            imágenes adjuntas opcionales) y votos de nivel de gasto.
+          </Li>
+          <Li>
+            <strong>Datos de ranking y logros:</strong> tu actividad en la app se utiliza para
+            calcular un puntaje de contribución que se muestra en rankings periódicos (semanales,
+            mensuales, anuales e histórico). El ranking incluye tu nombre de usuario, puntaje,
+            desglose de actividad y racha de días consecutivos. Estos datos son visibles para
+            todos los usuarios autenticados. Además, se calculan logros (badges) basados en tu
+            actividad y posición en el ranking.
           </Li>
           <Li>
             <strong>Datos de comportamiento (local):</strong> para las sugerencias
@@ -92,7 +100,8 @@ export default function PrivacyPolicy() {
         <Box component="ul" sx={{ pl: 1, mt: 0 }}>
           <Li>
             <strong>Cloud Firestore:</strong> almacena datos estructurados (comentarios,
-            calificaciones, favoritos, etc.) en servidores de Google Cloud.
+            calificaciones, favoritos, rankings de usuarios, logros, etc.) en servidores
+            de Google Cloud.
           </Li>
           <Li>
             <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
@@ -143,6 +152,12 @@ export default function PrivacyPolicy() {
           corrección de errores. No se comparte tu identidad ni tu UID; solo el
           contenido del mensaje. Ningún otro dato personal se comparte con terceros.
         </P>
+        <P>
+          Podés compartir voluntariamente tu posición y puntaje en el ranking usando
+          la función de compartir. Esto utiliza la Web Share API de tu navegador o copia
+          el texto al portapapeles, y se envía a la aplicación que elijas. Esta acción
+          es completamente voluntaria.
+        </P>
       </Section>
 
       <Divider sx={{ mb: 2.5 }} />
@@ -156,7 +171,8 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Eliminar tu contenido:</strong> podés borrar tus comentarios,
-            calificaciones, favoritos y etiquetas desde la app.
+            calificaciones, favoritos, likes y etiquetas desde la app. Los datos de ranking
+            son generados automáticamente a partir de tu actividad y se actualizan periódicamente.
           </Li>
           <Li>
             <strong>Controlar tu perfil:</strong> podés elegir si tu perfil es público

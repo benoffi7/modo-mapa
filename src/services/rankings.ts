@@ -28,8 +28,37 @@ export async function fetchLatestRanking(type: 'weekly' | 'monthly' | 'yearly'):
   return snap.empty ? null : snap.docs[0].data();
 }
 
-export function getCurrentPeriodKey(type: 'weekly' | 'monthly' | 'yearly'): string {
+export function getPreviousPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): string | null {
+  if (type === 'alltime') return null;
+
   const now = new Date();
+
+  if (type === 'yearly') {
+    return `yearly_${now.getFullYear() - 1}`;
+  }
+
+  if (type === 'monthly') {
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const month = String(prev.getMonth() + 1).padStart(2, '0');
+    return `monthly_${prev.getFullYear()}-${month}`;
+  }
+
+  // Weekly: previous ISO week
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  d.setUTCDate(d.getUTCDate() - 7);
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `weekly_${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+export function getCurrentPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): string {
+  const now = new Date();
+
+  if (type === 'alltime') {
+    return 'alltime';
+  }
 
   if (type === 'yearly') {
     return `yearly_${now.getFullYear()}`;
@@ -49,8 +78,12 @@ export function getCurrentPeriodKey(type: 'weekly' | 'monthly' | 'yearly'): stri
   return `weekly_${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
-function getPeriodRange(type: 'weekly' | 'monthly' | 'yearly'): { start: Date; end: Date } {
+function getPeriodRange(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): { start: Date; end: Date } {
   const now = new Date();
+
+  if (type === 'alltime') {
+    return { start: new Date(2020, 0, 1), end: new Date(now.getFullYear() + 1, 0, 1) };
+  }
 
   if (type === 'yearly') {
     return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear() + 1, 0, 1) };
@@ -87,10 +120,57 @@ async function countUserDocs(
   return snap.data().count;
 }
 
+/**
+ * Fetches the user's score from the last N periods of the given type.
+ * Returns an array of scores ordered from oldest to newest.
+ */
+export async function fetchUserScoreHistory(
+  userId: string,
+  periodType: 'weekly' | 'monthly' | 'yearly' | 'alltime',
+  count = 8,
+): Promise<number[]> {
+  if (periodType === 'alltime') return [];
+  const safeCount = Math.min(count, 12);
+
+  const keys: string[] = [];
+  const now = new Date();
+
+  for (let i = safeCount - 1; i >= 0; i--) {
+    if (periodType === 'monthly') {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      keys.push(`monthly_${d.getFullYear()}-${m}`);
+    } else if (periodType === 'yearly') {
+      keys.push(`yearly_${now.getFullYear() - i}`);
+    } else {
+      // weekly
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 7);
+      const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = utc.getUTCDay() || 7;
+      utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+      const weekNum = Math.ceil(((utc.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+      keys.push(`weekly_${utc.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`);
+    }
+  }
+
+  // Deduplicate keys (can happen at year boundaries)
+  const uniqueKeys = [...new Set(keys)];
+
+  const rankings = await Promise.all(uniqueKeys.map((k) => fetchRanking(k)));
+
+  return rankings.map((r) => {
+    if (!r) return 0;
+    const entry = r.rankings.find((e) => e.userId === userId);
+    return entry?.score ?? 0;
+  });
+}
+
 export async function fetchUserLiveScore(
   userId: string,
   displayName: string,
-  periodType: 'weekly' | 'monthly' | 'yearly',
+  periodType: 'weekly' | 'monthly' | 'yearly' | 'alltime',
 ): Promise<UserRankingEntry> {
   const { start, end } = getPeriodRange(periodType);
 
