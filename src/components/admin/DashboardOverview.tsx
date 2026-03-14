@@ -161,7 +161,7 @@ export default function DashboardOverview() {
               <StatCard label="Total enviadas" value={notifStats.total} />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-              <StatCard label="Leídas" value={`${notifStats.read} (${readRate}%)`} />
+              <StatCard label={`Leídas (${readRate}%)`} value={notifStats.read} />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
               <StatCard label="No leídas" value={notifStats.unread} />
