@@ -3,6 +3,7 @@ import EmailPasswordDialog from './EmailPasswordDialog';
 
 const mockLinkEmailPassword = vi.fn();
 const mockSignInWithEmail = vi.fn();
+const mockSendResetEmail = vi.fn();
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -10,6 +11,11 @@ vi.mock('../../context/AuthContext', () => ({
     signInWithEmail: mockSignInWithEmail,
     authError: null,
   }),
+}));
+
+vi.mock('../../services/emailAuth', () => ({
+  sendResetEmail: (...args: unknown[]) => mockSendResetEmail(...args),
+  getAuthErrorMessage: () => 'Error de prueba.',
 }));
 
 describe('EmailPasswordDialog', () => {
@@ -22,6 +28,7 @@ describe('EmailPasswordDialog', () => {
     vi.clearAllMocks();
     mockLinkEmailPassword.mockResolvedValue(undefined);
     mockSignInWithEmail.mockResolvedValue(undefined);
+    mockSendResetEmail.mockResolvedValue(undefined);
   });
 
   it('renders register tab by default', () => {
@@ -117,5 +124,36 @@ describe('EmailPasswordDialog', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it('shows forgot password link on login tab', () => {
+    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
+    expect(screen.getByRole('button', { name: 'Olvidé mi contraseña' })).toBeInTheDocument();
+  });
+
+  it('does not show forgot password on register tab', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
+    expect(screen.queryByRole('button', { name: 'Olvidé mi contraseña' })).not.toBeInTheDocument();
+  });
+
+  it('sends reset email when email is valid', async () => {
+    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Olvidé mi contraseña' }));
+
+    await waitFor(() => {
+      expect(mockSendResetEmail).toHaveBeenCalledWith('test@example.com');
+      expect(screen.getByText(/enviamos un email/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows error when email is empty on forgot password', async () => {
+    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Olvidé mi contraseña' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ingresá tu email/)).toBeInTheDocument();
+    });
+    expect(mockSendResetEmail).not.toHaveBeenCalled();
   });
 });

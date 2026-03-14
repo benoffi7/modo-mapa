@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { PASSWORD_MIN_LENGTH } from '../../constants/auth';
+import { sendResetEmail, getAuthErrorMessage } from '../../services/emailAuth';
 
 interface EmailPasswordDialogProps {
   open: boolean;
@@ -37,12 +38,14 @@ export default function EmailPasswordDialog({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
     setLocalError(null);
+    setResetSent(false);
   };
 
   const handleTabChange = (_: unknown, value: TabValue) => {
@@ -90,6 +93,23 @@ export default function EmailPasswordDialog({
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!emailValid) {
+      setLocalError('Ingresá tu email para recibir el link de recuperación.');
+      return;
+    }
+    setLocalError(null);
+    setLoading(true);
+    try {
+      await sendResetEmail(email);
+      setResetSent(true);
+    } catch (error) {
+      setLocalError(getAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const error = localError ?? authError;
 
   return (
@@ -103,6 +123,12 @@ export default function EmailPasswordDialog({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+
+        {resetSent && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Te enviamos un email para restablecer tu contraseña.
           </Alert>
         )}
 
@@ -155,6 +181,17 @@ export default function EmailPasswordDialog({
                   : undefined
               }
             />
+          )}
+          {tab === 'login' && (
+            <Button
+              variant="text"
+              size="small"
+              onClick={handleForgotPassword}
+              disabled={loading}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none', mt: -1 }}
+            >
+              Olvidé mi contraseña
+            </Button>
           )}
         </Box>
       </DialogContent>
