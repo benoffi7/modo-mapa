@@ -21,16 +21,18 @@
     window.$docsify = {
       name: 'Modo Mapa',
       repo: 'https://github.com/benoffi7/modo-mapa',
-      loadSidebar: true,
+      loadSidebar: '_sidebar.md',
+      mergeSidebar: true,
       subMaxLevel: 2,
       auto2top: true,
+      notFoundPage: true,
       search: {
         placeholder: 'Buscar...',
         noData: 'Sin resultados',
         paths: 'auto',
       },
       alias: {
-        '/.*/_sidebar.md': '/_sidebar.md',
+        '/(feat|fix|reference|reports|issues)/.*/_sidebar.md': '/_sidebar.md',
       },
     };
   </script>
