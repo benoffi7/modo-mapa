@@ -6,10 +6,12 @@ import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { incrementBusinessCount } from '../utils/aggregates';
 import { logAbuse } from '../utils/abuseLogger';
 import { createNotification } from '../utils/notifications';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onCommentCreated = onDocumentCreated(
   'comments/{commentId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getFirestore();
     const snap = event.data;
     if (!snap) return;
@@ -87,6 +89,8 @@ export const onCommentCreated = onDocumentCreated(
         });
       }
     }
+
+    await trackFunctionTiming('onCommentCreated', startMs);
   },
 );
 

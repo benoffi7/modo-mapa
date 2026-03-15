@@ -27,3 +27,4 @@ export { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto } f
 export { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from './admin/feedback';
 export { getAuthStats } from './admin/authStats';
 export { setAdminClaim, removeAdminClaim } from './admin/claims';
+export { getStorageStats } from './admin/storageStats';

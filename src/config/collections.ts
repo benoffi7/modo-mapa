@@ -15,4 +15,5 @@ export const COLLECTIONS = {
   USER_RANKINGS: 'userRankings',
   NOTIFICATIONS: 'notifications',
   USER_SETTINGS: 'userSettings',
+  PERF_METRICS: 'perfMetrics',
 } as const;

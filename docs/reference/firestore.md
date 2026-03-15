@@ -12,14 +12,15 @@
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
 | `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/datos_usuario/datos_comercio/otro), status (pending/viewed/responded/resolved), createdAt, flagged?, adminResponse?, respondedAt?, respondedBy?, viewedByUser?, mediaUrl?, mediaType? (image/video), githubIssueUrl? | Create auth+owner; read/delete owner; admin read+update (respond/resolve); user update (viewedByUser) |
-| `config` | `counters`, `moderation` | counters: totales + daily reads/writes/deletes; moderation: bannedWords | Admin read; Functions write |
-| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, newAccounts, daily ops, byCollection | Auth read; Functions write |
+| `config` | `counters`, `moderation`, `perfCounters` | counters: totales + daily reads/writes/deletes; moderation: bannedWords; perfCounters: Cloud Function timings (array union per function name, reset daily) | Admin read; Functions write |
+| `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, newAccounts, daily ops, byCollection, performance? (vitals/queries/functions/sampleCount) | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
 | `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
+| `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create auth; read admin; Functions read (dailyMetrics aggregation) |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
 
 ### Subcollections
@@ -170,7 +171,13 @@ interface AdminCounters {
 
 interface DailyMetrics {
   date, ratingDistribution, topFavorited, topCommented, topRated, topTags,
-  dailyReads, dailyWrites, dailyDeletes, byCollection, activeUsers, newAccounts
+  dailyReads, dailyWrites, dailyDeletes, byCollection, activeUsers, newAccounts,
+  performance?: {
+    vitals: Record<string, { p50, p75, p95 }>;
+    queries: Record<string, { p50, p95 }>;
+    functions: Record<string, { p50, p95, count }>;
+    sampleCount: number;
+  }
 }
 
 // Auth metrics (from getAuthStats callable)
@@ -211,6 +218,23 @@ interface CommentLikeStats {
 }
 
 interface AbuseLog { id, userId, type, collection, detail, timestamp }
+
+// Performance metrics (captured per session)
+interface PerfVitals { lcp: number | null; inp: number | null; cls: number | null; ttfb: number | null }
+interface QueryTiming { p50: number; p95: number; count: number }
+interface DeviceInfo { type: 'mobile' | 'desktop'; connection: string }
+interface PerfMetricsDoc {
+  sessionId: string;
+  userId: string | null;
+  timestamp: Timestamp;
+  vitals: PerfVitals;
+  queries: Record<string, QueryTiming>;
+  device: DeviceInfo;
+  appVersion: string;
+}
+
+// Storage stats (from getStorageStats callable)
+interface StorageStats { totalBytes: number; fileCount: number; updatedAt: string }
 ```
 
 ---

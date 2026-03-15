@@ -20,6 +20,7 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 | `suggestions.ts` | Pesos del algoritmo de sugerencias (`SUGGESTION_WEIGHTS`), `MAX_SUGGESTIONS`, `NEARBY_RADIUS_KM` |
 | `auth.ts` | PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS (en espanol) |
 | `admin.ts` | Email admin, page size, status chips/labels, abuse type labels/colors |
+| `performance.ts` | `PERF_THRESHOLDS` (green/red por vital: LCP, INP, CLS, TTFB), `PERF_FLUSH_DELAY_MS` (30s) |
 | `index.ts` | Barrel re-export de todos los modulos (15) + COLLECTIONS de config |
 
 `types/index.ts` re-exporta `PREDEFINED_TAGS`, `PRICE_LEVEL_LABELS` y `CATEGORY_LABELS` desde constants para backwards compatibility.
@@ -43,7 +44,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
 | `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
-| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts) |
+| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts), `fetchPerfMetrics` (ultimos N docs de `perfMetrics`), `fetchStorageStats` (callable → `getStorageStats`) |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
 ### Reglas del service layer
@@ -130,6 +131,19 @@ Utilidad centralizada para Firebase Analytics (GA4). Solo activa en produccion, 
 | Funcion | Descripcion |
 |---------|-------------|
 | `truncate(text, maxLength)` | Trunca texto y agrega `...` si excede `maxLength`. Compartido entre CommentsList y UserProfileSheet |
+
+### `perfMetrics.ts`
+
+Utilidad de captura de Web Vitals y query timing. Solo activa en produccion si `analyticsEnabled`.
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `initPerfMetrics(uid, analyticsEnabled)` | Inicializa session, observa LCP/INP/CLS/TTFB, registra flush en `visibilitychange` |
+| `measureAsync(name, fn)` | Wrapper que mide duracion de una operacion async y acumula timing por nombre |
+| `calculatePercentile(arr, p)` | Calcula percentil `p` de un array numerico |
+| `getDeviceInfo()` | Detecta mobile/desktop y tipo de conexion (`effectiveType`) |
+
+Flush: una unica escritura a `perfMetrics` collection por sesion (al ocultar tab o tras 30s). Best-effort, silent fail.
 
 ### `businessHelpers.ts`
 
