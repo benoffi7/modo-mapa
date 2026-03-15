@@ -22,7 +22,6 @@
       name: 'Modo Mapa',
       repo: 'https://github.com/benoffi7/modo-mapa',
       loadSidebar: '_sidebar.md',
-      mergeSidebar: true,
       subMaxLevel: 2,
       auto2top: true,
       notFoundPage: true,
@@ -32,7 +31,7 @@
         paths: 'auto',
       },
       alias: {
-        '/:path(.*)/_sidebar.md': '/_sidebar.md',
+        '/.*/_sidebar.md': '/_sidebar.md',
       },
     };
   </script>
