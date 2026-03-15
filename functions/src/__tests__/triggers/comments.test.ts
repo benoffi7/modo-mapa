@@ -12,6 +12,7 @@ const {
   mockTrackWrite,
   mockTrackDelete,
   mockLogAbuse,
+  mockCreateNotification,
 } = vi.hoisted(() => ({
   handlers: {} as Record<string, (event: unknown) => Promise<void>>,
   mockIncrement: vi.fn().mockReturnValue({ __increment: true }),
@@ -22,6 +23,7 @@ const {
   mockTrackWrite: vi.fn().mockResolvedValue(undefined),
   mockTrackDelete: vi.fn().mockResolvedValue(undefined),
   mockLogAbuse: vi.fn().mockResolvedValue(undefined),
+  mockCreateNotification: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock firebase-admin/firestore
@@ -56,6 +58,7 @@ vi.mock('../../utils/counters', () => ({
 }));
 vi.mock('../../utils/abuseLogger', () => ({ logAbuse: (...args: unknown[]) => mockLogAbuse(...args) }));
 vi.mock('../../utils/aggregates', () => ({ incrementBusinessCount: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../../utils/notifications', () => ({ createNotification: (...args: unknown[]) => mockCreateNotification(...args) }));
 
 // --- Firestore mock helpers ---
 
@@ -191,6 +194,69 @@ describe('onCommentCreated', () => {
     });
 
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('creates comment_reply notification for parent author', async () => {
+    const parentDoc = createMockDoc({ userId: 'parent-author', replyCount: 2 });
+    createMockDb({ parentDoc });
+
+    await handlers['created:comments/{commentId}']({
+      data: {
+        data: () => ({
+          userId: 'replier',
+          text: 'Great comment!',
+          businessId: 'b1',
+          businessName: 'Café Test',
+          parentId: 'parent123',
+          displayName: 'Replier Name',
+        }),
+        ref: { delete: vi.fn() },
+      },
+    });
+
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        userId: 'parent-author',
+        type: 'comment_reply',
+        actorId: 'replier',
+        actorName: 'Replier Name',
+        businessId: 'b1',
+        referenceId: 'parent123',
+      }),
+    );
+  });
+
+  it('does NOT notify when replying to own comment', async () => {
+    const parentDoc = createMockDoc({ userId: 'same-user', replyCount: 1 });
+    createMockDb({ parentDoc });
+
+    await handlers['created:comments/{commentId}']({
+      data: {
+        data: () => ({
+          userId: 'same-user',
+          text: 'Self reply',
+          businessId: 'b1',
+          parentId: 'parent123',
+        }),
+        ref: { delete: vi.fn() },
+      },
+    });
+
+    expect(mockCreateNotification).not.toHaveBeenCalled();
+  });
+
+  it('does NOT notify for root comments (no parentId)', async () => {
+    createMockDb();
+
+    await handlers['created:comments/{commentId}']({
+      data: {
+        data: () => ({ userId: 'u1', text: 'root', businessId: 'b1' }),
+        ref: { delete: vi.fn() },
+      },
+    });
+
+    expect(mockCreateNotification).not.toHaveBeenCalled();
   });
 });
 
