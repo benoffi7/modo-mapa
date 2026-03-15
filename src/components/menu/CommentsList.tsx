@@ -1,4 +1,5 @@
-import { useMemo, useState, useCallback, useDeferredValue, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback, useDeferredValue, useEffect, useRef, type RefCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Autocomplete,
   Box,
@@ -25,6 +26,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { useSwipeActions } from '../../hooks/useSwipeActions';
@@ -36,15 +38,213 @@ import { formatRelativeTime } from '../../utils/formatDate';
 import { truncate } from '../../utils/text';
 import type { Business, Comment } from '../../types';
 
+const VIRTUALIZE_THRESHOLD = 20;
+
 type SortMode = 'recent' | 'oldest' | 'useful';
 
 interface Props {
   onNavigate: () => void;
 }
 
+interface CommentItemProps {
+  id: string;
+  comment: Comment;
+  business: Business | null;
+  editingId: string | null;
+  editText: string;
+  isSavingEdit: boolean;
+  swipe: ReturnType<typeof useSwipeActions>;
+  getSwipeRef: (id: string) => React.RefObject<HTMLElement | null>;
+  unreadReplyCommentIds: Set<string>;
+  onSelectBusiness: (business: Business | null, commentId?: string) => void;
+  onStartEdit: (comment: Comment) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onSetEditText: (text: string) => void;
+  onMarkForDelete: (id: string, comment: Comment) => void;
+}
+
+function CommentItem({
+  id, comment, business, editingId, editText, isSavingEdit,
+  swipe, getSwipeRef, unreadReplyCommentIds,
+  onSelectBusiness, onStartEdit, onSaveEdit, onCancelEdit, onSetEditText, onMarkForDelete,
+}: CommentItemProps) {
+  const isSwiped = swipe.swipedId === id;
+  const itemRef = getSwipeRef(id);
+  // eslint-disable-next-line react-hooks/refs -- ref is only read inside touch event callbacks, not during render
+  const handlers = swipe.getHandlers(id, itemRef);
+  const style = swipe.getStyle(id);
+
+  return (
+    <Box
+      sx={{ position: 'relative', overflow: 'hidden' }}
+      onClick={() => isSwiped && swipe.reset()}
+    >
+      {isSwiped && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            ...(swipe.direction === 'left'
+              ? { right: 0, bgcolor: 'error.main' }
+              : { left: 0, bgcolor: 'primary.main' }),
+            width: 80,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <IconButton
+            sx={{ color: 'common.white' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (swipe.direction === 'left') {
+                onMarkForDelete(id, comment);
+              } else {
+                onStartEdit(comment);
+              }
+              swipe.reset();
+            }}
+            aria-label={swipe.direction === 'left' ? 'Eliminar' : 'Editar'}
+          >
+            {swipe.direction === 'left'
+              ? <DeleteOutlineIcon />
+              : <EditOutlinedIcon />}
+          </IconButton>
+        </Box>
+      )}
+
+      <Box
+        ref={itemRef}
+        {...handlers}
+        sx={{
+          position: 'relative',
+          bgcolor: 'background.paper',
+          zIndex: 1,
+        }}
+        style={style}
+      >
+        <ListItemButton
+          onClick={() => editingId !== id && !isSwiped && onSelectBusiness(business, id)}
+          disabled={!business && editingId !== id}
+          sx={{ pr: 1, alignItems: 'flex-start' }}
+        >
+          <ListItemText
+            primary={business?.name || 'Comercio desconocido'}
+            secondary={
+              editingId === id ? (
+                <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    multiline
+                    maxRows={4}
+                    value={editText}
+                    onChange={(e) => onSetEditText(e.target.value)}
+                    disabled={isSavingEdit}
+                    slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+                    helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={(e) => { e.stopPropagation(); onSaveEdit(); }}
+                      disabled={isSavingEdit || !editText.trim()}
+                      aria-label="Guardar edición"
+                    >
+                      <CheckIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); onCancelEdit(); }}
+                      disabled={isSavingEdit}
+                      aria-label="Cancelar edición"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+              ) : (
+                <>
+                  <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
+                    {truncate(comment.text, 80)}
+                  </Typography>
+                  <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.25, flexWrap: 'wrap' }}>
+                    <Typography component="span" variant="caption" color="text.secondary">
+                      {formatRelativeTime(comment.createdAt)}
+                    </Typography>
+                    {comment.updatedAt && (
+                      <Typography component="span" variant="caption" color="text.disabled">
+                        (editado)
+                      </Typography>
+                    )}
+                    {comment.likeCount > 0 && (
+                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                        <FavoriteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                        <Typography component="span" variant="caption" color="text.disabled">
+                          {comment.likeCount}
+                        </Typography>
+                      </Box>
+                    )}
+                    {(comment.replyCount ?? 0) > 0 && (
+                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                        {unreadReplyCommentIds.has(comment.id) && (
+                          <Box
+                            component="span"
+                            sx={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              bgcolor: 'info.main',
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <ChatBubbleOutlineIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {comment.replyCount}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </>
+              )
+            }
+            primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+          />
+          {editingId !== id && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); onStartEdit(comment); }}
+                sx={{ color: 'text.secondary' }}
+                aria-label="Editar comentario"
+              >
+                <EditOutlinedIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); onMarkForDelete(id, comment); }}
+                sx={{ color: 'text.secondary' }}
+                aria-label="Eliminar comentario"
+              >
+                <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Box>
+          )}
+        </ListItemButton>
+      </Box>
+    </Box>
+  );
+}
+
 export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
+  const { notifications, markRead } = useNotifications();
 
   // Data loading
   const collectionRef = useMemo(() => getCommentsCollection(), []);
@@ -92,6 +292,17 @@ export default function CommentsList({ onNavigate }: Props) {
     }
     return swipeRefs.current.get(id)!;
   }, []);
+
+  // Unread reply notifications — referenceId points to the parent comment id
+  const unreadReplyCommentIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const n of notifications) {
+      if (n.type === 'comment_reply' && !n.read && n.referenceId) {
+        ids.add(n.referenceId);
+      }
+    }
+    return ids;
+  }, [notifications]);
 
   // "Load all" when search is active — uses loadAll from hook (async loop with hasMoreRef)
   useEffect(() => {
@@ -184,8 +395,16 @@ export default function CommentsList({ onNavigate }: Props) {
     setEditText('');
   }, []);
 
-  const handleSelectBusiness = (business: Business | null) => {
+  const handleSelectBusiness = (business: Business | null, commentId?: string) => {
     if (!business) return;
+    // Mark unread reply notifications for this comment as read
+    if (commentId) {
+      for (const n of notifications) {
+        if (n.type === 'comment_reply' && !n.read && n.referenceId === commentId) {
+          markRead(n.id);
+        }
+      }
+    }
     setSelectedBusiness(business);
     onNavigate();
   };
@@ -193,6 +412,27 @@ export default function CommentsList({ onNavigate }: Props) {
   const isFiltered = !!deferredSearch || !!filterBusiness;
 
   const showControls = comments.length >= 3;
+
+  // Virtualization (#112)
+  const shouldVirtualize = filteredComments.length >= VIRTUALIZE_THRESHOLD;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: filteredComments.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 72,
+    overscan: 5,
+    enabled: shouldVirtualize,
+  });
+
+  // Auto-loadMore when near the end of virtual list
+  const lastVirtualItem = virtualizer.getVirtualItems().at(-1);
+  const lastVirtualIndex = lastVirtualItem?.index ?? -1;
+  useEffect(() => {
+    if (!shouldVirtualize || lastVirtualIndex < 0 || !hasMore || isLoadingMore || searchInput) return;
+    if (lastVirtualIndex >= filteredComments.length - 5) {
+      loadMore();
+    }
+  }, [shouldVirtualize, lastVirtualIndex, filteredComments.length, hasMore, isLoadingMore, searchInput, loadMore]);
 
   return (
     <PaginatedListShell
@@ -353,175 +593,80 @@ export default function CommentsList({ onNavigate }: Props) {
         </Typography>
       )}
 
-      {filteredComments.length > 0 && (
+      {filteredComments.length > 0 && !shouldVirtualize && (
         <List disablePadding>
-          {filteredComments.map(({ id, comment, business }) => {
-            const isSwiped = swipe.swipedId === id;
-            const itemRef = getSwipeRef(id);
-            const handlers = swipe.getHandlers(id, itemRef);
-            const style = swipe.getStyle(id);
-
-            return (
-              <Box
-                key={id}
-                sx={{ position: 'relative', overflow: 'hidden' }}
-                onClick={() => isSwiped && swipe.reset()}
-              >
-                {/* #109: Revealed swipe actions behind the item */}
-                {isSwiped && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      ...(swipe.direction === 'left'
-                        ? { right: 0, bgcolor: 'error.main' }
-                        : { left: 0, bgcolor: 'primary.main' }),
-                      width: 80,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <IconButton
-                      sx={{ color: 'common.white' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (swipe.direction === 'left') {
-                          markForDelete(id, comment);
-                        } else {
-                          handleStartEdit(comment);
-                        }
-                        swipe.reset();
-                      }}
-                      aria-label={swipe.direction === 'left' ? 'Eliminar' : 'Editar'}
-                    >
-                      {swipe.direction === 'left'
-                        ? <DeleteOutlineIcon />
-                        : <EditOutlinedIcon />}
-                    </IconButton>
-                  </Box>
-                )}
-
-                {/* Swipeable list item */}
-                <Box
-                  ref={itemRef}
-                  {...handlers}
-                  sx={{
-                    position: 'relative',
-                    bgcolor: 'background.paper',
-                    zIndex: 1,
-                  }}
-                  style={style}
-                >
-                  <ListItemButton
-                    onClick={() => editingId !== id && !isSwiped && handleSelectBusiness(business)}
-                    disabled={!business && editingId !== id}
-                    sx={{ pr: 1, alignItems: 'flex-start' }}
-                  >
-                    <ListItemText
-                      primary={business?.name || 'Comercio desconocido'}
-                      secondary={
-                        editingId === id ? (
-                          // #106: Edit inline
-                          <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              multiline
-                              maxRows={4}
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              disabled={isSavingEdit}
-                              slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                              helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
-                                disabled={isSavingEdit || !editText.trim()}
-                                aria-label="Guardar edición"
-                              >
-                                <CheckIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
-                                disabled={isSavingEdit}
-                                aria-label="Cancelar edición"
-                              >
-                                <CloseIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                        ) : (
-                          <>
-                            {/* Comment text */}
-                            <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
-                              {truncate(comment.text, 80)}
-                            </Typography>
-                            {/* #108 + #104: Metadata row */}
-                            <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.25, flexWrap: 'wrap' }}>
-                              <Typography component="span" variant="caption" color="text.secondary">
-                                {formatRelativeTime(comment.createdAt)}
-                              </Typography>
-                              {comment.updatedAt && (
-                                <Typography component="span" variant="caption" color="text.disabled">
-                                  (editado)
-                                </Typography>
-                              )}
-                              {comment.likeCount > 0 && (
-                                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                                  <FavoriteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                                  <Typography component="span" variant="caption" color="text.disabled">
-                                    {comment.likeCount}
-                                  </Typography>
-                                </Box>
-                              )}
-                              {(comment.replyCount ?? 0) > 0 && (
-                                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                                  <ChatBubbleOutlineIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
-                                  <Typography component="span" variant="caption" color="text.secondary">
-                                    {comment.replyCount}
-                                  </Typography>
-                                </Box>
-                              )}
-                            </Box>
-                          </>
-                        )
-                      }
-                      primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-                    />
-                    {/* Action buttons: edit + delete (visible fallback for accessibility) */}
-                    {editingId !== id && (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); handleStartEdit(comment); }}
-                          sx={{ color: 'text.secondary' }}
-                          aria-label="Editar comentario"
-                        >
-                          <EditOutlinedIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); markForDelete(id, comment); }}
-                          sx={{ color: 'text.secondary' }}
-                          aria-label="Eliminar comentario"
-                        >
-                          <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </ListItemButton>
-                </Box>
-              </Box>
-            );
-          })}
+          {filteredComments.map(({ id, comment, business }) => (
+            <CommentItem
+              key={id}
+              id={id}
+              comment={comment}
+              business={business}
+              editingId={editingId}
+              editText={editText}
+              isSavingEdit={isSavingEdit}
+              swipe={swipe}
+              getSwipeRef={getSwipeRef}
+              unreadReplyCommentIds={unreadReplyCommentIds}
+              onSelectBusiness={handleSelectBusiness}
+              onStartEdit={handleStartEdit}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onSetEditText={setEditText}
+              onMarkForDelete={markForDelete}
+            />
+          ))}
         </List>
+      )}
+
+      {filteredComments.length > 0 && shouldVirtualize && (
+        <Box
+          ref={scrollContainerRef}
+          sx={{ flex: 1, overflow: 'auto' }}
+        >
+          <List
+            disablePadding
+            sx={{
+              height: virtualizer.getTotalSize(),
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const { id, comment, business } = filteredComments[virtualRow.index];
+              return (
+                <Box
+                  key={id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement as RefCallback<HTMLDivElement>}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <CommentItem
+                    id={id}
+                    comment={comment}
+                    business={business}
+                    editingId={editingId}
+                    editText={editText}
+                    isSavingEdit={isSavingEdit}
+                    swipe={swipe}
+                    getSwipeRef={getSwipeRef}
+                    unreadReplyCommentIds={unreadReplyCommentIds}
+                    onSelectBusiness={handleSelectBusiness}
+                    onStartEdit={handleStartEdit}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onSetEditText={setEditText}
+                    onMarkForDelete={markForDelete}
+                  />
+                </Box>
+              );
+            })}
+          </List>
+        </Box>
       )}
 
       <Snackbar

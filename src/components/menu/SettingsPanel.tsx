@@ -255,6 +255,13 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyFeedback', val)}
       />
+      <SettingRow
+        label="Respuestas a comentarios"
+        checked={settings.notifyReplies}
+        disabled={!settings.notificationsEnabled}
+        indented
+        onChange={(val) => updateSetting('notifyReplies', val)}
+      />
 
       <Divider sx={{ my: 1.5 }} />
 
