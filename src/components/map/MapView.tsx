@@ -79,7 +79,7 @@ export default function MapView() {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             textAlign: 'center',
-            bgcolor: 'rgba(255,255,255,0.95)',
+            bgcolor: (theme) => `rgba(${theme.palette.mode === 'dark' ? '30,30,30' : '255,255,255'},0.95)`,
             borderRadius: 2,
             px: 3,
             py: 2,

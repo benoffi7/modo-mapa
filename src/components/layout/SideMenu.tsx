@@ -41,7 +41,7 @@ import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { trackEvent } from '../../utils/analytics';
-import { ADD_BUSINESS_URL } from '../../constants/ui';
+import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 
 // Lazy-loaded section components (P1.3 — keeps them out of the main chunk)
@@ -152,7 +152,7 @@ export default function SideMenu({ open, onClose }: Props) {
               {/* User header */}
               <Box sx={{ p: 2, pb: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: '#1a73e8', width: 40, height: 40 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
                     {userName.charAt(0).toUpperCase()}
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -219,49 +219,49 @@ export default function SideMenu({ open, onClose }: Props) {
 
                 <ListItemButton onClick={() => setActiveSection('recent')}>
                   <ListItemIcon>
-                    <HistoryIcon sx={{ color: '#ff9800' }} />
+                    <HistoryIcon sx={{ color: 'warning.main' }} />
                   </ListItemIcon>
                   <ListItemText primary="Recientes" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('suggestions')}>
                   <ListItemIcon>
-                    <LightbulbOutlinedIcon sx={{ color: '#fbc02d' }} />
+                    <LightbulbOutlinedIcon sx={{ color: 'warning.light' }} />
                   </ListItemIcon>
                   <ListItemText primary="Sugeridos" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('comments')}>
                   <ListItemIcon>
-                    <ChatBubbleOutlineIcon sx={{ color: '#1a73e8' }} />
+                    <ChatBubbleOutlineIcon sx={{ color: 'primary.main' }} />
                   </ListItemIcon>
                   <ListItemText primary="Comentarios" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('ratings')}>
                   <ListItemIcon>
-                    <StarOutlineIcon sx={{ color: '#fbbc04' }} />
+                    <StarOutlineIcon sx={{ color: 'warning.light' }} />
                   </ListItemIcon>
                   <ListItemText primary="Calificaciones" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}>
                   <ListItemIcon>
-                    <FeedbackOutlinedIcon sx={{ color: '#34a853' }} />
+                    <FeedbackOutlinedIcon sx={{ color: 'success.main' }} />
                   </ListItemIcon>
                   <ListItemText primary="Feedback" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('rankings')}>
                   <ListItemIcon>
-                    <LeaderboardIcon sx={{ color: '#e65100' }} />
+                    <LeaderboardIcon sx={{ color: RANKINGS_COLOR }} />
                   </ListItemIcon>
                   <ListItemText primary="Rankings" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('stats')}>
                   <ListItemIcon>
-                    <BarChartIcon sx={{ color: '#7b1fa2' }} />
+                    <BarChartIcon sx={{ color: STATS_COLOR }} />
                   </ListItemIcon>
                   <ListItemText primary="Estadísticas" />
                 </ListItemButton>
@@ -297,7 +297,7 @@ export default function SideMenu({ open, onClose }: Props) {
                 <Divider />
                 <ListItemButton onClick={() => { trackEvent('dark_mode_toggle', { enabled: mode !== 'dark' }); toggleColorMode(); }} sx={{ py: 1 }}>
                   <ListItemIcon sx={{ minWidth: 40 }}>
-                    {mode === 'dark' ? <DarkModeIcon sx={{ color: '#ffb74d' }} /> : <LightModeIcon sx={{ color: '#fb8c00' }} />}
+                    {mode === 'dark' ? <DarkModeIcon sx={{ color: 'warning.light' }} /> : <LightModeIcon sx={{ color: 'warning.main' }} />}
                   </ListItemIcon>
                   <ListItemText primary="Modo oscuro" />
                   <Switch

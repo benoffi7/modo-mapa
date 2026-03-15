@@ -61,7 +61,7 @@ export default function BusinessSheet() {
                 width: 40,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: '#dadce0',
+                backgroundColor: 'divider',
               }}
             />
           </Box>

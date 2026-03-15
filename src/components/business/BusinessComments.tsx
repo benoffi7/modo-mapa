@@ -5,9 +5,6 @@ import {
   TextField,
   Button,
   List,
-  ListItem,
-  ListItemText,
-  Avatar,
   Divider,
   IconButton,
   Snackbar,
@@ -15,19 +12,13 @@ import {
   Collapse,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import ReplyIcon from '@mui/icons-material/Reply';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useAuth } from '../../context/AuthContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
-import { formatDateMedium } from '../../utils/formatDate';
+import CommentRow from './CommentRow';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
+import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import type { Comment } from '../../types';
 
@@ -60,8 +51,18 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Undo delete
-  const [pendingDeletes, setPendingDeletes] = useState<Map<string, Comment>>(new Map());
-  const deleteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const onConfirmDeleteComment = useCallback(
+    async (comment: Comment) => {
+      if (!user) return;
+      await deleteComment(comment.id, user.uid);
+    },
+    [user],
+  );
+  const { isPendingDelete, markForDelete: markCommentForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
+    onConfirmDelete: onConfirmDeleteComment,
+    onDeleteComplete: onCommentsChange,
+    message: 'Comentario eliminado',
+  });
 
   // Optimistic likes
   const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
@@ -104,9 +105,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
 
   // Sorted top-level comments only
   const sortedTopLevel = useMemo(() => {
-    const visible = pendingDeletes.size > 0
-      ? topLevelComments.filter((c) => !pendingDeletes.has(c.id))
-      : topLevelComments;
+    const visible = topLevelComments.filter((c) => !isPendingDelete(c.id));
 
     return [...visible].sort((a, b) => {
       switch (sortMode) {
@@ -115,7 +114,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         case 'useful': return b.likeCount - a.likeCount;
       }
     });
-  }, [topLevelComments, sortMode, pendingDeletes]);
+  }, [topLevelComments, sortMode, isPendingDelete]);
 
   // Helpers for optimistic likes
   const isLiked = useCallback((commentId: string) => {
@@ -144,15 +143,15 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     setIsSubmitting(false);
   };
 
-  const handleStartEdit = (comment: Comment) => {
+  const handleStartEdit = useCallback((comment: Comment) => {
     setEditingId(comment.id);
     setEditText(comment.text);
-  };
+  }, []);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingId(null);
     setEditText('');
-  };
+  }, []);
 
   const handleSaveEdit = async () => {
     if (!editingId || !user || !editText.trim()) return;
@@ -168,40 +167,9 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     setIsSavingEdit(false);
   };
 
-  const handleDelete = (comment: Comment) => {
-    // Cancel existing timer for this comment if any
-    const existingTimer = deleteTimersRef.current.get(comment.id);
-    if (existingTimer) clearTimeout(existingTimer);
-
-    setPendingDeletes((prev) => new Map(prev).set(comment.id, comment));
-    const timer = setTimeout(async () => {
-      if (!user) return;
-      try {
-        await deleteComment(comment.id, user.uid);
-        onCommentsChange();
-      } catch (error) {
-        if (import.meta.env.DEV) console.error('Error deleting comment:', error);
-      }
-      deleteTimersRef.current.delete(comment.id);
-      setPendingDeletes((prev) => {
-        const next = new Map(prev);
-        next.delete(comment.id);
-        return next;
-      });
-    }, 5000);
-    deleteTimersRef.current.set(comment.id, timer);
-  };
-
-  const handleUndoDelete = (commentId: string) => {
-    const timer = deleteTimersRef.current.get(commentId);
-    if (timer) clearTimeout(timer);
-    deleteTimersRef.current.delete(commentId);
-    setPendingDeletes((prev) => {
-      const next = new Map(prev);
-      next.delete(commentId);
-      return next;
-    });
-  };
+  const handleDelete = useCallback((comment: Comment) => {
+    markCommentForDelete(comment.id, comment);
+  }, [markCommentForDelete]);
 
   const handleToggleLike = async (commentId: string) => {
     if (!user) return;
@@ -237,13 +205,13 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   };
 
   // Reply handlers
-  const handleStartReply = (comment: Comment) => {
+  const handleStartReply = useCallback((comment: Comment) => {
     setReplyingTo({ id: comment.id, userName: comment.userName });
     setReplyText('');
     // Auto-expand thread when replying
     setExpandedThreads((prev) => new Set(prev).add(comment.id));
     setTimeout(() => replyInputRef.current?.focus(), 100);
-  };
+  }, []);
 
   const handleCancelReply = () => {
     setReplyingTo(null);
@@ -277,188 +245,44 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     });
   };
 
+  const handleShowProfile = useCallback((userId: string, userName: string) => {
+    setProfileUser({ id: userId, name: userName });
+  }, []);
+
+  const handleEditTextChange = useCallback((text: string) => {
+    setEditText(text);
+  }, []);
+
   const getReplyCount = (comment: Comment): number => {
     // Use denormalized count, but fall back to actual replies in local data
     const localReplies = repliesByParent.get(comment.id);
     return comment.replyCount ?? localReplies?.length ?? 0;
   };
 
-  // Render a single comment row (used for both top-level and replies)
-  const renderComment = (comment: Comment, isReply: boolean) => {
-    // If this comment is pending delete, skip rendering
-    if (pendingDeletes.has(comment.id)) return null;
-
-    // Deleted parent placeholder
-    const isDeletedParent = !comment.text && !comment.userName;
-
+  const renderCommentRow = (comment: Comment, isReply: boolean) => {
+    if (isPendingDelete(comment.id)) return null;
     return (
-      <ListItem
+      <CommentRow
         key={comment.id}
-        alignItems="flex-start"
-        disablePadding
-        sx={{
-          py: 1,
-          ...(isReply ? { pl: 2 } : {}),
-        }}
-      >
-        <Avatar
-          sx={{
-            width: isReply ? 26 : 32,
-            height: isReply ? 26 : 32,
-            mr: 1.5,
-            mt: 0.5,
-            fontSize: isReply ? '0.75rem' : '0.85rem',
-            bgcolor: '#1a73e8',
-          }}
-        >
-          {(comment.userName || 'A').charAt(0).toUpperCase()}
-        </Avatar>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-            <Typography
-              component="span"
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                fontSize: isReply ? '0.8rem' : undefined,
-                ...(profileVisibility.get(comment.userId) ? {
-                  cursor: 'pointer',
-                  '&:hover': { textDecoration: 'underline' },
-                } : {}),
-              }}
-              onClick={() => profileVisibility.get(comment.userId) && setProfileUser({ id: comment.userId, name: comment.userName })}
-            >
-              {isDeletedParent ? 'Comentario eliminado' : (comment.userName || 'Anónimo')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {formatDateMedium(comment.createdAt)}
-            </Typography>
-            {comment.updatedAt && (
-              <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                (editado)
-              </Typography>
-            )}
-          </Box>
-
-          {editingId === comment.id ? (
-            <Box sx={{ mt: 0.5 }}>
-              <TextField
-                fullWidth
-                size="small"
-                multiline
-                maxRows={4}
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
-              />
-              <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={handleSaveEdit}
-                  disabled={isSavingEdit || !editText.trim()}
-                  aria-label="Guardar edición"
-                >
-                  <CheckIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={handleCancelEdit} disabled={isSavingEdit} aria-label="Cancelar edición">
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-          ) : (
-            <ListItemText
-              secondary={comment.text}
-              slotProps={{ secondary: { component: 'span', display: 'block', ...(isReply ? { fontSize: '0.8rem' } : {}) } }}
-              sx={{ m: 0 }}
-            />
-          )}
-
-          {/* Action buttons row: like + reply count + reply button */}
-          {editingId !== comment.id && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>
-              {/* Like button (not for own comments) */}
-              {user && comment.userId !== user.uid && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleToggleLike(comment.id)}
-                    sx={{ color: isLiked(comment.id) ? '#e91e63' : 'text.secondary', p: 0.5 }}
-                    aria-label={isLiked(comment.id) ? 'Quitar like' : 'Dar like'}
-                  >
-                    {isLiked(comment.id) ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
-                  </IconButton>
-                  {getLikeCount(comment) > 0 && (
-                    <Typography variant="caption" color="text.secondary" sx={{ ml: 0.25 }}>
-                      {getLikeCount(comment)}
-                    </Typography>
-                  )}
-                </Box>
-              )}
-              {/* Show like count for own comments (read-only) */}
-              {user && comment.userId === user.uid && getLikeCount(comment) > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <FavoriteIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                  <Typography variant="caption" color="text.disabled" sx={{ ml: 0.25 }}>
-                    {getLikeCount(comment)}
-                  </Typography>
-                </Box>
-              )}
-
-              {/* Reply count indicator (top-level only) */}
-              {!isReply && getReplyCount(comment) > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ChatBubbleOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 0.25 }}>
-                    {getReplyCount(comment)}
-                  </Typography>
-                </Box>
-              )}
-
-              {/* Reply button (top-level only, for logged-in users) */}
-              {!isReply && user && (
-                <Button
-                  size="small"
-                  startIcon={<ReplyIcon sx={{ fontSize: 14 }} />}
-                  onClick={() => handleStartReply(comment)}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.75rem',
-                    color: 'text.secondary',
-                    minWidth: 'auto',
-                    p: '2px 6px',
-                  }}
-                >
-                  Responder
-                </Button>
-              )}
-            </Box>
-          )}
-        </Box>
-
-        {/* Edit + Delete buttons for own comments */}
-        {user && comment.userId === user.uid && editingId !== comment.id && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
-            <IconButton
-              size="small"
-              onClick={() => handleStartEdit(comment)}
-              sx={{ color: 'text.secondary' }}
-              aria-label="Editar comentario"
-            >
-              <EditOutlinedIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => handleDelete(comment)}
-              sx={{ color: 'text.secondary' }}
-              aria-label="Eliminar comentario"
-            >
-              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Box>
-        )}
-      </ListItem>
+        comment={comment}
+        isOwn={comment.userId === user?.uid}
+        isLiked={isLiked(comment.id)}
+        likeCount={getLikeCount(comment)}
+        replyCount={isReply ? 0 : getReplyCount(comment)}
+        isReply={isReply}
+        isEditing={editingId === comment.id}
+        editText={editText}
+        isSavingEdit={isSavingEdit}
+        isProfilePublic={profileVisibility.get(comment.userId) ?? false}
+        onToggleLike={handleToggleLike}
+        onStartEdit={handleStartEdit}
+        onSaveEdit={handleSaveEdit}
+        onCancelEdit={handleCancelEdit}
+        onEditTextChange={handleEditTextChange}
+        onDelete={handleDelete}
+        onReply={isReply ? undefined : handleStartReply}
+        onShowProfile={handleShowProfile}
+      />
     );
   };
 
@@ -516,7 +340,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
             disabled={isSubmitting || !newComment.trim()}
             sx={{
               bgcolor: 'primary.main',
-              color: '#fff',
+              color: 'primary.contrastText',
               width: 40,
               height: 40,
               flexShrink: 0,
@@ -532,14 +356,14 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       <List disablePadding>
         {sortedTopLevel.map((comment, index) => {
           const replies = repliesByParent.get(comment.id) ?? [];
-          const visibleReplies = replies.filter((r) => !pendingDeletes.has(r.id));
-          const pendingReplyDeletes = replies.filter((r) => pendingDeletes.has(r.id)).length;
+          const visibleReplies = replies.filter((r) => !isPendingDelete(r.id));
+          const pendingReplyDeletes = replies.filter((r) => isPendingDelete(r.id)).length;
           const replyCount = getReplyCount(comment) - pendingReplyDeletes;
           const isExpanded = expandedThreads.has(comment.id);
 
           return (
             <Box key={comment.id}>
-              {renderComment(comment, false)}
+              {renderCommentRow(comment, false)}
 
               {/* Thread: "Ver N respuestas" toggle + replies */}
               {replyCount > 0 && (
@@ -573,7 +397,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                         gap: 1,
                       }}
                     >
-                      {visibleReplies.map((reply) => renderComment(reply, true))}
+                      {visibleReplies.map((reply) => renderCommentRow(reply, true))}
                     </Box>
                   </Collapse>
                 </Box>
@@ -616,7 +440,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
                       disabled={isSubmitting || !replyText.trim()}
                       sx={{
                         bgcolor: 'primary.main',
-                        color: '#fff',
+                        color: 'primary.contrastText',
                         width: 32,
                         height: 32,
                         flexShrink: 0,
@@ -650,13 +474,12 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       </List>
 
       <Snackbar
-        open={pendingDeletes.size > 0}
-        message="Comentario eliminado"
+        open={deleteSnackbarProps.open}
+        message={deleteSnackbarProps.message}
+        autoHideDuration={deleteSnackbarProps.autoHideDuration}
+        onClose={deleteSnackbarProps.onClose}
         action={
-          <Button color="primary" size="small" onClick={() => {
-            const lastKey = [...pendingDeletes.keys()].pop();
-            if (lastKey) handleUndoDelete(lastKey);
-          }}>
+          <Button color="primary" size="small" onClick={deleteSnackbarProps.onUndo}>
             Deshacer
           </Button>
         }

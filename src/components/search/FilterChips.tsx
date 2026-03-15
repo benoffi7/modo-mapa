@@ -9,10 +9,10 @@ export default function FilterChips() {
 
   const chipSx = (isActive: boolean) => ({
     backgroundColor: isActive ? undefined : 'background.paper',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+    boxShadow: 1,
     flexShrink: 0,
     '&:hover': {
-      boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+      boxShadow: 2,
     },
   });
 

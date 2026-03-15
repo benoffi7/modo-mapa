@@ -10,15 +10,17 @@ import {
 import type {
   CollectionReference,
   QueryDocumentSnapshot,
+  QueryConstraint,
 } from 'firebase/firestore';
 
 interface UsePaginatedQueryReturn<T> {
   items: T[];
   isLoading: boolean;
   isLoadingMore: boolean;
-  error: boolean;
+  error: string | null;
   hasMore: boolean;
   loadMore: () => Promise<void>;
+  loadAll: (maxItems?: number) => Promise<void>;
   reload: () => Promise<void>;
 }
 
@@ -30,39 +32,53 @@ export { invalidateQueryCache } from '../services/queryCache';
  * Paginated Firestore query hook with "Load more" pattern.
  *
  * @param collectionRef - Collection reference with converter already applied. Pass null to skip query.
- * @param userId - User ID for the where('userId', '==', uid) constraint. All lists filter by user.
+ * @param constraints - Firestore query constraints (e.g. [where('userId', '==', uid)]).
  * @param orderByField - Field to order by descending (e.g. 'createdAt').
  * @param pageSize - Number of items per page (default 20).
+ * @param cacheKey - Key for query cache (used by invalidateQueryCache). Typically the userId.
  */
 export function usePaginatedQuery<T>(
   collectionRef: CollectionReference<T> | null,
-  userId: string | undefined,
+  constraints: QueryConstraint[] | string | undefined,
   orderByField: string,
   pageSize = 20,
+  cacheKey?: string,
 ): UsePaginatedQueryReturn<T> {
+  // Backward compat: if constraints is a string, treat as userId (old API)
+  const resolvedConstraints = useMemo(() => {
+    if (typeof constraints === 'string') {
+      return [where('userId', '==', constraints)] as QueryConstraint[];
+    }
+    return constraints ?? null;
+  }, [constraints]);
+
+  const resolvedCacheKey = cacheKey ?? (typeof constraints === 'string' ? constraints : undefined);
+
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const lastDocRef = useRef<QueryDocumentSnapshot<T> | null>(null);
+  const hasMoreRef = useRef(false);
 
   const stableRef = useMemo(() => collectionRef, [collectionRef]);
 
   const loadPage = useCallback(async (cursor: QueryDocumentSnapshot<T> | null, skipCache = false) => {
-    if (!stableRef || !userId) return;
+    if (!stableRef || !resolvedConstraints || !resolvedCacheKey) return;
 
     const isFirstPage = cursor === null;
 
     // Check cache for first page only
     if (isFirstPage && !skipCache) {
-      const cached = getQueryCache(stableRef.path, userId);
+      const cached = getQueryCache(stableRef.path, resolvedCacheKey);
       if (cached) {
         setItems(cached.items as T[]);
         setHasMore(cached.hasMore);
+        hasMoreRef.current = cached.hasMore;
         lastDocRef.current = cached.lastDoc as QueryDocumentSnapshot<T> | null;
         setIsLoading(false);
-        setError(false);
+        setError(null);
         return;
       }
     }
@@ -72,22 +88,23 @@ export function usePaginatedQuery<T>(
     } else {
       setIsLoadingMore(true);
     }
-    setError(false);
+    setError(null);
 
     try {
-      const constraints = [
-        where('userId', '==', userId),
+      const queryConstraints = [
+        ...resolvedConstraints,
         orderBy(orderByField, 'desc'),
         limit(pageSize + 1),
         ...(cursor ? [startAfter(cursor)] : []),
       ];
 
-      const snapshot = await getDocs(query(stableRef, ...constraints));
+      const snapshot = await getDocs(query(stableRef, ...queryConstraints));
       const docs = snapshot.docs;
       const hasMoreResults = docs.length > pageSize;
       const pageDocs = hasMoreResults ? docs.slice(0, pageSize) : docs;
 
       setHasMore(hasMoreResults);
+      hasMoreRef.current = hasMoreResults;
       lastDocRef.current = pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : null;
 
       const pageItems = pageDocs.map((d) => d.data());
@@ -95,7 +112,7 @@ export function usePaginatedQuery<T>(
         setItems(pageItems);
 
         // Cache first page
-        setQueryCache(stableRef.path, userId, {
+        setQueryCache(stableRef.path, resolvedCacheKey, {
           items: pageItems,
           lastDoc: lastDocRef.current,
           hasMore: hasMoreResults,
@@ -106,7 +123,7 @@ export function usePaginatedQuery<T>(
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('Error loading data:', err);
-      setError(true);
+      setError('Error al cargar datos');
     }
 
     if (isFirstPage) {
@@ -114,7 +131,7 @@ export function usePaginatedQuery<T>(
     } else {
       setIsLoadingMore(false);
     }
-  }, [stableRef, userId, orderByField, pageSize]);
+  }, [stableRef, resolvedConstraints, resolvedCacheKey, orderByField, pageSize]);
 
   useEffect(() => {
     lastDocRef.current = null;
@@ -127,13 +144,21 @@ export function usePaginatedQuery<T>(
     await loadPage(lastDocRef.current);
   }, [hasMore, isLoadingMore, loadPage]);
 
+  const loadAll = useCallback(async (maxItems = 200) => {
+    let loaded = 0;
+    while (hasMoreRef.current && loaded < maxItems) {
+      await loadPage(lastDocRef.current);
+      loaded += pageSize;
+    }
+  }, [loadPage, pageSize]);
+
   const reload = useCallback(async () => {
-    if (stableRef && userId) {
-      invalidateQueryCache(stableRef.path, userId);
+    if (stableRef && resolvedCacheKey) {
+      invalidateQueryCache(stableRef.path, resolvedCacheKey);
     }
     lastDocRef.current = null;
     await loadPage(null, true);
-  }, [loadPage, stableRef, userId]);
+  }, [loadPage, stableRef, resolvedCacheKey]);
 
-  return { items, isLoading, isLoadingMore, error, hasMore, loadMore, reload };
+  return { items, isLoading, isLoadingMore, error, hasMore, loadMore, loadAll, reload };
 }

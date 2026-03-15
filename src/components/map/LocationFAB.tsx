@@ -15,10 +15,10 @@ export default function LocationFAB() {
         position: 'absolute',
         bottom: 24,
         right: 16,
-        backgroundColor: '#fff',
-        color: '#666',
+        backgroundColor: 'background.paper',
+        color: 'text.secondary',
         '&:hover': {
-          backgroundColor: '#f5f5f5',
+          backgroundColor: 'action.hover',
         },
         zIndex: 1000,
       }}

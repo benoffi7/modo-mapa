@@ -60,7 +60,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating (global + multi-criterio), tags (predefinidos + custom), comentarios (editar/likes/sorting/threads), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
-- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios, calificaciones, rankings, feedback (enviar + mis envios), ayuda, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
+- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios (busqueda, sorting, filtro por comercio, edit inline, stats, swipe actions, skeleton loader, preview enriquecido), calificaciones, rankings, feedback (enviar + mis envios), ayuda, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
 - **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
@@ -83,4 +83,8 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Lazy Sentry**: `@sentry/react` cargado via dynamic `import()` (no en main chunk)
 - **Batched likes**: `fetchUserLikes` usa `documentId('in')` con batches de 30 (no N+1 getDoc)
 - **Price level cache**: `usePriceLevelFilter` con `limit(20K)` safety bound + TTL 5min
+- **`useUndoDelete`**: hook generico para undo-delete con Map de pending, timer cleanup en unmount, snackbar props
+- **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
+- **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
+- **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
 - **Tests**: 162+ tests (frontend + backend) cubriendo triggers, services, hooks, contexts, auth components

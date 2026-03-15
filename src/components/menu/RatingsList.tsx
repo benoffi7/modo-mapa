@@ -85,7 +85,7 @@ export default function RatingsList({ onNavigate }: Props) {
   if (ratings.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <StarBorderIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+        <StarBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
           No calificaste comercios todavía
         </Typography>
