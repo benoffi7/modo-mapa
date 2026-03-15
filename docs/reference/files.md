@@ -9,7 +9,7 @@ src/
 ├── index.css                        # Estilos globales minimos
 ├── config/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
-│   ├── collections.ts               # Nombres de colecciones Firestore centralizados (incl. COMMENT_LIKES)
+│   ├── collections.ts               # Nombres de colecciones Firestore centralizados (incl. COMMENT_LIKES, PERF_METRICS)
 │   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback, commentLike)
 │   ├── adminConverters.ts           # Converters para AdminCounters (incl. commentLikes), DailyMetrics, AbuseLog
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
@@ -27,7 +27,8 @@ src/
 │   ├── business.ts                 # LEVELS, LEVEL_SYMBOLS, PRICE_CHIPS, PRICE_LEVEL_LABELS, CATEGORY_LABELS
 │   ├── criteria.ts                 # RATING_CRITERIA (CriterionConfig[] con id y label para multi-criterio)
 │   ├── suggestions.ts              # SUGGESTION_WEIGHTS, MAX_SUGGESTIONS, NEARBY_RADIUS_KM
-│   └── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
+│   ├── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
+│   └── performance.ts              # PERF_THRESHOLDS (green/red por vital), PERF_FLUSH_DELAY_MS
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
@@ -46,11 +47,12 @@ src/
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
 │   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
-│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData (incl. commentLikes/likesGiven), fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats, fetchCommentStats
+│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData (incl. commentLikes/likesGiven), fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats, fetchCommentStats, fetchPerfMetrics, fetchStorageStats
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response, comment_reply), UserSettings (incl. notifyFeedback, notifyReplies) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
 │   ├── admin.ts                     # AdminCounters (incl. commentLikes), DailyMetrics (extends PublicMetrics), AbuseLog, AuthStats, NotificationStats, SettingsAggregates, PriceLevelStats, CommentLikeStats
-│   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
+│   ├── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
+│   └── perfMetrics.ts               # PerfVitals, QueryTiming, DeviceInfo, PerfMetricsDoc
 ├── theme/
 │   └── index.ts                     # MUI theme with getDesignTokens(mode) for light/dark
 ├── data/
@@ -76,7 +78,9 @@ src/
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   ├── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatRelativeTime, formatDateFull (compartidos)
-│   └── text.ts                     # truncate (compartido entre CommentsList y UserProfileSheet)
+│   ├── text.ts                     # truncate (compartido entre CommentsList y UserProfileSheet)
+│   ├── perfMetrics.ts               # initPerfMetrics, measureAsync — Web Vitals + query timing capture (prod only)
+│   └── perfMetrics.test.ts          # Tests unitarios para calculatePercentile, getDeviceInfo
 ├── pages/
 │   ├── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
 │   ├── ThemePlayground.tsx          # Dev-only color playground with palette generator + output
@@ -85,7 +89,7 @@ src/
 ├── components/
 │   ├── admin/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email + dev auto-login in emulator
-│   │   ├── AdminLayout.tsx          # AppBar + Tabs (9 secciones)
+│   │   ├── AdminLayout.tsx          # AppBar + Tabs (10 secciones)
 │   │   ├── AdminPanelWrapper.tsx    # Wrapper compartido loading/error/empty para paneles admin
 │   │   ├── DashboardOverview.tsx    # StatCards (incl. Likes) + PieCharts + TopLists + Custom Tags ranking + "Salud de comentarios" section
 │   │   ├── ActivityFeed.tsx         # Tabs por coleccion (ultimos 20 items). Comments: Likes, Resp. columns + editado/Respuesta chips
@@ -97,6 +101,7 @@ src/
 │   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (orquestacion)
 │   │   ├── BackupTable.tsx          # Tabla de backups (memoizada con React.memo)
 │   │   ├── BackupConfirmDialog.tsx  # Dialog de confirmacion restore/delete (memoizado)
+│   │   ├── PerformancePanel.tsx     # Panel admin: Web Vitals semaforos, query latency, CF timing, storage stats, filtros periodo/device/connection
 │   │   ├── PhotoReviewPanel.tsx     # Panel admin: filtro por status, lista de fotos
 │   │   ├── PhotoReviewCard.tsx      # Card individual: approve/reject/delete + revert actions + report count
 │   │   ├── backupTypes.ts           # Tipos: BackupEntry, ConfirmAction
@@ -168,15 +173,18 @@ src/
 |---------|-------------|
 | `firestore.rules` | Reglas de seguridad: auth, ownership, admin (email check, tolerant to missing fields), timestamps server-side, isValidCriteria, replyCount rules (threads), priceLevels delete rule, feedback update rules (admin respond + user viewedByUser) |
 | `storage.rules` | Reglas de Firebase Storage para fotos de menu + feedback media (10MB, image/*) |
-| `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas |
-| `.firebaserc` | Proyecto: `modo-mapa-app` |
+| `firebase.json` | Config de hosting (CSP), functions, emuladores, reglas. Multi-site hosting (production + staging). Firestore config para `(default)` + `staging` named DB |
+| `.firebaserc` | Proyecto: `modo-mapa-app`. Hosting targets: `production` → `modo-mapa-app`, `staging` → `modo-mapa-staging` |
 | `vite.config.ts` | Plugin React + VitePWA + Sentry + `__APP_VERSION__` desde package.json |
 | `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend, lazy-loaded via dynamic import) |
 | `functions/src/admin/authStats.ts` | Cloud Function callable `getAuthStats`: consulta Firebase Auth para auth method breakdown y email verification stats |
+| `functions/src/admin/storageStats.ts` | Cloud Function callable `getStorageStats`: calcula total bytes y fileCount en `menuPhotos/` de Cloud Storage |
+| `functions/src/utils/perfTracker.ts` | `trackFunctionTiming(name, startMs)` + `calculatePercentile` — acumula timings de Cloud Functions en `config/perfCounters` |
 | `functions/src/__tests__/admin/authStats.test.ts` | Tests unitarios para `getAuthStats` |
 | `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |
 | `firestore.indexes.json` | Indices compuestos Firestore (comments, ratings, favorites, feedback por userId+timestamp) |
 | `.github/workflows/deploy.yml` | CI/CD: build + deploy Firestore rules/indexes + hosting en push a main |
+| `.github/workflows/deploy-staging.yml` | CI/CD staging: lint + test + build (con `VITE_FIRESTORE_DATABASE_ID=staging`) + deploy `hosting:staging` en push a branch `staging` |
 | `.github/workflows/preview.yml` | CI: lint + test + build + deploy preview channel en PRs |
 | `PROCEDURES.md` | Flujo de desarrollo (PRD -> specs -> plan -> implementar) |
 | `.env.example` | Template de variables de entorno |

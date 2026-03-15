@@ -4,6 +4,7 @@ import type {
   SnapshotOptions,
 } from 'firebase/firestore';
 import type { AdminCounters, DailyMetrics, AbuseLog } from '../types/admin';
+import type { PerfMetricsDoc } from '../types/perfMetrics';
 import { toDate } from '../utils/formatDate';
 
 function asNumber(val: unknown, fallback = 0): number {
@@ -31,6 +32,10 @@ export const countersConverter: FirestoreDataConverter<AdminCounters> = {
     };
   },
 };
+
+function asNumberOrNull(val: unknown): number | null {
+  return typeof val === 'number' ? val : null;
+}
 
 function asRecord(val: unknown): Record<string, number> {
   return (val != null && typeof val === 'object' && !Array.isArray(val))
@@ -80,6 +85,46 @@ export const abuseLogConverter: FirestoreDataConverter<AbuseLog> = {
       collection: String(d.collection ?? ''),
       detail: String(d.detail ?? ''),
       timestamp: toDate(d.timestamp),
+    };
+  },
+};
+
+function asQueryTimingRecord(val: unknown): Record<string, { p50: number; p95: number; count: number }> {
+  if (val == null || typeof val !== 'object' || Array.isArray(val)) return {};
+  const result: Record<string, { p50: number; p95: number; count: number }> = {};
+  for (const [key, v] of Object.entries(val as Record<string, unknown>)) {
+    if (v && typeof v === 'object') {
+      const q = v as Record<string, unknown>;
+      result[key] = { p50: asNumber(q.p50), p95: asNumber(q.p95), count: asNumber(q.count) };
+    }
+  }
+  return result;
+}
+
+export const perfMetricsConverter: FirestoreDataConverter<PerfMetricsDoc> = {
+  toFirestore(data: PerfMetricsDoc) {
+    return { ...data };
+  },
+  fromFirestore(snap: QueryDocumentSnapshot, options?: SnapshotOptions): PerfMetricsDoc {
+    const d = snap.data(options);
+    const vitals = (d.vitals && typeof d.vitals === 'object') ? d.vitals as Record<string, unknown> : {};
+    const device = (d.device && typeof d.device === 'object') ? d.device as Record<string, unknown> : {};
+    return {
+      sessionId: String(d.sessionId ?? ''),
+      userId: d.userId ? String(d.userId) : null,
+      timestamp: d.timestamp,
+      vitals: {
+        lcp: asNumberOrNull(vitals.lcp),
+        inp: asNumberOrNull(vitals.inp),
+        cls: asNumberOrNull(vitals.cls),
+        ttfb: asNumberOrNull(vitals.ttfb),
+      },
+      queries: asQueryTimingRecord(d.queries),
+      device: {
+        type: (device.type === 'mobile' ? 'mobile' : 'desktop') as 'mobile' | 'desktop',
+        connection: String(device.connection ?? 'unknown'),
+      },
+      appVersion: String(d.appVersion ?? ''),
     };
   },
 };

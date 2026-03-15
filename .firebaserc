@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "modo-mapa-app"
+  },
+  "targets": {
+    "modo-mapa-app": {
+      "hosting": {
+        "production": ["modo-mapa-app"],
+        "staging": ["modo-mapa-staging"]
+      }
+    }
   }
 }

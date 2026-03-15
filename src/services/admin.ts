@@ -27,8 +27,9 @@ import {
   userProfileConverter,
   menuPhotoConverter,
 } from '../config/converters';
-import { countersConverter, dailyMetricsConverter, abuseLogConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates } from '../types/admin';
+import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats } from '../types/admin';
+import type { PerfMetricsDoc } from '../types/perfMetrics';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel } from '../types';
 
 // ── Counters ───────────────────────────────────────────────────────────
@@ -296,6 +297,27 @@ export async function fetchRecentPriceLevels(count: number): Promise<PriceLevel[
       updatedAt: data.updatedAt?.toDate?.() ?? new Date(data.updatedAt),
     };
   });
+}
+
+// ── Performance Metrics ──────────────────────────────────────────────
+
+export async function fetchPerfMetrics(maxDocs = 200): Promise<PerfMetricsDoc[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.PERF_METRICS).withConverter(perfMetricsConverter),
+      orderBy('timestamp', 'desc'),
+      limit(maxDocs),
+    ),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+// ── Storage Stats (callable) ─────────────────────────────────────────
+
+export async function fetchStorageStats(): Promise<StorageStats> {
+  const fn = httpsCallable<void, StorageStats>(functions, 'getStorageStats');
+  const result = await fn();
+  return result.data;
 }
 
 // ── Recent Comment Likes ──────────────────────────────────────────────

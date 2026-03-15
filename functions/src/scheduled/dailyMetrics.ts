@@ -1,5 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { calculatePercentile } from '../utils/perfTracker';
 
 function getStartOfDay(): Date {
   const now = new Date();
@@ -123,6 +124,74 @@ export const dailyMetrics = onSchedule(
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, 10);
 
+    // ── Performance aggregation ─────────────────────────────────────────
+    const yesterday = new Date(startOfDay);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const [perfSnap, perfCountersSnap] = await Promise.all([
+      db.collection('perfMetrics')
+        .where('timestamp', '>=', Timestamp.fromDate(yesterday))
+        .get(),
+      db.doc('config/perfCounters').get(),
+    ]);
+
+    type VitalKey = 'lcp' | 'inp' | 'cls' | 'ttfb';
+    const vitalArrays: Record<VitalKey, number[]> = { lcp: [], inp: [], cls: [], ttfb: [] };
+    const queryAcc: Record<string, { p50s: number[]; p95s: number[] }> = {};
+
+    for (const perfDoc of perfSnap.docs) {
+      const data = perfDoc.data();
+      const vitals = (data.vitals ?? {}) as Record<string, number | null>;
+      for (const key of ['lcp', 'inp', 'cls', 'ttfb'] as VitalKey[]) {
+        const val = vitals[key];
+        if (typeof val === 'number') vitalArrays[key].push(val);
+      }
+      const queries = (data.queries ?? {}) as Record<string, { p50?: number; p95?: number }>;
+      for (const [name, q] of Object.entries(queries)) {
+        if (!queryAcc[name]) queryAcc[name] = { p50s: [], p95s: [] };
+        if (typeof q.p50 === 'number') queryAcc[name].p50s.push(q.p50);
+        if (typeof q.p95 === 'number') queryAcc[name].p95s.push(q.p95);
+      }
+    }
+
+    const perfVitals: Record<string, { p50: number; p75: number; p95: number }> = {};
+    for (const key of ['lcp', 'inp', 'cls', 'ttfb'] as VitalKey[]) {
+      if (vitalArrays[key].length > 0) {
+        perfVitals[key] = {
+          p50: calculatePercentile(vitalArrays[key], 50),
+          p75: calculatePercentile(vitalArrays[key], 75),
+          p95: calculatePercentile(vitalArrays[key], 95),
+        };
+      }
+    }
+
+    const perfQueries: Record<string, { p50: number; p95: number }> = {};
+    for (const [name, acc] of Object.entries(queryAcc)) {
+      perfQueries[name] = {
+        p50: calculatePercentile(acc.p50s, 50),
+        p95: calculatePercentile(acc.p95s, 50),
+      };
+    }
+
+    const perfFunctions: Record<string, { p50: number; p95: number; count: number }> = {};
+    const perfCountersData = perfCountersSnap.data() ?? {};
+    for (const [name, timings] of Object.entries(perfCountersData)) {
+      if (Array.isArray(timings) && timings.length > 0) {
+        perfFunctions[name] = {
+          p50: calculatePercentile(timings as number[], 50),
+          p95: calculatePercentile(timings as number[], 95),
+          count: timings.length,
+        };
+      }
+    }
+
+    const performance = {
+      vitals: perfVitals,
+      queries: perfQueries,
+      functions: perfFunctions,
+      sampleCount: perfSnap.size,
+    };
+
     // Write daily metrics doc
     await db.doc(`dailyMetrics/${today}`).set(
       {
@@ -137,19 +206,19 @@ export const dailyMetrics = onSchedule(
         dailyReads: counters.dailyReads ?? 0,
         dailyWrites: counters.dailyWrites ?? 0,
         dailyDeletes: counters.dailyDeletes ?? 0,
+        performance,
       },
       { merge: true },
     );
 
-    // Reset daily counters
-    await db.doc('config/counters').set(
-      {
-        dailyReads: 0,
-        dailyWrites: 0,
-        dailyDeletes: 0,
-      },
-      { merge: true },
-    );
+    // Reset daily counters + perf counters
+    await Promise.all([
+      db.doc('config/counters').set(
+        { dailyReads: 0, dailyWrites: 0, dailyDeletes: 0 },
+        { merge: true },
+      ),
+      db.doc('config/perfCounters').delete(),
+    ]);
 
     // Log top writers as abuse log for monitoring
     const writerCollections = ['comments', 'feedback', 'customTags'];

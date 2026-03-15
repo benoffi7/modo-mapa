@@ -132,7 +132,7 @@
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificacion en frontend (AdminGuard) y server-side (Firestore rules)
-- 9 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
+- 10 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
 
 | Tab | Descripcion |
 |-----|-------------|
@@ -145,6 +145,7 @@
 | **Alertas** | Logs de abuso (rate limit excedido, contenido flaggeado, top writers) |
 | **Backups** | Crear backup manual, listar con paginacion (20/pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable |
 | **Fotos** | Panel de revision de fotos de menu. Filtro por status (todas/pendientes/aprobadas/rechazadas) con contadores. Acciones contextuales por status: aprobar pendientes/rechazadas, rechazar con razon, eliminar aprobadas/rechazadas. Badge de reportes en cada card |
+| **Performance** | Web Vitals (LCP, INP, CLS, TTFB) con semaforos verde/amarillo/rojo segun umbrales. Percentiles p50/p75/p95. Graficos de tendencia temporal. Latencia de queries Firestore (p50/p95). Timing de Cloud Functions (p50/p95/count, agregado por `dailyMetrics`). Storage stats (bytes, archivos, barra de cuota). Filtros: periodo (hoy/7d/30d), dispositivo (all/mobile/desktop), conexion (all/wifi/4g/3g) |
 
 ---
 
@@ -166,6 +167,7 @@
 | `resolveFeedback` | admin | Marca feedback como resuelto. Actualiza status a `resolved`. Crea notificacion `feedback_response` | 60s |
 | `createGithubIssueFromFeedback` | admin | Crea issue en GitHub desde feedback. Usa `@octokit/rest` + `GITHUB_TOKEN` secret. Mapea categoria a label (bug/enhancement/feedback). Guarda `githubIssueUrl` en doc. Previene duplicados | 30s |
 | `getAuthStats` | admin | Consulta Firebase Auth para devolver breakdown de metodos de autenticacion (anonimos vs email) y stats de verificacion de email | 30s |
+| `getStorageStats` | admin | Calcula total bytes y cantidad de archivos en `menuPhotos/` de Cloud Storage. Memory: 256MiB | 60s |
 
 Todas las callable admin:
 
@@ -196,9 +198,30 @@ Todas las callable admin:
 
 | Funcion | Schedule | Descripcion |
 |---------|----------|-------------|
-| `dailyMetrics` | 3:00 AM | Calcula distribucion, tops, active users, newAccounts. Reset daily counters |
+| `dailyMetrics` | 3:00 AM | Calcula distribucion, tops, active users, newAccounts. Agrega performance data: vitals (p50/p75/p95 de perfMetrics del dia anterior), queries (p50/p95), Cloud Function timings (de `config/perfCounters`). Reset daily counters + perfCounters |
 | `cleanupRejectedPhotos` | Diario | Elimina fotos rechazadas con mas de 7 dias (Storage + Firestore) |
 | `computeWeeklyRanking` | Lunes 4:00 AM | Calcula ranking semanal. Scoring: Comment=3, Rating=2, Like/Tag/Favorite=1, Photo=5 |
 | `computeMonthlyRanking` | 1ro de mes 4:00 AM | Calcula ranking mensual con misma formula |
 | `computeAlltimeRanking` | Lunes 5:00 AM | Calcula ranking historico all-time. Memory: 1GiB, timeout: 540s |
 | `cleanupExpiredNotifications` | 5:00 AM | Elimina notificaciones expiradas (>30 dias) |
+
+---
+
+## Performance Metrics
+
+- **Web Vitals capture**: LCP, INP, CLS, TTFB via `PerformanceObserver` API. Solo en produccion y si `analyticsEnabled`. Una sesion = un flush a Firestore (al `visibilitychange:hidden` o tras 30s timeout)
+- **Query timing**: `measureAsync(name, fn)` wrapper que mide duracion de queries Firestore y acumula percentiles por sesion
+- **Cloud Function timing**: `trackFunctionTiming(name, startMs)` acumula tiempos en `config/perfCounters` (array union). Actualmente instrumentado en `onRatingWritten` y `onCommentCreated`
+- **Daily aggregation**: `dailyMetrics` lee `perfMetrics` del dia anterior + `config/perfCounters`, calcula p50/p75/p95 de vitals y queries, p50/p95/count de functions, y escribe en `dailyMetrics/{date}.performance`. Borra `config/perfCounters` post-agregacion
+- **Admin panel**: tab Performance con semaforos (verde/amarillo/rojo), graficos de tendencia, tablas de latencia, storage stats
+- **Thresholds** (`constants/performance.ts`): LCP green<=2500ms, INP green<=200ms, CLS green<=0.1, TTFB green<=800ms
+
+---
+
+## Staging environment
+
+- **Named Firestore DB**: database `staging` en mismo proyecto Firebase (`modo-mapa-app`). Configurado via `VITE_FIRESTORE_DATABASE_ID=staging`
+- **Multi-site hosting**: target `staging` en `firebase.json`, site `modo-mapa-staging` en `.firebaserc`
+- **Deploy workflow**: `.github/workflows/deploy-staging.yml` — build con env staging + deploy `hosting:staging` en push a branch `staging`
+- **Firebase config**: `src/config/firebase.ts` lee `VITE_FIRESTORE_DATABASE_ID` y pasa `databaseId` a `getFirestore()`. App Check deshabilitado en staging
+- **Mismas rules/indexes**: staging usa los mismos `firestore.rules` y `firestore.indexes.json` que produccion

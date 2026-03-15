@@ -1,7 +1,12 @@
 /**
  * Seed script for admin dashboard testing.
- * Run with: node scripts/seed-admin-data.mjs
- * Requires emulators running: npm run emulators
+ *
+ * Usage:
+ *   node scripts/seed-admin-data.mjs              # seed local emulators (default)
+ *   node scripts/seed-admin-data.mjs --target staging  # seed remote staging DB
+ *
+ * Emulator mode requires emulators running: npm run emulators
+ * Staging mode uses Application Default Credentials (gcloud auth).
  */
 
 import { createRequire } from 'module';
@@ -10,12 +15,24 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, '..', 'functions', 'node_modules', 'x.js'));
 const admin = require('firebase-admin');
-const { Timestamp } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 
-// Use admin SDK to bypass Firestore rules in emulator
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-admin.initializeApp({ projectId: 'modo-mapa-app' });
-const db = admin.firestore();
+const target = process.argv.includes('--target')
+  ? process.argv[process.argv.indexOf('--target') + 1]
+  : null;
+
+if (!target) {
+  // Local emulators
+  process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+  admin.initializeApp({ projectId: 'modo-mapa-app' });
+  console.log('Target: local emulators (default database)');
+} else {
+  // Remote named database (e.g. staging)
+  admin.initializeApp({ projectId: 'modo-mapa-app' });
+  console.log(`Target: remote database "${target}"`);
+}
+
+const db = target ? getFirestore(admin.app(), target) : getFirestore();
 
 // Helper wrappers to match client SDK API used below
 const doc = (_db, col, id) => db.collection(col).doc(id);
@@ -162,6 +179,7 @@ async function seed() {
         customTags: randomInt(5, 20),
       },
       activeUsers: randomInt(3, 10),
+      newAccounts: randomInt(0, 3),
     });
   }
 
@@ -592,9 +610,51 @@ async function seed() {
   await db.doc('config/counters').set({
     priceLevels: plPairs.size,
     menuPhotos: 5,
+    perfMetrics: 7,
   }, { merge: true });
 
   // Seed config/aggregates for pre-aggregated dailyMetrics (DT-4)
+  // ── Performance Metrics (7 docs, one per day) ─────────────────────────
+  const perfDevices = [
+    { type: 'mobile', connection: '4g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '3g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '4g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '3g' },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(12, 0, 0, 0);
+    const isMobile = perfDevices[i].type === 'mobile';
+    const is3g = perfDevices[i].connection === '3g';
+    const lcpBase = isMobile ? (is3g ? 3500 : 2200) : 1500;
+    const inpBase = isMobile ? (is3g ? 350 : 180) : 80;
+    const clsBase = isMobile ? 0.08 : 0.03;
+    const ttfbBase = is3g ? 1200 : isMobile ? 600 : 350;
+
+    await addDoc(collection(db, 'perfMetrics'), {
+      sessionId: `seed-session-${i}`,
+      userId: USER_IDS[i % USER_IDS.length],
+      timestamp: Timestamp.fromDate(d),
+      vitals: {
+        lcp: lcpBase + Math.random() * 400 - 200,
+        inp: inpBase + Math.random() * 60 - 30,
+        cls: clsBase + Math.random() * 0.04,
+        ttfb: ttfbBase + Math.random() * 200 - 100,
+      },
+      queries: {
+        notifications: { p50: 80 + Math.random() * 40, p95: 200 + Math.random() * 100, count: 5 + Math.floor(Math.random() * 10) },
+        userSettings: { p50: 40 + Math.random() * 30, p95: 120 + Math.random() * 60, count: 3 + Math.floor(Math.random() * 5) },
+        paginatedQuery: { p50: 150 + Math.random() * 80, p95: 400 + Math.random() * 200, count: 8 + Math.floor(Math.random() * 15) },
+      },
+      device: perfDevices[i],
+      appVersion: '2.8.0',
+    });
+  }
+
   // Compute business-level aggregates from seeded data
   const bizFavCounts = {};
   const bizCommentCounts = {};
@@ -696,6 +756,7 @@ async function seed() {
   console.log('- 30 top-user comments (1 per business from top 3)');
   console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
+  console.log('- 7 perf metrics (1 per day, mix mobile/desktop, wifi/4g/3g)');
   console.log('- Counters and moderation config');
   console.log('- 1 admin user with custom claim (admin: true)');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');

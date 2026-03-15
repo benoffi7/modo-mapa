@@ -91,6 +91,16 @@ export default function PrivacyPolicy() {
             sign_out, password_changed) y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
+          <Li>
+            <strong>Métricas de rendimiento (opcional):</strong> si activás &quot;Enviar
+            datos de uso&quot; en Configuración, se recopilan métricas de rendimiento una
+            vez por sesión. Esto incluye indicadores Web Vitals del navegador (LCP, INP,
+            CLS, TTFB), tiempos de carga de datos, tipo de dispositivo (móvil/escritorio),
+            tipo de conexión y versión de la app. Estos datos se almacenan en Cloud
+            Firestore asociados a tu UID y se usan exclusivamente para monitorear y
+            mejorar el rendimiento de la aplicación. Solo los administradores pueden
+            acceder a estos datos.
+          </Li>
         </Box>
       </Section>
 
@@ -100,7 +110,7 @@ export default function PrivacyPolicy() {
         <Box component="ul" sx={{ pl: 1, mt: 0 }}>
           <Li>
             <strong>Cloud Firestore:</strong> almacena datos estructurados (comentarios,
-            calificaciones, favoritos, rankings de usuarios, logros, etc.) en servidores
+            calificaciones, favoritos, rankings de usuarios, logros, métricas de rendimiento, etc.) en servidores
             de Google Cloud.
           </Li>
           <Li>

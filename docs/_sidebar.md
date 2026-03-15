@@ -11,6 +11,7 @@
   - [Security](/reference/security.md)
   - [DevOps](/reference/devops.md)
   - [Issues](/reference/issues.md)
+  - [Workflow](/reference/workflow.md)
   - [Coding Standards](/reference/CODING_STANDARDS.md)
   - [Security Guidelines](/reference/SECURITY_GUIDELINES.md)
 
@@ -30,6 +31,11 @@
     - [PRD](/feat/admin/comments-admin-gaps/prd.md)
   - [Performance Semaphores](/feat/admin/performance-semaphores/)
     - [PRD](/feat/admin/performance-semaphores/prd.md)
+    - [Specs](/feat/admin/performance-semaphores/specs.md)
+    - [Plan](/feat/admin/performance-semaphores/plan.md)
+    - [Plan Phase 2](/feat/admin/performance-semaphores/plan-phase2.md)
+  - [Staging Environment](/feat/admin/staging-environment/)
+    - [Plan](/feat/admin/staging-environment/plan.md)
 
 - **[Content](/feat/content/)**
   - [Feedback Status](/feat/content/feedback-status/)
@@ -92,7 +98,6 @@
     - [Specs](/feat/infra/sentry/specs.md)
     - [Plan](/feat/infra/sentry/plan.md)
   - [Telegram Notifications](/feat/infra/telegram-notifications/)
-    - [PRD](/feat/infra/telegram-notifications/prd.md)
 
 - **[Security](/feat/security/)**
   - [Analytics Opt-out](/feat/security/analytics-optout/)

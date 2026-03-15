@@ -1,8 +1,8 @@
-name: Deploy to Firebase Hosting
+name: Deploy Staging
 
 on:
   push:
-    branches: [main]
+    branches: [staging]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -42,26 +42,13 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-          VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY }}
+          VITE_FIRESTORE_DATABASE_ID: staging
           VITE_ADMIN_EMAIL: ${{ secrets.VITE_ADMIN_EMAIL }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Firestore rules and indexes
-        run: npx firebase-tools deploy --only firestore:rules,firestore:indexes --project modo-mapa-app
-
-      - name: Deploy Cloud Functions
-        run: |
-          cd functions && npm ci
-          cd ..
-          npx firebase-tools deploy --only functions --project modo-mapa-app
-
-      - name: Deploy to production hosting
-        run: npx firebase-tools deploy --only hosting:production --project modo-mapa-app
+      - name: Deploy staging hosting
+        run: npx firebase-tools deploy --only hosting:staging --project modo-mapa-app

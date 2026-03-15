@@ -61,3 +61,9 @@ export interface AbuseLog {
   detail: string;
   timestamp: Date;
 }
+
+export interface StorageStats {
+  totalBytes: number;
+  fileCount: number;
+  updatedAt: string;
+}
