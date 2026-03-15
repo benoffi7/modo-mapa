@@ -1,20 +1,18 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { defineString } from 'firebase-functions/params';
 import { createNotification } from '../utils/notifications';
+import { assertAdmin } from '../helpers/assertAdmin';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_RESPONSE_LENGTH = 500;
 
-const GITHUB_OWNER = 'benoffi7';
-const GITHUB_REPO = 'modo-mapa';
-
-function assertAdmin(auth: { token: { email?: string; email_verified?: boolean } } | undefined): void {
-  if (IS_EMULATOR) return; // Skip all auth checks in emulator
-  if (!auth?.token.email_verified || auth?.token.email !== ADMIN_EMAIL) {
-    throw new HttpsError('permission-denied', 'Admin only');
-  }
-}
+const GITHUB_OWNER = defineString('GITHUB_OWNER', {
+  description: 'GitHub repository owner',
+});
+const GITHUB_REPO = defineString('GITHUB_REPO', {
+  description: 'GitHub repository name',
+});
 
 export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
@@ -143,8 +141,8 @@ export const createGithubIssueFromFeedback = onCall(
     const octokit = new Octokit({ auth: token });
 
     const { data: issue } = await octokit.issues.create({
-      owner: GITHUB_OWNER,
-      repo: GITHUB_REPO,
+      owner: GITHUB_OWNER.value(),
+      repo: GITHUB_REPO.value(),
       title,
       body: bodyParts.join('\n'),
       labels,
