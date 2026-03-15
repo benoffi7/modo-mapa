@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { fetchCounters, fetchAllCustomTags, fetchAuthStats, fetchNotificationStats } from '../../services/admin';
+import { fetchCounters, fetchAllCustomTags, fetchAuthStats, fetchNotificationStats, fetchCommentStats } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
@@ -20,20 +20,28 @@ const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   feedback_response: 'Respuesta feedback',
 };
 
+interface CommentStats {
+  edited: number;
+  replies: number;
+  total: number;
+}
+
 interface DashboardData {
   counters: AdminCounters | null;
   customTagCounts: Array<{ label: string; value: number }>;
   authStats: AuthStats | null;
   notificationStats: NotificationStats | null;
+  commentStats: CommentStats | null;
 }
 
 export default function DashboardOverview() {
   const fetcher = useCallback(async (): Promise<DashboardData> => {
-    const [counters, customTags, authStats, notificationStats] = await Promise.all([
+    const [counters, customTags, authStats, notificationStats, commentStats] = await Promise.all([
       fetchCounters(),
       fetchAllCustomTags(),
       fetchAuthStats().catch(() => null),
       fetchNotificationStats().catch(() => null),
+      fetchCommentStats().catch(() => null),
     ]);
 
     const labelMap = new Map<string, number>();
@@ -44,7 +52,7 @@ export default function DashboardOverview() {
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
 
-    return { counters, customTagCounts, authStats, notificationStats };
+    return { counters, customTagCounts, authStats, notificationStats, commentStats };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -57,6 +65,7 @@ export default function DashboardOverview() {
   const customTagCounts = data?.customTagCounts ?? [];
   const authStats = data?.authStats;
   const notifStats = data?.notificationStats;
+  const commentStats = data?.commentStats;
 
   const ratingPieData = metrics
     ? Object.entries(metrics.ratingDistribution).map(([key, value]) => ({
@@ -112,6 +121,35 @@ export default function DashboardOverview() {
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatCard label="Feedback" value={counters?.feedback ?? 0} />
         </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Likes" value={counters?.commentLikes ?? 0} />
+        </Grid>
+
+        {commentStats && commentStats.total > 0 && (
+          <>
+            <Grid size={12}>
+              <Typography variant="subtitle1" sx={{ mt: 1 }}>Salud de comentarios</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Editados" value={commentStats.edited} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard
+                label="% editados"
+                value={Math.round((commentStats.edited / commentStats.total) * 100)}
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard label="Respuestas" value={commentStats.replies} />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <StatCard
+                label="% respuestas"
+                value={Math.round((commentStats.replies / commentStats.total) * 100)}
+              />
+            </Grid>
+          </>
+        )}
 
         {authStats && (
           <>

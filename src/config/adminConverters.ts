@@ -24,6 +24,7 @@ export const countersConverter: FirestoreDataConverter<AdminCounters> = {
       users: asNumber(d.users),
       customTags: asNumber(d.customTags),
       userTags: asNumber(d.userTags),
+      commentLikes: asNumber(d.commentLikes),
       dailyReads: asNumber(d.dailyReads),
       dailyWrites: asNumber(d.dailyWrites),
       dailyDeletes: asNumber(d.dailyDeletes),
