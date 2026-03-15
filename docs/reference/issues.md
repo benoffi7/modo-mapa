@@ -77,6 +77,7 @@
 | [#109](https://github.com/benoffi7/modo-mapa/issues/109) | feat | Comentarios: swipe actions (mobile) | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
 | [#110](https://github.com/benoffi7/modo-mapa/issues/110) | feat | Comentarios: skeleton loader | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
 | [#111](https://github.com/benoffi7/modo-mapa/issues/111) | feat | Comentarios: empty state mejorado | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| — | feat | Admin: comments module gaps (likes counter, trends, user stats, activity columns, comment health) | — | In progress | `docs/feat/admin/comments-admin-gaps/` |
 
 ---
 
@@ -140,6 +141,7 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 |---------|---------|
 | `docs/feat/admin/admin-backups/` | Gestion de backups (#34) |
 | `docs/feat/admin/auth-metrics/` | Admin auth metrics (#84) |
+| `docs/feat/admin/comments-admin-gaps/` | Admin comments module gaps (likes, trends, user stats, activity columns, comment health) |
 
 #### Fix (`docs/fix/`)
 
