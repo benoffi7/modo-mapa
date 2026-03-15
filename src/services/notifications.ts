@@ -13,18 +13,21 @@ import {
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { notificationConverter } from '../config/converters';
+import { measureAsync } from '../utils/perfMetrics';
 import type { AppNotification } from '../types';
 
 export async function fetchUserNotifications(
   userId: string,
   maxResults = 50,
 ): Promise<AppNotification[]> {
-  const snap = await getDocs(
-    query(
-      collection(db, COLLECTIONS.NOTIFICATIONS).withConverter(notificationConverter),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc'),
-      firestoreLimit(maxResults),
+  const snap = await measureAsync('notifications', () =>
+    getDocs(
+      query(
+        collection(db, COLLECTIONS.NOTIFICATIONS).withConverter(notificationConverter),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc'),
+        firestoreLimit(maxResults),
+      ),
     ),
   );
   return snap.docs.map((d) => d.data());
@@ -52,11 +55,13 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 }
 
 export async function getUnreadCount(userId: string): Promise<number> {
-  const snap = await getCountFromServer(
-    query(
-      collection(db, COLLECTIONS.NOTIFICATIONS),
-      where('userId', '==', userId),
-      where('read', '==', false),
+  const snap = await measureAsync('unreadCount', () =>
+    getCountFromServer(
+      query(
+        collection(db, COLLECTIONS.NOTIFICATIONS),
+        where('userId', '==', userId),
+        where('read', '==', false),
+      ),
     ),
   );
   return snap.data().count;
