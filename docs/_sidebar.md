@@ -14,51 +14,152 @@
   - [Coding Standards](reference/CODING_STANDARDS.md)
   - [Security Guidelines](reference/SECURITY_GUIDELINES.md)
 
-- **Features — Admin**
-  - [Admin Backups — PRD](feat/admin/admin-backups/prd.md)
-  - [Admin Backups — Specs](feat/admin/admin-backups/specs.md)
-  - [Auth Metrics — PRD](feat/admin/auth-metrics/prd.md)
-  - [Auth Metrics — Specs](feat/admin/auth-metrics/specs.md)
+- **Admin**
+  - Admin Backups
+    - [PRD](feat/admin/admin-backups/prd.md)
+    - [Specs](feat/admin/admin-backups/specs.md)
+    - [Plan](feat/admin/admin-backups/plan.md)
+    - [Changelog](feat/admin/admin-backups/changelog.md)
+    - [Security Report](feat/admin/admin-backups/security-report.md)
+    - [Improvements](feat/admin/admin-backups/improvements-report.md)
+  - Auth Metrics
+    - [PRD](feat/admin/auth-metrics/prd.md)
+    - [Specs](feat/admin/auth-metrics/specs.md)
+    - [Plan](feat/admin/auth-metrics/plan.md)
   - [Comments Admin Gaps — PRD](feat/admin/comments-admin-gaps/prd.md)
   - [Performance Semaphores — PRD](feat/admin/performance-semaphores/prd.md)
 
-- **Features — Content**
-  - [Feedback Status — PRD](feat/content/feedback-status/prd.md)
-  - [Help Section — PRD](feat/content/help-section/prd.md)
-  - [Menu/Feedback/Ratings — PRD](feat/content/menu-feedback-ratings-version/prd.md)
-  - [Menu Photos — PRD](feat/content/menu-photos-history/prd.md)
+- **Content**
+  - Feedback Status
+    - [PRD](feat/content/feedback-status/prd.md)
+    - [Specs](feat/content/feedback-status/specs.md)
+    - [Plan](feat/content/feedback-status/plan.md)
+    - [Changelog](feat/content/feedback-status/changelog.md)
+  - Help Section
+    - [PRD](feat/content/help-section/prd.md)
+    - [Specs](feat/content/help-section/specs.md)
+    - [Plan](feat/content/help-section/plan.md)
+    - [Changelog](feat/content/help-section/changelog.md)
+  - Menu/Feedback/Ratings
+    - [PRD](feat/content/menu-feedback-ratings-version/prd.md)
+    - [Specs](feat/content/menu-feedback-ratings-version/specs.md)
+    - [Plan](feat/content/menu-feedback-ratings-version/plan.md)
+    - [Changelog](feat/content/menu-feedback-ratings-version/changelog.md)
+    - [PRD Filters](feat/content/menu-feedback-ratings-version/prd-filters.md)
+    - [Specs Filters](feat/content/menu-feedback-ratings-version/specs-filters.md)
+    - [Plan Filters](feat/content/menu-feedback-ratings-version/plan-filters.md)
+  - Menu Photos
+    - [PRD](feat/content/menu-photos-history/prd.md)
+    - [Specs](feat/content/menu-photos-history/specs.md)
+    - [Plan](feat/content/menu-photos-history/plan.md)
+    - [Changelog](feat/content/menu-photos-history/changelog.md)
   - [Rankings Improvements](feat/content/rankings-improvements/issues.md)
 
-- **Features — Infra**
-  - [Constants Dashboard — PRD](feat/infra/constants-dashboard/prd.md)
-  - [Firebase Analytics — PRD](feat/infra/firebase-analytics/prd.md)
-  - [Firebase Quota Offline — PRD](feat/infra/firebase-quota-offline/prd.md)
-  - [Modularizar Stats — PRD](feat/infra/modularizar-stats/prd.md)
-  - [Preview Environments — PRD](feat/infra/preview-environments/prd.md)
-  - [React Router — PRD](feat/infra/react-router/prd.md)
-  - [Sentry — PRD](feat/infra/sentry/prd.md)
+- **Infra**
+  - Constants Dashboard
+    - [PRD](feat/infra/constants-dashboard/prd.md)
+    - [Specs](feat/infra/constants-dashboard/specs.md)
+    - [Plan](feat/infra/constants-dashboard/plan.md)
+    - [Changelog](feat/infra/constants-dashboard/changelog.md)
+  - Firebase Analytics
+    - [PRD](feat/infra/firebase-analytics/prd.md)
+    - [Specs](feat/infra/firebase-analytics/specs.md)
+    - [Plan](feat/infra/firebase-analytics/plan.md)
+    - [Changelog](feat/infra/firebase-analytics/changelog.md)
+  - Firebase Quota Offline
+    - [PRD](feat/infra/firebase-quota-offline/prd.md)
+    - [Specs](feat/infra/firebase-quota-offline/specs.md)
+    - [Plan](feat/infra/firebase-quota-offline/plan.md)
+    - [Changelog](feat/infra/firebase-quota-offline/changelog.md)
+  - Modularizar Stats
+    - [PRD](feat/infra/modularizar-stats/prd.md)
+    - [Specs](feat/infra/modularizar-stats/specs.md)
+    - [Plan](feat/infra/modularizar-stats/plan.md)
+    - [Changelog](feat/infra/modularizar-stats/changelog.md)
+  - Preview Environments
+    - [PRD](feat/infra/preview-environments/prd.md)
+    - [Specs](feat/infra/preview-environments/specs.md)
+    - [Plan](feat/infra/preview-environments/plan.md)
+  - React Router
+    - [PRD](feat/infra/react-router/prd.md)
+    - [Specs](feat/infra/react-router/specs.md)
+    - [Plan](feat/infra/react-router/plan.md)
+  - Sentry
+    - [PRD](feat/infra/sentry/prd.md)
+    - [Specs](feat/infra/sentry/specs.md)
+    - [Plan](feat/infra/sentry/plan.md)
 
-- **Features — Security**
-  - [Analytics Opt-out — PRD](feat/security/analytics-optout/prd.md)
-  - [Email/Password Auth — PRD](feat/security/email-password-auth/prd.md)
-  - [Privacy Policy — PRD](feat/security/privacy-policy/prd.md)
-  - [Security Hardening — PRD](feat/security/security-hardening/prd.md)
-  - [User Settings — PRD](feat/security/user-settings/prd.md)
+- **Security**
+  - Analytics Opt-out
+    - [PRD](feat/security/analytics-optout/prd.md)
+    - [Specs](feat/security/analytics-optout/specs.md)
+    - [Plan](feat/security/analytics-optout/plan.md)
+  - Email/Password Auth
+    - [PRD](feat/security/email-password-auth/prd.md)
+    - [Specs](feat/security/email-password-auth/specs.md)
+    - [Plan](feat/security/email-password-auth/plan.md)
+  - Privacy Policy
+    - [PRD](feat/security/privacy-policy/prd.md)
+    - [Specs](feat/security/privacy-policy/specs.md)
+    - [Plan](feat/security/privacy-policy/plan.md)
+  - Security Hardening
+    - [PRD](feat/security/security-hardening/prd.md)
+    - [Specs](feat/security/security-hardening/specs.md)
+    - [Plan](feat/security/security-hardening/plan.md)
+    - [Changelog](feat/security/security-hardening/changelog.md)
+  - User Settings
+    - [PRD](feat/security/user-settings/prd.md)
+    - [Specs](feat/security/user-settings/specs.md)
+    - [Plan](feat/security/user-settings/plan.md)
 
-- **Features — Social**
-  - [Comments 2.0 — PRD](feat/social/comments-2.0/prd.md)
-  - [Comments Improvements — PRD](feat/social/comments-improvements/prd.md)
-  - [Comments Next — PRD](feat/social/comments-next/prd.md)
-  - [Custom User Tags — PRD](feat/social/custom-user-tags/prd.md)
-  - [Menu Comentarios — PRD](feat/social/menu-comentarios/prd.md)
-  - [Menu Favoritos — PRD](feat/social/menu-favoritos/prd.md)
+- **Social**
+  - Comments 2.0
+    - [PRD](feat/social/comments-2.0/prd.md)
+    - [Specs](feat/social/comments-2.0/specs.md)
+    - [Plan](feat/social/comments-2.0/plan.md)
+    - [Changelog](feat/social/comments-2.0/changelog.md)
+  - Comments Improvements
+    - [PRD](feat/social/comments-improvements/prd.md)
+    - [Specs](feat/social/comments-improvements/specs.md)
+    - [Plan](feat/social/comments-improvements/plan.md)
+    - [Changelog](feat/social/comments-improvements/changelog.md)
+    - [Issues](feat/social/comments-improvements/issues.md)
+  - Comments Next
+    - [PRD](feat/social/comments-next/prd.md)
+    - [Specs](feat/social/comments-next/specs.md)
+    - [Plan](feat/social/comments-next/plan.md)
+  - Custom User Tags
+    - [PRD](feat/social/custom-user-tags/prd.md)
+    - [Specs](feat/social/custom-user-tags/specs.md)
+    - [Plan](feat/social/custom-user-tags/plan.md)
+    - [Changelog](feat/social/custom-user-tags/changelog.md)
+  - Menu Comentarios
+    - [PRD](feat/social/menu-comentarios/prd.md)
+    - [Specs](feat/social/menu-comentarios/specs.md)
+    - [Plan](feat/social/menu-comentarios/plan.md)
+    - [Changelog](feat/social/menu-comentarios/changelog.md)
+  - Menu Favoritos
+    - [PRD](feat/social/menu-favoritos/prd.md)
+    - [Specs](feat/social/menu-favoritos/specs.md)
+    - [Plan](feat/social/menu-favoritos/plan.md)
+    - [Changelog](feat/social/menu-favoritos/changelog.md)
 
 - **Fixes**
-  - [Audit Residuals](fix/audit-residuals/prd.md)
-  - [CSP and Tags](fix/csp-and-tags-permissions/prd.md)
+  - Audit Residuals
+    - [PRD](fix/audit-residuals/prd.md)
+    - [Specs](fix/audit-residuals/specs.md)
+    - [Changelog](fix/audit-residuals/changelog.md)
+  - CSP and Tags
+    - [PRD](fix/csp-and-tags-permissions/prd.md)
+    - [Specs](fix/csp-and-tags-permissions/specs.md)
+    - [Plan](fix/csp-and-tags-permissions/plan.md)
+    - [Changelog](fix/csp-and-tags-permissions/changelog.md)
 
 - **Reports**
   - [Pre-launch Audit](reports/pre-launch-audit.md)
   - [Security Audit v1.4](reports/security-audit-v1.4.md)
   - [Usability Report](reports/usability-report-2026-03-14.md)
   - [Audit Phase 4](reports/audit-phase4-v1.md)
+
+- **Issues**
+  - [Issue #80 — Email Auth](issues/issue-80-email-password-auth.md)
