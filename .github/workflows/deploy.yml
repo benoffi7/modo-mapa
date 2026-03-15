@@ -61,7 +61,7 @@ jobs:
         run: |
           cd functions && npm ci
           cd ..
-          npx firebase-tools deploy --only functions --project modo-mapa-app
+          npx firebase-tools deploy --only functions --project modo-mapa-app --force
 
       - name: Deploy to production hosting
         run: npx firebase-tools deploy --only hosting:production --project modo-mapa-app
