@@ -39,15 +39,19 @@ export const auth = getAuth(app);
 export const functions = getFunctions(app);
 export const storage = getStorage(app);
 
+// Named database support: VITE_FIRESTORE_DATABASE_ID overrides the default DB.
+// Used for staging environment (named DB "staging" in same Firebase project).
+const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+
 // DEV: getFirestore estándar (emuladores no soportan persistent cache)
 // PROD: persistent cache en IndexedDB para reducir reads de Firestore
 export const db = import.meta.env.DEV
-  ? getFirestore(app)
+  ? getFirestore(app, databaseId)
   : initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
       }),
-    });
+    }, databaseId);
 
 if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
@@ -55,19 +59,15 @@ if (import.meta.env.DEV) {
   connectFunctionsEmulator(functions, 'localhost', 5001);
   connectStorageEmulator(storage, 'localhost', 9199);
 } else {
-  // App Check obligatorio en producción — los emuladores no lo necesitan.
+  // App Check obligatorio en producción — los emuladores y staging no lo necesitan.
   // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
   const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
-  if (!recaptchaKey) {
-    throw new Error(
-      'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY is required in production. ' +
-      'App Check protects Firebase resources from abuse. See docs/SECURITY_GUIDELINES.md.',
-    );
+  if (recaptchaKey) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+      isTokenAutoRefreshEnabled: true,
+    });
   }
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
-    isTokenAutoRefreshEnabled: true,
-  });
 }
 
 initAnalytics(app);
