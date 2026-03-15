@@ -1,16 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { defineString } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
 import type { UserRecord } from 'firebase-admin/auth';
 import { captureException } from '../utils/sentry';
+import { assertAdmin } from '../helpers/assertAdmin';
 
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
-
-const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
-  description: 'Email address of the admin user',
-});
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -30,19 +26,6 @@ interface AuthStatsResponse {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function verifyAdmin(request: CallableRequest): void {
-  const email = request.auth?.token.email;
-  const emailVerified = request.auth?.token.email_verified;
-
-  if (!emailVerified) {
-    throw new HttpsError('permission-denied', 'Email no verificado');
-  }
-
-  if (email !== ADMIN_EMAIL_PARAM.value()) {
-    throw new HttpsError('permission-denied', 'Solo admin puede ver auth stats');
-  }
-}
-
 function classifyUser(user: UserRecord): 'anonymous' | 'email' {
   const providers = user.providerData.map((p) => p.providerId);
   if (providers.includes('password')) return 'email';
@@ -54,9 +37,8 @@ function classifyUser(user: UserRecord): 'anonymous' | 'email' {
 export const getAuthStats = onCall(
   { enforceAppCheck: !IS_EMULATOR },
   async (request: CallableRequest): Promise<AuthStatsResponse> => {
-    verifyAdmin(request);
+    assertAdmin(request.auth);
 
-    const adminEmail = ADMIN_EMAIL_PARAM.value();
     const byMethod = { anonymous: 0, email: 0 };
     const emailVerification = { verified: 0, unverified: 0 };
     const users: AuthUserInfo[] = [];
@@ -69,7 +51,7 @@ export const getAuthStats = onCall(
 
         for (const user of listResult.users) {
           // Exclude admin from user stats
-          if (user.email === adminEmail) continue;
+          if (user.customClaims?.admin === true) continue;
 
           const authMethod = classifyUser(user);
           byMethod[authMethod]++;

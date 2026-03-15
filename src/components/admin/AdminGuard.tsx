@@ -6,15 +6,17 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../context/AuthContext';
-import { ADMIN_EMAIL } from '../../constants/admin';
+
+const ADMIN_EMAIL = 'benoffi11@gmail.com';
+const DEV_PASSWORD = 'dev123456';
 
 interface AdminGuardProps {
   children: ReactNode;
 }
 
 /**
- * In DEV mode, auto-creates and signs in as the admin user in the Auth emulator.
- * This avoids popup auth issues and ensures Firestore rules pass isAdmin().
+ * In DEV mode, auto-creates and signs in as the admin user in the Auth emulator,
+ * then sets the admin custom claim via the setAdminClaim Cloud Function.
  */
 function DevAdminGuard({ children }: AdminGuardProps) {
   const [ready, setReady] = useState(false);
@@ -22,18 +24,17 @@ function DevAdminGuard({ children }: AdminGuardProps) {
   useEffect(() => {
     let cancelled = false;
     const setup = async () => {
-      const { auth } = await import('../../config/firebase');
+      const { auth, functions } = await import('../../config/firebase');
       const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
-      const DEV_PASSWORD = 'dev123456';
+      const { httpsCallable } = await import('firebase/functions');
 
       try {
         await signInWithEmailAndPassword(auth, ADMIN_EMAIL, DEV_PASSWORD);
       } catch {
-        // User doesn't exist yet — create it
         await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, DEV_PASSWORD);
       }
 
-      // Set emailVerified via Auth Emulator admin API so isAdmin() passes in Firestore rules
+      // Set emailVerified via Auth Emulator admin API
       if (auth.currentUser && !auth.currentUser.emailVerified) {
         await fetch(
           'http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:update',
@@ -43,17 +44,22 @@ function DevAdminGuard({ children }: AdminGuardProps) {
             body: JSON.stringify({ localId: auth.currentUser.uid, emailVerified: true }),
           },
         );
-        // Force token refresh to pick up emailVerified
         await auth.currentUser.reload();
         await auth.currentUser.getIdToken(true);
       }
+
+      // Set admin custom claim via Cloud Function
+      const setAdmin = httpsCallable(functions, 'setAdminClaim');
+      await setAdmin({ targetUid: auth.currentUser!.uid });
+      // Force token refresh to pick up new claim
+      await auth.currentUser!.getIdToken(true);
 
       if (!cancelled) setReady(true);
     };
 
     setup().catch((err) => {
       console.error('[DevAdminGuard] setup failed:', err);
-      if (!cancelled) setReady(true); // render anyway so error is visible
+      if (!cancelled) setReady(true);
     });
 
     return () => { cancelled = true; };
@@ -84,9 +90,13 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     setSigningIn(true);
     setAccessDenied(false);
     const result = await signInWithGoogle();
-    if (result && (result.email !== ADMIN_EMAIL || !result.emailVerified)) {
-      setAccessDenied(true);
-      await signOut();
+    if (result) {
+      const { getIdTokenResult } = await import('firebase/auth');
+      const tokenResult = await getIdTokenResult(result, true);
+      if (tokenResult.claims.admin !== true) {
+        setAccessDenied(true);
+        await signOut();
+      }
     }
     setSigningIn(false);
   };
@@ -103,7 +113,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 2 }}>
         <Alert severity="error" sx={{ maxWidth: 400 }}>
-          Acceso denegado. Solo {ADMIN_EMAIL} puede acceder al panel de administración.
+          Acceso denegado. Tu cuenta no tiene permisos de administrador.
         </Alert>
         <Button
           onClick={() => {

@@ -3,11 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   handler,
   mockListUsers,
-  mockAdminEmailValue,
 } = vi.hoisted(() => ({
   handler: { fn: null as ((request: unknown) => Promise<unknown>) | null },
   mockListUsers: vi.fn(),
-  mockAdminEmailValue: vi.fn().mockReturnValue('admin@test.com'),
 }));
 
 // Mock firebase-functions/v2/https
@@ -30,11 +28,6 @@ vi.mock('firebase-functions/v2', () => ({
   logger: { error: vi.fn() },
 }));
 
-// Mock firebase-functions/params
-vi.mock('firebase-functions/params', () => ({
-  defineString: () => ({ value: mockAdminEmailValue }),
-}));
-
 // Mock firebase-admin/auth
 vi.mock('firebase-admin/auth', () => ({
   getAuth: () => ({ listUsers: mockListUsers }),
@@ -48,11 +41,20 @@ vi.mock('../../utils/sentry', () => ({
 // Import to trigger handler registration
 import '../../admin/authStats';
 
-function makeRequest(email: string, emailVerified: boolean) {
+function makeAdminRequest() {
   return {
     auth: {
       uid: 'admin-uid',
-      token: { email, email_verified: emailVerified },
+      token: { admin: true, email: 'admin@test.com', email_verified: true },
+    },
+  };
+}
+
+function makeNonAdminRequest() {
+  return {
+    auth: {
+      uid: 'user-uid',
+      token: { email: 'other@test.com', email_verified: true },
     },
   };
 }
@@ -60,7 +62,7 @@ function makeRequest(email: string, emailVerified: boolean) {
 function makeUserRecord(
   uid: string,
   providers: string[],
-  opts: { email?: string; emailVerified?: boolean; displayName?: string } = {},
+  opts: { email?: string; emailVerified?: boolean; displayName?: string; customClaims?: Record<string, unknown> } = {},
 ) {
   return {
     uid,
@@ -69,6 +71,7 @@ function makeUserRecord(
     displayName: opts.displayName ?? null,
     providerData: providers.map((id) => ({ providerId: id })),
     metadata: { creationTime: '2026-01-01T00:00:00Z' },
+    customClaims: opts.customClaims ?? null,
   };
 }
 
@@ -78,13 +81,12 @@ describe('getAuthStats', () => {
   });
 
   it('rejects non-admin users', async () => {
-    const request = makeRequest('other@test.com', true);
-    await expect(handler.fn!(request)).rejects.toThrow('Solo admin');
+    const request = makeNonAdminRequest();
+    await expect(handler.fn!(request)).rejects.toThrow('Admin only');
   });
 
-  it('rejects unverified admin email', async () => {
-    const request = makeRequest('admin@test.com', false);
-    await expect(handler.fn!(request)).rejects.toThrow('Email no verificado');
+  it('rejects unauthenticated requests', async () => {
+    await expect(handler.fn!({ auth: undefined })).rejects.toThrow('Must be signed in');
   });
 
   it('classifies anonymous users correctly', async () => {
@@ -93,7 +95,7 @@ describe('getAuthStats', () => {
       pageToken: undefined,
     });
 
-    const result = await handler.fn!(makeRequest('admin@test.com', true));
+    const result = await handler.fn!(makeAdminRequest());
     const data = result as { byMethod: { anonymous: number; email: number } };
     expect(data.byMethod.anonymous).toBe(1);
     expect(data.byMethod.email).toBe(0);
@@ -107,7 +109,7 @@ describe('getAuthStats', () => {
       pageToken: undefined,
     });
 
-    const result = await handler.fn!(makeRequest('admin@test.com', true));
+    const result = await handler.fn!(makeAdminRequest());
     const data = result as {
       byMethod: { anonymous: number; email: number };
       emailVerification: { verified: number; unverified: number };
@@ -119,13 +121,13 @@ describe('getAuthStats', () => {
   it('excludes admin from stats', async () => {
     mockListUsers.mockResolvedValueOnce({
       users: [
-        makeUserRecord('admin', ['password'], { email: 'admin@test.com' }),
+        makeUserRecord('admin', ['password'], { email: 'admin@test.com', customClaims: { admin: true } }),
         makeUserRecord('u1', []),
       ],
       pageToken: undefined,
     });
 
-    const result = await handler.fn!(makeRequest('admin@test.com', true));
+    const result = await handler.fn!(makeAdminRequest());
     const data = result as { users: unknown[] };
     expect(data.users).toHaveLength(1);
   });
@@ -141,7 +143,7 @@ describe('getAuthStats', () => {
         pageToken: undefined,
       });
 
-    const result = await handler.fn!(makeRequest('admin@test.com', true));
+    const result = await handler.fn!(makeAdminRequest());
     const data = result as { byMethod: { anonymous: number; email: number } };
     expect(data.byMethod.anonymous).toBe(1);
     expect(data.byMethod.email).toBe(1);

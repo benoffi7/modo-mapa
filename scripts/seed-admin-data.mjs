@@ -612,6 +612,71 @@ async function seed() {
     tagCounts: {},
   });
 
+  // Create admin user in Auth emulator with custom claims
+  console.log('Creating admin user in Auth emulator...');
+  const ADMIN_EMAIL = 'benoffi11@gmail.com';
+  const AUTH_EMULATOR = 'http://localhost:9099';
+
+  let adminUid = null;
+  try {
+    const createRes = await fetch(
+      `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:signUp`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+        body: JSON.stringify({
+          email: ADMIN_EMAIL,
+          password: 'dev123456',
+          returnSecureToken: true,
+        }),
+      },
+    );
+    const createData = await createRes.json();
+    adminUid = createData.localId;
+  } catch {
+    // User may already exist — try to look up
+    console.log('  Admin user may already exist, attempting lookup...');
+  }
+
+  if (!adminUid) {
+    // Try signing in to get the UID
+    try {
+      const signInRes = await fetch(
+        `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+          body: JSON.stringify({
+            email: ADMIN_EMAIL,
+            password: 'dev123456',
+            returnSecureToken: true,
+          }),
+        },
+      );
+      const signInData = await signInRes.json();
+      adminUid = signInData.localId;
+    } catch {
+      console.log('  Could not find or create admin user');
+    }
+  }
+
+  if (adminUid) {
+    // Set emailVerified + custom claims (admin: true)
+    await fetch(
+      `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:update`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+        body: JSON.stringify({
+          localId: adminUid,
+          emailVerified: true,
+          customAttributes: JSON.stringify({ admin: true }),
+        }),
+      },
+    );
+    console.log(`  Admin user ready: ${ADMIN_EMAIL} (uid: ${adminUid}, claim: admin=true)`);
+  }
+
   console.log('\n✅ Seed complete!');
   console.log('- 10 users');
   console.log('- ~60 comments (4 flagged, ~6 edited, with likeCount) + ~20 replies (threads)');
@@ -632,6 +697,7 @@ async function seed() {
   console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
   console.log('- Counters and moderation config');
+  console.log('- 1 admin user with custom claim (admin: true)');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');
   console.log('Open http://localhost:5173/admin to see the dashboard');
 
