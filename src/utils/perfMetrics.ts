@@ -1,6 +1,5 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config/firebase';
 import { PERF_FLUSH_DELAY_MS } from '../constants/performance';
 import { trackEvent } from './analytics';
 import type { PerfVitals, QueryTiming } from '../types/perfMetrics';
@@ -9,19 +8,17 @@ import type { PerfVitals, QueryTiming } from '../types/perfMetrics';
 const vitals: PerfVitals = { lcp: null, inp: null, cls: null, ttfb: null };
 const queryTimings = new Map<string, number[]>();
 let sessionId = '';
-let userId: string | null = null;
 let flushed = false;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 // --- Public API ---
 
-export function initPerfMetrics(uid: string, analyticsEnabled: boolean): void {
+export function initPerfMetrics(_uid: string, analyticsEnabled: boolean): void {
   if (!import.meta.env.PROD) return;
   if (!analyticsEnabled) return;
   if (sessionId) return; // already initialized
 
   sessionId = crypto.randomUUID();
-  userId = uid;
 
   observeLCP();
   observeINP();
@@ -173,10 +170,9 @@ async function flushPerfMetrics(): Promise<void> {
   const APP_VERSION: string = __APP_VERSION__;
 
   try {
-    await addDoc(collection(db, COLLECTIONS.PERF_METRICS), {
+    const writePerfMetrics = httpsCallable(functions, 'writePerfMetrics');
+    await writePerfMetrics({
       sessionId,
-      userId,
-      timestamp: serverTimestamp(),
       vitals: { ...vitals },
       queries: buildQueryStats(),
       device: getDeviceInfo(),
