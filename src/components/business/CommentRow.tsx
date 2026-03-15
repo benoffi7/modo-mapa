@@ -39,8 +39,8 @@ export interface CommentRowProps {
   onCancelEdit: () => void;
   onEditTextChange: (text: string) => void;
   onDelete: (comment: Comment) => void;
-  onReply?: (comment: Comment) => void;
-  onShowProfile?: (userId: string, userName: string) => void;
+  onReply?: ((comment: Comment) => void) | undefined;
+  onShowProfile?: ((userId: string, userName: string) => void) | undefined;
 }
 
 const CommentRow = memo(function CommentRow({

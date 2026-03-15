@@ -32,15 +32,15 @@ Fecha: 2026-03-14
 
 ### Mejoras core (media complejidad)
 
-7. #106 - Editar inline
-8. #105 - Indicador de respuestas
-9. #101 - Filtrar por comercio
-10. #107 - Stats resumen
-11. #112 - Virtualizacion
+1. #106 - Editar inline
+2. #105 - Indicador de respuestas
+3. #101 - Filtrar por comercio
+4. #107 - Stats resumen
+5. #112 - Virtualizacion
 
 ### UX avanzada (media complejidad, mas riesgo)
 
-12. #109 - Swipe actions (mobile)
+1. #109 - Swipe actions (mobile)
 
 ## Archivo principal afectado
 
