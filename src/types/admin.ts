@@ -8,6 +8,7 @@ export interface AdminCounters {
   users: number;
   customTags: number;
   userTags: number;
+  commentLikes: number;
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;
