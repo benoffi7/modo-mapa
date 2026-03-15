@@ -289,26 +289,11 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
-    // Performance metrics — usuarios autenticados pueden crear (una vez por sesión).
-    // Solo admin puede leer (para el dashboard). No se permite update ni delete.
+    // Performance metrics — escritura via Cloud Function (writePerfMetrics) con rate limit.
+    // Solo admin puede leer (para el dashboard). Client no puede escribir directamente.
     match /perfMetrics/{docId} {
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly([
-          'sessionId', 'userId', 'timestamp', 'vitals', 'queries', 'device', 'appVersion'
-        ])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.sessionId is string
-        && request.resource.data.timestamp == request.time
-        && request.resource.data.vitals is map
-        && request.resource.data.vitals.keys().hasOnly(['lcp', 'inp', 'cls', 'ttfb'])
-        && request.resource.data.device is map
-        && request.resource.data.device.keys().hasOnly(['type', 'connection'])
-        && request.resource.data.queries is map
-        && request.resource.data.queries.size() <= 10
-        && request.resource.data.appVersion is string
-        && request.resource.data.appVersion.size() <= 20;
       allow read: if isAdmin();
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
