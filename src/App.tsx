@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { ColorModeProvider } from './context/ColorModeContext';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationsProvider } from './context/NotificationsContext';
 import { MapProvider } from './context/MapContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import AppShell from './components/layout/AppShell';
@@ -31,6 +32,7 @@ function App() {
     <ColorModeProvider>
       <ErrorBoundary>
         <AuthProvider>
+        <NotificationsProvider>
           <Routes>
             {import.meta.env.DEV && (
               <>
@@ -71,6 +73,7 @@ function App() {
               }
             />
           </Routes>
+        </NotificationsProvider>
         </AuthProvider>
       </ErrorBoundary>
     </ColorModeProvider>
