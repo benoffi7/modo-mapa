@@ -38,3 +38,4 @@ functions/lib/
 !.claude/skills/
 !.claude/commands/
 !.claude/README.md
+*.tsbuildinfo
