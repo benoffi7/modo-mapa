@@ -1,7 +1,12 @@
 /**
  * Seed script for admin dashboard testing.
- * Run with: node scripts/seed-admin-data.mjs
- * Requires emulators running: npm run emulators
+ *
+ * Usage:
+ *   node scripts/seed-admin-data.mjs              # seed local emulators (default)
+ *   node scripts/seed-admin-data.mjs --target staging  # seed remote staging DB
+ *
+ * Emulator mode requires emulators running: npm run emulators
+ * Staging mode uses Application Default Credentials (gcloud auth).
  */
 
 import { createRequire } from 'module';
@@ -10,12 +15,24 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, '..', 'functions', 'node_modules', 'x.js'));
 const admin = require('firebase-admin');
-const { Timestamp } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 
-// Use admin SDK to bypass Firestore rules in emulator
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-admin.initializeApp({ projectId: 'modo-mapa-app' });
-const db = admin.firestore();
+const target = process.argv.includes('--target')
+  ? process.argv[process.argv.indexOf('--target') + 1]
+  : null;
+
+if (!target) {
+  // Local emulators
+  process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+  admin.initializeApp({ projectId: 'modo-mapa-app' });
+  console.log('Target: local emulators (default database)');
+} else {
+  // Remote named database (e.g. staging)
+  admin.initializeApp({ projectId: 'modo-mapa-app' });
+  console.log(`Target: remote database "${target}"`);
+}
+
+const db = target ? getFirestore(admin.app(), target) : getFirestore();
 
 // Helper wrappers to match client SDK API used below
 const doc = (_db, col, id) => db.collection(col).doc(id);

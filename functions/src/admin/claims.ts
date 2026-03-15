@@ -2,7 +2,6 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { defineString } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
-import { IS_EMULATOR } from '../helpers/env';
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
   description: 'Email address of the admin user',
@@ -14,7 +13,7 @@ const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
  * The custom claim is used by Firestore rules (request.auth.token.admin == true).
  */
 export const setAdminClaim = onCall(
-  { enforceAppCheck: !IS_EMULATOR },
+  {},
   async (request: CallableRequest): Promise<{ admin: boolean }> => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Requires authentication');

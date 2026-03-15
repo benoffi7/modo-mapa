@@ -80,6 +80,17 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, authError, signInWithGoogle, signOut } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [adminReady, setAdminReady] = useState(false);
+
+  // Check if returning admin user already has the claim
+  useEffect(() => {
+    if (!user || user.isAnonymous) return;
+    let cancelled = false;
+    user.getIdTokenResult().then((result) => {
+      if (!cancelled && result.claims.admin) setAdminReady(true);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user]);
 
   // DEV: auto-login as admin in emulator
   if (import.meta.env.DEV) {
@@ -108,6 +119,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       }
       // Force token refresh to pick up the new admin claim
       await firebaseAuth.currentUser?.getIdToken(true);
+      setAdminReady(true);
     } catch {
       setAccessDenied(true);
       await signOut();
@@ -142,25 +154,31 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (!user || user.isAnonymous) {
+  if (!user || user.isAnonymous || !adminReady) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 3 }}>
-        <Typography variant="h4">Panel de Administración</Typography>
-        <Typography variant="body1" color="text.secondary">
-          Inicia sesión con tu cuenta de Google para acceder.
-        </Typography>
-        <Button
-          onClick={handleLogin}
-          variant="contained"
-          size="large"
-          disabled={signingIn}
-        >
-          {signingIn ? <CircularProgress size={24} /> : 'Iniciar sesión con Google'}
-        </Button>
-        {authError && (
-          <Alert severity="error" sx={{ maxWidth: 400 }}>
-            {authError}
-          </Alert>
+        {signingIn ? (
+          <CircularProgress />
+        ) : (
+          <>
+            <Typography variant="h4">Panel de Administración</Typography>
+            <Typography variant="body1" color="text.secondary">
+              Inicia sesión con tu cuenta de Google para acceder.
+            </Typography>
+            <Button
+              onClick={handleLogin}
+              variant="contained"
+              size="large"
+              disabled={signingIn}
+            >
+              Iniciar sesión con Google
+            </Button>
+            {authError && (
+              <Alert severity="error" sx={{ maxWidth: 400 }}>
+                {authError}
+              </Alert>
+            )}
+          </>
         )}
       </Box>
     );
