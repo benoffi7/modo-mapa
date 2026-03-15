@@ -7,13 +7,17 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
  * The dailyMetrics scheduled function reads and resets these counters.
  */
 export async function trackFunctionTiming(functionName: string, startMs: number): Promise<void> {
-  const elapsed = performance.now() - startMs;
-  const db = getFirestore();
+  try {
+    const elapsed = performance.now() - startMs;
+    const db = getFirestore();
 
-  await db.doc('config/perfCounters').set(
-    { [functionName]: FieldValue.arrayUnion(Math.round(elapsed)) },
-    { merge: true },
-  );
+    await db.doc('config/perfCounters').set(
+      { [functionName]: FieldValue.arrayUnion(Math.round(elapsed)) },
+      { merge: true },
+    );
+  } catch {
+    // Best-effort — don't let perf tracking break the trigger
+  }
 }
 
 /**
