@@ -5,8 +5,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+import { IS_EMULATOR } from '../helpers/env';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -145,8 +144,8 @@ export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  assertAdmin(request.auth);
-  await checkRateLimit(request.auth!.uid);
+  const admin = assertAdmin(request.auth);
+  await checkRateLimit(admin.uid);
 
   const client = getFirestoreAdminClient();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -178,8 +177,8 @@ export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsRespons
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  assertAdmin(request.auth);
-  await checkRateLimit(request.auth!.uid);
+  const admin = assertAdmin(request.auth);
+  await checkRateLimit(admin.uid);
 
   const pageSize = clampPageSize(request.data?.pageSize);
   const pageToken = request.data?.pageToken;
@@ -232,8 +231,8 @@ export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: tru
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  assertAdmin(request.auth);
-  await checkRateLimit(request.auth!.uid);
+  const admin = assertAdmin(request.auth);
+  await checkRateLimit(admin.uid);
 
   const backupId = validateBackupId(request.data?.backupId);
   const backupUri = `${BACKUP_PREFIX}${backupId}`;
@@ -277,8 +276,8 @@ export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true 
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  assertAdmin(request.auth);
-  await checkRateLimit(request.auth!.uid);
+  const admin = assertAdmin(request.auth);
+  await checkRateLimit(admin.uid);
 
   const backupId = validateBackupId(request.data?.backupId);
 
