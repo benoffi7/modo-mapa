@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { calculatePercentile } from '../../utils/perfMetrics';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -52,23 +54,14 @@ function getSemaphoreColor(key: VitalKey, value: number): 'success' | 'warning' 
   return 'error';
 }
 
-const SEMAPHORE_COLORS = {
-  success: '#4caf50',
-  warning: '#ff9800',
-  error: '#f44336',
-} as const;
 
 function formatVital(key: VitalKey, value: number): string {
   if (key === 'cls') return value.toFixed(3);
   return `${Math.round(value)}`;
 }
 
-function pctl(arr: number[], p: number): number {
-  if (arr.length === 0) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const idx = Math.ceil((p / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, idx)];
-}
+// Re-export from shared utility to avoid duplication
+const pctl = calculatePercentile;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -208,6 +201,7 @@ function buildTrendData(docs: PerfMetricsDoc[]): TrendPoint[] {
 // ── Sub-components ──────────────────────────────────────────────────────
 
 function SemaphoreCard({ vitalKey, data }: { vitalKey: VitalKey; data: AggregatedVitals | null }) {
+  const theme = useTheme();
   const label = VITAL_LABELS[vitalKey];
   const description = VITAL_DESCRIPTIONS[vitalKey];
 
@@ -225,7 +219,7 @@ function SemaphoreCard({ vitalKey, data }: { vitalKey: VitalKey; data: Aggregate
   }
 
   const status = getSemaphoreColor(vitalKey, data.p75);
-  const color = SEMAPHORE_COLORS[status];
+  const color = theme.palette[status].main;
 
   return (
     <Card variant="outlined" sx={{ borderLeft: `4px solid ${color}` }}>
