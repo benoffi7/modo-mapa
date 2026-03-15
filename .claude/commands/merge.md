@@ -61,17 +61,49 @@ npm run build
 
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
-## Phase 2: Automated audits (run in parallel via agents)
+## Phase 2: Automated audits (run ALL in parallel via agents)
 
-Launch these agents and collect their reports. These are informational — they produce warnings but don't block the merge unless critical issues are found:
+Launch ALL these agents in parallel and collect their reports. These are informational — they produce warnings but don't block the merge unless critical issues are found:
 
 1. **dark-mode-auditor** — scan for hardcoded colors in changed files only:
    - Get changed files: `git diff --name-only main -- 'src/**/*.tsx' 'src/**/*.ts'`
-   - If any hardcoded colors found in NEW code (not pre-existing), warn the user
+   - If any hardcoded colors found in NEW code (not pre-existing), fix before merge
 
-2. **help-docs-reviewer** — validate HelpSection matches features.md (only if help-related files changed)
+2. **help-docs-reviewer** — validate HelpSection matches features.md
 
-Report audit results as a summary. If critical issues found, ask user before proceeding.
+3. **security** — audit changed files for vulnerabilities:
+   - XSS in user-generated content rendering
+   - Query injection in Firestore queries
+   - Timer/async race conditions in hooks
+   - Input validation in services
+
+4. **architecture** — validate structural quality:
+   - Separation of responsibilities
+   - Code duplication between files
+   - Hook reusability (not coupled to specific components)
+   - React antipatterns (setState in render, refs misuse)
+
+5. **ui-reviewer** — UX and accessibility review:
+   - Layout on 360px mobile
+   - Accessibility (aria-labels, keyboard nav, aria-live)
+   - Dark mode consistency
+   - Empty/error states clarity
+
+6. **performance** — performance impact analysis:
+   - Bundle size impact of new imports
+   - Re-render efficiency (memo, useCallback, useMemo)
+   - Async loops (loadAll, touch event handlers)
+
+7. **privacy-policy** — verify no new data collection requires policy update:
+   - New analytics events
+   - New Firestore writes
+   - New localStorage usage
+
+8. **admin-metrics-auditor** — verify admin dashboard completeness:
+   - New data/events that should be visible in admin
+   - Orphaned data (collected but not shown)
+
+Fix critical issues found by any agent. Report all results as a summary table before proceeding.
 
 ## Phase 3: Documentation updates (automated)
 
@@ -159,11 +191,23 @@ Output a final summary:
 ```
 ## Merge Complete
 
-- Branch: feat/auth-metrics → main
-- Version: 2.3.0 → 2.4.0
-- CI: passing (run #12345)
-- Issue: #84 closed
-- Audits: dark-mode (0 issues), help-docs (ok)
-- Docs updated: features.md, firestore.md, issues.md
+- Branch: feat/xxx → main
+- Version: X.Y.Z → X.Y+1.Z
+- CI: passing (run #NNNNN)
+- Issues: #N closed
+
+### Audits
+| Agent | Result |
+|-------|--------|
+| dark-mode | 0 issues |
+| help-docs | ok |
+| security | 0 vulnerabilities |
+| architecture | ok |
+| ui-reviewer | 0 issues |
+| performance | no impact |
+| privacy-policy | no changes needed |
+| admin-metrics | no orphaned data |
+
+- Docs updated: features.md, files.md, patterns.md, issues.md
 - Branch cleaned: remote + local
 ```
