@@ -30,6 +30,8 @@
     - [PRD](/feat/admin/comments-admin-gaps/prd.md)
   - [Performance Semaphores](/feat/admin/performance-semaphores/)
     - [PRD](/feat/admin/performance-semaphores/prd.md)
+  - [Enhanced Abuse Alerts](/feat/admin/enhanced-abuse-alerts/)
+    - [PRD](/feat/admin/enhanced-abuse-alerts/)
 
 - **[Content](/feat/content/)**
   - [Feedback Status](/feat/content/feedback-status/)
