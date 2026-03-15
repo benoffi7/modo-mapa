@@ -21,11 +21,10 @@ export const getStorageStats = onCall(
       const bucket = getStorage().bucket();
       const [files] = await bucket.getFiles({ prefix: 'menuPhotos/' });
 
-      let totalBytes = 0;
-      for (const file of files) {
-        const [metadata] = await file.getMetadata();
-        totalBytes += Number(metadata.size ?? 0);
-      }
+      const totalBytes = files.reduce(
+        (sum, file) => sum + Number(file.metadata.size ?? 0),
+        0,
+      );
 
       return {
         totalBytes,
