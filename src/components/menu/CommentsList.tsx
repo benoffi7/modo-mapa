@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useDeferredValue, useEffect } from 'react';
+import { useMemo, useState, useCallback, useDeferredValue, useEffect, useRef } from 'react';
 import {
   Autocomplete,
   Box,
@@ -48,7 +48,7 @@ export default function CommentsList({ onNavigate }: Props) {
 
   // Data loading
   const collectionRef = useMemo(() => getCommentsCollection(), []);
-  const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
+  const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, loadAll, reload } =
     usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
 
   // Undo delete
@@ -85,12 +85,19 @@ export default function CommentsList({ onNavigate }: Props) {
 
   // Swipe actions (#109)
   const swipe = useSwipeActions();
+  const swipeRefs = useRef<Map<string, React.RefObject<HTMLElement | null>>>(new Map());
+  const getSwipeRef = useCallback((id: string) => {
+    if (!swipeRefs.current.has(id)) {
+      swipeRefs.current.set(id, { current: null });
+    }
+    return swipeRefs.current.get(id)!;
+  }, []);
 
-  // "Load all" when search is active
+  // "Load all" when search is active — uses loadAll from hook (async loop with hasMoreRef)
   useEffect(() => {
-    if (!searchInput || !hasMore || isLoadingMore) return;
-    loadMore();
-  }, [searchInput, hasMore, isLoadingMore, loadMore]);
+    if (!searchInput || !hasMore) return;
+    loadAll(200);
+  }, [searchInput, hasMore, loadAll]);
 
   // Map raw items to { comment, business }
   const comments = useMemo(() => {
@@ -349,9 +356,10 @@ export default function CommentsList({ onNavigate }: Props) {
       {filteredComments.length > 0 && (
         <List disablePadding>
           {filteredComments.map(({ id, comment, business }) => {
-            const handlers = swipe.getHandlers(id);
-            const style = swipe.getStyle(id);
             const isSwiped = swipe.swipedId === id;
+            const itemRef = getSwipeRef(id);
+            const handlers = swipe.getHandlers(id, itemRef);
+            const style = swipe.getStyle(id);
 
             return (
               <Box
@@ -376,7 +384,7 @@ export default function CommentsList({ onNavigate }: Props) {
                     }}
                   >
                     <IconButton
-                      sx={{ color: '#fff' }}
+                      sx={{ color: 'common.white' }}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (swipe.direction === 'left') {
@@ -397,12 +405,12 @@ export default function CommentsList({ onNavigate }: Props) {
 
                 {/* Swipeable list item */}
                 <Box
+                  ref={itemRef}
                   {...handlers}
                   sx={{
                     position: 'relative',
                     bgcolor: 'background.paper',
                     zIndex: 1,
-                    '@media (pointer: fine)': { touchAction: 'none' },
                   }}
                   style={style}
                 >
