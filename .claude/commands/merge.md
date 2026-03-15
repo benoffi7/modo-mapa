@@ -124,7 +124,17 @@ git diff --name-only main -- 'src/types/**' 'src/config/adminConverters.ts' 'fun
 
 If yes, launch the **seed-manager** agent to verify seed data is in sync.
 
-### 3c. Check privacy policy (if data collection changed)
+### 3c. Update docs site (if docs/ changed)
+
+Check if any docs were added, moved, or removed:
+
+```bash
+git diff --name-only main -- 'docs/**/*.md'
+```
+
+If yes, launch the **docs-site-maintainer** agent to regenerate README.md index files and update `_sidebar.md`.
+
+### 3d. Check privacy policy (if data collection changed)
 
 Check if analytics events, new collections, or new user data fields were added:
 
