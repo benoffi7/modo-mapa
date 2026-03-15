@@ -82,8 +82,26 @@ export default function ActivityFeed() {
               { label: 'Usuario', render: (c) => c.userName },
               { label: 'Comercio', render: (c) => getBusinessName(c.businessId) },
               { label: 'Texto', render: (c) => c.text.length > 50 ? `${c.text.slice(0, 50)}...` : c.text },
-              { label: 'Fecha', render: (c) => formatDateShort(c.createdAt) },
-              { label: 'Estado', render: (c) => c.flagged ? <FlaggedChip /> : null },
+              { label: 'Likes', render: (c) => c.likeCount > 0 ? c.likeCount : '–' },
+              { label: 'Resp.', render: (c) => (c.replyCount ?? 0) > 0 ? c.replyCount! : '–' },
+              {
+                label: 'Fecha',
+                render: (c) => (
+                  <>
+                    {formatDateShort(c.createdAt)}
+                    {c.updatedAt && <Chip label="editado" size="small" sx={{ ml: 0.5 }} />}
+                  </>
+                ),
+              },
+              {
+                label: 'Estado',
+                render: (c) => (
+                  <>
+                    {c.parentId && <Chip label="Respuesta" size="small" color="info" sx={{ mr: 0.5 }} />}
+                    {c.flagged && <FlaggedChip />}
+                  </>
+                ),
+              },
             ]}
           />
         )}

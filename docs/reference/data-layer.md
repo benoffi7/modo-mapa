@@ -43,7 +43,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
 | `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
-| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData`, `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats` |
+| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts) |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
 ### Reglas del service layer
