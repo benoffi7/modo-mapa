@@ -35,7 +35,7 @@ export async function updateUserSettings(
     await setDoc(ref, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
   } else {
     // First write — send all fields so Firestore rules pass validation
-    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, analyticsEnabled } = DEFAULT_SETTINGS;
-    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, analyticsEnabled, ...updates, updatedAt: serverTimestamp() });
+    const { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled } = DEFAULT_SETTINGS;
+    await setDoc(ref, { profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled, ...updates, updatedAt: serverTimestamp() });
   }
 }
