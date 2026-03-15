@@ -1,20 +1,13 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createNotification } from '../utils/notifications';
+import { assertAdmin } from '../helpers/assertAdmin';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_RESPONSE_LENGTH = 500;
 
 const GITHUB_OWNER = 'benoffi7';
 const GITHUB_REPO = 'modo-mapa';
-
-function assertAdmin(auth: { token: { email?: string; email_verified?: boolean } } | undefined): void {
-  if (IS_EMULATOR) return; // Skip all auth checks in emulator
-  if (!auth?.token.email_verified || auth?.token.email !== ADMIN_EMAIL) {
-    throw new HttpsError('permission-denied', 'Admin only');
-  }
-}
 
 export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },

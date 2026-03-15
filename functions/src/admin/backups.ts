@@ -1,19 +1,14 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { defineString } from 'firebase-functions/params';
 import { v1 } from '@google-cloud/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
+import { assertAdmin } from '../helpers/assertAdmin';
 
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 
 // ── Constants ──────────────────────────────────────────────────────────
-
-const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
-  description: 'Email address of the admin user',
-});
 
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
 const BACKUP_BUCKET_NAME = 'modo-mapa-app-backups';
@@ -102,21 +97,6 @@ async function checkRateLimit(uid: string): Promise<void> {
   });
 }
 
-async function verifyAdmin(request: CallableRequest): Promise<void> {
-  const email = request.auth?.token.email;
-  const emailVerified = request.auth?.token.email_verified;
-
-  if (!emailVerified) {
-    throw new HttpsError('permission-denied', 'Email no verificado');
-  }
-
-  if (email !== ADMIN_EMAIL_PARAM.value()) {
-    throw new HttpsError('permission-denied', 'Solo admin puede gestionar backups');
-  }
-
-  await checkRateLimit(request.auth!.uid);
-}
-
 function getBackupBucket() {
   return getStorage().bucket(BACKUP_BUCKET_NAME);
 }
@@ -165,7 +145,8 @@ export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  await verifyAdmin(request);
+  assertAdmin(request.auth);
+  await checkRateLimit(request.auth!.uid);
 
   const client = getFirestoreAdminClient();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -197,7 +178,8 @@ export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsRespons
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  await verifyAdmin(request);
+  assertAdmin(request.auth);
+  await checkRateLimit(request.auth!.uid);
 
   const pageSize = clampPageSize(request.data?.pageSize);
   const pageToken = request.data?.pageToken;
@@ -250,7 +232,8 @@ export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: tru
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  await verifyAdmin(request);
+  assertAdmin(request.auth);
+  await checkRateLimit(request.auth!.uid);
 
   const backupId = validateBackupId(request.data?.backupId);
   const backupUri = `${BACKUP_PREFIX}${backupId}`;
@@ -294,7 +277,8 @@ export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true 
   memory: '256MiB',
   enforceAppCheck: !IS_EMULATOR,
 }, async (request) => {
-  await verifyAdmin(request);
+  assertAdmin(request.auth);
+  await checkRateLimit(request.auth!.uid);
 
   const backupId = validateBackupId(request.data?.backupId);
 

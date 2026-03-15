@@ -2,17 +2,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { createNotification } from '../utils/notifications';
+import { assertAdmin } from '../helpers/assertAdmin';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'benoffi11@gmail.com';
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 
 export const approveMenuPhoto = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { photoId } = request.data;
     if (!photoId || typeof photoId !== 'string') {
@@ -45,7 +42,7 @@ export const approveMenuPhoto = onCall(
     // Approve the new photo
     batch.update(photoRef, {
       status: 'approved',
-      reviewedBy: auth.uid,
+      reviewedBy: request.auth!.uid,
       reviewedAt: FieldValue.serverTimestamp(),
     });
 
@@ -70,10 +67,7 @@ export const approveMenuPhoto = onCall(
 export const rejectMenuPhoto = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { photoId, reason } = request.data;
     if (!photoId || typeof photoId !== 'string') {
@@ -92,7 +86,7 @@ export const rejectMenuPhoto = onCall(
     await photoRef.update({
       status: 'rejected',
       rejectionReason: reason || '',
-      reviewedBy: auth.uid,
+      reviewedBy: request.auth!.uid,
       reviewedAt: FieldValue.serverTimestamp(),
     });
 
@@ -115,10 +109,7 @@ export const rejectMenuPhoto = onCall(
 export const deleteMenuPhoto = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    const { auth } = request;
-    if (!auth?.token.email_verified || auth.token.email !== ADMIN_EMAIL) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    assertAdmin(request.auth);
 
     const { photoId } = request.data;
     if (!photoId || typeof photoId !== 'string') {
