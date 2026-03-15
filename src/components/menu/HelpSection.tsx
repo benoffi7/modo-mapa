@@ -51,7 +51,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <NotificationsOutlinedIcon color="primary" />,
     title: 'Notificaciones',
     description:
-      'Campana en la barra de búsqueda. Recibís avisos de likes en comentarios, fotos aprobadas o rechazadas, cambios en rankings y respuestas a tu feedback. Tocá para ir al comercio o marcá como leídas.',
+      'Campana en la barra de búsqueda. Recibís avisos de likes en comentarios, respuestas a tus comentarios, fotos aprobadas o rechazadas, cambios en rankings y respuestas a tu feedback. Podés desactivar cada tipo en Configuración. Tocá para ir al comercio o marcá como leídas.',
   },
   {
     id: 'perfil',

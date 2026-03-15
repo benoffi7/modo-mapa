@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   notifyPhotos: false,
   notifyRankings: false,
   notifyFeedback: true,
+  notifyReplies: true,
   analyticsEnabled: false,
   updatedAt: new Date(),
 };
