@@ -180,7 +180,7 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Controlar notificaciones:</strong> podés activar o desactivar las
-            notificaciones (likes, fotos, rankings, feedback) desde Configuración.
+            notificaciones (likes, fotos, rankings, feedback, respuestas a comentarios) desde Configuración.
           </Li>
           <Li>
             <strong>Cerrar sesión:</strong> podés cerrar tu sesión en cualquier momento.
