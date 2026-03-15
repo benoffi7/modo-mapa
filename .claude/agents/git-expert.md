@@ -17,7 +17,8 @@ Todos los demas agentes tienen prohibido correr comandos git. Si otro agente nec
 - Features: `feat/<issue>-<descripcion>`
 - Fixes: `fix/<issue>-<descripcion>`
 - Chores: `chore/<issue>-<descripcion>`
-- **NUNCA trabajar directo en main.**
+- **NUNCA trabajar directo en main** para cambios de codigo.
+- **Excepcion**: los artefactos del workflow (prd.md, specs.md, plan.md) se pushean directo a main sin crear rama. Tambien actualizar `docs/_sidebar.md` si se agregan docs nuevos.
 
 ### Commits
 
