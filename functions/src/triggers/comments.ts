@@ -71,7 +71,7 @@ export const onCommentCreated = onDocumentCreated(
 
       // Don't notify if replying to own comment
       if (parentAuthorId !== userId) {
-        const displayName = (data.displayName as string) || 'Alguien';
+        const displayName = (data.userName as string) || 'Alguien';
         const replyText = (data.text as string) || '';
         const truncatedText = replyText.length > 80 ? replyText.slice(0, 80) + '…' : replyText;
 
