@@ -208,7 +208,7 @@ describe('onCommentCreated', () => {
           businessId: 'b1',
           businessName: 'Café Test',
           parentId: 'parent123',
-          displayName: 'Replier Name',
+          userName: 'Replier Name',
         }),
         ref: { delete: vi.fn() },
       },
