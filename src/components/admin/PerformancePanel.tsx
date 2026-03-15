@@ -14,7 +14,7 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Alert from '@mui/material/Alert';
 import { useAsyncData } from '../../hooks/useAsyncData';
-import { fetchPerfMetrics, fetchStorageStats } from '../../services/admin';
+import { fetchPerfMetrics, fetchStorageStats, fetchDailyMetrics } from '../../services/admin';
 import { PERF_THRESHOLDS } from '../../constants/performance';
 import type { PerfMetricsDoc, PerfVitals } from '../../types/perfMetrics';
 import type { StorageStats } from '../../types/admin';
@@ -82,14 +82,21 @@ interface AggregatedQueries {
   [name: string]: { p50: number; p95: number; count: number };
 }
 
+interface FunctionTiming {
+  p50: number;
+  p95: number;
+  count: number;
+}
+
 interface PanelData {
   vitals: Record<VitalKey, AggregatedVitals | null>;
   queries: AggregatedQueries;
+  functions: Record<string, FunctionTiming>;
   totalSessions: number;
   storageStats: StorageStats | null;
 }
 
-function aggregateMetrics(docs: PerfMetricsDoc[]): Omit<PanelData, 'storageStats'> {
+function aggregateMetrics(docs: PerfMetricsDoc[]): Omit<PanelData, 'storageStats' | 'functions'> {
   const vitalArrays: Record<VitalKey, number[]> = { lcp: [], inp: [], cls: [], ttfb: [] };
   const queryAcc: Record<string, { p50s: number[]; p95s: number[]; totalCount: number }> = {};
 
@@ -223,6 +230,44 @@ function QueryLatencyTable({ queries }: { queries: AggregatedQueries }) {
   );
 }
 
+const FUNCTION_LABELS: Record<string, string> = {
+  onCommentCreated: 'onCommentCreated',
+  onRatingWritten: 'onRatingWritten',
+};
+
+function FunctionTimingTable({ functions }: { functions: Record<string, FunctionTiming> }) {
+  const entries = Object.entries(functions);
+
+  if (entries.length === 0) {
+    return <Alert severity="info">No hay datos de timing de funciones. Se agregan con el dailyMetrics diario.</Alert>;
+  }
+
+  return (
+    <TableContainer component={Paper} variant="outlined">
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Function</TableCell>
+            <TableCell align="right">p50</TableCell>
+            <TableCell align="right">p95</TableCell>
+            <TableCell align="right">Invocaciones</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {entries.map(([name, timing]) => (
+            <TableRow key={name}>
+              <TableCell>{FUNCTION_LABELS[name] ?? name}</TableCell>
+              <TableCell align="right">{Math.round(timing.p50)} ms</TableCell>
+              <TableCell align="right">{Math.round(timing.p95)} ms</TableCell>
+              <TableCell align="right">{timing.count}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
 const FREE_TIER_STORAGE = 1 * 1024 * 1024 * 1024; // 1 GB
 
 function StorageCard({ stats }: { stats: StorageStats | null }) {
@@ -268,13 +313,18 @@ function StorageCard({ stats }: { stats: StorageStats | null }) {
 
 export default function PerformancePanel() {
   const fetcher = useCallback(async (): Promise<PanelData> => {
-    const [docs, storageStats] = await Promise.all([
+    const [docs, storageStats, dailyMetrics] = await Promise.all([
       fetchPerfMetrics(200),
       fetchStorageStats().catch(() => null),
+      fetchDailyMetrics('desc', 1).catch(() => []),
     ]);
 
     const aggregated = aggregateMetrics(docs);
-    return { ...aggregated, storageStats };
+    const latestMetrics = dailyMetrics[0] as unknown as Record<string, unknown> | undefined;
+    const perfData = (latestMetrics?.performance ?? {}) as Record<string, unknown>;
+    const functions = (perfData.functions ?? {}) as Record<string, FunctionTiming>;
+
+    return { ...aggregated, functions, storageStats };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -300,6 +350,11 @@ export default function PerformancePanel() {
           <Typography variant="h6" gutterBottom>Latencia de Queries</Typography>
           <Box sx={{ mb: 3 }}>
             <QueryLatencyTable queries={data.queries} />
+          </Box>
+
+          <Typography variant="h6" gutterBottom>Cloud Functions</Typography>
+          <Box sx={{ mb: 3 }}>
+            <FunctionTimingTable functions={data.functions} />
           </Box>
 
           <Typography variant="h6" gutterBottom>Storage</Typography>
