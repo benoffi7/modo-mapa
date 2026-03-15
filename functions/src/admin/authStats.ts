@@ -5,8 +5,7 @@ import { getAuth } from 'firebase-admin/auth';
 import type { UserRecord } from 'firebase-admin/auth';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+import { IS_EMULATOR } from '../helpers/env';
 
 // ── Types ─────────────────────────────────────────────────────────────
 

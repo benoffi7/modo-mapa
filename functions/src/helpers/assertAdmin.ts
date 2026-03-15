@@ -1,17 +1,26 @@
 import { HttpsError } from 'firebase-functions/v2/https';
+import { IS_EMULATOR } from './env';
 
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
-
-interface AuthToken {
-  admin?: boolean;
-  email?: string;
-  email_verified?: boolean;
+export interface AdminAuth {
+  uid: string;
+  token: {
+    admin?: boolean;
+    email?: string;
+    email_verified?: boolean;
+  };
 }
 
+/**
+ * Verifies the caller has admin custom claim.
+ * Returns the validated auth object so callers don't need non-null assertions.
+ * In emulator mode, returns a stub auth if none provided.
+ */
 export function assertAdmin(
-  auth: { uid: string; token: AuthToken } | undefined,
-): void {
-  if (IS_EMULATOR) return;
+  auth: AdminAuth | undefined,
+): AdminAuth {
+  if (IS_EMULATOR) {
+    return auth ?? { uid: 'emulator-admin', token: { admin: true } };
+  }
 
   if (!auth) {
     throw new HttpsError('unauthenticated', 'Must be signed in');
@@ -20,4 +29,6 @@ export function assertAdmin(
   if (auth.token.admin !== true) {
     throw new HttpsError('permission-denied', 'Admin only');
   }
+
+  return auth;
 }

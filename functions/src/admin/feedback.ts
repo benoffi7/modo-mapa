@@ -3,8 +3,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { createNotification } from '../utils/notifications';
 import { assertAdmin } from '../helpers/assertAdmin';
-
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+import { IS_EMULATOR } from '../helpers/env';
 const MAX_RESPONSE_LENGTH = 500;
 
 const GITHUB_OWNER = defineString('GITHUB_OWNER', {
