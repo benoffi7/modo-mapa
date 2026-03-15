@@ -5,7 +5,9 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
+import { auth as firebaseAuth, functions } from '../../config/firebase';
 import { ADMIN_EMAIL } from '../../constants/admin';
 
 interface AdminGuardProps {
@@ -33,17 +35,21 @@ function DevAdminGuard({ children }: AdminGuardProps) {
         await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, DEV_PASSWORD);
       }
 
-      // Set emailVerified via Auth Emulator admin API so isAdmin() passes in Firestore rules
-      if (auth.currentUser && !auth.currentUser.emailVerified) {
+      // Set emailVerified + admin claim via Auth Emulator admin API so isAdmin() passes in Firestore rules
+      if (auth.currentUser) {
         await fetch(
           'http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:update',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
-            body: JSON.stringify({ localId: auth.currentUser.uid, emailVerified: true }),
+            body: JSON.stringify({
+              localId: auth.currentUser.uid,
+              emailVerified: true,
+              customAttributes: JSON.stringify({ admin: true }),
+            }),
           },
         );
-        // Force token refresh to pick up emailVerified
+        // Force token refresh to pick up emailVerified + admin claim
         await auth.currentUser.reload();
         await auth.currentUser.getIdToken(true);
       }
@@ -84,7 +90,25 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     setSigningIn(true);
     setAccessDenied(false);
     const result = await signInWithGoogle();
-    if (result && (result.email !== ADMIN_EMAIL || !result.emailVerified)) {
+    if (!result || !result.emailVerified) {
+      setAccessDenied(true);
+      if (result) await signOut();
+      setSigningIn(false);
+      return;
+    }
+
+    try {
+      const setAdminClaim = httpsCallable<void, { admin: boolean }>(functions, 'setAdminClaim');
+      const { data } = await setAdminClaim();
+      if (!data.admin) {
+        setAccessDenied(true);
+        await signOut();
+        setSigningIn(false);
+        return;
+      }
+      // Force token refresh to pick up the new admin claim
+      await firebaseAuth.currentUser?.getIdToken(true);
+    } catch {
       setAccessDenied(true);
       await signOut();
     }
@@ -103,7 +127,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 2 }}>
         <Alert severity="error" sx={{ maxWidth: 400 }}>
-          Acceso denegado. Solo {ADMIN_EMAIL} puede acceder al panel de administración.
+          Acceso denegado. No tenés permisos de administrador.
         </Alert>
         <Button
           onClick={() => {

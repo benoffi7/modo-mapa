@@ -79,7 +79,7 @@ describe('getAuthStats', () => {
 
   it('rejects non-admin users', async () => {
     const request = makeRequest('other@test.com', true);
-    await expect(handler.fn!(request)).rejects.toThrow('Solo admin');
+    await expect(handler.fn!(request)).rejects.toThrow('Admin only');
   });
 
   it('rejects unverified admin email', async () => {
