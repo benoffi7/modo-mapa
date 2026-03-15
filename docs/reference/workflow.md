@@ -68,14 +68,14 @@ https://benoffi7.github.io/modo-mapa/feat/infra/telegram-notifications/prd.html
 
 **Mejora:** Cuando el usuario da feedback sustancial, crear un archivo `feedback-log.md` en la carpeta del feature con fecha, feedback recibido, y cambios aplicados. Esto ayuda a trackear decisiones.
 
-### 5. Branch para features grandes
+### 5. Branch para features grandes (IMPLEMENTADO)
 
-**Problema:** Pushear todo a main puede romper el deploy si hay cambios de codigo (no solo docs).
+~~**Problema:** Pushear todo a main puede romper el deploy si hay cambios de codigo (no solo docs).~~
 
-**Mejora propuesta:**
-- **Solo docs** → push directo a main (safe, no afecta build)
-- **Codigo** → crear branch, PR con preview, merge despues de review
-- El deploy actual ya soporta esto (preview.yml genera preview en PRs)
+**Regla vigente (desde 2026-03-15):**
+
+- **Solo docs del workflow** (prd.md, specs.md, plan.md) → push directo a main. Sin rama, sin auditorias, sin CI check. Actualizar `_sidebar.md` al agregar docs nuevos.
+- **Todo lo demas** (codigo, config, rules, scripts, changelogs) → crear branch, PR, `/merge` con checklist completa.
 
 ### 6. Checklist de review en el PRD
 

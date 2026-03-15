@@ -73,6 +73,18 @@ Toda la documentación se guarda en `docs/<tipo>-<descripcion>/`:
 
 Cada iteración se empieza desde cero actualizando los archivos existentes (no se crean versiones).
 
+### Push directo a main (solo docs del workflow)
+
+Los 3 artefactos del workflow de diseño (`prd.md`, `specs.md`, `plan.md`) se pueden pushear **directamente a main** sin crear rama, sin auditorías, y sin verificar CI. Esto es porque:
+
+- No afectan el build ni el código
+- Necesitan estar en main inmediatamente para ser visibles en GitHub Pages
+- El usuario los revisa de forma asíncrona desde GitHub Pages
+
+Al pushear docs nuevos, también actualizar `docs/_sidebar.md` para que aparezcan en la navegación.
+
+**Todo lo demás** (código, config, rules, scripts, changelogs) sigue el flujo normal de ramas + PR + `/merge`.
+
 ## Trabajo en paralelo (múltiples agentes)
 
 Cuando hay más de un agente trabajando en el repo al mismo tiempo, **cada agente debe usar su propio worktree** para evitar conflictos en el working directory:

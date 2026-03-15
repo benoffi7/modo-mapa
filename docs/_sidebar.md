@@ -116,6 +116,10 @@
     - [PRD](/feat/security/user-settings/prd.md)
     - [Specs](/feat/security/user-settings/specs.md)
     - [Plan](/feat/security/user-settings/plan.md)
+  - [Custom Claims](/feat/security/custom-claims/)
+    - [PRD](/feat/security/custom-claims/prd.md)
+    - [Specs](/feat/security/custom-claims/specs.md)
+    - [Plan](/feat/security/custom-claims/plan.md)
 
 - **[Social](/feat/social/)**
   - [Comments 2.0](/feat/social/comments-2.0/)

@@ -103,7 +103,8 @@ Memory files persist learnings across conversations. They are NOT in the repo be
 4. /release          ← (optional) tag + CHANGELOG + GitHub Release
 ```
 
-**Rule: NEVER work directly on main.** Always `/start` first.
+**Rule: NEVER work directly on main for code changes.** Always `/start` first.
+**Exception:** Workflow docs (prd.md, specs.md, plan.md) go directly to main — no branch, no audits, no CI check. Update `_sidebar.md` when adding new docs.
 
 ### Version convention
 
