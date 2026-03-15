@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userSettingsConverter } from '../config/converters';
+import { measureAsync } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -17,8 +18,10 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export async function fetchUserSettings(userId: string): Promise<UserSettings> {
-  const snap = await getDoc(
-    doc(db, COLLECTIONS.USER_SETTINGS, userId).withConverter(userSettingsConverter),
+  const snap = await measureAsync('userSettings', () =>
+    getDoc(
+      doc(db, COLLECTIONS.USER_SETTINGS, userId).withConverter(userSettingsConverter),
+    ),
   );
   return snap.exists() ? snap.data() : { ...DEFAULT_SETTINGS };
 }

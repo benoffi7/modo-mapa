@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
 import { setAnalyticsEnabled } from '../utils/analytics';
+import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
 
 type SettingKey = keyof Omit<UserSettings, 'updatedAt'>;
@@ -27,6 +28,13 @@ export function useUserSettings() {
   useEffect(() => {
     setAnalyticsEnabled(settings.analyticsEnabled);
   }, [settings.analyticsEnabled]);
+
+  // Initialize performance metrics once user and settings are ready
+  useEffect(() => {
+    if (user) {
+      initPerfMetrics(user.uid, settings.analyticsEnabled);
+    }
+  }, [user, settings.analyticsEnabled]);
 
   const updateSetting = useCallback(
     (key: SettingKey, value: boolean) => {

@@ -3,6 +3,10 @@ import { usePaginatedQuery, invalidateQueryCache } from './usePaginatedQuery';
 
 const mockGetDocs = vi.fn();
 
+vi.mock('../utils/perfMetrics', () => ({
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
+}));
+
 vi.mock('firebase/firestore', () => ({
   query: vi.fn((...args: unknown[]) => args),
   getDocs: (...args: unknown[]) => mockGetDocs(...args),
