@@ -134,11 +134,11 @@
 
 | Tab | Descripcion |
 |-----|-------------|
-| **Overview** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard) |
-| **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags, price levels, comment likes) con ultimos 20 items, indicador de flagged |
+| **Overview** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback, commentLikes), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard), "Salud de comentarios" section (editados count, % editados, respuestas count, % respuestas) |
+| **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags, price levels, comment likes) con ultimos 20 items, indicador de flagged. Comentarios: columnas Likes y Resp. (replyCount), chips "editado" (si `updatedAt`) y "Respuesta" (si `parentId`) |
 | **Feedback** | Tabla de feedback con categoria, mensaje, status (pending/viewed/responded/resolved), filtro por status. Acciones admin: responder (respondToFeedback callable), resolver (resolveFeedback callable), crear issue en GitHub (createGithubIssueFromFeedback callable). Link a GitHub issue si existe |
-| **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo, usuarios activos, total escrituras, new accounts trend. Click en leyenda para mostrar/ocultar series |
-| **Usuarios** | Rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, total), stats generales (total, activos, promedio acciones), auth method breakdown (anonimos vs email), email verified stats, settings aggregates (privacidad, notificaciones, analytics) |
+| **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo (incl. commentLikes line), usuarios activos, total escrituras, new accounts trend. Click en leyenda para mostrar/ocultar series |
+| **Usuarios** | Rankings top 10 por metrica (comentarios, ratings, favoritos, tags, feedback, likesGiven, total), stats generales (total, activos, promedio acciones), auth method breakdown (anonimos vs email), email verified stats, settings aggregates (privacidad, notificaciones, analytics), "Mas likes dados" TopList |
 | **Firebase Usage** | Graficos lineales de reads/writes/deletes y usuarios activos (ultimos 30 dias), pie charts por coleccion, barras de cuota vs free tier |
 | **Alertas** | Logs de abuso (rate limit excedido, contenido flaggeado, top writers) |
 | **Backups** | Crear backup manual, listar con paginacion (20/pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable |
