@@ -2,6 +2,24 @@
 
 You are testing the modo-mapa local development environment. Follow this protocol systematically.
 
+## Step 0: Verify working directory (CRITICAL)
+
+Before doing ANYTHING, verify you are in the correct directory. If working in a worktree, you MUST be inside it:
+
+```bash
+pwd
+git rev-parse --show-toplevel
+git branch --show-current
+```
+
+**If you are in a worktree** (branch is not `main`), confirm `pwd` is inside `.claude/worktrees/<name>`, NOT the main repo root. Running `dev-env.sh` from the wrong directory uses main's seed script and rules -- this has caused 5+ rounds of silent failures in the past.
+
+**If pwd is wrong**, `cd` to the worktree FIRST:
+
+```bash
+cd /Users/gonzalo.benoffi./Documents/GitHub/modo-mapa/.claude/worktrees/<name>
+```
+
 ## Step 1: Start the dev environment
 
 Run the script directly — it handles PATH, Java, emulators, seed, and Vite:
@@ -37,6 +55,16 @@ All 6 checks must pass (ports, HTTP responses, seed data). If any fail, check lo
 ```
 
 **Do NOT manually start emulators, seed, or Vite separately.** The script handles orchestration. If the script itself fails, fix the script — don't work around it.
+
+### Post-seed smoke check
+
+After start/restart, verify that seed data includes any NEW fields added in this branch. For example, if you added `notifyReplies` to userSettings, check it exists:
+
+```bash
+curl -s http://localhost:8080/v1/projects/modo-mapa-app/databases/(default)/documents/userSettings/user_001 | grep -o '"notifyReplies"' || echo "MISSING FIELD"
+```
+
+If key fields are missing, the seed script is stale (likely running from main instead of the worktree -- go back to Step 0).
 
 ## Step 2: Run TypeScript and lint checks
 
@@ -151,6 +179,31 @@ Current seeded collections:
 - `priceLevels` (~35)
 - `menuPhotos` (5: 2 pending, 2 approved, 1 rejected)
 - `config/counters` and `config/moderation`
+
+## Cloud Function trigger testing protocol
+
+When testing Cloud Functions that fire on Firestore writes (e.g., onCreate triggers):
+
+### Before creating test data
+
+1. **Identify required user settings** -- check which user settings must be enabled for the trigger to fire (e.g., `notificationsEnabled: true`, `notifyReplies: true`)
+2. **List eligible users** -- query the emulator to find users with the right settings:
+
+   ```bash
+   curl -s http://localhost:8080/v1/projects/modo-mapa-app/databases/(default)/documents/userSettings?pageSize=20 | python3 -c "import sys,json; docs=json.load(sys.stdin).get('documents',[]); [print(d['name'].split('/')[-1], {k:v for k,v in d['fields'].items() if 'notify' in k.lower() or 'enabled' in k.lower()}) for d in docs]"
+   ```
+
+3. **Use an eligible user** for the test write -- do not pick randomly
+
+### After creating test data
+
+Wait 2-3 seconds for the trigger, then check the target collection for the expected document.
+
+## Anti-patterns (do NOT do these)
+
+- **Do NOT simulate client SDK writes via REST API to test Firestore rules.** Rules that require `request.time` (e.g., `updatedAt == request.time`) cannot work with REST because you cannot send `serverTimestamp()`. For rule validation, use the actual app in the browser.
+- **Do NOT run dev-env.sh from the main repo when working in a worktree.** The seed script and rules will be from main, not your branch.
+- **Do NOT test Cloud Function triggers against users without checking their settings first.** This wastes multiple debug rounds.
 
 ## Troubleshooting
 
