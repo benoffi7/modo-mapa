@@ -64,7 +64,7 @@ if (import.meta.env.DEV) {
   const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
   const isStaging = !!import.meta.env.VITE_FIRESTORE_DATABASE_ID;
 
-  if (recaptchaKey) {
+  if (recaptchaKey && !isStaging) {
     initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
       isTokenAutoRefreshEnabled: true,
