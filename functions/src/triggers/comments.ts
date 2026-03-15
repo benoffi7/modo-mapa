@@ -5,6 +5,7 @@ import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { incrementBusinessCount } from '../utils/aggregates';
 import { logAbuse } from '../utils/abuseLogger';
+import { createNotification } from '../utils/notifications';
 
 export const onCommentCreated = onDocumentCreated(
   'comments/{commentId}',
@@ -48,9 +49,11 @@ export const onCommentCreated = onDocumentCreated(
 
     // 3. Increment parent replyCount (server-side — H2 security fix)
     const parentId = data.parentId as string | undefined;
+    let parentSnap: FirebaseFirestore.DocumentSnapshot | null = null;
     if (parentId) {
       const parentRef = db.collection('comments').doc(parentId);
       await parentRef.update({ replyCount: FieldValue.increment(1) });
+      parentSnap = await parentRef.get();
     }
 
     // 4. Counters + aggregates
@@ -59,6 +62,30 @@ export const onCommentCreated = onDocumentCreated(
     await trackWrite(db, 'comments');
     if (businessId) {
       await incrementBusinessCount(db, 'businessComments', businessId, 1);
+    }
+
+    // 5. Notify parent comment author about the reply
+    if (parentId && parentSnap?.exists) {
+      const parentData = parentSnap.data()!;
+      const parentAuthorId = parentData.userId as string;
+
+      // Don't notify if replying to own comment
+      if (parentAuthorId !== userId) {
+        const displayName = (data.userName as string) || 'Alguien';
+        const replyText = (data.text as string) || '';
+        const truncatedText = replyText.length > 80 ? replyText.slice(0, 80) + '…' : replyText;
+
+        await createNotification(db, {
+          userId: parentAuthorId,
+          type: 'comment_reply',
+          message: `${displayName} respondió tu comentario: "${truncatedText}"`,
+          actorId: userId,
+          actorName: displayName,
+          businessId: businessId,
+          businessName: data.businessName as string | undefined,
+          referenceId: parentId,
+        });
+      }
     }
   },
 );
