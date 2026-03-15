@@ -31,7 +31,8 @@ src/
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
-│   └── MapContext.tsx                # Estado del mapa (selected, search, filters)
+│   ├── MapContext.tsx                # Estado del mapa (selected, search, filters)
+│   └── NotificationsContext.tsx      # Notificaciones: instancia unica compartida (unread count, mark read, polling)
 ├── services/
 │   ├── index.ts                     # Barrel export de todas las operaciones CRUD
 │   ├── favorites.ts                 # addFavorite, removeFavorite
@@ -47,7 +48,7 @@ src/
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
 │   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData (incl. commentLikes/likesGiven), fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats, fetchCommentStats
 ├── types/
-│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response), UserSettings (incl. notifyFeedback) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
+│   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response, comment_reply), UserSettings (incl. notifyFeedback, notifyReplies) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
 │   ├── admin.ts                     # AdminCounters (incl. commentLikes), DailyMetrics (extends PublicMetrics), AbuseLog, AuthStats, NotificationStats, SettingsAggregates, PriceLevelStats, CommentLikeStats
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
@@ -145,7 +146,8 @@ src/
 │   │   └── OfflineIndicator.test.tsx
 │   └── menu/
 │       ├── FavoritesList.tsx
-│       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe
+│       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe, virtualizacion condicional (@tanstack/react-virtual >= 20 items)
+│       ├── CommentItem.tsx           # Item individual de comentario (React.memo), extraido de CommentsList. Blue dot para unread replies
 │       ├── PaginatedListShell.tsx   # Shell reutilizable: skeleton/error/empty/no-results/pagination
 │       ├── RatingsList.tsx
 │       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)

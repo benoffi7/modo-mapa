@@ -77,7 +77,9 @@
 | [#109](https://github.com/benoffi7/modo-mapa/issues/109) | feat | Comentarios: swipe actions (mobile) | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
 | [#110](https://github.com/benoffi7/modo-mapa/issues/110) | feat | Comentarios: skeleton loader | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
 | [#111](https://github.com/benoffi7/modo-mapa/issues/111) | feat | Comentarios: empty state mejorado | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
-| — | feat | Admin: comments module gaps (likes counter, trends, user stats, activity columns, comment health) | — | In progress | `docs/feat/admin/comments-admin-gaps/` |
+| — | feat | Admin: comments module gaps (likes counter, trends, user stats, activity columns, comment health) | — | Merged | `docs/feat/admin/comments-admin-gaps/` |
+| [#100](https://github.com/benoffi7/modo-mapa/issues/100) | feat | Notificaciones de respuestas a comentarios (comment_reply) | — | Merged | `docs/feat/social/comments-next/` |
+| [#112](https://github.com/benoffi7/modo-mapa/issues/112) | feat | Virtualizacion condicional de CommentsList (@tanstack/react-virtual) | — | Merged | `docs/feat/social/comments-next/` |
 
 ---
 
@@ -103,6 +105,7 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 | `docs/feat/social/menu-comentarios/` | Menu lateral - Comentarios (#9) |
 | `docs/feat/social/comments-2.0/` | Comentarios 2.0 (#45) + Compartir (#46) |
 | `docs/feat/social/comments-improvements/` | Comments improvements (#101-#111) |
+| `docs/feat/social/comments-next/` | Reply notifications (#100) + virtualization (#112) |
 
 #### Content (`docs/feat/content/`)
 
