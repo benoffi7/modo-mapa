@@ -1,19 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { defineString } from 'firebase-functions/params';
 import { v1 } from '@google-cloud/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
-
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
-
-// ── Constants ──────────────────────────────────────────────────────────
-
-const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
-  description: 'Email address of the admin user',
-});
+import { IS_EMULATOR } from '../helpers/env';
+import { verifyAdmin as verifyAdminBase } from '../helpers/verifyAdmin';
 
 const PROJECT_DB = 'projects/modo-mapa-app/databases/(default)';
 const BACKUP_BUCKET_NAME = 'modo-mapa-app-backups';
@@ -103,17 +96,7 @@ async function checkRateLimit(uid: string): Promise<void> {
 }
 
 async function verifyAdmin(request: CallableRequest): Promise<void> {
-  const email = request.auth?.token.email;
-  const emailVerified = request.auth?.token.email_verified;
-
-  if (!emailVerified) {
-    throw new HttpsError('permission-denied', 'Email no verificado');
-  }
-
-  if (email !== ADMIN_EMAIL_PARAM.value()) {
-    throw new HttpsError('permission-denied', 'Solo admin puede gestionar backups');
-  }
-
+  verifyAdminBase(request);
   await checkRateLimit(request.auth!.uid);
 }
 

@@ -2,11 +2,9 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { createNotification } from '../utils/notifications';
+import { IS_EMULATOR } from '../helpers/env';
+import { verifyAdmin } from '../helpers/verifyAdmin';
 
-const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
-  description: 'Email address of the admin user',
-});
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_RESPONSE_LENGTH = 500;
 
 const GITHUB_OWNER = defineString('GITHUB_OWNER', {
@@ -16,17 +14,10 @@ const GITHUB_REPO = defineString('GITHUB_REPO', {
   description: 'GitHub repository name',
 });
 
-function assertAdmin(auth: { token: { email?: string; email_verified?: boolean } } | undefined): void {
-  if (IS_EMULATOR) return; // Skip all auth checks in emulator
-  if (!auth?.token.email_verified || auth?.token.email !== ADMIN_EMAIL_PARAM.value()) {
-    throw new HttpsError('permission-denied', 'Admin only');
-  }
-}
-
 export const respondToFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    assertAdmin(request.auth);
+    verifyAdmin(request);
 
     const { feedbackId, response } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {
@@ -66,7 +57,7 @@ export const respondToFeedback = onCall(
 export const resolveFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
   async (request) => {
-    assertAdmin(request.auth);
+    verifyAdmin(request);
 
     const { feedbackId } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {
@@ -98,7 +89,7 @@ export const resolveFeedback = onCall(
 export const createGithubIssueFromFeedback = onCall(
   { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30 },
   async (request) => {
-    assertAdmin(request.auth);
+    verifyAdmin(request);
 
     const { feedbackId } = request.data;
     if (!feedbackId || typeof feedbackId !== 'string') {

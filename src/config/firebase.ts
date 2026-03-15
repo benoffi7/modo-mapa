@@ -59,14 +59,21 @@ if (import.meta.env.DEV) {
   connectFunctionsEmulator(functions, 'localhost', 5001);
   connectStorageEmulator(storage, 'localhost', 9199);
 } else {
-  // App Check obligatorio en producción — los emuladores y staging no lo necesitan.
+  // App Check obligatorio en producción — staging no lo necesita.
   // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
   const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
+  const isStaging = !!import.meta.env.VITE_FIRESTORE_DATABASE_ID;
+
   if (recaptchaKey) {
     initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
       isTokenAutoRefreshEnabled: true,
     });
+  } else if (!isStaging) {
+    throw new Error(
+      'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY is required in production. '
+      + 'App Check protects Firebase resources from abuse. See docs/SECURITY_GUIDELINES.md.',
+    );
   }
 }
 

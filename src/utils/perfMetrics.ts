@@ -170,7 +170,7 @@ async function flushPerfMetrics(): Promise<void> {
   flushed = true;
   if (flushTimer) clearTimeout(flushTimer);
 
-  const APP_VERSION = '__APP_VERSION__';
+  const APP_VERSION: string = __APP_VERSION__;
 
   try {
     await addDoc(collection(db, COLLECTIONS.PERF_METRICS), {
