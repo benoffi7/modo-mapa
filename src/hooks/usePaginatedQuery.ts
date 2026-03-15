@@ -24,6 +24,7 @@ interface UsePaginatedQueryReturn<T> {
   reload: () => Promise<void>;
 }
 
+import { measureAsync } from '../utils/perfMetrics';
 import { invalidateQueryCache, getQueryCache, setQueryCache } from '../services/queryCache';
 
 export { invalidateQueryCache } from '../services/queryCache';
@@ -98,7 +99,7 @@ export function usePaginatedQuery<T>(
         ...(cursor ? [startAfter(cursor)] : []),
       ];
 
-      const snapshot = await getDocs(query(stableRef, ...queryConstraints));
+      const snapshot = await measureAsync('paginatedQuery', () => getDocs(query(stableRef, ...queryConstraints)));
       const docs = snapshot.docs;
       const hasMoreResults = docs.length > pageSize;
       const pageDocs = hasMoreResults ? docs.slice(0, pageSize) : docs;

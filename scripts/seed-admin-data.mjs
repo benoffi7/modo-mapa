@@ -588,6 +588,33 @@ async function seed() {
     });
   }
 
+  // 14. PerfMetrics (7 docs, one per day of last week)
+  console.log('Creating perf metrics...');
+  const deviceTypes = ['mobile', 'desktop'];
+  const connections = ['wifi', '4g', '3g'];
+  for (let day = 1; day <= 7; day++) {
+    const device = deviceTypes[day % 2];
+    const conn = connections[day % 3];
+    await addDoc(collection(db, 'perfMetrics'), {
+      sessionId: `seed_session_${day}`,
+      userId: randomFrom(USER_IDS),
+      timestamp: daysAgo(day),
+      vitals: {
+        lcp: device === 'mobile' ? randomInt(1800, 4500) : randomInt(1200, 3000),
+        inp: device === 'mobile' ? randomInt(80, 600) : randomInt(50, 300),
+        cls: Math.round((Math.random() * 0.3) * 1000) / 1000,
+        ttfb: conn === '3g' ? randomInt(600, 2200) : randomInt(200, 1000),
+      },
+      queries: {
+        notifications: { p50: randomInt(80, 300), p95: randomInt(300, 800), count: randomInt(3, 12) },
+        userSettings: { p50: randomInt(50, 200), p95: randomInt(200, 500), count: randomInt(2, 8) },
+        paginatedQuery: { p50: randomInt(100, 400), p95: randomInt(400, 1200), count: randomInt(5, 20) },
+      },
+      device: { type: device, connection: conn },
+      appVersion: '1.0.0',
+    });
+  }
+
   // Update counters with new collections
   await db.doc('config/counters').set({
     priceLevels: plPairs.size,
@@ -631,6 +658,7 @@ async function seed() {
   console.log('- 30 top-user comments (1 per business from top 3)');
   console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
+  console.log('- 7 perf metrics (1 per day, mix mobile/desktop, wifi/4g/3g)');
   console.log('- Counters and moderation config');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');
   console.log('Open http://localhost:5173/admin to see the dashboard');
