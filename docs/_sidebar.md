@@ -174,10 +174,8 @@
     - [Changelog](/fix/csp-and-tags-permissions/changelog.md)
 
 - **[Reports](/reports/)**
-  - [Pre-launch Audit](/reports/pre-launch-audit.md)
-  - [Security Audit v1.4](/reports/security-audit-v1.4.md)
+  - [Tech Debt Backlog](/reports/tech-debt.md)
   - [Usability Report](/reports/usability-report-2026-03-14.md)
-  - [Audit Phase 4](/reports/audit-phase4-v1.md)
 
 - **[Issues](/issues/)**
   - [Issue #80 — Email Auth](/issues/issue-80-email-password-auth.md)
