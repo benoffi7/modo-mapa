@@ -2,8 +2,8 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { defineString } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
-
-const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+import { IS_EMULATOR } from '../helpers/env';
+import { assertAdmin } from '../helpers/assertAdmin';
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
   description: 'Email of the bootstrap admin (used only for initial setup)',
@@ -17,6 +17,7 @@ export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: tr
       throw new HttpsError('invalid-argument', 'targetUid required');
     }
 
+    // Authorization: emulator bypass, existing admin, or bootstrap via email
     if (!IS_EMULATOR) {
       const isExistingAdmin = request.auth?.token.admin === true;
       const isBootstrap =
@@ -28,7 +29,11 @@ export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: tr
       }
     }
 
-    await getAuth().setCustomUserClaims(targetUid, { admin: true });
+    // Merge with existing claims to avoid overwriting other claims
+    const user = await getAuth().getUser(targetUid);
+    const currentClaims = user.customClaims ?? {};
+    await getAuth().setCustomUserClaims(targetUid, { ...currentClaims, admin: true });
+
     logger.info('Admin claim set', {
       targetUid,
       setBy: request.auth?.uid ?? 'emulator',
@@ -46,18 +51,21 @@ export const removeAdminClaim = onCall<{ targetUid: string }, Promise<{ success:
       throw new HttpsError('invalid-argument', 'targetUid required');
     }
 
-    if (!IS_EMULATOR && request.auth?.token.admin !== true) {
-      throw new HttpsError('permission-denied', 'Admin only');
-    }
+    const admin = assertAdmin(request.auth);
 
-    if (request.auth?.uid === targetUid) {
+    if (admin.uid === targetUid) {
       throw new HttpsError('failed-precondition', 'Cannot remove your own admin claim');
     }
 
-    await getAuth().setCustomUserClaims(targetUid, { admin: false });
+    // Merge with existing claims, remove admin key
+    const user = await getAuth().getUser(targetUid);
+    const currentClaims = { ...(user.customClaims ?? {}) };
+    delete currentClaims.admin;
+    await getAuth().setCustomUserClaims(targetUid, currentClaims);
+
     logger.info('Admin claim removed', {
       targetUid,
-      removedBy: request.auth?.uid ?? 'emulator',
+      removedBy: admin.uid,
     });
 
     return { success: true as const };
