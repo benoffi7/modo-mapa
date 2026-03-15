@@ -37,6 +37,7 @@ main.tsx
                  │    ├─ BusinessTags (tags predefinidos + custom)
                  │    ├─ MenuPhotoSection (foto de menu + upload + viewer)
                  │    ├─ BusinessComments (lista + formulario + editar + undo delete + likes + sorting)
+                 │    │    └─ CommentRow (memo, individual comment rendering)
                  │    └─ ShareButton (Web Share API + clipboard fallback)
                  ├─ NameDialog (nombre de usuario, primera visita)
                  ├─ EmailPasswordDialog (registro/login con tabs, forgot password)
@@ -46,7 +47,8 @@ main.tsx
                       ├─ Nav (Favoritos, Recientes, Comentarios, Calificaciones, Feedback, Agregar comercio)
                       ├─ FavoritesList + ListFilters
                       ├─ RecentVisits (historial localStorage)
-                      ├─ CommentsList
+                      ├─ CommentsList (search, sorting, filter, edit, stats, swipe)
+                      │    └─ PaginatedListShell (skeleton/error/empty/pagination)
                       ├─ RatingsList + ListFilters
                       ├─ FeedbackForm (Tabs: Enviar / Mis envíos)
                       │    └─ MyFeedbackList (status chips, admin responses, nueva respuesta indicator)

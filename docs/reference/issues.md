@@ -101,6 +101,7 @@ Cada feature/fix tiene su carpeta en `docs/feat/<categoria>/<nombre>/` o `docs/f
 | `docs/feat/social/menu-favoritos/` | Menu lateral - Favoritos (#7) |
 | `docs/feat/social/menu-comentarios/` | Menu lateral - Comentarios (#9) |
 | `docs/feat/social/comments-2.0/` | Comentarios 2.0 (#45) + Compartir (#46) |
+| `docs/feat/social/comments-improvements/` | Comments improvements (#101-#111) |
 
 #### Content (`docs/feat/content/`)
 
