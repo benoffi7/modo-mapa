@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useDeferredValue, useEffect, useRef, type RefCallback } from 'react';
+import { memo, useMemo, useState, useCallback, useDeferredValue, useEffect, useRef, type RefCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Autocomplete,
@@ -64,7 +64,7 @@ interface CommentItemProps {
   onMarkForDelete: (id: string, comment: Comment) => void;
 }
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
   id, comment, business, editingId, editText, isSavingEdit,
   swipe, getSwipeRef, unreadReplyCommentIds,
   onSelectBusiness, onStartEdit, onSaveEdit, onCancelEdit, onSetEditText, onMarkForDelete,
@@ -239,7 +239,7 @@ function CommentItem({
       </Box>
     </Box>
   );
-}
+});
 
 export default function CommentsList({ onNavigate }: Props) {
   const { user } = useAuth();
@@ -304,11 +304,20 @@ export default function CommentsList({ onNavigate }: Props) {
     return ids;
   }, [notifications]);
 
-  // "Load all" when search is active — uses loadAll from hook (async loop with hasMoreRef)
+  // "Load all" when search becomes active — fires once, not on every keystroke
+  const hasTriggeredLoadAll = useRef(false);
   useEffect(() => {
-    if (!searchInput || !hasMore) return;
+    if (searchInput && !hasTriggeredLoadAll.current) {
+      hasTriggeredLoadAll.current = true;
+    }
+    if (!searchInput) {
+      hasTriggeredLoadAll.current = false;
+    }
+  }, [searchInput]);
+  useEffect(() => {
+    if (!hasTriggeredLoadAll.current || !hasMore) return;
     loadAll(200);
-  }, [searchInput, hasMore, loadAll]);
+  }, [hasMore, loadAll]);
 
   // Map raw items to { comment, business }
   const comments = useMemo(() => {
@@ -395,7 +404,7 @@ export default function CommentsList({ onNavigate }: Props) {
     setEditText('');
   }, []);
 
-  const handleSelectBusiness = (business: Business | null, commentId?: string) => {
+  const handleSelectBusiness = useCallback((business: Business | null, commentId?: string) => {
     if (!business) return;
     // Mark unread reply notifications for this comment as read
     if (commentId) {
@@ -407,7 +416,7 @@ export default function CommentsList({ onNavigate }: Props) {
     }
     setSelectedBusiness(business);
     onNavigate();
-  };
+  }, [notifications, markRead, setSelectedBusiness, onNavigate]);
 
   const isFiltered = !!deferredSearch || !!filterBusiness;
 
