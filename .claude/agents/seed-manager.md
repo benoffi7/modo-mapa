@@ -71,6 +71,19 @@ If emulators aren't running, just validate the script syntax:
 node --check scripts/seed-admin-data.mjs
 ```
 
+### Step 6: Post-seed validation (if emulators are running)
+
+After seeding, verify that NEW fields actually exist in the seeded documents. For each new field added in Step 1, query one document via the emulator REST API to confirm:
+
+```bash
+# Example: verify notifyReplies field exists in userSettings
+curl -s http://localhost:8080/v1/projects/modo-mapa-app/databases/(default)/documents/userSettings/user_001 | grep '"notifyReplies"'
+```
+
+If the field is missing, the seed script update was incomplete or the seed ran from the wrong directory (main repo instead of worktree).
+
+**IMPORTANT**: Always run dev-env.sh from the worktree directory when working on a branch, not from the main repo root. Running from main uses the old seed script.
+
 ## Important rules
 
 - Seed data should be realistic (use Spanish names, Buenos Aires locations, realistic timestamps)

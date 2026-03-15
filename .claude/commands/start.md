@@ -97,17 +97,25 @@ test -f .env && grep -c "VITE_FIREBASE" .env || echo "ERROR: .env missing or inc
 Ready to work. When done, run `/merge` to merge to main.
 ```
 
-### Step 6: Change to worktree directory
+### Step 6: Change to worktree directory and stay there
 
 ```bash
 cd .claude/worktrees/<short-name>
 ```
 
-Confirm to the user that they are now working in the worktree.
+Confirm to the user that they are now working in the worktree. **From this point on, ALL commands (dev-env.sh, npm, tsc, tests) MUST run from within the worktree directory.** Running scripts from the main repo root will use main's seed/rules instead of the branch's.
+
+Before any subsequent `./scripts/dev-env.sh` call, always verify:
+
+```bash
+pwd  # Must contain .claude/worktrees/<name>
+```
 
 ## Important notes
 
 - **NEVER work directly on main** — always use this command first
+- **ALL commands must run from the worktree directory** — running dev-env.sh, seed, or tests from the main repo will silently use main's files
 - Background agents cannot request interactive permissions — work as main agent for implementation
 - The worktree is an isolated copy of the repo; changes don't affect main until merged
 - `/merge` handles worktree cleanup automatically after merging
+- **PATH setup**: If `npm`/`node` commands fail with "command not found", add `/opt/homebrew/bin` to PATH before running. The `dev-env.sh` script handles this internally, but direct npm/npx calls may need it.
