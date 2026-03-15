@@ -1,9 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
@@ -17,8 +20,12 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import { fetchAbuseLogs } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
@@ -29,10 +36,134 @@ import type { AbuseLog } from '../../types/admin';
 type AbuseType = AbuseLog['type'];
 type SortField = 'timestamp' | 'type' | 'collection';
 type SortDir = 'asc' | 'desc';
+type DatePreset = 'all' | 'today' | 'week' | 'month';
 
 const ALL_TYPES: AbuseType[] = ['rate_limit', 'flagged', 'top_writers'];
 const PAGE_SIZE = 20;
 
+const DATE_PRESETS: { key: DatePreset; label: string }[] = [
+  { key: 'all', label: 'Todo' },
+  { key: 'today', label: 'Hoy' },
+  { key: 'week', label: 'Última semana' },
+  { key: 'month', label: 'Último mes' },
+];
+
+// ---------------------------------------------------------------------------
+// KpiCard – local component for KPI summary cards
+// ---------------------------------------------------------------------------
+function KpiCard({ label, value, secondary }: { label: string; value: string | number; secondary?: ReactNode }) {
+  return (
+    <Card variant="outlined" sx={{ minWidth: 140, flex: '1 1 0' }}>
+      <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {value}
+          </Typography>
+          {secondary}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// computeKpis – derive KPI values from raw logs
+// ---------------------------------------------------------------------------
+interface KpiData {
+  alertsToday: number;
+  alertsYesterday: number;
+  topType: string;
+  topUser: string;
+  topUserCount: number;
+  total: number;
+}
+
+function computeKpis(logs: AbuseLog[]): KpiData {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday.getTime() - 86_400_000);
+
+  let alertsToday = 0;
+  let alertsYesterday = 0;
+  const typeCounts: Record<string, number> = {};
+  const userCounts: Record<string, number> = {};
+
+  for (const log of logs) {
+    const ts = log.timestamp.getTime();
+    if (ts >= startOfToday.getTime()) alertsToday++;
+    else if (ts >= startOfYesterday.getTime()) alertsYesterday++;
+
+    typeCounts[log.type] = (typeCounts[log.type] ?? 0) + 1;
+    userCounts[log.userId] = (userCounts[log.userId] ?? 0) + 1;
+  }
+
+  let topType = '-';
+  let topTypeCount = 0;
+  for (const [type, count] of Object.entries(typeCounts)) {
+    if (count > topTypeCount) {
+      topTypeCount = count;
+      topType = ABUSE_TYPE_LABELS[type as AbuseType] ?? type;
+    }
+  }
+
+  let topUser = '-';
+  let topUserCount = 0;
+  for (const [user, count] of Object.entries(userCounts)) {
+    if (count > topUserCount) {
+      topUserCount = count;
+      topUser = user.slice(0, 8);
+    }
+  }
+
+  return { alertsToday, alertsYesterday, topType, topUser, topUserCount, total: logs.length };
+}
+
+// ---------------------------------------------------------------------------
+// getDateThreshold – return Date threshold for a given preset or null
+// ---------------------------------------------------------------------------
+function getDateThreshold(preset: DatePreset): Date | null {
+  if (preset === 'all') return null;
+  const now = new Date();
+  if (preset === 'today') {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  if (preset === 'week') {
+    return new Date(now.getTime() - 7 * 86_400_000);
+  }
+  // month
+  return new Date(now.getTime() - 30 * 86_400_000);
+}
+
+// ---------------------------------------------------------------------------
+// exportToCsv – generate and download a CSV file from logs
+// ---------------------------------------------------------------------------
+function exportToCsv(logs: AbuseLog[], filename: string): void {
+  const header = 'Tipo,Usuario,Colección,Detalle,Fecha';
+  const rows = logs.map((log) => {
+    const type = ABUSE_TYPE_LABELS[log.type] ?? log.type;
+    const detail = `"${log.detail.replace(/"/g, '""')}"`;
+    const date = log.timestamp.toLocaleString();
+    return `${type},${log.userId},${log.collection},${detail},${date}`;
+  });
+
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export default function AbuseAlerts() {
   const fetcher = useCallback(() => fetchAbuseLogs(200), []);
   const { data: logs, loading, error } = useAsyncData(fetcher);
@@ -44,6 +175,13 @@ export default function AbuseAlerts() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
+
+  // KPI summary
+  const kpis = useMemo(() => {
+    if (!logs) return null;
+    return computeKpis(logs);
+  }, [logs]);
 
   // Unique collections for filter chips
   const collections = useMemo(() => {
@@ -63,6 +201,12 @@ export default function AbuseAlerts() {
   const filtered = useMemo(() => {
     if (!logs) return [];
     let result = logs;
+
+    // Date preset filter
+    const threshold = getDateThreshold(datePreset);
+    if (threshold) {
+      result = result.filter((l) => l.timestamp.getTime() >= threshold.getTime());
+    }
 
     if (typeFilter !== 'all') {
       result = result.filter((l) => l.type === typeFilter);
@@ -88,7 +232,7 @@ export default function AbuseAlerts() {
     });
 
     return result;
-  }, [logs, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
+  }, [logs, datePreset, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -106,13 +250,69 @@ export default function AbuseAlerts() {
     setTypeFilter('all');
     setCollectionFilter('');
     setUserSearch('');
+    setDatePreset('all');
     setVisibleCount(PAGE_SIZE);
   };
 
-  const hasActiveFilters = typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '';
+  const hasActiveFilters =
+    typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all';
+
+  // Trend icon for today vs yesterday
+  const trendIcon = useMemo(() => {
+    if (!kpis) return null;
+    if (kpis.alertsToday > kpis.alertsYesterday) {
+      return <TrendingUpIcon fontSize="small" sx={{ color: 'error.main' }} />;
+    }
+    if (kpis.alertsToday < kpis.alertsYesterday) {
+      return <TrendingDownIcon fontSize="small" sx={{ color: 'success.main' }} />;
+    }
+    return <TrendingFlatIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
+  }, [kpis]);
+
+  const handleExport = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    exportToCsv(filtered, `alertas-${yyyy}-${mm}-${dd}.csv`);
+  };
 
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando alertas.">
+      {/* KPI Cards */}
+      {kpis && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+          <KpiCard label="Alertas hoy" value={kpis.alertsToday} secondary={trendIcon} />
+          <KpiCard label="Tipo más frecuente" value={kpis.topType} />
+          <KpiCard
+            label="Usuario más activo"
+            value={kpis.topUser}
+            secondary={
+              kpis.topUserCount > 0 ? (
+                <Typography variant="caption" color="text.secondary">
+                  ({kpis.topUserCount})
+                </Typography>
+              ) : undefined
+            }
+          />
+          <KpiCard label="Total cargadas" value={kpis.total} />
+        </Box>
+      )}
+
+      {/* Date preset chips */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        {DATE_PRESETS.map((preset) => (
+          <Chip
+            key={preset.key}
+            label={preset.label}
+            size="small"
+            variant={datePreset === preset.key ? 'filled' : 'outlined'}
+            color={datePreset === preset.key ? 'primary' : 'default'}
+            onClick={() => setDatePreset(datePreset === preset.key ? 'all' : preset.key)}
+          />
+        ))}
+      </Box>
+
       {/* Type filter chips with counts */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
         <Badge
@@ -140,7 +340,7 @@ export default function AbuseAlerts() {
         ))}
       </Box>
 
-      {/* Collection filter + user search */}
+      {/* Collection filter + user search + export */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
         {collections.length > 0 && (
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -176,6 +376,13 @@ export default function AbuseAlerts() {
             Limpiar filtros
           </Button>
         )}
+        <Tooltip title="Exportar CSV">
+          <span>
+            <IconButton size="small" onClick={handleExport} disabled={filtered.length === 0}>
+              <FileDownloadIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Box>
 
       {/* Results count */}
