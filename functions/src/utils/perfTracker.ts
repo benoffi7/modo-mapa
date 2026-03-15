@@ -1,4 +1,4 @@
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
 /**
  * Tracks Cloud Function execution times in a counter doc.
@@ -6,15 +6,22 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
  * Accumulates timings in `config/perfCounters` as arrays keyed by function name.
  * The dailyMetrics scheduled function reads and resets these counters.
  */
+const MAX_SAMPLES_PER_FUNCTION = 5000;
+
 export async function trackFunctionTiming(functionName: string, startMs: number): Promise<void> {
   try {
-    const elapsed = performance.now() - startMs;
+    const elapsed = Math.round(performance.now() - startMs);
     const db = getFirestore();
+    const docRef = db.doc('config/perfCounters');
 
-    await db.doc('config/perfCounters').set(
-      { [functionName]: FieldValue.arrayUnion(Math.round(elapsed)) },
-      { merge: true },
-    );
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(docRef);
+      const data = snap.data() ?? {};
+      const existing: number[] = Array.isArray(data[functionName]) ? data[functionName] : [];
+
+      if (existing.length >= MAX_SAMPLES_PER_FUNCTION) return; // safety bound
+      tx.set(docRef, { [functionName]: [...existing, elapsed] }, { merge: true });
+    });
   } catch {
     // Best-effort — don't let perf tracking break the trigger
   }
