@@ -66,6 +66,17 @@
 | [#97](https://github.com/benoffi7/modo-mapa/issues/97) | feat | Rankings: compartir logro en redes sociales | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
 | [#98](https://github.com/benoffi7/modo-mapa/issues/98) | feat | Rankings: grafico de evolucion del score | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
 | [#99](https://github.com/benoffi7/modo-mapa/issues/99) | feat | Rankings: pull-to-refresh | [#114](https://github.com/benoffi7/modo-mapa/pull/114) | Merged | `docs/feat/content/rankings-improvements/` |
+| [#101](https://github.com/benoffi7/modo-mapa/issues/101) | feat | Comentarios: filtrar por comercio | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#102](https://github.com/benoffi7/modo-mapa/issues/102) | feat | Comentarios: busqueda de texto | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#103](https://github.com/benoffi7/modo-mapa/issues/103) | feat | Comentarios: ordenamiento multiple | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#104](https://github.com/benoffi7/modo-mapa/issues/104) | feat | Comentarios: mostrar likes recibidos | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#105](https://github.com/benoffi7/modo-mapa/issues/105) | feat | Comentarios: indicador de respuestas | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#106](https://github.com/benoffi7/modo-mapa/issues/106) | feat | Comentarios: editar inline | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#107](https://github.com/benoffi7/modo-mapa/issues/107) | feat | Comentarios: stats resumen | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#108](https://github.com/benoffi7/modo-mapa/issues/108) | feat | Comentarios: preview mejorado | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#109](https://github.com/benoffi7/modo-mapa/issues/109) | feat | Comentarios: swipe actions (mobile) | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#110](https://github.com/benoffi7/modo-mapa/issues/110) | feat | Comentarios: skeleton loader | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
+| [#111](https://github.com/benoffi7/modo-mapa/issues/111) | feat | Comentarios: empty state mejorado | [#115-#118](https://github.com/benoffi7/modo-mapa/pull/115) | Merged | `docs/feat/social/comments-improvements/` |
 
 ---
 

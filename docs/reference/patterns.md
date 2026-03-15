@@ -46,13 +46,17 @@
 |--------|-------------|
 | **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. |
 | **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm. `key={businessId}` en BusinessPriceLevel para reset de `pendingLevel`. Evita useEffect + refs para reset, compatible con strict lint rules. |
-| **Undo delete** | Comentarios se eliminan con undo (5s timer + Snackbar). Usado en BusinessComments y CommentsList. |
+| **Undo delete (`useUndoDelete`)** | Hook generico para undo-delete con Map de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
+| **`PaginatedListShell`** | Componente wrapper para listas paginadas: skeleton/error/empty/no-results/pagination. Props configurables (`emptyIcon`, `renderSkeleton`, `noResultsMessage`, `isFiltered`). Adoptado en CommentsList. |
+| **`CommentRow` (memo)** | Componente memoizado extraido de BusinessComments (~170 lineas). Recibe `isEditing: boolean` precalculado para evitar re-renders de todos los rows al cambiar `editingId`. |
+| **Swipe actions (`useSwipeActions`)** | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
 | **Admin panel pattern** | Todos los paneles admin usan `useAsyncData` + `AdminPanelWrapper` para estados loading/error. |
 | **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
 | **Hook generico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
-| **Debounce con useDeferredValue** | `useBusinesses` y `useListFilters` usan `useDeferredValue` de React 19 para debounce de busqueda. |
+| **Debounce con useDeferredValue** | `useBusinesses`, `useListFilters` y `CommentsList` usan `useDeferredValue` de React 19 para debounce de busqueda. |
+| **`usePaginatedQuery` constraints genericos** | El hook acepta `QueryConstraint[]` o `string` (backward compat con userId). `cacheKey` obligatorio para cache compat. Incluye `loadAll(maxItems)` con `hasMoreRef` para loops async seguros. |
 | **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
 
 ## Uploads y media

@@ -98,7 +98,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   if (favorites.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <FavoriteBorderIcon sx={{ fontSize: 48, color: '#ccc', mb: 1 }} />
+        <FavoriteBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
           No tenés favoritos todavía
         </Typography>
@@ -148,7 +148,7 @@ export default function FavoritesList({ onNavigate }: Props) {
                 e.stopPropagation();
                 handleRemoveFavorite(fav.businessId);
               }}
-              sx={{ color: '#ea4335' }}
+              sx={{ color: 'secondary.main' }}
             >
               <FavoriteIcon />
             </IconButton>

@@ -65,7 +65,7 @@ export default function LineChartCard({ title, data, lines, xAxisKey = 'date' }:
                 onClick={handleLegendClick}
                 wrapperStyle={{ cursor: 'pointer' }}
                 formatter={(value: string, entry) => (
-                  <span style={{ color: hidden.has(String(entry.dataKey ?? '')) ? '#ccc' : entry.color }}>
+                  <span style={{ color: hidden.has(String(entry.dataKey ?? '')) ? 'var(--mui-palette-action-disabled, #ccc)' : entry.color }}>
                     {value}
                   </span>
                 )}

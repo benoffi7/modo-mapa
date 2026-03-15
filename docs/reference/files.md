@@ -61,7 +61,9 @@ src/
 │   ├── useBusinessDataCache.ts      # Cache client-side para datos del business view (5 min TTL) + patchBusinessCache
 │   ├── useColorMode.ts              # Hook for dark/light mode toggle (consumes ColorModeContext)
 │   ├── useListFilters.ts            # Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento
-│   ├── usePaginatedQuery.ts         # Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL)
+│   ├── usePaginatedQuery.ts         # Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL) + loadAll + QueryConstraint[]
+│   ├── useUndoDelete.ts            # Hook para undo-delete con timer cleanup, Map de pending deletes, snackbar props
+│   ├── useSwipeActions.ts          # Hook para swipe-to-reveal en mobile (touch events, threshold 80px)
 │   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa (limit 20K + TTL 5min)
 │   ├── useNotifications.ts          # Hook para notificaciones in-app con polling visibility-aware
 │   ├── useProfileVisibility.ts      # Hook para visibilidad de perfil publico (cache TTL 60s)
@@ -72,7 +74,8 @@ src/
 │   └── useSuggestions.ts           # Hook para sugerencias personalizadas (scoring client-side)
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
-│   └── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatDateFull (compartidos)
+│   ├── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatRelativeTime, formatDateFull (compartidos)
+│   └── text.ts                     # truncate (compartido entre CommentsList y UserProfileSheet)
 ├── pages/
 │   ├── AdminDashboard.tsx           # Entry point admin (AdminGuard + AdminLayout)
 │   ├── ThemePlayground.tsx          # Dev-only color playground with palette generator + output
@@ -126,6 +129,7 @@ src/
 │   │   ├── CustomTagDialog.tsx      # Dialog crear/editar custom tag (memoizado)
 │   │   ├── DeleteTagDialog.tsx      # Dialog confirmacion eliminacion tag (memoizado)
 │   │   ├── BusinessComments.tsx     # Comentarios + formulario + editar + undo delete + likes + sorting (props-driven)
+│   │   ├── CommentRow.tsx          # Fila individual de comentario (memo). Extraido de BusinessComments
 │   │   ├── BusinessPriceLevel.tsx   # Nivel de gasto $/$$/$$$ con optimistic UI (pendingLevel + key remount)
 │   │   ├── MenuPhotoSection.tsx     # Foto de menu: preview, staleness chip, upload/viewer toggle
 │   │   ├── MenuPhotoUpload.tsx      # Dialog upload con preview, progress, AbortController cancel
@@ -141,7 +145,8 @@ src/
 │   │   └── OfflineIndicator.test.tsx
 │   └── menu/
 │       ├── FavoritesList.tsx
-│       ├── CommentsList.tsx
+│       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe
+│       ├── PaginatedListShell.tsx   # Shell reutilizable: skeleton/error/empty/no-results/pagination
 │       ├── RatingsList.tsx
 │       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)
 │       ├── SuggestionsView.tsx       # Sugerencias personalizadas (useSuggestions)
