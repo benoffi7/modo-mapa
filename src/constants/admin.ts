@@ -1,8 +1,6 @@
 import type { AbuseLog } from '../types/admin';
 import type { MenuPhotoStatus } from '../types';
 
-export const ADMIN_EMAIL: string = import.meta.env.VITE_ADMIN_EMAIL ?? '';
-
 export const FREE_TIER_READS = 50_000;
 export const FREE_TIER_WRITES = 20_000;
 

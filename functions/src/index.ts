@@ -26,3 +26,4 @@ export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/
 export { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto } from './admin/menuPhotos';
 export { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from './admin/feedback';
 export { getAuthStats } from './admin/authStats';
+export { setAdminClaim, removeAdminClaim } from './admin/claims';
