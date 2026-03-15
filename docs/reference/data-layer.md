@@ -143,7 +143,7 @@ Utilidad de captura de Web Vitals y query timing. Solo activa en produccion si `
 | `calculatePercentile(arr, p)` | Calcula percentil `p` de un array numerico |
 | `getDeviceInfo()` | Detecta mobile/desktop y tipo de conexion (`effectiveType`) |
 
-Flush: una unica escritura a `perfMetrics` collection por sesion (al ocultar tab o tras 30s). Best-effort, silent fail.
+Flush: una unica escritura por sesion (al ocultar tab o tras 30s) via `writePerfMetrics` callable (Admin SDK), no direct Firestore addDoc. Best-effort, silent fail.
 
 ### `businessHelpers.ts`
 

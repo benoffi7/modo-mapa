@@ -179,6 +179,7 @@ src/
 | `src/config/sentry.ts` | Inicializacion condicional de Sentry (frontend, lazy-loaded via dynamic import) |
 | `functions/src/admin/authStats.ts` | Cloud Function callable `getAuthStats`: consulta Firebase Auth para auth method breakdown y email verification stats |
 | `functions/src/admin/storageStats.ts` | Cloud Function callable `getStorageStats`: calcula total bytes y fileCount en `menuPhotos/` de Cloud Storage |
+| `functions/src/admin/perfMetrics.ts` | Cloud Function callable `writePerfMetrics` — escribe Web Vitals + query metrics via Admin SDK con rate limiting (5/dia por usuario) |
 | `functions/src/utils/perfTracker.ts` | `trackFunctionTiming(name, startMs)` + `calculatePercentile` — acumula timings de Cloud Functions en `config/perfCounters` |
 | `functions/src/__tests__/admin/authStats.test.ts` | Tests unitarios para `getAuthStats` |
 | `functions/src/utils/sentry.ts` | Inicializacion + captureException de Sentry (Cloud Functions) |

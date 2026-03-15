@@ -168,6 +168,7 @@
 | `createGithubIssueFromFeedback` | admin | Crea issue en GitHub desde feedback. Usa `@octokit/rest` + `GITHUB_TOKEN` secret. Mapea categoria a label (bug/enhancement/feedback). Guarda `githubIssueUrl` en doc. Previene duplicados | 30s |
 | `getAuthStats` | admin | Consulta Firebase Auth para devolver breakdown de metodos de autenticacion (anonimos vs email) y stats de verificacion de email | 30s |
 | `getStorageStats` | admin | Calcula total bytes y cantidad de archivos en `menuPhotos/` de Cloud Storage. Memory: 256MiB | 60s |
+| `writePerfMetrics` | auth | Escribe Web Vitals + query metrics via Admin SDK. Rate limit: 5/dia por usuario (`_rateLimits/perf_{userId}`) | 30s |
 
 Todas las callable admin:
 
