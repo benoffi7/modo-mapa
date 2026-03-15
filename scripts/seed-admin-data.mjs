@@ -622,6 +622,47 @@ async function seed() {
   }, { merge: true });
 
   // Seed config/aggregates for pre-aggregated dailyMetrics (DT-4)
+  // ── Performance Metrics (7 docs, one per day) ─────────────────────────
+  const perfDevices = [
+    { type: 'mobile', connection: '4g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '3g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '4g' },
+    { type: 'desktop', connection: 'wifi' },
+    { type: 'mobile', connection: '3g' },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(12, 0, 0, 0);
+    const isMobile = perfDevices[i].type === 'mobile';
+    const is3g = perfDevices[i].connection === '3g';
+    const lcpBase = isMobile ? (is3g ? 3500 : 2200) : 1500;
+    const inpBase = isMobile ? (is3g ? 350 : 180) : 80;
+    const clsBase = isMobile ? 0.08 : 0.03;
+    const ttfbBase = is3g ? 1200 : isMobile ? 600 : 350;
+
+    await addDoc(collection(db, 'perfMetrics'), {
+      sessionId: `seed-session-${i}`,
+      userId: USER_IDS[i % USER_IDS.length],
+      timestamp: Timestamp.fromDate(d),
+      vitals: {
+        lcp: lcpBase + Math.random() * 400 - 200,
+        inp: inpBase + Math.random() * 60 - 30,
+        cls: clsBase + Math.random() * 0.04,
+        ttfb: ttfbBase + Math.random() * 200 - 100,
+      },
+      queries: {
+        notifications: { p50: 80 + Math.random() * 40, p95: 200 + Math.random() * 100, count: 5 + Math.floor(Math.random() * 10) },
+        userSettings: { p50: 40 + Math.random() * 30, p95: 120 + Math.random() * 60, count: 3 + Math.floor(Math.random() * 5) },
+        paginatedQuery: { p50: 150 + Math.random() * 80, p95: 400 + Math.random() * 200, count: 8 + Math.floor(Math.random() * 15) },
+      },
+      device: perfDevices[i],
+      appVersion: '2.6.0',
+    });
+  }
+
   // Compute business-level aggregates from seeded data
   const bizFavCounts = {};
   const bizCommentCounts = {};
