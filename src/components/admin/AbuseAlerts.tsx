@@ -114,8 +114,12 @@ export default function AbuseAlerts() {
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando alertas.">
       {/* Type filter chips with counts */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-        <Badge badgeContent={logs?.length ?? 0} color="default" max={999}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+        <Badge
+          badgeContent={logs?.length ?? 0}
+          max={999}
+          sx={{ '& .MuiBadge-badge': { bgcolor: 'text.primary', color: 'background.paper' } }}
+        >
           <Chip
             label="Todas"
             variant={typeFilter === 'all' ? 'filled' : 'outlined'}
