@@ -33,18 +33,18 @@
 
 ## Menu lateral (SideMenu)
 
-- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos)
+- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count)
 - Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
   - **Sugeridos para vos**: sugerencias personalizadas via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Componente: `SuggestionsView.tsx`
   - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio
-  - **Comentarios**: lista mejorada con skeleton loader, empty state motivacional, preview enriquecido (fecha relativa, indicador editado, likes, replies), busqueda de texto (con `useDeferredValue` + auto-load-all), ordenamiento (recientes/antiguos/mas likes via `ToggleButtonGroup`), filtro por comercio (Autocomplete), edicion inline, stats resumen colapsable (total, likes, promedio, mas popular), swipe actions en mobile (deslizar para editar/eliminar), undo delete con `useUndoDelete` hook. Envuelto en `PaginatedListShell` para loading/error/empty states consistentes
+  - **Comentarios**: lista mejorada con skeleton loader, empty state motivacional, preview enriquecido (fecha relativa, indicador editado, likes, replies), busqueda de texto (con `useDeferredValue` + auto-load-all), ordenamiento (recientes/antiguos/mas likes via `ToggleButtonGroup`), filtro por comercio (Autocomplete), edicion inline, stats resumen colapsable (total, likes, promedio, mas popular), swipe actions en mobile (deslizar para editar/eliminar), undo delete con `useUndoDelete` hook. Envuelto en `PaginatedListShell` para loading/error/empty states consistentes. Blue dot indicator en comentarios con respuestas no leidas; mark-as-read al hacer click. `CommentItem` extraido y memoizado (`React.memo`). Virtualizacion condicional con `@tanstack/react-virtual` cuando hay >= 20 items (mejora performance en listas largas)
   - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio
   - **Rankings**: ranking semanal/mensual/anual/historico (all-time) con scoring por actividad. Cards con medallas, barra de progreso y animaciones fade-in escalonadas. Indicador de tendencia (▲▼) vs periodo anterior. Sistema de tiers (Bronce/Plata/Oro/Diamante) con barra de progreso al siguiente nivel. Sistema de badges/logros (11 badges: primera reseña, comentarista, influencer, fotografo, critico, popular, todoterreno, podio, racha 7d, etc). Racha (streak) de dias consecutivos con actividad. Grafico sparkline de evolucion del score. Boton compartir (Web Share API / clipboard). Pull-to-refresh. Perfil publico al tocar un usuario (modal con desglose, badges y score). Filtro por zona (UI placeholder, proximamente). Card "Tu actividad" colapsable (2 lineas por defecto, expandible para desglose completo). Desglose con barras horizontales de colores por categoria. Live score fallback si no estas en ranking pre-computado
   - **Feedback**: formulario con 2 tabs (Enviar / Mis envios). Enviar: categoria (bug/sugerencia/datos_usuario/datos_comercio/otro) + mensaje (max 1000) + imagen adjunta opcional (max 10MB, JPG/PNG/WebP). Mis envios: `MyFeedbackList` muestra feedback del usuario con chips de status (pending/viewed/responded/resolved), respuestas del admin colapsables, indicador de nueva respuesta (dot verde), imagen adjunta inline. Al expandir un feedback respondido se marca como visto (`markFeedbackViewed`)
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
-  - **Configuracion**: seccion Cuenta (primera): anonimos ven crear cuenta/login, usuarios email ven email + badge verificacion + re-enviar verificacion (con cooldown 60s) + cambiar contrasena + cerrar sesion con confirmacion. Toggles de privacidad (perfil publico/privado), notificaciones (master + likes/fotos/rankings/feedback), y datos de uso (analytics). Defaults todos en false. Optimistic UI con revert on error
+  - **Configuracion**: seccion Cuenta (primera): anonimos ven crear cuenta/login, usuarios email ven email + badge verificacion + re-enviar verificacion (con cooldown 60s) + cambiar contrasena + cerrar sesion con confirmacion. Toggles de privacidad (perfil publico/privado), notificaciones (master + likes/fotos/rankings/feedback/replies), y datos de uso (analytics). Defaults todos en false. Optimistic UI con revert on error
   - **Ayuda**: seccion colapsable con 7 topics en formato Accordion (mapa, comercio, menu lateral, notificaciones, perfil, configuracion, feedback). Lazy-loaded via `React.lazy()`. Componente: `HelpSection.tsx`
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
@@ -59,9 +59,11 @@
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
 - Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
-- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`
+- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`
 - Generadas automaticamente por Cloud Functions triggers
+- `comment_reply`: notifica al autor del comentario padre cuando alguien responde. Generada por `onCommentCreated` cuando el comentario tiene `parentId`. Respeta setting `notifyReplies` del usuario destinatario. NotificationItem muestra `ReplyIcon` para este tipo
 - Expiran a los 30 dias (cleanup diario)
+- `NotificationsContext` centralizado: instancia unica compartida por todos los consumidores (campana, badge SideMenu, etc.)
 
 ---
 
@@ -176,7 +178,7 @@ Todas las callable admin:
 
 | Trigger | Coleccion | Acciones |
 |---------|-----------|----------|
-| `onCommentCreated` | `comments` | Rate limit (20/dia) + moderacion + increment parent `replyCount` (si es reply) + counters |
+| `onCommentCreated` | `comments` | Rate limit (20/dia) + moderacion + increment parent `replyCount` (si es reply) + counters + notificacion `comment_reply` al autor del comentario padre (si es reply, respeta `notifyReplies` setting) |
 | `onCommentUpdated` | `comments` | Re-moderacion del texto editado (flag/unflag) |
 | `onCommentDeleted` | `comments` | Decrement parent `replyCount` (floor 0) + cascade delete orphaned replies + decrement counters |
 | `onCommentLikeCreated` | `commentLikes` | Increment likeCount + rate limit (50/dia) + counters + notificacion al autor (si no es self-like) |

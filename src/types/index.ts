@@ -135,7 +135,7 @@ export interface PriceLevel {
   updatedAt: Date;
 }
 
-export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply';
 
 export interface AppNotification {
   id: string;
@@ -184,6 +184,7 @@ export interface UserSettings {
   notifyPhotos: boolean;
   notifyRankings: boolean;
   notifyFeedback: boolean;
+  notifyReplies: boolean;
   analyticsEnabled: boolean;
   updatedAt: Date;
 }

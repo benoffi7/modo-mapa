@@ -28,6 +28,7 @@
     "@mui/material": "^7.3.9",
     "@sentry/react": "^10.43.0",
     "@sentry/vite-plugin": "^5.1.1",
+    "@tanstack/react-virtual": "^3.13.22",
     "@vis.gl/react-google-maps": "^1.7.1",
     "browser-image-compression": "^2.0.2",
     "firebase": "^12.10.0",

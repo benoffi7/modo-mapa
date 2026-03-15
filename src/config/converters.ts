@@ -281,6 +281,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyPhotos: settings.notifyPhotos,
       notifyRankings: settings.notifyRankings,
       notifyFeedback: settings.notifyFeedback,
+      notifyReplies: settings.notifyReplies,
       analyticsEnabled: settings.analyticsEnabled,
       updatedAt: settings.updatedAt,
     };
@@ -294,6 +295,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyPhotos: d.notifyPhotos ?? false,
       notifyRankings: d.notifyRankings ?? false,
       notifyFeedback: d.notifyFeedback ?? true,
+      notifyReplies: d.notifyReplies ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
       updatedAt: toDate(d.updatedAt),
     };

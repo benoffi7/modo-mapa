@@ -1,5 +1,6 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
+  Badge,
   Drawer,
   Box,
   Avatar,
@@ -40,6 +41,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { useNotifications } from '../../hooks/useNotifications';
 import { trackEvent } from '../../utils/analytics';
 import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
@@ -92,6 +94,11 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
 export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
+  const { notifications } = useNotifications();
+  const unreadReplyCount = useMemo(
+    () => notifications.filter((n) => n.type === 'comment_reply' && !n.read).length,
+    [notifications],
+  );
   useEffect(() => {
     if (open) trackEvent('side_menu_open');
   }, [open]);
@@ -233,7 +240,9 @@ export default function SideMenu({ open, onClose }: Props) {
 
                 <ListItemButton onClick={() => setActiveSection('comments')}>
                   <ListItemIcon>
-                    <ChatBubbleOutlineIcon sx={{ color: 'primary.main' }} />
+                    <Badge badgeContent={unreadReplyCount} color="error" max={9}>
+                      <ChatBubbleOutlineIcon sx={{ color: 'primary.main' }} />
+                    </Badge>
                   </ListItemIcon>
                   <ListItemText primary="Comentarios" />
                 </ListItemButton>

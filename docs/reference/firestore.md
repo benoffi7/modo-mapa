@@ -17,7 +17,7 @@
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
-| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
@@ -146,7 +146,7 @@ interface Feedback {
 // pending=warning, viewed=info, responded=success, resolved=secondary
 
 // Notification types
-type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response';
+type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply';
 
 // User settings (includes notifyFeedback)
 interface UserSettings {
@@ -156,6 +156,7 @@ interface UserSettings {
   notifyPhotos: boolean;
   notifyRankings: boolean;
   notifyFeedback: boolean;
+  notifyReplies: boolean;      // default true — notificaciones cuando responden a tus comentarios
   analyticsEnabled: boolean;
   updatedAt: Date;
 }

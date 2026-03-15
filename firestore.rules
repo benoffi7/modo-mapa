@@ -279,13 +279,14 @@ service cloud.firestore {
     match /userSettings/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'analyticsEnabled', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'analyticsEnabled', 'updatedAt'])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
         && request.resource.data.notifyPhotos is bool
         && request.resource.data.notifyRankings is bool
         && request.resource.data.notifyFeedback is bool
+        && request.resource.data.notifyReplies is bool
         && request.resource.data.analyticsEnabled is bool
         && request.resource.data.updatedAt == request.time;
     }
