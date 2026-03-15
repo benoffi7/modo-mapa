@@ -20,8 +20,8 @@
 | `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
-| `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create auth; read admin; Functions read (dailyMetrics aggregation) |
-| `_rateLimits` | `backup_{userId}` | count, resetAt | No client access; Functions write (admin SDK) |
+| `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
+| `_rateLimits` | `backup_{userId}`, `perf_{userId}` | count, resetAt | No client access; Functions write (admin SDK). Usado por backups (5/min) y perfMetrics (5/dia) |
 
 ### Subcollections
 
