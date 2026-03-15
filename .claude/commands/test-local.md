@@ -2,28 +2,41 @@
 
 You are testing the modo-mapa local development environment. Follow this protocol systematically.
 
-## Step 1: Ensure dev environment is running with data
+## Step 1: Start the dev environment
 
-Run `./scripts/dev-env.sh start` — this automatically:
-
-1. Builds Cloud Functions
-2. Starts all Firebase emulators (Auth, Firestore, Storage, Functions)
-3. Seeds test data (always runs on fresh emulator start)
-4. Starts Vite dev server
-
-If already running, verify health:
+Run the script directly — it handles PATH, Java, emulators, seed, and Vite:
 
 ```bash
-./scripts/dev-env.sh health
+./scripts/dev-env.sh start
 ```
 
-If anything is down, restart everything:
+This **single command** does everything:
+
+1. Ensures node/npx and Java 21 are in PATH
+2. Builds Cloud Functions
+3. Starts all Firebase emulators (Auth, Firestore, Storage, Functions)
+4. Seeds test data (always runs on fresh emulator start)
+5. Starts Vite dev server
+
+If it fails or services are partially up, run:
 
 ```bash
 ./scripts/dev-env.sh restart
 ```
 
-**IMPORTANT**: `start` and `restart` always seed data automatically. The seed script (`scripts/seed-admin-data.mjs`) must be kept in sync with the data model — when new collections or fields are added, update the seed script too.
+After start/restart, **always verify** with:
+
+```bash
+./scripts/dev-env.sh health
+```
+
+All 6 checks must pass (ports, HTTP responses, seed data). If any fail, check logs:
+
+```bash
+./scripts/dev-env.sh logs
+```
+
+**Do NOT manually start emulators, seed, or Vite separately.** The script handles orchestration. If the script itself fails, fix the script — don't work around it.
 
 ## Step 2: Run TypeScript and lint checks
 

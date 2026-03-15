@@ -128,6 +128,7 @@ interface UserCollectionSnapshots {
   userTags: UserTag[];
   customTags: CustomTag[];
   feedback: Feedback[];
+  commentLikes: CommentLike[];
 }
 
 /**
@@ -137,7 +138,7 @@ interface UserCollectionSnapshots {
  * more documents than the limit, the rankings will reflect the sample.
  */
 export async function fetchUsersPanelData(maxPerCollection = 500): Promise<UserCollectionSnapshots> {
-  const [usersSnap, commentsSnap, ratingsSnap, favoritesSnap, userTagsSnap, customTagsSnap, feedbackSnap] =
+  const [usersSnap, commentsSnap, ratingsSnap, favoritesSnap, userTagsSnap, customTagsSnap, feedbackSnap, commentLikesSnap] =
     await Promise.all([
       getDocs(collection(db, COLLECTIONS.USERS).withConverter(userProfileConverter)),
       getDocs(query(collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter), limit(maxPerCollection))),
@@ -146,6 +147,7 @@ export async function fetchUsersPanelData(maxPerCollection = 500): Promise<UserC
       getDocs(query(collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter), limit(maxPerCollection))),
       getDocs(query(collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter), limit(maxPerCollection))),
       getDocs(query(collection(db, COLLECTIONS.FEEDBACK).withConverter(feedbackConverter), limit(maxPerCollection))),
+      getDocs(query(collection(db, COLLECTIONS.COMMENT_LIKES), limit(maxPerCollection))),
     ]);
 
   return {
@@ -157,7 +159,31 @@ export async function fetchUsersPanelData(maxPerCollection = 500): Promise<UserC
     userTags: userTagsSnap.docs.map((d) => d.data()),
     customTags: customTagsSnap.docs.map((d) => d.data()),
     feedback: feedbackSnap.docs.map((d) => d.data()),
+    commentLikes: commentLikesSnap.docs.map((d) => {
+      const data = d.data();
+      return {
+        userId: String(data.userId ?? ''),
+        commentId: String(data.commentId ?? ''),
+        createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
+      };
+    }),
   };
+}
+
+// ── Comment Stats (edit/reply counts) ─────────────────────────────────
+
+export async function fetchCommentStats(): Promise<{ edited: number; replies: number; total: number }> {
+  const snap = await getDocs(
+    collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
+  );
+  let edited = 0;
+  let replies = 0;
+  for (const d of snap.docs) {
+    const c = d.data();
+    if (c.updatedAt) edited++;
+    if (c.parentId) replies++;
+  }
+  return { edited, replies, total: snap.size };
 }
 
 // ── Daily Metrics ──────────────────────────────────────────────────────

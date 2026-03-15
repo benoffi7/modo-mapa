@@ -15,6 +15,7 @@ interface UserStats {
   favorites: number;
   tags: number;
   feedback: number;
+  likesGiven: number;
   total: number;
   authMethod?: 'anonymous' | 'email';
   emailVerified?: boolean;
@@ -36,7 +37,7 @@ function processData(
 ): ProcessedData {
   const map = new Map<string, { name: string; stats: UserStats }>();
 
-  const emptyStats = (): UserStats => ({ comments: 0, ratings: 0, favorites: 0, tags: 0, feedback: 0, total: 0 });
+  const emptyStats = (): UserStats => ({ comments: 0, ratings: 0, favorites: 0, tags: 0, feedback: 0, likesGiven: 0, total: 0 });
 
   const getOrCreate = (userId: string): { name: string; stats: UserStats } => {
     let entry = map.get(userId);
@@ -87,6 +88,12 @@ function processData(
   for (const f of raw.feedback) {
     const entry = getOrCreate(f.userId);
     entry.stats.feedback++;
+    entry.stats.total++;
+  }
+
+  for (const l of raw.commentLikes) {
+    const entry = getOrCreate(l.userId);
+    entry.stats.likesGiven++;
     entry.stats.total++;
   }
 
@@ -206,6 +213,9 @@ export default function UsersPanel() {
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TopList title="Más feedback" items={topBy('feedback')} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TopList title="Más likes dados" items={topBy('likesGiven')} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TopList title="Más activos (total)" items={topBy('total')} />

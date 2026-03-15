@@ -11,7 +11,7 @@ src/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados (incl. COMMENT_LIKES)
 │   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback, commentLike)
-│   ├── adminConverters.ts           # Converters para AdminCounters, DailyMetrics, AbuseLog
+│   ├── adminConverters.ts           # Converters para AdminCounters (incl. commentLikes), DailyMetrics, AbuseLog
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
 ├── constants/
 │   ├── index.ts                    # Barrel re-export de todos los módulos + COLLECTIONS
@@ -45,10 +45,10 @@ src/
 │   ├── rankings.ts                  # fetchLatestRanking (ranking mensual/semanal)
 │   ├── userProfile.ts               # fetchUserProfile (stats, comentarios, ranking position)
 │   ├── suggestions.ts               # fetchUserSuggestionData (favorites, ratings, tags para sugerencias)
-│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData, fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats
+│   └── admin.ts                     # fetchCounters, fetchRecent*, fetchUsersPanelData (incl. commentLikes/likesGiven), fetchDailyMetrics, fetchAbuseLogs, fetchAllPhotos, fetchAuthStats, fetchNotificationStats, fetchSettingsAggregates, fetchPriceLevelStats, fetchCommentLikeStats, fetchCommentStats
 ├── types/
 │   ├── index.ts                     # Business, Rating, Comment, CommentLike, CustomTag, UserTag, Favorite, Feedback, FeedbackStatus, FeedbackCategory, MenuPhoto, MenuPhotoStatus, PriceLevel, NotificationType (incl. feedback_response), UserSettings (incl. notifyFeedback) + re-exports PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS from constants
-│   ├── admin.ts                     # AdminCounters, DailyMetrics (extends PublicMetrics), AbuseLog, AuthStats, NotificationStats, SettingsAggregates, PriceLevelStats, CommentLikeStats
+│   ├── admin.ts                     # AdminCounters (incl. commentLikes), DailyMetrics (extends PublicMetrics), AbuseLog, AuthStats, NotificationStats, SettingsAggregates, PriceLevelStats, CommentLikeStats
 │   └── metrics.ts                   # PublicMetrics, TopTagEntry, TopBusinessEntry, TopRatedEntry
 ├── theme/
 │   └── index.ts                     # MUI theme with getDesignTokens(mode) for light/dark
@@ -86,11 +86,11 @@ src/
 │   │   ├── AdminGuard.tsx           # Google Sign-In + verificacion email + dev auto-login in emulator
 │   │   ├── AdminLayout.tsx          # AppBar + Tabs (9 secciones)
 │   │   ├── AdminPanelWrapper.tsx    # Wrapper compartido loading/error/empty para paneles admin
-│   │   ├── DashboardOverview.tsx    # StatCards + PieCharts + TopLists + Custom Tags ranking
-│   │   ├── ActivityFeed.tsx         # Tabs por coleccion (ultimos 20 items)
+│   │   ├── DashboardOverview.tsx    # StatCards (incl. Likes) + PieCharts + TopLists + Custom Tags ranking + "Salud de comentarios" section
+│   │   ├── ActivityFeed.tsx         # Tabs por coleccion (ultimos 20 items). Comments: Likes, Resp. columns + editado/Respuesta chips
 │   │   ├── FeedbackList.tsx         # Tabla de feedback: status filters, respond/resolve/create-issue actions, GitHub issue link
-│   │   ├── TrendsPanel.tsx          # Graficos evolucion + selector dia/semana/mes/ano
-│   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback)
+│   │   ├── TrendsPanel.tsx          # Graficos evolucion + selector dia/semana/mes/ano + commentLikes line
+│   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback, likesGiven) + "Mas likes dados" TopList
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
 │   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
 │   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (orquestacion)
@@ -179,7 +179,7 @@ src/
 | `PROCEDURES.md` | Flujo de desarrollo (PRD -> specs -> plan -> implementar) |
 | `.env.example` | Template de variables de entorno |
 | `functions/.env` | Variables de entorno de Cloud Functions (ADMIN_EMAIL) |
-| `scripts/dev-env.sh` | Gestion de entorno dev: status, start, stop, restart, seed, health, logs |
+| `scripts/dev-env.sh` | Gestion de entorno dev: status, start, stop, restart, seed, health, logs. Self-contained PATH, robust health checks |
 | `scripts/seed-admin-data.mjs` | Seed de datos de prueba para emuladores |
 | `functions/seed-prod-ranking.mjs` | Script para computar y guardar ranking mensual en Firestore produccion |
 | `docs/CODING_STANDARDS.md` | Estandares de codigo: service layer, patrones de componentes, convenciones TS |

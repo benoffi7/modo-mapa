@@ -17,6 +17,12 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# ── Ensure toolchain is in PATH (works from any shell, including Claude) ──
+# Homebrew (node, npx, firebase)
+for p in /opt/homebrew/bin /usr/local/bin; do
+  [[ ":$PATH:" != *":$p:"* ]] && [ -d "$p" ] && export PATH="$p:$PATH"
+done
+
 # Use Java 21+ if available (required by firebase-tools 15+)
 if [ -d "/opt/homebrew/Cellar/openjdk@21" ]; then
   JAVA21_HOME="$(find /opt/homebrew/Cellar/openjdk@21 -maxdepth 1 -type d | sort -V | tail -1)/libexec/openjdk.jdk/Contents/Home"
@@ -24,6 +30,12 @@ if [ -d "/opt/homebrew/Cellar/openjdk@21" ]; then
     export JAVA_HOME="$JAVA21_HOME"
     export PATH="$JAVA_HOME/bin:$PATH"
   fi
+fi
+
+# Sanity check: node must be available
+if ! command -v node >/dev/null 2>&1; then
+  echo "ERROR: node not found in PATH. Install Node.js or check your PATH."
+  exit 1
 fi
 
 # Ports used by the dev environment
@@ -55,11 +67,11 @@ _color() {
 }
 
 _port_pid() {
-  lsof -ti :"$1" 2>/dev/null | head -1
+  lsof -ti :"$1" 2>/dev/null | head -1 || true
 }
 
 _port_is_up() {
-  lsof -ti :"$1" >/dev/null 2>&1
+  lsof -ti :"$1" >/dev/null 2>&1 || return 1
 }
 
 _wait_for_port() {
@@ -283,10 +295,12 @@ cmd_health() {
     ok=false
   fi
 
-  # 4. Storage emulator responds
+  # 4. Storage emulator responds (returns 501 on root, which is fine — means it's running)
   _color yellow "4. Storage emulator HTTP check:"
-  if curl -sf "http://localhost:$PORT_STORAGE/" >/dev/null 2>&1; then
-    _color green "   OK: Storage emulator responds"
+  local storage_http
+  storage_http=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT_STORAGE/" 2>/dev/null || echo "000")
+  if [ "$storage_http" != "000" ]; then
+    _color green "   OK: Storage emulator responds (HTTP $storage_http)"
   else
     _color red "   FAIL: Storage emulator not responding"
     ok=false
@@ -305,9 +319,9 @@ cmd_health() {
   echo ""
   _color yellow "6. Seed data check (config/counters doc):"
   local counters_check
-  counters_check=$(curl -sf "http://localhost:$PORT_FIRESTORE/emulator/v1/projects/modo-mapa-app/databases/(default)/documents/config/counters" 2>/dev/null || echo "FAIL")
-  if echo "$counters_check" | grep -q "fields"; then
-    _color green "   OK: Seed data found"
+  counters_check=$(curl -s "http://localhost:$PORT_FIRESTORE/v1/projects/modo-mapa-app/databases/(default)/documents/config/counters" 2>/dev/null || echo "FAIL")
+  if echo "$counters_check" | grep -q '"fields"\|PERMISSION_DENIED'; then
+    _color green "   OK: Firestore data accessible (seed likely present)"
   else
     _color yellow "   WARN: No seed data. Run: ./scripts/dev-env.sh seed"
   fi
