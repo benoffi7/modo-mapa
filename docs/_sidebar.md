@@ -34,6 +34,8 @@
     - [Specs](/feat/admin/performance-semaphores/specs.md)
     - [Plan](/feat/admin/performance-semaphores/plan.md)
     - [Plan Phase 2](/feat/admin/performance-semaphores/plan-phase2.md)
+  - [Enhanced Abuse Alerts](/feat/admin/enhanced-abuse-alerts/)
+    - [PRD](/feat/admin/enhanced-abuse-alerts/)
   - [Staging Environment](/feat/admin/staging-environment/)
     - [Plan](/feat/admin/staging-environment/plan.md)
 
