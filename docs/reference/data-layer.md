@@ -76,7 +76,7 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useColorMode` | Hook para dark/light mode. Consume `ColorModeContext`. Retorna `{ mode, toggleColorMode }`. |
 | `useBusinesses` | Filtra `businesses.json` por searchQuery + activeFilters + activePriceFilter con `useDeferredValue`. |
 | `useListFilters<T>` | Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento. Usado en FavoritesList y RatingsList. |
-| `usePaginatedQuery<T>` | Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL). Exporta `invalidateQueryCache()`. |
+| `usePaginatedQuery<T>` | Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL). Acepta `QueryConstraint[]` o `string` (backward compat). `cacheKey` obligatorio. Incluye `loadAll(maxItems)` para fetch completo async. Exporta `invalidateQueryCache()`. |
 | `usePriceLevelFilter` | Cache global de promedios de precio por comercio. Fetch unico con `fetchPromise` singleton. Exporta `invalidatePriceLevelCache()`. |
 | `useVisitHistory` | Historial de visitas en localStorage (ultimos 20 comercios). Retorna `{ visits, recordVisit }`. Se usa en BusinessSheet para registrar y en RecentVisits para mostrar. |
 | `useUserLocation` | Geolocalizacion del navegador. |
@@ -84,6 +84,8 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useUserSettings` | Settings del usuario (perfil publico, notificaciones). Optimistic UI con revert on error. Retorna `{ settings, loading, updateSetting }`. |
 | `useProfileVisibility` | Cache module-level con TTL 60s para `profilePublic` de otros usuarios. Batch fetch con `documentId() in`. Retorna `Map<string, boolean>`. Usa `useSyncExternalStore`. |
 | `useNotifications` | Polling cada 60s de notificaciones no leidas. Retorna `{ notifications, unreadCount, loading, markRead, markAllRead, refresh }`. |
+| `useUndoDelete` | Hook para undo-delete con `Map` de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
+| `useSwipeActions` | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags del usuario via `services/suggestions.ts`, scoring client-side con Haversine para cercania. Retorna `{ suggestions, isLoading, error }`. Max 10 resultados. |
 
 ### `useBusinessData` — Race condition fix
@@ -110,6 +112,7 @@ Funciones centralizadas de formato de fecha en locale argentino (es-AR):
 | `toDate(field)` | Convierte Firestore Timestamp-like a `Date` nativo | `Date` object |
 | `formatDateShort(date)` | Formato corto: dd/MM, HH:mm | `12/03, 14:30` |
 | `formatDateMedium(date)` | Formato medio: d MMM yyyy | `12 mar 2026` |
+| `formatRelativeTime(date)` | Tiempo relativo humanizado (hace X min/horas/dias, ayer) | `hace 2 min`, `ayer` |
 | `formatDateFull(dateStr)` | Formato completo desde ISO string: dd/MM/yyyy, HH:mm | `12/03/2026, 14:30` |
 
 ### `analytics.ts`
@@ -121,6 +124,12 @@ Utilidad centralizada para Firebase Analytics (GA4). Solo activa en produccion, 
 | `initAnalytics(app)` | Inicializa analytics (solo en PROD). Llamada desde `main.tsx` |
 | `trackEvent(name, params?)` | Envia evento custom a GA4. No-op si analytics no inicializado |
 | `setUserProperty(name, value)` | Establece propiedad de usuario en GA4 |
+
+### `text.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `truncate(text, maxLength)` | Trunca texto y agrega `...` si excede `maxLength`. Compartido entre CommentsList y UserProfileSheet |
 
 ### `businessHelpers.ts`
 
