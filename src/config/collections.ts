@@ -16,4 +16,6 @@ export const COLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   USER_SETTINGS: 'userSettings',
   PERF_METRICS: 'perfMetrics',
+  SHARED_LISTS: 'sharedLists',
+  LIST_ITEMS: 'listItems',
 } as const;
