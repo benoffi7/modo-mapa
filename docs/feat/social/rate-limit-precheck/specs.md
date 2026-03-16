@@ -100,15 +100,7 @@ Agregar `Alert` al import de `@mui/material` (línea 2-12).
 ## Decisiones de diseño
 
 1. **Alert en vez de ocultar** — mejor que esconder el input sin explicación, el usuario entiende por qué no puede comentar.
-2. **Severity `info`** — no es un error del usuario, es un límite del sistema. No usar `warning` ni `error`.
+2. **Severity `info`** — no es un error del usuario, es un límite del sistema.
 3. **Contador solo si > 0** — no mostrar "0/20 hoy" a usuarios que no comentaron, es ruido.
 4. **Warning al acercarse** — feedback progresivo, el usuario sabe que le quedan pocos.
 5. **No hacer query adicional** — los datos ya están disponibles en `comments` (prop del componente).
-
----
-
-## Para el review
-
-1. ¿Está bien "info" como severity o preferís "warning"?
-2. ¿Querés el contador siempre visible o solo cuando hay > 0 comentarios del día?
-3. ¿El umbral de warning (≤3 restantes) te parece bien?
