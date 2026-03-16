@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Box,
   List,
@@ -21,6 +21,7 @@ import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
 import ListFilters from './ListFilters';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Favorite } from '../../types';
 
 interface FavoriteItem {
@@ -64,6 +65,8 @@ export default function FavoritesList({ onNavigate }: Props) {
     sortBy,
     setSortBy,
   } = useListFilters(favorites);
+
+  const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
   const handleRemoveFavorite = async (businessId: string) => {
     if (!user) return;
@@ -109,7 +112,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   }
 
   return (
-    <Box>
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
       <ListFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -171,6 +174,6 @@ export default function FavoritesList({ onNavigate }: Props) {
           </Button>
         </Box>
       )}
-    </Box>
+    </PullToRefreshWrapper>
   );
 }
