@@ -10,6 +10,7 @@ import {
   Snackbar,
   Chip,
   Collapse,
+  Alert,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
@@ -312,7 +313,13 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         )}
       </Box>
 
-      {user && (
+      {user && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
+          Alcanzaste el límite de {MAX_COMMENTS_PER_DAY} comentarios por hoy. Podés comentar de nuevo mañana.
+        </Alert>
+      )}
+
+      {user && userCommentsToday < MAX_COMMENTS_PER_DAY && (
         <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <TextField
             fullWidth
@@ -327,7 +334,20 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               }
             }}
             slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-            helperText={newComment.length > 0 ? `${newComment.length}/${MAX_COMMENT_LENGTH}` : undefined}
+            helperText={
+              userCommentsToday > 0
+                ? newComment.length > 0
+                  ? `${newComment.length}/${MAX_COMMENT_LENGTH} · ${userCommentsToday}/${MAX_COMMENTS_PER_DAY} hoy`
+                  : `${userCommentsToday}/${MAX_COMMENTS_PER_DAY} comentarios hoy`
+                : newComment.length > 0
+                  ? `${newComment.length}/${MAX_COMMENT_LENGTH}`
+                  : undefined
+            }
+            FormHelperTextProps={{
+              sx: MAX_COMMENTS_PER_DAY - userCommentsToday <= 3 && userCommentsToday > 0
+                ? { color: 'warning.main' }
+                : undefined,
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',
@@ -404,7 +424,14 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               )}
 
               {/* Inline reply form */}
-              {replyingTo?.id === comment.id && (
+              {replyingTo?.id === comment.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
+                    Alcanzaste el límite diario de comentarios.
+                  </Alert>
+                </Box>
+              )}
+              {replyingTo?.id === comment.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
                 <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                     Respondiendo a {replyingTo.userName}...
