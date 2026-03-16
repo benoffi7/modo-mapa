@@ -15,7 +15,7 @@ import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { sharedListConverter, listItemConverter } from '../config/converters';
-import { invalidateQueryCache } from '../hooks/usePaginatedQuery';
+import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import type { SharedList, ListItem } from '../types';
 

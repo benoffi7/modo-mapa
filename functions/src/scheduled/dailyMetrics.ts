@@ -29,7 +29,7 @@ function topN<T>(entries: [string, T][], getCount: (v: T) => number, n: number):
 async function getTopTags(
   db: FirebaseFirestore.Firestore,
 ): Promise<Array<{ tagId: string; count: number }>> {
-  const snapshot = await db.collection('userTags').select('tagId').get();
+  const snapshot = await db.collection('userTags').select('tagId').limit(10000).get();
   const counts = new Map<string, number>();
 
   for (const doc of snapshot.docs) {
