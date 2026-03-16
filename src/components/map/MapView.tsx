@@ -10,6 +10,7 @@ import BusinessMarker from './BusinessMarker';
 export default function MapView() {
   const map = useMap();
   const { selectedBusiness, setSelectedBusiness } = useSelection();
+  const selectedId = selectedBusiness?.id ?? null;
   const { userLocation, searchQuery, activeFilters } = useFilters();
   const { businesses } = useBusinesses();
   const hasActiveFilters = searchQuery.trim().length > 0 || activeFilters.length > 0;
@@ -66,7 +67,7 @@ export default function MapView() {
           <BusinessMarker
             key={business.id}
             business={business}
-            isSelected={selectedBusiness?.id === business.id}
+            isSelected={business.id === selectedId}
             onClick={handleMarkerClick}
           />
         ))}
