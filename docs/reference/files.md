@@ -97,11 +97,21 @@ src/
 │   │   ├── TrendsPanel.tsx          # Graficos evolucion + selector dia/semana/mes/ano + commentLikes line
 │   │   ├── UsersPanel.tsx           # Rankings por usuario (comments, ratings, favs, tags, feedback, likesGiven) + "Mas likes dados" TopList
 │   │   ├── FirebaseUsage.tsx        # LineCharts + PieCharts + barras de cuota
-│   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs
+│   │   ├── AbuseAlerts.tsx          # Tabla de abuse logs (orquestador, helpers en alerts/)
+│   │   ├── alerts/
+│   │   │   ├── alertsHelpers.ts    # Tipos, constantes, computeKpis, exportToCsv, getDateThreshold
+│   │   │   └── KpiCard.tsx         # Card resumen KPI reutilizable
 │   │   ├── BackupsPanel.tsx         # Gestion de backups Firestore (orquestacion)
 │   │   ├── BackupTable.tsx          # Tabla de backups (memoizada con React.memo)
 │   │   ├── BackupConfirmDialog.tsx  # Dialog de confirmacion restore/delete (memoizado)
-│   │   ├── PerformancePanel.tsx     # Panel admin: Web Vitals semaforos, query latency, CF timing, storage stats, filtros periodo/device/connection
+│   │   ├── FeaturesPanel.tsx        # Panel admin: métricas por funcionalidad, adopción, gráficos 30 días
+│   │   ├── PerformancePanel.tsx     # Panel admin: orquestador (importa subcomponentes de perf/)
+│   │   ├── perf/
+│   │   │   ├── perfHelpers.ts       # Tipos, agregación, filtros, formateo de vitals
+│   │   │   ├── SemaphoreCard.tsx    # Card con semáforo verde/amarillo/rojo
+│   │   │   ├── QueryLatencyTable.tsx # Tabla p50/p95 de queries
+│   │   │   ├── FunctionTimingTable.tsx # Tabla p50/p95 de Cloud Functions
+│   │   │   └── StorageCard.tsx      # Card de uso de Firebase Storage
 │   │   ├── PhotoReviewPanel.tsx     # Panel admin: filtro por status, lista de fotos
 │   │   ├── PhotoReviewCard.tsx      # Card individual: approve/reject/delete + revert actions + report count
 │   │   ├── backupTypes.ts           # Tipos: BackupEntry, ConfirmAction
@@ -135,6 +145,7 @@ src/
 │   │   ├── CustomTagDialog.tsx      # Dialog crear/editar custom tag (memoizado)
 │   │   ├── DeleteTagDialog.tsx      # Dialog confirmacion eliminacion tag (memoizado)
 │   │   ├── BusinessComments.tsx     # Comentarios + formulario + editar + undo delete + likes + sorting (props-driven)
+│   │   ├── CommentInput.tsx        # Formulario de nuevo comentario (memo). Rate limit precheck, contador diario
 │   │   ├── CommentRow.tsx          # Fila individual de comentario (memo). Extraido de BusinessComments
 │   │   ├── BusinessPriceLevel.tsx   # Nivel de gasto $/$$/$$$ con optimistic UI (pendingLevel + key remount)
 │   │   ├── MenuPhotoSection.tsx     # Foto de menu: preview, staleness chip, upload/viewer toggle
