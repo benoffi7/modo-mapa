@@ -55,7 +55,7 @@ export default memo(function FavoriteButton({ businessId, isFavorite, isLoading,
       aria-label={shown ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
       disabled={isLoading || isToggling || !user}
-      sx={{ color: shown ? '#ea4335' : 'text.secondary' }}
+      sx={{ color: shown ? 'error.main' : 'text.secondary' }}
     >
       {shown ? <FavoriteIcon /> : <FavoriteBorderIcon />}
     </IconButton>
