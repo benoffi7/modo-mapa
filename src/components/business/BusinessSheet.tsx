@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
-import { SwipeableDrawer, Box, Divider } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { SwipeableDrawer, Box, Divider, IconButton } from '@mui/material';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
@@ -12,13 +14,16 @@ import MenuPhotoSection from './MenuPhotoSection';
 import BusinessComments from './BusinessComments';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
+import AddToListDialog from './AddToListDialog';
 
 export default function BusinessSheet() {
+  const { user } = useAuth();
   const { selectedBusiness, setSelectedBusiness } = useSelection();
   const isOpen = selectedBusiness !== null;
   const businessId = selectedBusiness?.id ?? null;
   const data = useBusinessData(businessId);
   const { recordVisit } = useVisitHistory();
+  const [listDialogOpen, setListDialogOpen] = useState(false);
 
   useEffect(() => {
     if (selectedBusiness) {
@@ -35,6 +40,7 @@ export default function BusinessSheet() {
   const handleOpen = () => {};
 
   return (
+    <>
     <SwipeableDrawer
       anchor="bottom"
       open={isOpen}
@@ -78,6 +84,13 @@ export default function BusinessSheet() {
                 />
               }
               shareButton={<ShareButton business={selectedBusiness} />}
+              addToListButton={
+                user && !user.isAnonymous ? (
+                  <IconButton onClick={() => setListDialogOpen(true)} aria-label="Guardar en lista">
+                    <BookmarkBorderIcon />
+                  </IconButton>
+                ) : undefined
+              }
             />
             <Divider sx={{ my: 1.5 }} />
             <BusinessRating
@@ -122,5 +135,14 @@ export default function BusinessSheet() {
         </Box>
       )}
     </SwipeableDrawer>
+    {selectedBusiness && (
+      <AddToListDialog
+        open={listDialogOpen}
+        onClose={() => setListDialogOpen(false)}
+        businessId={selectedBusiness.id}
+        businessName={selectedBusiness.name}
+      />
+    )}
+    </>
   );
 }
