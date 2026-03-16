@@ -232,8 +232,8 @@
     - [Changelog](/fix/csp-and-tags-permissions/changelog.md)
 
 - **[Reports](/reports/)**
+  - [Backlog de Producto](/reports/backlog-producto.md)
   - [Tech Debt Backlog](/reports/tech-debt.md)
-  - [Usability Report](/reports/usability-report-2026-03-14.md)
 
 - **[Issues](/issues/)**
   - [Issue #80 — Email Auth](/issues/issue-80-email-password-auth.md)
