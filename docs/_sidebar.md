@@ -122,6 +122,8 @@
   - [Telegram Notifications](/feat/infra/telegram-notifications/)
   - [Toast Global](/feat/infra/toast-global/)
     - [PRD](/feat/infra/toast-global/prd.md)
+    - [Specs](/feat/infra/toast-global/specs.md)
+    - [Plan](/feat/infra/toast-global/plan.md)
 
 - **[Security](/feat/security/)**
   - [Analytics Opt-out](/feat/security/analytics-optout/)
@@ -189,6 +191,8 @@
     - [PRD](/feat/social/preguntas-respuestas/prd.md)
   - [Rate Limit Precheck](/feat/social/rate-limit-precheck/)
     - [PRD](/feat/social/rate-limit-precheck/prd.md)
+    - [Specs](/feat/social/rate-limit-precheck/specs.md)
+    - [Plan](/feat/social/rate-limit-precheck/plan.md)
   - [Recomendaciones entre Usuarios](/feat/social/recomendaciones-usuarios/)
     - [PRD](/feat/social/recomendaciones-usuarios/prd.md)
   - [Seguir Usuarios](/feat/social/seguir-usuarios/)
