@@ -36,18 +36,22 @@ import {
   toggleListPublic,
 } from '../../services/sharedLists';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { getDocs, query, where, orderBy } from 'firebase/firestore';
+import { getDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
+import { sharedListConverter } from '../../config/converters';
 import { CATEGORY_LABELS } from '../../types';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { SharedList, ListItem, Business } from '../../types';
 
 interface Props {
   onNavigate: () => void;
+  sharedListId?: string | undefined;
 }
 
 const MAX_LISTS = 10;
 
-export default function SharedListsView({ onNavigate }: Props) {
+export default function SharedListsView({ onNavigate, sharedListId }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
   const toast = useToast();
@@ -57,6 +61,30 @@ export default function SharedListsView({ onNavigate }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Map<string, ListItem[]>>(new Map());
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
+
+  // Shared list from deep link
+  const [sharedList, setSharedList] = useState<SharedList | null>(null);
+  const [sharedItems, setSharedItems] = useState<ListItem[]>([]);
+  const [loadingShared, setLoadingShared] = useState(false);
+
+  useEffect(() => {
+    if (!sharedListId) return;
+    let ignore = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch
+    setLoadingShared(true);
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, COLLECTIONS.SHARED_LISTS, sharedListId).withConverter(sharedListConverter));
+        if (ignore || !snap.exists()) { setLoadingShared(false); return; }
+        const list = snap.data();
+        setSharedList(list);
+        const items = await fetchListItems(list.id);
+        if (!ignore) setSharedItems(items);
+      } catch { /* ignore */ }
+      if (!ignore) setLoadingShared(false);
+    })();
+    return () => { ignore = true; };
+  }, [sharedListId]);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -178,6 +206,55 @@ export default function SharedListsView({ onNavigate }: Props) {
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <CircularProgress size={24} sx={{ mb: 1 }} />
         <Typography variant="body2" color="text.secondary">Cargando...</Typography>
+      </Box>
+    );
+  }
+
+  // Show shared list from deep link
+  if (sharedListId && (loadingShared || sharedList)) {
+    return (
+      <Box sx={{ px: 2, py: 1 }}>
+        {loadingShared ? (
+          <Box sx={{ py: 3, textAlign: 'center' }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : sharedList ? (
+          <>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+              {sharedList.name}
+            </Typography>
+            {sharedList.description && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {sharedList.description}
+              </Typography>
+            )}
+            <Chip label={`${sharedItems.length} comercio${sharedItems.length !== 1 ? 's' : ''}`} size="small" sx={{ mb: 1.5 }} />
+            {sharedItems.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">Lista vacía.</Typography>
+            ) : (
+              <List disablePadding dense>
+                {sharedItems.map((item) => {
+                  const business = allBusinesses.find((b) => b.id === item.businessId);
+                  if (!business) return null;
+                  return (
+                    <ListItemButton key={item.id} onClick={() => handleSelectBusiness(business)} sx={{ borderRadius: 1 }}>
+                      <ListItemText
+                        primary={business.name}
+                        secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
+                        primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}
+                        secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                      />
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            )}
+          </>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+            Lista no encontrada o es privada.
+          </Typography>
+        )}
       </Box>
     );
   }

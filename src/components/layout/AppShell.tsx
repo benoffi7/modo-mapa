@@ -15,6 +15,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 export default function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuInitialSection, setMenuInitialSection] = useState<string | undefined>(undefined);
+  const [sharedListId, setSharedListId] = useState<string | undefined>(undefined);
   const [searchParams, setSearchParams] = useSearchParams();
   const { setSelectedBusiness } = useSelection();
 
@@ -33,6 +34,7 @@ export default function AppShell() {
 
     const listId = searchParams.get('list');
     if (listId) {
+      setSharedListId(listId);
       setMenuInitialSection('lists');
       setMenuOpen(true);
       searchParams.delete('list');
@@ -57,7 +59,7 @@ export default function AppShell() {
       <LocationFAB />
       <BusinessSheet />
       <NameDialog />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); }} initialSection={menuInitialSection} />
+      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} initialSection={menuInitialSection} sharedListId={sharedListId} />
     </Box>
   );
 }
