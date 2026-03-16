@@ -17,12 +17,17 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
   const { user } = useAuth();
   const toast = useToast();
   const [isToggling, setIsToggling] = useState(false);
+  const [optimistic, setOptimistic] = useState<boolean | null>(null);
+
+  const shown = optimistic ?? isFavorite;
 
   const toggleFavorite = useCallback(async () => {
     if (!user) return;
+    const wasFavorite = isFavorite;
+    setOptimistic(!wasFavorite);
     setIsToggling(true);
     try {
-      if (isFavorite) {
+      if (wasFavorite) {
         await removeFavorite(user.uid, businessId);
         toast.info('Removido de favoritos');
       } else {
@@ -31,6 +36,7 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
       }
       onToggle();
     } catch (error) {
+      setOptimistic(null);
       if (import.meta.env.DEV) console.error('Error toggling favorite:', error);
       toast.error('No se pudo actualizar favoritos');
     }
@@ -39,12 +45,12 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
 
   return (
     <IconButton
-      aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+      aria-label={shown ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
       disabled={isLoading || isToggling || !user}
-      sx={{ color: isFavorite ? '#ea4335' : 'text.secondary' }}
+      sx={{ color: shown ? '#ea4335' : 'text.secondary' }}
     >
-      {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+      {shown ? <FavoriteIcon /> : <FavoriteBorderIcon />}
     </IconButton>
   );
 }
