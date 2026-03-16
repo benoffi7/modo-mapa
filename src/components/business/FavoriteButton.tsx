@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { IconButton } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -13,11 +13,18 @@ interface Props {
   onToggle: () => void;
 }
 
-export default function FavoriteButton({ businessId, isFavorite, isLoading, onToggle }: Props) {
+export default memo(function FavoriteButton({ businessId, isFavorite, isLoading, onToggle }: Props) {
   const { user } = useAuth();
   const toast = useToast();
   const [isToggling, setIsToggling] = useState(false);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
+  const [prevIsFavorite, setPrevIsFavorite] = useState(isFavorite);
+
+  // Clear optimistic state when server state catches up (React pattern for derived state)
+  if (isFavorite !== prevIsFavorite) {
+    setPrevIsFavorite(isFavorite);
+    setOptimistic(null);
+  }
 
   const shown = optimistic ?? isFavorite;
 
@@ -53,4 +60,4 @@ export default function FavoriteButton({ businessId, isFavorite, isLoading, onTo
       {shown ? <FavoriteIcon /> : <FavoriteBorderIcon />}
     </IconButton>
   );
-}
+});
