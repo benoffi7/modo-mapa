@@ -185,3 +185,21 @@ Output a final summary:
 - features.md, patterns.md, PROJECT_REFERENCE.md, HelpSection.tsx
 - Branch cleaned: remote + local
 ```
+
+## Phase 7: Update Backlog de Producto
+
+**MANDATORY** — Update `docs/reports/backlog-producto.md` with:
+
+1. Add the merged feature to the "Implementado" table (version, issues, description)
+2. Move completed issues from backlog sections to implemented
+3. Update "En desarrollo / Próximo" if priorities changed
+4. Update "Métricas de progreso" counts
+5. Commit and push: `git add docs/reports/backlog-producto.md && git commit -m "docs: update backlog de producto post-merge" && git push origin main`
+
+This file is the **single source of truth** for product roadmap and issue tracking.
+Referenced by: workflow.md, memory (feedback_features_vs_backlog.md).
+
+## Phase 8: Post-merge review
+
+Ask: "¿Hay algo que mejorar de los agentes, del flujo de trabajo o permisos?"
+If improvements identified, implement or save to memory.
