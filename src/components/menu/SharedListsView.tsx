@@ -19,6 +19,8 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShareIcon from '@mui/icons-material/Share';
+import LockIcon from '@mui/icons-material/Lock';
+import PublicIcon from '@mui/icons-material/Public';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -31,6 +33,7 @@ import {
   deleteList,
   fetchListItems,
   removeBusinessFromList,
+  toggleListPublic,
 } from '../../services/sharedLists';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { getDocs, query, where, orderBy } from 'firebase/firestore';
@@ -108,6 +111,16 @@ export default function SharedListsView({ onNavigate }: Props) {
       if (expandedId === list.id) setExpandedId(null);
     } catch {
       toast.error('No se pudo eliminar la lista');
+    }
+  };
+
+  const handleTogglePublic = async (list: SharedList) => {
+    try {
+      await toggleListPublic(list.id, !list.isPublic);
+      setLists((prev) => prev.map((l) => l.id === list.id ? { ...l, isPublic: !l.isPublic } : l));
+      toast.success(list.isPublic ? 'Lista ahora es privada' : 'Lista ahora es pública');
+    } catch {
+      toast.error('No se pudo cambiar la visibilidad');
     }
   };
 
@@ -224,9 +237,14 @@ export default function SharedListsView({ onNavigate }: Props) {
                     primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(list); }} aria-label="Compartir lista">
-                      <ShareIcon fontSize="small" />
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePublic(list); }} aria-label={list.isPublic ? 'Hacer privada' : 'Hacer pública'}>
+                      {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
                     </IconButton>
+                    {list.isPublic && (
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(list); }} aria-label="Compartir lista">
+                        <ShareIcon fontSize="small" />
+                      </IconButton>
+                    )}
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(list); }} aria-label="Eliminar lista" sx={{ color: 'error.main' }}>
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>

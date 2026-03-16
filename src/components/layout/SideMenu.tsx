@@ -82,6 +82,7 @@ declare const __APP_VERSION__: string;
 interface Props {
   open: boolean;
   onClose: () => void;
+  initialSection?: string | undefined;
 }
 
 type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
@@ -101,7 +102,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose }: Props) {
+export default function SideMenu({ open, onClose, initialSection }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -118,6 +119,13 @@ export default function SideMenu({ open, onClose }: Props) {
   }, [open]);
 
   const [activeSection, setActiveSectionRaw] = useState<Section>('nav');
+
+  useEffect(() => {
+    if (initialSection && open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- set initial section from deep link
+      setActiveSectionRaw(initialSection as Section);
+    }
+  }, [initialSection, open]);
 
   const setActiveSection = (section: Section) => {
     setActiveSectionRaw(section);

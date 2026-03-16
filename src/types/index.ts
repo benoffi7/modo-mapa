@@ -88,6 +88,7 @@ export interface SharedList {
   ownerId: string;
   name: string;
   description: string;
+  isPublic: boolean;
   itemCount: number;
   createdAt: Date;
   updatedAt: Date;

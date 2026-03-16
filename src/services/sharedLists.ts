@@ -32,6 +32,7 @@ export async function createList(userId: string, name: string, description: stri
     ownerId: userId,
     name: name.trim(),
     description: description.trim(),
+    isPublic: false,
     itemCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -39,6 +40,13 @@ export async function createList(userId: string, name: string, description: stri
   invalidateQueryCache(COLLECTIONS.SHARED_LISTS, userId);
   trackEvent('list_created', { list_id: ref.id });
   return ref.id;
+}
+
+export async function toggleListPublic(listId: string, isPublic: boolean): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), {
+    isPublic,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function updateList(listId: string, name: string, description: string): Promise<void> {
