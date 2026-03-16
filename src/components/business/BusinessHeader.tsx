@@ -10,9 +10,10 @@ interface Props {
   business: Business;
   favoriteButton: ReactNode;
   shareButton?: ReactNode;
+  addToListButton?: ReactNode;
 }
 
-export default function BusinessHeader({ business, favoriteButton, shareButton }: Props) {
+export default function BusinessHeader({ business, favoriteButton, shareButton, addToListButton }: Props) {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -27,6 +28,7 @@ export default function BusinessHeader({ business, favoriteButton, shareButton }
           />
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {addToListButton}
           {shareButton}
           {favoriteButton}
         </Box>

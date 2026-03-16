@@ -40,6 +40,7 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import CasinoIcon from '@mui/icons-material/Casino';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -57,6 +58,7 @@ const FavoritesList = lazy(() => import('../menu/FavoritesList'));
 const RecentVisits = lazy(() => import('../menu/RecentVisits'));
 const CommentsList = lazy(() => import('../menu/CommentsList'));
 const RatingsList = lazy(() => import('../menu/RatingsList'));
+const SharedListsView = lazy(() => import('../menu/SharedListsView'));
 const FeedbackForm = lazy(() => import('../menu/FeedbackForm'));
 const StatsView = lazy(() => import('../menu/StatsView'));
 const RankingsView = lazy(() => import('../menu/RankingsView'));
@@ -80,12 +82,15 @@ declare const __APP_VERSION__: string;
 interface Props {
   open: boolean;
   onClose: () => void;
+  initialSection?: string | undefined;
+  sharedListId?: string | undefined;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
+  lists: 'Mis Listas',
   recent: 'Recientes',
   suggestions: 'Sugeridos para vos',
   comments: 'Comentarios',
@@ -98,7 +103,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose }: Props) {
+export default function SideMenu({ open, onClose, initialSection, sharedListId }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -115,6 +120,13 @@ export default function SideMenu({ open, onClose }: Props) {
   }, [open]);
 
   const [activeSection, setActiveSectionRaw] = useState<Section>('nav');
+
+  useEffect(() => {
+    if (initialSection && open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- set initial section from deep link
+      setActiveSectionRaw(initialSection as Section);
+    }
+  }, [initialSection, open]);
 
   const setActiveSection = (section: Section) => {
     setActiveSectionRaw(section);
@@ -263,6 +275,15 @@ export default function SideMenu({ open, onClose }: Props) {
                   </ListItemIcon>
                   <ListItemText primary="Favoritos" />
                 </ListItemButton>
+
+                {user && !user.isAnonymous && (
+                  <ListItemButton onClick={() => setActiveSection('lists')}>
+                    <ListItemIcon>
+                      <BookmarkBorderIcon sx={{ color: 'info.main' }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Mis Listas" />
+                  </ListItemButton>
+                )}
 
                 <ListItemButton onClick={() => setActiveSection('recent')}>
                   <ListItemIcon>
@@ -418,6 +439,7 @@ export default function SideMenu({ open, onClose }: Props) {
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}

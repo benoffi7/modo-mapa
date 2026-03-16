@@ -71,6 +71,15 @@
 | **Photo staleness** | Si la foto fue revisada hace mas de 6 meses, se muestra un chip "Posiblemente desactualizado" (warning). |
 | **Feedback media upload** | `sendFeedback` acepta un `File` opcional. Valida tipo (JPG/PNG/WebP) y tamanio (max 10MB). Sube a `feedback-media/{feedbackId}/{fileName}`, obtiene download URL y actualiza el doc con `mediaUrl` y `mediaType`. |
 
+## Shared lists
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Two-collection model** | `sharedLists` (metadata + owner) + `listItems` (compound ID `{listId}__{businessId}`). itemCount mantenido manualmente con `increment()`. |
+| **Public/private toggle** | Campo `isPublic` en sharedList. Rules: read solo para owner o `isPublic == true`. Share button solo visible si pública. |
+| **Deep link** | `?list={id}` en URL abre SideMenu en sección lists con la lista específica. `sharedListId` prop propagado AppShell → SideMenu → SharedListsView. |
+| **AddToListDialog** | Dialog desde BusinessSheet con checkboxes por lista. Carga estado checked via `fetchListItems` por cada lista del usuario. Crear nueva lista inline. |
+
 ## Abuse alerts (admin)
 
 | Patron | Descripcion |

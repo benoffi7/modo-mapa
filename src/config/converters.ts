@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -298,6 +298,52 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyReplies: d.notifyReplies ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
       updatedAt: toDate(d.updatedAt),
+    };
+  },
+};
+
+export const sharedListConverter: FirestoreDataConverter<SharedList> = {
+  toFirestore(list: SharedList) {
+    return {
+      ownerId: list.ownerId,
+      name: list.name,
+      description: list.description,
+      isPublic: list.isPublic,
+      itemCount: list.itemCount,
+      createdAt: list.createdAt,
+      updatedAt: list.updatedAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): SharedList {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      ownerId: String(d.ownerId ?? ''),
+      name: String(d.name ?? ''),
+      description: String(d.description ?? ''),
+      isPublic: d.isPublic === true,
+      itemCount: Number(d.itemCount ?? 0),
+      createdAt: toDate(d.createdAt),
+      updatedAt: toDate(d.updatedAt),
+    };
+  },
+};
+
+export const listItemConverter: FirestoreDataConverter<ListItem> = {
+  toFirestore(item: ListItem) {
+    return {
+      listId: item.listId,
+      businessId: item.businessId,
+      createdAt: item.createdAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): ListItem {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      listId: String(d.listId ?? ''),
+      businessId: String(d.businessId ?? ''),
+      createdAt: toDate(d.createdAt),
     };
   },
 };
