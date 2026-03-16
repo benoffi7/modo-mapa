@@ -123,6 +123,8 @@
     - [Plan](/feat/infra/sentry/plan.md)
   - [Skeleton Loaders](/feat/infra/skeleton-loaders/)
     - [PRD](/feat/infra/skeleton-loaders/prd.md)
+  - [GA4 API](/feat/infra/ga4-api/)
+    - [PRD](/feat/infra/ga4-api/prd.md)
   - [Métricas + Panel](/feat/infra/metricas-panel/)
     - [PRD](/feat/infra/metricas-panel/prd.md)
     - [Specs](/feat/infra/metricas-panel/specs.md)
