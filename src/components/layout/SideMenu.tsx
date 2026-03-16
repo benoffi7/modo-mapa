@@ -45,9 +45,10 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNotifications } from '../../hooks/useNotifications';
 import { trackEvent } from '../../utils/analytics';
 import { useToast } from '../../context/ToastContext';
-import { useSelection } from '../../context/MapContext';
+import { useSelection, useFilters } from '../../context/MapContext';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { distanceKm } from '../../utils/distance';
 import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 
@@ -103,6 +104,7 @@ export default function SideMenu({ open, onClose }: Props) {
   const { notifications } = useNotifications();
   const toast = useToast();
   const { setSelectedBusiness } = useSelection();
+  const { userLocation } = useFilters();
   const { visits } = useVisitHistory();
   const unreadReplyCount = useMemo(
     () => notifications.filter((n) => n.type === 'comment_reply' && !n.read).length,
@@ -124,12 +126,21 @@ export default function SideMenu({ open, onClose }: Props) {
 
   const handleSurprise = () => {
     const visitedIds = new Set(visits.map((v) => v.businessId));
-    const unvisited = allBusinesses.filter((b) => !visitedIds.has(b.id));
-    const pool = unvisited.length > 0 ? unvisited : allBusinesses;
+    let candidates = allBusinesses.filter((b) => !visitedIds.has(b.id));
+
+    // If GPS available, prefer nearby (within 5km)
+    if (userLocation && candidates.length > 0) {
+      const nearby = candidates.filter(
+        (b) => distanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng) <= 5,
+      );
+      if (nearby.length > 0) candidates = nearby;
+    }
+
+    const pool = candidates.length > 0 ? candidates : allBusinesses;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     setSelectedBusiness(pick);
     onClose();
-    if (unvisited.length === 0) {
+    if (candidates.length === 0) {
       toast.info('¡Ya visitaste todos! Te sorprendemos con uno al azar.');
     } else {
       toast.success(`¡Sorpresa! Descubrí ${pick.name}`);
