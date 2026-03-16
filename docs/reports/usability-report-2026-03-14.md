@@ -89,9 +89,10 @@
 
 ## 5. Resumen de priorizacion sugerida
 
-| Prioridad | Items |
-|-----------|-------|
-| **P0 — Critico** | Toast de errores ([#138](https://github.com/benoffi7/modo-mapa/issues/138)), pre-check rate limit ([#133](https://github.com/benoffi7/modo-mapa/issues/133)) |
-| **P1 — Alta** | Enhanced Abuse Alerts Fase 1, onboarding gamificado ([#145](https://github.com/benoffi7/modo-mapa/issues/145)), distancia al usuario ([#147](https://github.com/benoffi7/modo-mapa/issues/147)), pull-to-refresh global ([#146](https://github.com/benoffi7/modo-mapa/issues/146)) |
-| **P2 — Media** | "Sorprendeme" ([#139](https://github.com/benoffi7/modo-mapa/issues/139)), listas compartidas ([#142](https://github.com/benoffi7/modo-mapa/issues/142)), Enhanced Abuse Alerts Fase 2 |
-| **P3 — Nice to have** | Trending ([#140](https://github.com/benoffi7/modo-mapa/issues/140)), Q&A ([#127](https://github.com/benoffi7/modo-mapa/issues/127)), menu digital ([#132](https://github.com/benoffi7/modo-mapa/issues/132)), PerformancePanel decomposition |
+| Prioridad | Items | Estado |
+|-----------|-------|--------|
+| **P0 — Critico** | Toast de errores ([#138](https://github.com/benoffi7/modo-mapa/issues/138)), pre-check rate limit ([#133](https://github.com/benoffi7/modo-mapa/issues/133)) | ✅ v2.10.0 |
+| **P1 — Alta** | Enhanced Abuse Alerts Fase 1, onboarding gamificado ([#145](https://github.com/benoffi7/modo-mapa/issues/145)), distancia al usuario ([#147](https://github.com/benoffi7/modo-mapa/issues/147)), pull-to-refresh global ([#146](https://github.com/benoffi7/modo-mapa/issues/146)) | ✅ v2.11.0 |
+| **P2 — Media** | "Sorprendeme" ([#139](https://github.com/benoffi7/modo-mapa/issues/139)), Enhanced Abuse Alerts Fase 2 | ✅ v2.12.0 |
+| **P2 — Media** | Listas compartidas ([#142](https://github.com/benoffi7/modo-mapa/issues/142)) | Pendiente |
+| **P3 — Nice to have** | Trending ([#140](https://github.com/benoffi7/modo-mapa/issues/140)), Q&A ([#127](https://github.com/benoffi7/modo-mapa/issues/127)), PerformancePanel decomposition | Pendiente |
