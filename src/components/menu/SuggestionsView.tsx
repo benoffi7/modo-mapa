@@ -9,8 +9,9 @@ import {
 } from '@mui/material';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useSelection } from '../../context/MapContext';
+import { useSelection, useFilters } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
+import { distanceKm, formatDistance } from '../../utils/distance';
 import { CATEGORY_LABELS } from '../../types';
 import type { Business, SuggestionReason } from '../../types';
 
@@ -32,6 +33,7 @@ interface Props {
 
 export default function SuggestionsView({ onNavigate }: Props) {
   const { setSelectedBusiness } = useSelection();
+  const { userLocation } = useFilters();
   const { suggestions, isLoading, error } = useSuggestions();
 
   const handleSelectBusiness = (business: Business) => {
@@ -93,6 +95,12 @@ export default function SuggestionsView({ onNavigate }: Props) {
                     {CATEGORY_LABELS[item.business.category]}
                     {' · '}
                     {item.business.address}
+                    {userLocation && (
+                      <>
+                        {' · '}
+                        {formatDistance(distanceKm(userLocation.lat, userLocation.lng, item.business.lat, item.business.lng))}
+                      </>
+                    )}
                   </Typography>
                   <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {item.reasons.map((reason) => (

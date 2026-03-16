@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -15,12 +15,17 @@ import RankingsEmptyState from './RankingsEmptyState';
 import UserProfileModal from './UserProfileModal';
 import UserScoreCard from './UserScoreCard';
 import { PERIOD_OPTIONS } from '../../constants/rankings';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { UserRankingEntry } from '../../types';
 
 export default function RankingsView() {
   const { user, displayName } = useAuth();
   const { ranking, loading, error, periodType, setPeriodType, refetch, positionChanges } = useRankings();
   const [selectedProfile, setSelectedProfile] = useState<{ entry: UserRankingEntry; position: number } | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_ranking_viewed', 'true');
+  }, []);
 
   const maxScore = ranking?.rankings[0]?.score ?? 0;
   const currentUserEntry = ranking?.rankings.find((e) => e.userId === user?.uid);
@@ -49,6 +54,7 @@ export default function RankingsView() {
   }, [shouldFetchLive, uid, name, periodType]);
 
   const effectiveEntry = currentUserEntry ?? liveEntry ?? undefined;
+  const handleRefresh = useCallback(async () => { await refetch(); }, [refetch]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -79,7 +85,7 @@ export default function RankingsView() {
       </Box>
 
       {/* Content */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <PullToRefreshWrapper onRefresh={handleRefresh}>
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress size={32} />
@@ -122,7 +128,7 @@ export default function RankingsView() {
             )}
           </>
         )}
-      </Box>
+      </PullToRefreshWrapper>
 
       {/* Current user card */}
       {!loading && !error && (ranking || liveEntry) && (

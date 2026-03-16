@@ -33,6 +33,7 @@ import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { PaginatedListShell } from './PaginatedListShell';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MAX_COMMENT_LENGTH } from '../../constants/validation';
 import { formatRelativeTime } from '../../utils/formatDate';
 import { truncate } from '../../utils/text';
@@ -251,6 +252,8 @@ export default function CommentsList({ onNavigate }: Props) {
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, loadAll, reload } =
     usePaginatedQuery<Comment>(collectionRef, user?.uid, 'createdAt');
 
+  const handleRefresh = useCallback(async () => { reload(); }, [reload]);
+
   // Undo delete
   const onConfirmDelete = useCallback(
     async (comment: Comment) => {
@@ -444,6 +447,7 @@ export default function CommentsList({ onNavigate }: Props) {
   }, [shouldVirtualize, lastVirtualIndex, filteredComments.length, hasMore, isLoadingMore, searchInput, loadMore]);
 
   return (
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
     <PaginatedListShell
       isLoading={isLoading}
       error={error}
@@ -690,5 +694,6 @@ export default function CommentsList({ onNavigate }: Props) {
         }
       />
     </PaginatedListShell>
+    </PullToRefreshWrapper>
   );
 }

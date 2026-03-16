@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Box,
   List,
@@ -18,6 +18,7 @@ import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateMedium } from '../../utils/formatDate';
 import ListFilters from './ListFilters';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Rating as RatingType } from '../../types';
 
 interface Props {
@@ -54,6 +55,8 @@ export default function RatingsList({ onNavigate }: Props) {
     sortBy,
     setSortBy,
   } = useListFilters(ratings, { enableScoreFilter: true });
+
+  const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
   const handleSelectBusiness = (business: Business | null) => {
     if (!business) return;
@@ -94,7 +97,7 @@ export default function RatingsList({ onNavigate }: Props) {
   }
 
   return (
-    <Box>
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
       <ListFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -143,6 +146,6 @@ export default function RatingsList({ onNavigate }: Props) {
           </Button>
         </Box>
       )}
-    </Box>
+    </PullToRefreshWrapper>
   );
 }
