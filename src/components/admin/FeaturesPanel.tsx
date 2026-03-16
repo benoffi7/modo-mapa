@@ -1,10 +1,12 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import Alert from '@mui/material/Alert';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
@@ -23,76 +25,35 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { fetchDailyMetrics, fetchCounters } from '../../services/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
+import LineChartCard from './charts/LineChartCard';
 import type { ReactElement } from 'react';
 import type { AdminCounters, DailyMetrics } from '../../types/admin';
 
-interface FeatureCard {
+interface FeatureDef {
+  key: string;
   name: string;
   icon: ReactElement;
   getValue: (counters: AdminCounters) => number;
-  getTrend: (metrics: DailyMetrics[]) => { today: number; yesterday: number };
+  collectionKey: string;
   color: string;
 }
 
-function getWritesByDay(metrics: DailyMetrics[], field: keyof AdminCounters): { today: number; yesterday: number } {
-  const todayWrites = metrics[0]?.writesByCollection?.[field] ?? 0;
-  const yesterdayWrites = metrics[1]?.writesByCollection?.[field] ?? 0;
-  return { today: todayWrites, yesterday: yesterdayWrites };
-}
-
-const FEATURES: FeatureCard[] = [
-  {
-    name: 'Calificaciones',
-    icon: <StarOutlineIcon />,
-    getValue: (c) => c.ratings,
-    getTrend: (m) => getWritesByDay(m, 'ratings'),
-    color: '#FFC107',
-  },
-  {
-    name: 'Comentarios',
-    icon: <ChatBubbleOutlineIcon />,
-    getValue: (c) => c.comments,
-    getTrend: (m) => getWritesByDay(m, 'comments'),
-    color: '#2196F3',
-  },
-  {
-    name: 'Likes',
-    icon: <ThumbUpOutlinedIcon />,
-    getValue: (c) => c.commentLikes,
-    getTrend: (m) => getWritesByDay(m, 'commentLikes'),
-    color: '#E91E63',
-  },
-  {
-    name: 'Favoritos',
-    icon: <FavoriteIcon />,
-    getValue: (c) => c.favorites,
-    getTrend: (m) => getWritesByDay(m, 'favorites'),
-    color: '#F44336',
-  },
-  {
-    name: 'Tags',
-    icon: <LabelOutlinedIcon />,
-    getValue: (c) => c.customTags + c.userTags,
-    getTrend: (m) => getWritesByDay(m, 'customTags'),
-    color: '#9C27B0',
-  },
-  {
-    name: 'Feedback',
-    icon: <FeedbackOutlinedIcon />,
-    getValue: (c) => c.feedback,
-    getTrend: (m) => getWritesByDay(m, 'feedback'),
-    color: '#4CAF50',
-  },
+const FEATURES: FeatureDef[] = [
+  { key: 'ratings', name: 'Calificaciones', icon: <StarOutlineIcon />, getValue: (c) => c.ratings, collectionKey: 'ratings', color: '#FFC107' },
+  { key: 'comments', name: 'Comentarios', icon: <ChatBubbleOutlineIcon />, getValue: (c) => c.comments, collectionKey: 'comments', color: '#2196F3' },
+  { key: 'likes', name: 'Likes', icon: <ThumbUpOutlinedIcon />, getValue: (c) => c.commentLikes, collectionKey: 'commentLikes', color: '#E91E63' },
+  { key: 'favorites', name: 'Favoritos', icon: <FavoriteIcon />, getValue: (c) => c.favorites, collectionKey: 'favorites', color: '#F44336' },
+  { key: 'tags', name: 'Tags', icon: <LabelOutlinedIcon />, getValue: (c) => c.customTags + c.userTags, collectionKey: 'customTags', color: '#9C27B0' },
+  { key: 'feedback', name: 'Feedback', icon: <FeedbackOutlinedIcon />, getValue: (c) => c.feedback, collectionKey: 'feedback', color: '#4CAF50' },
 ];
 
-// Features that don't have server-side counters but exist as trackEvent
-const FEATURE_LABELS: { name: string; icon: ReactElement; description: string }[] = [
-  { name: 'Sorpréndeme', icon: <CasinoIcon />, description: 'Evento: surprise_me' },
-  { name: 'Listas', icon: <BookmarkBorderIcon />, description: 'Eventos: list_created, list_item_added' },
-  { name: 'Búsqueda', icon: <SearchIcon />, description: 'Evento: business_search' },
-  { name: 'Compartir', icon: <ShareIcon />, description: 'Evento: business_share' },
-  { name: 'Fotos', icon: <CameraAltOutlinedIcon />, description: 'Evento: menu_photo_upload' },
-  { name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, description: 'Evento: dark_mode_toggle' },
+const GA4_FEATURES: { name: string; icon: ReactElement; description: string }[] = [
+  { name: 'Sorpréndeme', icon: <CasinoIcon />, description: 'surprise_me' },
+  { name: 'Listas', icon: <BookmarkBorderIcon />, description: 'list_created, list_item_added' },
+  { name: 'Búsqueda', icon: <SearchIcon />, description: 'business_search' },
+  { name: 'Compartir', icon: <ShareIcon />, description: 'business_share' },
+  { name: 'Fotos', icon: <CameraAltOutlinedIcon />, description: 'menu_photo_upload' },
+  { name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, description: 'dark_mode_toggle' },
 ];
 
 function TrendIcon({ today, yesterday }: { today: number; yesterday: number }) {
@@ -101,16 +62,21 @@ function TrendIcon({ today, yesterday }: { today: number; yesterday: number }) {
   return <TrendingFlatIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
 }
 
-interface FetchResult {
-  counters: AdminCounters | null;
-  dailyMetrics: DailyMetrics[];
+function buildFeatureTrend(metrics: DailyMetrics[], collectionKey: string): { date: string; value: number }[] {
+  // metrics sorted desc, reverse for chart (oldest first)
+  return [...metrics].reverse().map((m) => ({
+    date: (m as unknown as { id?: string }).id ?? '',
+    value: m.writesByCollection?.[collectionKey] ?? 0,
+  }));
 }
 
 export default function FeaturesPanel() {
-  const fetcher = useCallback(async (): Promise<FetchResult> => {
+  const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
+
+  const fetcher = useCallback(async () => {
     const [counters, dailyMetrics] = await Promise.all([
       fetchCounters(),
-      fetchDailyMetrics('desc', 7),
+      fetchDailyMetrics('desc', 30),
     ]);
     return { counters, dailyMetrics };
   }, []);
@@ -133,46 +99,67 @@ export default function FeaturesPanel() {
             <Chip label={`${data.dailyMetrics[0]?.dailyWrites ?? 0} escrituras hoy`} variant="outlined" />
           </Box>
 
-          {/* Feature cards with counters */}
+          {/* Feature cards */}
           <Typography variant="h6" gutterBottom>Métricas por funcionalidad</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Tocá una card para ver el gráfico de los últimos 30 días.
+          </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {FEATURES.map((feature) => {
               const total = feature.getValue(data.counters!);
-              const trend = feature.getTrend(data.dailyMetrics);
+              const today = data.dailyMetrics[0]?.writesByCollection?.[feature.collectionKey] ?? 0;
+              const yesterday = data.dailyMetrics[1]?.writesByCollection?.[feature.collectionKey] ?? 0;
+              const isExpanded = expandedFeature === feature.key;
+              const trendData = isExpanded ? buildFeatureTrend(data.dailyMetrics, feature.collectionKey) : [];
+
               return (
-                <Grid key={feature.name} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card variant="outlined" sx={{ borderLeft: `4px solid ${feature.color}` }}>
+                <Grid key={feature.key} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Card
+                    variant="outlined"
+                    sx={{ borderLeft: `4px solid ${feature.color}`, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 2 } }}
+                    onClick={() => setExpandedFeature(isExpanded ? null : feature.key)}
+                  >
                     <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <Box sx={{ color: feature.color }}>{feature.icon}</Box>
                         <Typography variant="subtitle2">{feature.name}</Typography>
-                        {(trend.today > 0 || trend.yesterday > 0) && (
+                        {(today > 0 || yesterday > 0) && (
                           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <TrendIcon today={trend.today} yesterday={trend.yesterday} />
+                            <TrendIcon today={today} yesterday={yesterday} />
                           </Box>
                         )}
                       </Box>
                       <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                        {total.toLocaleString()}
+                        {today}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        total acumulado
-                        {trend.today > 0 && ` · ${trend.today} hoy`}
+                        hoy · {total.toLocaleString()} total
                       </Typography>
                     </CardContent>
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <Box sx={{ px: 2, pb: 2 }}>
+                        <LineChartCard
+                          title={`${feature.name} — últimos 30 días`}
+                          data={trendData}
+                          lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
+                          xAxisKey="date"
+                        />
+                      </Box>
+                    </Collapse>
                   </Card>
                 </Grid>
               );
             })}
           </Grid>
 
-          {/* Analytics-only features (no server counters yet) */}
-          <Typography variant="h6" gutterBottom>Features sin métricas server-side</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Estos features solo se trackean via Firebase Analytics (GA4). Para verlos acá, necesitan agregación en dailyMetrics.
-          </Typography>
+          {/* GA4-only features */}
+          <Typography variant="h6" gutterBottom>Features solo en GA4</Typography>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Estos eventos se trackean en Firebase Analytics (GA4) pero no tienen agregación server-side todavía.
+            Se pueden traer via Google Analytics Data API con una Cloud Function callable (mejora futura).
+          </Alert>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            {FEATURE_LABELS.map((feature) => (
+            {GA4_FEATURES.map((feature) => (
               <Grid key={feature.name} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card variant="outlined" sx={{ opacity: 0.7 }}>
                   <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -181,16 +168,15 @@ export default function FeaturesPanel() {
                       <Typography variant="subtitle2">{feature.name}</Typography>
                     </Box>
                     <Typography variant="caption" color="text.secondary">
-                      {feature.description}
+                      Eventos: {feature.description}
                     </Typography>
-                    <Chip label="Solo GA4" size="small" variant="outlined" sx={{ mt: 0.5, display: 'flex', width: 'fit-content' }} />
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
 
-          {/* Adoption funnel */}
+          {/* Adoption */}
           <Typography variant="h6" gutterBottom>Adopción</Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
