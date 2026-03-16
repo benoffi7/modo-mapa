@@ -60,9 +60,9 @@ export interface AbuseLog {
   collection: string;
   detail: string;
   timestamp: Date;
-  reviewed?: boolean;
-  dismissed?: boolean;
-  reviewedAt?: Date;
+  reviewed?: boolean | undefined;
+  dismissed?: boolean | undefined;
+  reviewedAt?: Date | undefined;
 }
 
 export interface StorageStats {
