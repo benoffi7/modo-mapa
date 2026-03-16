@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import CommentRow from './CommentRow';
+import CommentInput from './CommentInput';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
@@ -37,7 +38,6 @@ interface Props {
 export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const { user, displayName } = useAuth();
   const toast = useToast();
-  const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -132,13 +132,12 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   }, [optimisticLikeDelta]);
 
   // Handlers
-  const handleSubmit = async () => {
-    if (!user || !newComment.trim()) return;
+  const handleSubmitText = async (text: string) => {
+    if (!user) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     try {
-      await addComment(user.uid, displayName || 'Anónimo', businessId, newComment.trim());
-      setNewComment('');
+      await addComment(user.uid, displayName || 'Anónimo', businessId, text);
       onCommentsChange();
       toast.success('Comentario publicado');
     } catch (error) {
@@ -322,64 +321,12 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         )}
       </Box>
 
-      {user && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-        <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
-          Alcanzaste el límite de {MAX_COMMENTS_PER_DAY} comentarios por hoy. Podés comentar de nuevo mañana.
-        </Alert>
-      )}
-
-      {user && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Dejá tu comentario..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-            helperText={
-              userCommentsToday > 0
-                ? newComment.length > 0
-                  ? `${newComment.length}/${MAX_COMMENT_LENGTH} · ${userCommentsToday}/${MAX_COMMENTS_PER_DAY} hoy`
-                  : `${userCommentsToday}/${MAX_COMMENTS_PER_DAY} comentarios hoy`
-                : newComment.length > 0
-                  ? `${newComment.length}/${MAX_COMMENT_LENGTH}`
-                  : undefined
-            }
-            FormHelperTextProps={{
-              sx: MAX_COMMENTS_PER_DAY - userCommentsToday <= 3 && userCommentsToday > 0
-                ? { color: 'warning.main' }
-                : undefined,
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '20px',
-              },
-            }}
-          />
-          <IconButton
-            color="primary"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !newComment.trim()}
-            sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              width: 40,
-              height: 40,
-              flexShrink: 0,
-              '&:hover': { bgcolor: 'primary.dark' },
-              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-            }}
-          >
-            <SendIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Box>
+      {user && (
+        <CommentInput
+          userCommentsToday={userCommentsToday}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmitText}
+        />
       )}
 
       <List disablePadding>

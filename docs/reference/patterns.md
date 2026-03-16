@@ -52,6 +52,8 @@
 | **Undo delete (`useUndoDelete`)** | Hook generico para undo-delete con Map de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
 | **`PaginatedListShell`** | Componente wrapper para listas paginadas: skeleton/error/empty/no-results/pagination. Props configurables (`emptyIcon`, `renderSkeleton`, `noResultsMessage`, `isFiltered`). Adoptado en CommentsList. |
 | **`CommentRow` (memo)** | Componente memoizado extraido de BusinessComments (~170 lineas). Recibe `isEditing: boolean` precalculado para evitar re-renders de todos los rows al cambiar `editingId`. |
+| **`CommentInput` (memo)** | Formulario de comentario extraido de BusinessComments. Maneja rate limit precheck, contador diario, warning visual. Estado del texto encapsulado. |
+| **Admin panel decomposition** | PerformancePanel → `admin/perf/` (SemaphoreCard, QueryLatencyTable, FunctionTimingTable, StorageCard, perfHelpers). AbuseAlerts → `admin/alerts/` (KpiCard, alertsHelpers). Patron: helpers y subcomponentes en subdirectorio, parent como orquestador. |
 | **Swipe actions (`useSwipeActions`)** | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
