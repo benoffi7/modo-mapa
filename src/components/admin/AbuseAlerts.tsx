@@ -26,7 +26,10 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import { fetchAbuseLogs } from '../../services/admin';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { fetchAbuseLogs, reviewAbuseLog, dismissAbuseLog } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { ABUSE_TYPE_COLORS, ABUSE_TYPE_LABELS } from '../../constants';
@@ -176,6 +179,8 @@ export default function AbuseAlerts() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'all'>('pending');
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   // KPI summary
   const kpis = useMemo(() => {
@@ -201,6 +206,11 @@ export default function AbuseAlerts() {
   const filtered = useMemo(() => {
     if (!logs) return [];
     let result = logs;
+
+    // Status filter (pending = not reviewed and not dismissed)
+    if (statusFilter === 'pending') {
+      result = result.filter((l) => !l.reviewed && !l.dismissed);
+    }
 
     // Date preset filter
     const threshold = getDateThreshold(datePreset);
@@ -232,7 +242,47 @@ export default function AbuseAlerts() {
     });
 
     return result;
-  }, [logs, datePreset, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
+  }, [logs, statusFilter, datePreset, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
+
+  // User alert stats (computed from all loaded logs, not filtered)
+  const userAlertCounts = useMemo(() => {
+    if (!logs) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const log of logs) {
+      counts.set(log.userId, (counts.get(log.userId) ?? 0) + 1);
+    }
+    return counts;
+  }, [logs]);
+
+  const handleReview = async (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActionInProgress(logId);
+    try {
+      await reviewAbuseLog(logId);
+      // Update local state to avoid refetch
+      if (logs) {
+        const log = logs.find((l) => l.id === logId);
+        if (log) {
+          log.reviewed = true;
+          log.reviewedAt = new Date();
+        }
+      }
+    } catch { /* ignore */ }
+    setActionInProgress(null);
+  };
+
+  const handleDismiss = async (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActionInProgress(logId);
+    try {
+      await dismissAbuseLog(logId);
+      if (logs) {
+        const log = logs.find((l) => l.id === logId);
+        if (log) log.dismissed = true;
+      }
+    } catch { /* ignore */ }
+    setActionInProgress(null);
+  };
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -251,11 +301,12 @@ export default function AbuseAlerts() {
     setCollectionFilter('');
     setUserSearch('');
     setDatePreset('all');
+    setStatusFilter('pending');
     setVisibleCount(PAGE_SIZE);
   };
 
   const hasActiveFilters =
-    typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all';
+    typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all' || statusFilter !== 'pending';
 
   // Trend icon for today vs yesterday
   const trendIcon = useMemo(() => {
@@ -311,6 +362,23 @@ export default function AbuseAlerts() {
             onClick={() => setDatePreset(datePreset === preset.key ? 'all' : preset.key)}
           />
         ))}
+      </Box>
+
+      {/* Status filter */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Chip
+          label="Pendientes"
+          size="small"
+          variant={statusFilter === 'pending' ? 'filled' : 'outlined'}
+          color={statusFilter === 'pending' ? 'warning' : 'default'}
+          onClick={() => setStatusFilter('pending')}
+        />
+        <Chip
+          label="Todas"
+          size="small"
+          variant={statusFilter === 'all' ? 'filled' : 'outlined'}
+          onClick={() => setStatusFilter('all')}
+        />
       </Box>
 
       {/* Type filter chips with counts */}
@@ -474,27 +542,76 @@ export default function AbuseAlerts() {
           </TableContainer>
 
           {/* Expanded detail */}
-          {visible.map((log) => (
-            <Collapse key={`detail-${log.id}`} in={expandedId === log.id} timeout="auto" unmountOnExit>
-              <Paper variant="outlined" sx={{ p: 2, my: 1, bgcolor: 'action.hover' }}>
-                <Typography variant="subtitle2" gutterBottom>Detalle completo</Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {log.detail}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Usuario: {log.userId}
+          {visible.map((log) => {
+            const userTotal = userAlertCounts.get(log.userId) ?? 0;
+            const isRecidivist = userTotal > 3;
+            return (
+              <Collapse key={`detail-${log.id}`} in={expandedId === log.id} timeout="auto" unmountOnExit>
+                <Paper variant="outlined" sx={{ p: 2, my: 1, bgcolor: 'action.hover' }}>
+                  <Typography variant="subtitle2" gutterBottom>Detalle completo</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {log.detail}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Colección: {log.collection}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Fecha: {log.timestamp.toLocaleString()}
-                  </Typography>
-                </Box>
-              </Paper>
-            </Collapse>
-          ))}
+                  <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Usuario: {log.userId}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Colección: {log.collection}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Fecha: {log.timestamp.toLocaleString()}
+                    </Typography>
+                    <Chip
+                      label={`${userTotal} alerta${userTotal !== 1 ? 's' : ''} totales`}
+                      size="small"
+                      variant="outlined"
+                    />
+                    {isRecidivist && (
+                      <Chip
+                        icon={<WarningAmberIcon />}
+                        label="Reincidente"
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                      />
+                    )}
+                    {log.reviewed && (
+                      <Chip label="Revisada" size="small" color="success" variant="outlined" />
+                    )}
+                    {log.dismissed && (
+                      <Chip label="Descartada" size="small" variant="outlined" />
+                    )}
+                  </Box>
+                  {/* Actions */}
+                  {!log.reviewed && !log.dismissed && (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="success"
+                        startIcon={<CheckCircleOutlineIcon />}
+                        disabled={actionInProgress === log.id}
+                        onClick={(e) => handleReview(log.id, e)}
+                      >
+                        Revisar
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                        startIcon={<DeleteOutlineIcon />}
+                        disabled={actionInProgress === log.id}
+                        onClick={(e) => handleDismiss(log.id, e)}
+                      >
+                        Descartar
+                      </Button>
+                    </Box>
+                  )}
+                </Paper>
+              </Collapse>
+            );
+          })}
 
           {/* Load more */}
           {hasMore && (
