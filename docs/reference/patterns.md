@@ -71,6 +71,15 @@
 | **Photo staleness** | Si la foto fue revisada hace mas de 6 meses, se muestra un chip "Posiblemente desactualizado" (warning). |
 | **Feedback media upload** | `sendFeedback` acepta un `File` opcional. Valida tipo (JPG/PNG/WebP) y tamanio (max 10MB). Sube a `feedback-media/{feedbackId}/{fileName}`, obtiene download URL y actualiza el doc con `mediaUrl` y `mediaType`. |
 
+## Abuse alerts (admin)
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Review/dismiss actions** | Admin puede marcar alertas como revisadas o descartadas via `updateDoc` directo (no callable). Campos `reviewed`, `dismissed`, `reviewedAt` en `abuseLogs`. Firestore rules permiten update parcial por admin con `affectedKeys().hasOnly()`. |
+| **Local optimistic state** | `localUpdates` Map mergeado con datos de `useAsyncData` via `effectiveLogs` memo. Evita refetch completo post-acción. |
+| **Status filter** | Filtro por estado (Pendientes/Revisadas/Descartadas/Todas). Default: Pendientes. |
+| **User inline stats** | Total alertas del usuario y badge "Reincidente" (>3) calculados client-side desde datos ya cargados. Sin query adicional. |
+
 ## Feedback status tracking
 
 | Patron | Descripcion |
