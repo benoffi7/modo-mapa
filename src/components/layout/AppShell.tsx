@@ -14,10 +14,12 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 
 export default function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuInitialSection, setMenuInitialSection] = useState<string | undefined>(undefined);
   const [searchParams, setSearchParams] = useSearchParams();
   const { setSelectedBusiness } = useSelection();
 
   // Deep link: ?business=biz_001 opens the business sheet
+  // Deep link: ?list=xxx opens SideMenu on lists section
   useEffect(() => {
     const bizId = searchParams.get('business');
     if (bizId) {
@@ -26,6 +28,14 @@ export default function AppShell() {
         setSelectedBusiness(biz);
       }
       searchParams.delete('business');
+      setSearchParams(searchParams, { replace: true });
+    }
+
+    const listId = searchParams.get('list');
+    if (listId) {
+      setMenuInitialSection('lists');
+      setMenuOpen(true);
+      searchParams.delete('list');
       setSearchParams(searchParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run only on mount
@@ -47,7 +57,7 @@ export default function AppShell() {
       <LocationFAB />
       <BusinessSheet />
       <NameDialog />
-      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); }} initialSection={menuInitialSection} />
     </Box>
   );
 }
