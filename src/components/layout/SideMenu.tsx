@@ -39,10 +39,15 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
+import CasinoIcon from '@mui/icons-material/Casino';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNotifications } from '../../hooks/useNotifications';
 import { trackEvent } from '../../utils/analytics';
+import { useToast } from '../../context/ToastContext';
+import { useSelection } from '../../context/MapContext';
+import { useVisitHistory } from '../../hooks/useVisitHistory';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 
@@ -96,6 +101,9 @@ export default function SideMenu({ open, onClose }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
+  const toast = useToast();
+  const { setSelectedBusiness } = useSelection();
+  const { visits } = useVisitHistory();
   const unreadReplyCount = useMemo(
     () => notifications.filter((n) => n.type === 'comment_reply' && !n.read).length,
     [notifications],
@@ -113,6 +121,21 @@ export default function SideMenu({ open, onClose }: Props) {
     }
   };
   const [feedbackKey, setFeedbackKey] = useState(0);
+
+  const handleSurprise = () => {
+    const visitedIds = new Set(visits.map((v) => v.businessId));
+    const unvisited = allBusinesses.filter((b) => !visitedIds.has(b.id));
+    const pool = unvisited.length > 0 ? unvisited : allBusinesses;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setSelectedBusiness(pick);
+    onClose();
+    if (unvisited.length === 0) {
+      toast.info('¡Ya visitaste todos! Te sorprendemos con uno al azar.');
+    } else {
+      toast.success(`¡Sorpresa! Descubrí ${pick.name}`);
+    }
+    trackEvent('surprise_me', { business_id: pick.id });
+  };
 
   // Edit name dialog
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
@@ -242,6 +265,13 @@ export default function SideMenu({ open, onClose }: Props) {
                     <LightbulbOutlinedIcon sx={{ color: 'warning.light' }} />
                   </ListItemIcon>
                   <ListItemText primary="Sugeridos" />
+                </ListItemButton>
+
+                <ListItemButton onClick={handleSurprise}>
+                  <ListItemIcon>
+                    <CasinoIcon sx={{ color: 'secondary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Sorpréndeme" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => setActiveSection('comments')}>

@@ -85,6 +85,9 @@ export const abuseLogConverter: FirestoreDataConverter<AbuseLog> = {
       collection: String(d.collection ?? ''),
       detail: String(d.detail ?? ''),
       timestamp: toDate(d.timestamp),
+      reviewed: d.reviewed === true,
+      dismissed: d.dismissed === true,
+      reviewedAt: d.reviewedAt ? toDate(d.reviewedAt) : undefined,
     };
   },
 };
