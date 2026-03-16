@@ -20,14 +20,16 @@ Issue numbers (optional): $ARGUMENTS
 
 Run these sequentially — any failure aborts the merge:
 
-### 1a. Rebase on main
+### 1a. Sync with main
 
 ```bash
 git fetch origin main
-git rebase origin/main
+git merge origin/main --no-edit
 ```
 
-If conflicts, report them and abort — do NOT auto-resolve.
+Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
+
+**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge.
 
 ### 1b. Lint
 
