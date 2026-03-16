@@ -20,8 +20,10 @@ main.tsx
        │         ├─ TrendsPanel (graficos evolucion + selector dia/semana/mes/ano)
        │         ├─ UsersPanel (rankings por usuario + stats)
        │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
-       │         ├─ AbuseAlerts (tabla de logs de abuso)
+       │         ├─ AbuseAlerts (orquestador → alerts/KpiCard, alerts/alertsHelpers)
        │         ├─ BackupsPanel (crear, listar, restaurar, eliminar backups Firestore)
+       │         ├─ PerformancePanel (orquestador → perf/SemaphoreCard, QueryLatencyTable, etc.)
+       │         ├─ FeaturesPanel (métricas por funcionalidad, adopción, gráficos 30 días)
        │         └─ PhotoReviewPanel (revisar, aprobar, rechazar fotos de menu)
        └─ [/*] MapProvider + APIProvider
             └─ AppShell.tsx
@@ -36,8 +38,10 @@ main.tsx
                  │    ├─ BusinessPriceLevel (nivel de gasto $/$$/$$$ + votar)
                  │    ├─ BusinessTags (tags predefinidos + custom)
                  │    ├─ MenuPhotoSection (foto de menu + upload + viewer)
-                 │    ├─ BusinessComments (lista + formulario + editar + undo delete + likes + sorting)
+                 │    ├─ BusinessComments (lista + editar + undo delete + likes + sorting + replies)
+                 │    │    ├─ CommentInput (memo, formulario con rate limit precheck)
                  │    │    └─ CommentRow (memo, individual comment rendering)
+                 │    ├─ AddToListDialog (guardar comercio en listas compartidas)
                  │    └─ ShareButton (Web Share API + clipboard fallback)
                  ├─ NameDialog (nombre de usuario, primera visita)
                  ├─ EmailPasswordDialog (registro/login con tabs, forgot password)

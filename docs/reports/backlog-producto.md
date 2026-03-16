@@ -63,7 +63,7 @@
 |-------|--------|-----------|
 | [#158](https://github.com/benoffi7/modo-mapa/issues/158) | Rediseño del home: alternativas al mapa central | Exploración (requiere #159) |
 | Abuse Alerts Fase 3 | Notificaciones realtime + vista reincidentes | Baja |
-| PerformancePanel decomposition | Extraer subcomponentes de 514 líneas | Baja (incluido en #159) |
+| ~~PerformancePanel decomposition~~ | ~~Extraer subcomponentes~~ | ✅ v2.14.0+v2.14.2 |
 | Telegram Notifications | Placeholder vacío, definir scope | Por definir |
 
 ---
