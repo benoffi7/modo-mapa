@@ -1,9 +1,7 @@
 import { memo, useMemo, useState, useCallback, useDeferredValue, useEffect, useRef, type RefCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
-  Autocomplete,
   Box,
-  Collapse,
   List,
   ListItemButton,
   ListItemText,
@@ -12,18 +10,13 @@ import {
   Button,
   Snackbar,
   TextField,
-  ToggleButtonGroup,
-  ToggleButton,
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -34,6 +27,8 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import CommentsStats from './CommentsStats';
+import CommentsToolbar from './CommentsToolbar';
 import { MAX_COMMENT_LENGTH } from '../../constants/validation';
 import { formatRelativeTime } from '../../utils/formatDate';
 import { truncate } from '../../utils/text';
@@ -284,7 +279,6 @@ export default function CommentsList({ onNavigate }: Props) {
   const [filterBusiness, setFilterBusiness] = useState<Business | null>(null);
 
   // Stats (#107)
-  const [statsExpanded, setStatsExpanded] = useState(false);
 
   // Swipe actions (#109)
   const swipe = useSwipeActions();
@@ -467,126 +461,19 @@ export default function CommentsList({ onNavigate }: Props) {
       onLoadMore={loadMore}
     >
       {/* #107: Stats summary */}
-      {stats && (
-        <Box sx={{ mx: 2, mb: 1 }}>
-          <Box
-            role="button"
-            tabIndex={0}
-            aria-expanded={statsExpanded}
-            aria-label="Resumen de comentarios"
-            onClick={() => setStatsExpanded(!statsExpanded)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setStatsExpanded(!statsExpanded);
-              }
-            }}
-            sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', py: 0.5 }}
-          >
-            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-              Resumen
-            </Typography>
-            {statsExpanded ? <ExpandLessIcon fontSize="small" color="action" /> : <ExpandMoreIcon fontSize="small" color="action" />}
-          </Box>
-          <Collapse in={statsExpanded}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, pb: 1 }}>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Comentarios</Typography>
-                <Typography variant="body2" fontWeight={600}>{stats.total}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Likes recibidos</Typography>
-                <Typography variant="body2" fontWeight={600}>{stats.totalLikes}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Promedio likes</Typography>
-                <Typography variant="body2" fontWeight={600}>{stats.avgLikes.toFixed(1)}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Más popular</Typography>
-                <Typography variant="body2" fontWeight={600}>
-                  {truncate(stats.mostPopular?.business?.name ?? '—', 20)}
-                </Typography>
-              </Box>
-            </Box>
-          </Collapse>
-        </Box>
-      )}
+      {stats && <CommentsStats stats={stats} />}
 
-      {/* #103: Sorting chips (>= 3 items) */}
+      {/* Sort + search + filter */}
       {showControls && (
-        <ToggleButtonGroup
-          value={sortMode}
-          exclusive
-          onChange={(_, v) => v && setSortMode(v as SortMode)}
-          size="small"
-          aria-label="Ordenar comentarios"
-          sx={{ display: 'flex', gap: 0.5, px: 2, py: 1 }}
-        >
-          {(['recent', 'oldest', 'useful'] as const).map((mode) => (
-            <ToggleButton
-              key={mode}
-              value={mode}
-              sx={{
-                height: 24,
-                fontSize: '0.7rem',
-                borderRadius: '16px !important',
-                border: '1px solid',
-                borderColor: 'divider',
-                textTransform: 'none',
-                px: 1.5,
-              }}
-            >
-              {mode === 'recent' ? 'Recientes' : mode === 'oldest' ? 'Antiguos' : 'Más likes'}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      )}
-
-      {/* #102: Search */}
-      {showControls && (
-        <Box sx={{ px: 2, mb: 1 }}>
-          <TextField
-            size="small"
-            placeholder="Buscar comentarios..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            aria-label="Buscar comentarios"
-            fullWidth
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />
-                ),
-                endAdornment: searchInput ? (
-                  <IconButton
-                    size="small"
-                    onClick={() => setSearchInput('')}
-                    aria-label="Limpiar búsqueda"
-                  >
-                    <CloseIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
-                ) : null,
-              },
-            }}
-          />
-        </Box>
-      )}
-
-      {/* #101: Filter by business */}
-      {showControls && businessOptions.length > 1 && (
-        <Box sx={{ px: 2, mb: 1 }}>
-          <Autocomplete
-            size="small"
-            options={businessOptions}
-            getOptionLabel={(b) => b.name}
-            value={filterBusiness}
-            onChange={(_, v) => setFilterBusiness(v)}
-            renderInput={(params) => (
-              <TextField {...params} placeholder="Filtrar por comercio..." size="small" />
-            )}
-          />
-        </Box>
+        <CommentsToolbar
+          sortMode={sortMode}
+          onSortChange={(v) => setSortMode(v as SortMode)}
+          searchInput={searchInput}
+          onSearchChange={setSearchInput}
+          filterBusiness={filterBusiness}
+          onFilterBusinessChange={setFilterBusiness}
+          businessOptions={businessOptions}
+        />
       )}
 
       {/* Search results count + loading */}
