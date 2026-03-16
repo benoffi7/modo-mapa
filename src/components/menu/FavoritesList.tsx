@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Box,
   List,
@@ -13,13 +13,15 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
-import { useSelection } from '../../context/MapContext';
+import { useSelection, useFilters } from '../../context/MapContext';
+import { distanceKm, formatDistance } from '../../utils/distance';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
 import ListFilters from './ListFilters';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Favorite } from '../../types';
 
 interface FavoriteItem {
@@ -35,6 +37,7 @@ interface Props {
 export default function FavoritesList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
+  const { userLocation } = useFilters();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
 
@@ -62,6 +65,8 @@ export default function FavoritesList({ onNavigate }: Props) {
     sortBy,
     setSortBy,
   } = useListFilters(favorites);
+
+  const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
   const handleRemoveFavorite = async (businessId: string) => {
     if (!user) return;
@@ -107,7 +112,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   }
 
   return (
-    <Box>
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
       <ListFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -137,6 +142,12 @@ export default function FavoritesList({ onNavigate }: Props) {
                   />
                   <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                     {fav.business.address}
+                    {userLocation && (
+                      <>
+                        {' · '}
+                        {formatDistance(distanceKm(userLocation.lat, userLocation.lng, fav.business.lat, fav.business.lng))}
+                      </>
+                    )}
                   </Typography>
                 </>
               }
@@ -163,6 +174,6 @@ export default function FavoritesList({ onNavigate }: Props) {
           </Button>
         </Box>
       )}
-    </Box>
+    </PullToRefreshWrapper>
   );
 }
