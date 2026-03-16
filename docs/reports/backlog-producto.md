@@ -13,6 +13,7 @@
 | v2.11.0 | [#145](https://github.com/benoffi7/modo-mapa/issues/145), [#147](https://github.com/benoffi7/modo-mapa/issues/147), [#146](https://github.com/benoffi7/modo-mapa/issues/146) | Onboarding gamificado, distancia al usuario, pull-to-refresh global |
 | v2.12.0 | [#139](https://github.com/benoffi7/modo-mapa/issues/139), Abuse Alerts Fase 2 | Botón Sorpréndeme (con proximidad GPS), acciones revisar/descartar en alertas |
 | v2.13.0 | [#142](https://github.com/benoffi7/modo-mapa/issues/142) | Listas compartidas: CRUD, público/privado, deep link, AddToListDialog |
+| v2.14.0 | [#159](https://github.com/benoffi7/modo-mapa/issues/159) | Features panel en admin + PerformancePanel decomposition |
 
 ---
 
@@ -20,7 +21,7 @@
 
 | Prioridad | Issue | Título | Notas |
 |-----------|-------|--------|-------|
-| **Alta** | [#159](https://github.com/benoffi7/modo-mapa/issues/159) | Métricas por funcionalidad + panel orquestador | Incluye PerformancePanel decomposition. Requisito para PRDs y merge |
+| **Alta** | [#161](https://github.com/benoffi7/modo-mapa/issues/161) | GA4 Data API + writesByCollection en dailyMetrics | Continuación de #159 — datos reales para gráficos |
 | **Alta** | [#157](https://github.com/benoffi7/modo-mapa/issues/157) | Onboarding de cuenta: beneficios de verificar email | Conversión anónimo → email |
 
 ---
@@ -72,7 +73,7 @@
 | Métrica | Valor |
 |---------|-------|
 | Issues abiertos | 24 |
-| Issues cerrados esta sesión | #138, #133, #145, #147, #146, #139, #142 (7) |
-| Versiones publicadas hoy | v2.10.0, v2.11.0, v2.12.0, v2.13.0 |
-| PRDs creados | 22 |
+| Issues cerrados esta sesión | #138, #133, #145, #147, #146, #139, #142, #159 (8) |
+| Versiones publicadas hoy | v2.10.0, v2.11.0, v2.12.0, v2.13.0, v2.14.0 |
+| PRDs creados | 23 |
 | Skills creados | /merge, /bulk-prd |
