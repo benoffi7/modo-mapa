@@ -71,7 +71,7 @@ interface Props {
   sharedListId?: string | undefined;
 }
 
-type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',

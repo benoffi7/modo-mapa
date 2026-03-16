@@ -13,11 +13,12 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CasinoIcon from '@mui/icons-material/Casino';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
+import type { Section } from './SideMenu';
 
 interface Props {
   isAuthenticated: boolean;
   unreadReplyCount: number;
-  onNavigate: (section: string) => void;
+  onNavigate: (section: Section) => void;
   onSurprise: () => void;
   onFeedback: () => void;
 }
