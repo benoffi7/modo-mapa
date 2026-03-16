@@ -83,6 +83,23 @@ export interface Favorite {
   createdAt: Date;
 }
 
+export interface SharedList {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  itemCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ListItem {
+  id: string;
+  listId: string;
+  businessId: string;
+  createdAt: Date;
+}
+
 export type FeedbackCategory = 'bug' | 'sugerencia' | 'datos_usuario' | 'datos_comercio' | 'otro';
 
 export type FeedbackStatus = 'pending' | 'viewed' | 'responded' | 'resolved';

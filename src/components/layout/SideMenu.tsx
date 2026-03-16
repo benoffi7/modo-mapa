@@ -40,6 +40,7 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import CasinoIcon from '@mui/icons-material/Casino';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -57,6 +58,7 @@ const FavoritesList = lazy(() => import('../menu/FavoritesList'));
 const RecentVisits = lazy(() => import('../menu/RecentVisits'));
 const CommentsList = lazy(() => import('../menu/CommentsList'));
 const RatingsList = lazy(() => import('../menu/RatingsList'));
+const SharedListsView = lazy(() => import('../menu/SharedListsView'));
 const FeedbackForm = lazy(() => import('../menu/FeedbackForm'));
 const StatsView = lazy(() => import('../menu/StatsView'));
 const RankingsView = lazy(() => import('../menu/RankingsView'));
@@ -82,10 +84,11 @@ interface Props {
   onClose: () => void;
 }
 
-type Section = 'nav' | 'favorites' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
+  lists: 'Mis Listas',
   recent: 'Recientes',
   suggestions: 'Sugeridos para vos',
   comments: 'Comentarios',
@@ -264,6 +267,15 @@ export default function SideMenu({ open, onClose }: Props) {
                   <ListItemText primary="Favoritos" />
                 </ListItemButton>
 
+                {user && !user.isAnonymous && (
+                  <ListItemButton onClick={() => setActiveSection('lists')}>
+                    <ListItemIcon>
+                      <BookmarkBorderIcon sx={{ color: 'info.main' }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Mis Listas" />
+                  </ListItemButton>
+                )}
+
                 <ListItemButton onClick={() => setActiveSection('recent')}>
                   <ListItemIcon>
                     <HistoryIcon sx={{ color: 'warning.main' }} />
@@ -418,6 +430,7 @@ export default function SideMenu({ open, onClose }: Props) {
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
