@@ -37,14 +37,14 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <StorefrontOutlinedIcon color="primary" />,
     title: 'Comercio',
     description:
-      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar (con respuestas y likes), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados.',
+      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar (con respuestas y likes, máximo 20 por día), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Las acciones muestran confirmación o error automáticamente.',
   },
   {
     id: 'menu',
     icon: <MenuOutlinedIcon color="primary" />,
     title: 'Menú lateral',
     description:
-      'Accedé a favoritos, recientes, sugeridos para vos, comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings (semanal, mensual, anual e histórico con tendencia, tiers, badges, gráfico de evolución y perfil público al tocar un usuario), estadísticas, agregar comercio, configuración y ayuda. En Comentarios podés buscar por texto o nombre de comercio, ordenar (recientes, antiguos, más likes), filtrar por comercio, editar directamente desde el menú, ver un resumen con estadísticas, y en mobile deslizar para editar o eliminar. Cambiá el modo oscuro desde el footer del menú.',
+      'Accedé a favoritos (con distancia al comercio), recientes, sugeridos para vos (con distancia), comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings (semanal, mensual, anual e histórico con tendencia, tiers, badges, gráfico de evolución y perfil público al tocar un usuario), estadísticas, agregar comercio, configuración y ayuda. En Comentarios podés buscar por texto o nombre de comercio, ordenar (recientes, antiguos, más likes), filtrar por comercio, editar directamente desde el menú, ver un resumen con estadísticas, y en mobile deslizar para editar o eliminar. Tirá hacia abajo en cualquier lista para refrescar los datos. Si es tu primera vez, vas a ver un checklist de "Primeros pasos" para orientarte. Cambiá el modo oscuro desde el footer del menú.',
   },
   {
     id: 'notificaciones',

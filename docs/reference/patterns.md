@@ -44,7 +44,10 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. |
+| **Toast global (`useToast`)** | Context provider en `ToastContext.tsx` con `useMemo` para valor estable. Metodos `success/error/warning/info`. Auto-dismiss 4s. Un toast a la vez. Integrado en ratings (error), comments (exito+error), favorites (exito+error). |
+| **Pull-to-refresh (`usePullToRefresh`)** | Hook custom para gesto touch vertical. Solo activa si `scrollTop === 0`. Threshold 80px. `PullToRefreshWrapper` component con CircularProgress. Integrado en FavoritesList, CommentsList, RatingsList, RankingsView. |
+| **Rate limit precheck (UI)** | En BusinessComments, si `userCommentsToday >= MAX_COMMENTS_PER_DAY`, se reemplaza el input por Alert informativo. Contador "X/20 hoy" en helperText con color warning cuando quedan ≤3. Evita que el usuario escriba un comentario que no podra publicar. |
 | **Component remount via key** | `feedbackKey` en SideMenu fuerza remount del FeedbackForm. `key={businessId}` en BusinessPriceLevel para reset de `pendingLevel`. Evita useEffect + refs para reset, compatible con strict lint rules. |
 | **Undo delete (`useUndoDelete`)** | Hook generico para undo-delete con Map de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
 | **`PaginatedListShell`** | Componente wrapper para listas paginadas: skeleton/error/empty/no-results/pagination. Props configurables (`emptyIcon`, `renderSkeleton`, `noResultsMessage`, `isFiltered`). Adoptado en CommentsList. |
@@ -110,3 +113,4 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatDateFull`. Reemplaza duplicados en paneles admin y converters. |
+| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `SuggestionsView`, `FavoritesList`. |

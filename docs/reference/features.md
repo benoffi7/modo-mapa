@@ -15,13 +15,13 @@
 ## Comercio (BusinessSheet)
 
 - Nombre, categoria, direccion, telefono (link `tel:`)
-- Boton favorito (toggle corazon)
+- Boton favorito (toggle corazon). Optimistic UI con derived state pattern. Toast de exito/error via `useToast()`. Color theme-aware (`error.main`)
 - Boton direcciones (abre Google Maps)
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
-- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`
+- **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`. Toast de error via `useToast()` si falla la operacion
 - **Tags predefinidos**: vote count + toggle del usuario
 - **Tags custom**: crear, editar, eliminar (privados por usuario)
-- **Comentarios**: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas". `replyCount` gestionado exclusivamente por Cloud Functions (increment en create, decrement con floor en 0 en delete). Cascade delete de replies huerfanas en `onCommentDeleted`. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root, server-managed)
+- **Comentarios**: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros) + sorting (Recientes/Antiguos/Utiles). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas". `replyCount` gestionado exclusivamente por Cloud Functions (increment en create, decrement con floor en 0 en delete). Cascade delete de replies huerfanas en `onCommentDeleted`. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root, server-managed). **Rate limit precheck**: si el usuario alcanzo 20 comentarios/dia, el input se reemplaza por Alert informativo. Contador "X/20 comentarios hoy" en helperText (solo si >0). Warning visual cuando quedan ≤3. Toast de exito/error en submit/edit/reply via `useToast()`
 - **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Toggle: click en el mismo nivel remueve el voto (`deletePriceLevel`). Reset via `key={businessId}` en parent para forzar remount
 - **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
 - Datos cargados en paralelo (`Promise.all`, 7 queries) con cache client-side (5 min TTL). User likes fetched via batched `documentId('in')` queries (30 per batch, not individual getDoc per comment)
@@ -33,14 +33,14 @@
 
 ## Menu lateral (SideMenu)
 
-- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count)
+- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count). **Onboarding gamificado**: card "Primeros pasos" con 5 tareas (calificar, comentar, favoritear, agregar tag, explorar ranking). Progress bar, checks verdes al completar. Dismiss permanente via localStorage. Toast de celebracion al completar todas. Solo para usuarios autenticados (no anonimos)
 - Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
-  - **Sugeridos para vos**: sugerencias personalizadas via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Componente: `SuggestionsView.tsx`
-  - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio
-  - **Comentarios**: lista mejorada con skeleton loader, empty state motivacional, preview enriquecido (fecha relativa, indicador editado, likes, replies), busqueda de texto (con `useDeferredValue` + auto-load-all), ordenamiento (recientes/antiguos/mas likes via `ToggleButtonGroup`), filtro por comercio (Autocomplete), edicion inline, stats resumen colapsable (total, likes, promedio, mas popular), swipe actions en mobile (deslizar para editar/eliminar), undo delete con `useUndoDelete` hook. Envuelto en `PaginatedListShell` para loading/error/empty states consistentes. Blue dot indicator en comentarios con respuestas no leidas; mark-as-read al hacer click. `CommentItem` extraido y memoizado (`React.memo`). Virtualizacion condicional con `@tanstack/react-virtual` cuando hay >= 20 items (mejora performance en listas largas)
-  - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio
+  - **Sugeridos para vos**: sugerencias personalizadas via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Distancia al usuario mostrada junto a la direccion ("a 300m", "a 1.2km") si la ubicacion esta disponible. Componente: `SuggestionsView.tsx`
+  - **Favoritos**: lista con filtros (busqueda, categoria, orden). Quitar favorito inline. Click navega al comercio. Distancia al usuario junto a la direccion si la ubicacion esta disponible. Pull-to-refresh gesture
+  - **Comentarios**: lista mejorada con skeleton loader, empty state motivacional, preview enriquecido (fecha relativa, indicador editado, likes, replies), busqueda de texto (con `useDeferredValue` + auto-load-all), ordenamiento (recientes/antiguos/mas likes via `ToggleButtonGroup`), filtro por comercio (Autocomplete), edicion inline, stats resumen colapsable (total, likes, promedio, mas popular), swipe actions en mobile (deslizar para editar/eliminar), undo delete con `useUndoDelete` hook. Envuelto en `PaginatedListShell` para loading/error/empty states consistentes. Pull-to-refresh gesture. Blue dot indicator en comentarios con respuestas no leidas; mark-as-read al hacer click. `CommentItem` extraido y memoizado (`React.memo`). Virtualizacion condicional con `@tanstack/react-virtual` cuando hay >= 20 items (mejora performance en listas largas)
+  - **Calificaciones**: lista con estrellas y filtros (busqueda, categoria, estrellas minimas, orden). Click navega al comercio. Pull-to-refresh gesture
   - **Rankings**: ranking semanal/mensual/anual/historico (all-time) con scoring por actividad. Cards con medallas, barra de progreso y animaciones fade-in escalonadas. Indicador de tendencia (▲▼) vs periodo anterior. Sistema de tiers (Bronce/Plata/Oro/Diamante) con barra de progreso al siguiente nivel. Sistema de badges/logros (11 badges: primera reseña, comentarista, influencer, fotografo, critico, popular, todoterreno, podio, racha 7d, etc). Racha (streak) de dias consecutivos con actividad. Grafico sparkline de evolucion del score. Boton compartir (Web Share API / clipboard). Pull-to-refresh. Perfil publico al tocar un usuario (modal con desglose, badges y score). Filtro por zona (UI placeholder, proximamente). Card "Tu actividad" colapsable (2 lineas por defecto, expandible para desglose completo). Desglose con barras horizontales de colores por categoria. Live score fallback si no estas en ranking pre-computado
   - **Feedback**: formulario con 2 tabs (Enviar / Mis envios). Enviar: categoria (bug/sugerencia/datos_usuario/datos_comercio/otro) + mensaje (max 1000) + imagen adjunta opcional (max 10MB, JPG/PNG/WebP). Mis envios: `MyFeedbackList` muestra feedback del usuario con chips de status (pending/viewed/responded/resolved), respuestas del admin colapsables, indicador de nueva respuesta (dot verde), imagen adjunta inline. Al expandir un feedback respondido se marca como visto (`markFeedbackViewed`)
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
@@ -216,6 +216,37 @@ Todas las callable admin:
 - **Daily aggregation**: `dailyMetrics` lee `perfMetrics` del dia anterior + `config/perfCounters`, calcula p50/p75/p95 de vitals y queries, p50/p95/count de functions, y escribe en `dailyMetrics/{date}.performance`. Borra `config/perfCounters` post-agregacion
 - **Admin panel**: tab Performance con semaforos (verde/amarillo/rojo), graficos de tendencia, tablas de latencia, storage stats
 - **Thresholds** (`constants/performance.ts`): LCP green<=2500ms, INP green<=200ms, CLS green<=0.1, TTFB green<=800ms
+
+---
+
+## Toast global (feedback de acciones)
+
+- `ToastContext` provider con hook `useToast()` que expone `success()`, `error()`, `warning()`, `info()`
+- Snackbar MUI + Alert con auto-dismiss 4s, dismiss manual con X
+- Integrado en: BusinessRating (error), BusinessComments (exito + error en submit/edit/reply/like), FavoriteButton (exito add/remove + error)
+- Sin toast de exito en ratings (las estrellas son feedback visual suficiente)
+- Un toast a la vez (reemplaza el anterior si llega otro)
+- Posicion: bottom-center
+
+---
+
+## Distancia al usuario
+
+- Funcion Haversine extraida a `src/utils/distance.ts` (compartida por `useSuggestions` y componentes de lista)
+- `formatDistance(km)`: "a 300m" si <1km, "a 1.2km" si >=1km
+- Mostrada en SuggestionsView y FavoritesList junto a la direccion
+- Solo si `userLocation` esta disponible (no se piden permisos adicionales)
+- Calculo client-side, sin queries extra
+
+---
+
+## Pull-to-refresh
+
+- Hook `usePullToRefresh(onRefresh)` con deteccion de touch gesture
+- Componente `PullToRefreshWrapper` con CircularProgress visual (progress determinado durante pull, indeterminado durante refresh)
+- Threshold: 80px, solo touch (mobile-first), solo si scrollTop === 0
+- Integrado en: FavoritesList, CommentsList, RatingsList, RankingsView
+- No interfiere con scroll normal ni swipe actions de items
 
 ---
 
