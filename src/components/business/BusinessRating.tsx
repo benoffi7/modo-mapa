@@ -9,6 +9,7 @@ import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { upsertRating, deleteRating, upsertCriteriaRating } from '../../services/ratings';
 import { RATING_CRITERIA } from '../../constants/criteria';
 import type { Rating as RatingType, RatingCriteria, RatingCriterionId } from '../../types';
@@ -35,6 +36,7 @@ interface CriteriaAverages {
 
 export default memo(function BusinessRating({ businessId, ratings, isLoading, onRatingChange }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
   const [criteriaOpen, setCriteriaOpen] = useState(false);
 
   const { averageRating, totalRatings, serverMyRating, serverMyCriteria, criteriaAverages } = useMemo(() => {
@@ -95,6 +97,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
       onRatingChange();
     } catch {
       setPendingRating(null);
+      toast.error('No se pudo guardar la calificación');
     }
   };
 
@@ -107,6 +110,7 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
       onRatingChange();
     } catch {
       setPendingRating(null);
+      toast.error('No se pudo borrar la calificación');
     }
   };
 
@@ -123,8 +127,9 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
         delete next[criterionId];
         return Object.keys(next).length > 0 ? next : null;
       });
+      toast.error('No se pudo guardar el criterio');
     }
-  }, [user, businessId, onRatingChange]);
+  }, [user, businessId, onRatingChange, toast]);
 
   const hasCriteriaData = Object.values(criteriaAverages).some((c) => c.count > 0);
 

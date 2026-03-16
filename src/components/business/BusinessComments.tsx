@@ -14,6 +14,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import CommentRow from './CommentRow';
 import UserProfileSheet from '../user/UserProfileSheet';
@@ -34,6 +35,7 @@ interface Props {
 
 export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const { user, displayName } = useAuth();
+  const toast = useToast();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
@@ -137,8 +139,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       await addComment(user.uid, displayName || 'Anónimo', businessId, newComment.trim());
       setNewComment('');
       onCommentsChange();
+      toast.success('Comentario publicado');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding comment:', error);
+      toast.error('No se pudo publicar el comentario');
     }
     setIsSubmitting(false);
   };
@@ -161,8 +165,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       setEditingId(null);
       setEditText('');
       onCommentsChange();
+      toast.success('Comentario editado');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error editing comment:', error);
+      toast.error('No se pudo editar el comentario');
     }
     setIsSavingEdit(false);
   };
@@ -201,6 +207,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         return next;
       });
       if (import.meta.env.DEV) console.error('Error toggling like:', error);
+      toast.error('No se pudo actualizar el like');
     }
   };
 
@@ -227,8 +234,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
+      toast.success('Respuesta publicada');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding reply:', error);
+      toast.error('No se pudo publicar la respuesta');
     }
     setIsSubmitting(false);
   };
