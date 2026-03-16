@@ -1,9 +1,9 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.9.0
+**Version:** 2.11.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-14
+**Ultima actualizacion:** 2026-03-16
 
 ---
 
@@ -60,7 +60,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating (global + multi-criterio), tags (predefinidos + custom), comentarios (editar/likes/sorting/threads), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
-- **Menu lateral**: recientes (localStorage), sugeridos para vos, favoritos, comentarios (busqueda, sorting, filtro por comercio, edit inline, stats, swipe actions, skeleton loader, preview enriquecido), calificaciones, rankings, feedback (enviar + mis envios), ayuda, estadisticas. Todas las secciones lazy-loaded via `React.lazy()`
+- **Menu lateral**: recientes (localStorage), sugeridos para vos (con distancia al usuario), favoritos (con distancia, pull-to-refresh), comentarios (busqueda, sorting, filtro por comercio, edit inline, stats, swipe actions, skeleton loader, preview enriquecido, pull-to-refresh, rate limit precheck), calificaciones (pull-to-refresh), rankings (pull-to-refresh), feedback (enviar + mis envios), ayuda, estadisticas. Onboarding gamificado (checklist 5 tareas). Toast global de exito/error. Todas las secciones lazy-loaded via `React.lazy()`
 - **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
@@ -77,7 +77,10 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Service layer**: componentes → `src/services/` → Firestore SDK (nunca directo)
 - **Cache**: business data cache (5 min TTL) + paginated query cache (2 min TTL) + persistent cache (prod)
 - **Race condition fix**: `patchedRef` en `useBusinessData` previene sobreescritura de refetches parciales
-- **Optimistic UI**: pendingRating, pendingLevel, optimistic comments/likes
+- **Optimistic UI**: pendingRating, pendingLevel, optimistic comments/likes, FavoriteButton derived state
+- **Toast global**: `ToastContext` + `useToast()` hook (success/error/warning/info, 4s auto-dismiss)
+- **Pull-to-refresh**: `usePullToRefresh` hook + `PullToRefreshWrapper` en todas las listas
+- **Distance utils**: `src/utils/distance.ts` — Haversine + formatDistance, usado en sugerencias y favoritos
 - **`key={id}` remount**: evita useEffect/refs para reset de estado, compatible con strict lint
 - **`enforceAppCheck: !IS_EMULATOR`**: App Check solo en prod, deshabilitado en emuladores
 - **Lazy Sentry**: `@sentry/react` cargado via dynamic `import()` (no en main chunk)
@@ -87,4 +90,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 162+ tests (frontend + backend) cubriendo triggers, services, hooks, contexts, auth components
+- **Tests**: 230+ tests (173 frontend + 59 backend) cubriendo triggers, services, hooks, contexts, auth components
