@@ -259,7 +259,7 @@ export default function SideMenu({ open, onClose }: Props) {
               <List>
                 <ListItemButton onClick={() => setActiveSection('favorites')}>
                   <ListItemIcon>
-                    <FavoriteIcon sx={{ color: '#ea4335' }} />
+                    <FavoriteIcon sx={{ color: 'error.main' }} />
                   </ListItemIcon>
                   <ListItemText primary="Favoritos" />
                 </ListItemButton>
