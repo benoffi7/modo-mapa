@@ -6,6 +6,7 @@ import { APIProvider } from '@vis.gl/react-google-maps';
 import { ColorModeProvider } from './context/ColorModeContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
+import { ToastProvider } from './context/ToastContext';
 import { MapProvider } from './context/MapContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import AppShell from './components/layout/AppShell';
@@ -32,6 +33,7 @@ function App() {
     <ColorModeProvider>
       <ErrorBoundary>
         <AuthProvider>
+        <ToastProvider>
         <NotificationsProvider>
           <Routes>
             {import.meta.env.DEV && (
@@ -74,6 +76,7 @@ function App() {
             />
           </Routes>
         </NotificationsProvider>
+        </ToastProvider>
         </AuthProvider>
       </ErrorBoundary>
     </ColorModeProvider>

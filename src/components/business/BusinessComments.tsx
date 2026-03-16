@@ -10,10 +10,12 @@ import {
   Snackbar,
   Chip,
   Collapse,
+  Alert,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import CommentRow from './CommentRow';
 import UserProfileSheet from '../user/UserProfileSheet';
@@ -34,6 +36,7 @@ interface Props {
 
 export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const { user, displayName } = useAuth();
+  const toast = useToast();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
@@ -137,8 +140,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       await addComment(user.uid, displayName || 'Anónimo', businessId, newComment.trim());
       setNewComment('');
       onCommentsChange();
+      toast.success('Comentario publicado');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding comment:', error);
+      toast.error('No se pudo publicar el comentario');
     }
     setIsSubmitting(false);
   };
@@ -161,8 +166,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       setEditingId(null);
       setEditText('');
       onCommentsChange();
+      toast.success('Comentario editado');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error editing comment:', error);
+      toast.error('No se pudo editar el comentario');
     }
     setIsSavingEdit(false);
   };
@@ -201,6 +208,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         return next;
       });
       if (import.meta.env.DEV) console.error('Error toggling like:', error);
+      toast.error('No se pudo actualizar el like');
     }
   };
 
@@ -227,8 +235,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
+      toast.success('Respuesta publicada');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding reply:', error);
+      toast.error('No se pudo publicar la respuesta');
     }
     setIsSubmitting(false);
   };
@@ -312,7 +322,13 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
         )}
       </Box>
 
-      {user && (
+      {user && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
+          Alcanzaste el límite de {MAX_COMMENTS_PER_DAY} comentarios por hoy. Podés comentar de nuevo mañana.
+        </Alert>
+      )}
+
+      {user && userCommentsToday < MAX_COMMENTS_PER_DAY && (
         <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <TextField
             fullWidth
@@ -327,7 +343,20 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               }
             }}
             slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-            helperText={newComment.length > 0 ? `${newComment.length}/${MAX_COMMENT_LENGTH}` : undefined}
+            helperText={
+              userCommentsToday > 0
+                ? newComment.length > 0
+                  ? `${newComment.length}/${MAX_COMMENT_LENGTH} · ${userCommentsToday}/${MAX_COMMENTS_PER_DAY} hoy`
+                  : `${userCommentsToday}/${MAX_COMMENTS_PER_DAY} comentarios hoy`
+                : newComment.length > 0
+                  ? `${newComment.length}/${MAX_COMMENT_LENGTH}`
+                  : undefined
+            }
+            FormHelperTextProps={{
+              sx: MAX_COMMENTS_PER_DAY - userCommentsToday <= 3 && userCommentsToday > 0
+                ? { color: 'warning.main' }
+                : undefined,
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',
@@ -404,7 +433,14 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
               )}
 
               {/* Inline reply form */}
-              {replyingTo?.id === comment.id && (
+              {replyingTo?.id === comment.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
+                    Alcanzaste el límite diario de comentarios.
+                  </Alert>
+                </Box>
+              )}
+              {replyingTo?.id === comment.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
                 <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                     Respondiendo a {replyingTo.userName}...
