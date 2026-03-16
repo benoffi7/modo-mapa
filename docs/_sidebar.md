@@ -13,6 +13,7 @@
   - [Issues](/reference/issues.md)
   - [Workflow](/reference/workflow.md)
   - [Coding Standards](/reference/CODING_STANDARDS.md)
+  - [File Size Directive](/reference/file-size-directive.md)
   - [Security Guidelines](/reference/SECURITY_GUIDELINES.md)
 
 - **[Admin](/feat/admin/)**

@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
-  Badge,
   Drawer,
   Box,
   Avatar,
   Typography,
   IconButton,
-  List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -23,34 +21,21 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import StarOutlineIcon from '@mui/icons-material/StarOutline';
-import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
-import AddBusinessIcon from '@mui/icons-material/AddBusiness';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import { useAuth } from '../../context/AuthContext';
-import { useColorMode } from '../../hooks/useColorMode';
-import HistoryIcon from '@mui/icons-material/History';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
-import CasinoIcon from '@mui/icons-material/Casino';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { useAuth } from '../../context/AuthContext';
+import { useColorMode } from '../../hooks/useColorMode';
 import { useNotifications } from '../../hooks/useNotifications';
+import SideMenuNav from './SideMenuNav';
 import { trackEvent } from '../../utils/analytics';
 import { useToast } from '../../context/ToastContext';
 import { useSelection, useFilters } from '../../context/MapContext';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { distanceKm } from '../../utils/distance';
-import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 
 // Lazy-loaded section components (P1.3 — keeps them out of the main chunk)
@@ -268,106 +253,13 @@ export default function SideMenu({ open, onClose, initialSection, sharedListId }
               <Divider />
 
               {/* Navigation */}
-              <List>
-                <ListItemButton onClick={() => setActiveSection('favorites')}>
-                  <ListItemIcon>
-                    <FavoriteIcon sx={{ color: 'error.main' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Favoritos" />
-                </ListItemButton>
-
-                {user && !user.isAnonymous && (
-                  <ListItemButton onClick={() => setActiveSection('lists')}>
-                    <ListItemIcon>
-                      <BookmarkBorderIcon sx={{ color: 'info.main' }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Mis Listas" />
-                  </ListItemButton>
-                )}
-
-                <ListItemButton onClick={() => setActiveSection('recent')}>
-                  <ListItemIcon>
-                    <HistoryIcon sx={{ color: 'warning.main' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Recientes" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('suggestions')}>
-                  <ListItemIcon>
-                    <LightbulbOutlinedIcon sx={{ color: 'warning.light' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Sugeridos" />
-                </ListItemButton>
-
-                <ListItemButton onClick={handleSurprise}>
-                  <ListItemIcon>
-                    <CasinoIcon sx={{ color: 'secondary.main' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Sorpréndeme" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('comments')}>
-                  <ListItemIcon>
-                    <Badge badgeContent={unreadReplyCount} color="error" max={9}>
-                      <ChatBubbleOutlineIcon sx={{ color: 'primary.main' }} />
-                    </Badge>
-                  </ListItemIcon>
-                  <ListItemText primary="Comentarios" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('ratings')}>
-                  <ListItemIcon>
-                    <StarOutlineIcon sx={{ color: 'warning.light' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Calificaciones" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}>
-                  <ListItemIcon>
-                    <FeedbackOutlinedIcon sx={{ color: 'success.main' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Feedback" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('rankings')}>
-                  <ListItemIcon>
-                    <LeaderboardIcon sx={{ color: RANKINGS_COLOR }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Rankings" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('stats')}>
-                  <ListItemIcon>
-                    <BarChartIcon sx={{ color: STATS_COLOR }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Estadísticas" />
-                </ListItemButton>
-              </List>
-
-              <Divider />
-
-              <List>
-                <ListItemButton onClick={() => window.open(ADD_BUSINESS_URL, '_blank')}>
-                  <ListItemIcon>
-                    <AddBusinessIcon sx={{ color: 'text.secondary' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Agregar comercio" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('settings')}>
-                  <ListItemIcon>
-                    <SettingsOutlinedIcon sx={{ color: 'text.secondary' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Configuración" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => setActiveSection('help')}>
-                  <ListItemIcon>
-                    <HelpOutlineIcon sx={{ color: 'text.secondary' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Ayuda" />
-                </ListItemButton>
-              </List>
+              <SideMenuNav
+                isAuthenticated={!!user && !user.isAnonymous}
+                unreadReplyCount={unreadReplyCount}
+                onNavigate={setActiveSection}
+                onSurprise={handleSurprise}
+                onFeedback={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}
+              />
 
               {/* Version footer + dark mode toggle */}
               <Box sx={{ mt: 'auto' }}>
