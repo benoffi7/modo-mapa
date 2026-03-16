@@ -16,17 +16,14 @@
 | DT-6 | `BusinessComments` ~527 líneas mega-component | ✅ v2.14.2 — Extraído CommentInput (77 líneas). Reducido a 474 líneas |
 | DT-7 | `writesByCollection` en dailyMetrics nunca se computa | ✅ Ya implementado — trackWrite() en triggers escribe a dailyMetrics en tiempo real |
 | DT-8 | `AbuseAlerts` 643 líneas mega-component | ✅ v2.14.2 — Extraído alertsHelpers.ts (95 líneas) + KpiCard.tsx (29 líneas). Reducido a 238 líneas |
+| DT-9 | `CommentsList` 699 líneas mega-component | ✅ v2.14.3 — Extraído CommentsStats.tsx (64) + CommentsToolbar.tsx (88). Reducido a 586 líneas |
+| DT-10 | `SideMenu` 504 líneas con 12 nav items | ✅ v2.14.3 — Extraído SideMenuNav.tsx (106). Reducido a 396 líneas |
 
 ---
 
-## Pendientes (nice-to-have, no críticos)
+## Pendientes
 
-| ID | Archivo | Líneas | Descripción | Esfuerzo |
-|----|---------|--------|-------------|----------|
-| DT-9 | `CommentsList.tsx` | 699 | Mega component: virtualización + búsqueda + sorting + swipe + edición + stats. Extraer subcomponentes (CommentStats, CommentSearch, etc.) | Alto |
-| DT-10 | `SideMenu.tsx` | 504 | Creció con features (12 secciones + onboarding + sorpréndeme + listas). Extraer NavigationList a componente separado | Medio |
-
-Ninguno es bloqueante. Los componentes funcionan correctamente, el impacto es solo en mantenibilidad a futuro.
+Sin items pendientes. Se creó una [directiva de tamaño de archivos](../reference/file-size-directive.md) para prevenir la acumulación futura de componentes grandes (límite: 400 líneas).
 
 Próximos items de mejora están en el [Backlog de Producto](backlog-producto.md).
 
