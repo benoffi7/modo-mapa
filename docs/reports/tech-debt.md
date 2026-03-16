@@ -19,9 +19,14 @@
 
 ---
 
-## Pendientes
+## Pendientes (nice-to-have, no críticos)
 
-Sin items pendientes de deuda técnica.
+| ID | Archivo | Líneas | Descripción | Esfuerzo |
+|----|---------|--------|-------------|----------|
+| DT-9 | `CommentsList.tsx` | 699 | Mega component: virtualización + búsqueda + sorting + swipe + edición + stats. Extraer subcomponentes (CommentStats, CommentSearch, etc.) | Alto |
+| DT-10 | `SideMenu.tsx` | 504 | Creció con features (12 secciones + onboarding + sorpréndeme + listas). Extraer NavigationList a componente separado | Medio |
+
+Ninguno es bloqueante. Los componentes funcionan correctamente, el impacto es solo en mantenibilidad a futuro.
 
 Próximos items de mejora están en el [Backlog de Producto](backlog-producto.md).
 
