@@ -83,6 +83,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   initialSection?: string | undefined;
+  sharedListId?: string | undefined;
 }
 
 type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
@@ -102,7 +103,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, initialSection }: Props) {
+export default function SideMenu({ open, onClose, initialSection, sharedListId }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -438,7 +439,7 @@ export default function SideMenu({ open, onClose, initialSection }: Props) {
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
