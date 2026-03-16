@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.13.0
+**Version:** 2.14.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-16
