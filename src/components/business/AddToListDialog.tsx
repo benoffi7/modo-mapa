@@ -110,7 +110,12 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
       setNewName('');
       setShowCreate(false);
       toast.success('Lista creada y comercio agregado');
-      await loadData();
+      // Reload lists
+      const snap = await getDocs(
+        query(getSharedListsCollection(), where('ownerId', '==', user.uid), orderBy('updatedAt', 'desc')),
+      );
+      setLists(snap.docs.map((d) => d.data()));
+      setCheckedIds((prev) => new Set(prev).add(listId));
     } catch {
       toast.error('No se pudo crear la lista');
     }
