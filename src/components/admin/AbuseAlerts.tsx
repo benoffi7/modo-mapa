@@ -10,7 +10,6 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -26,7 +25,10 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import { fetchAbuseLogs } from '../../services/admin';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { fetchAbuseLogs, reviewAbuseLog, dismissAbuseLog } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { ABUSE_TYPE_COLORS, ABUSE_TYPE_LABELS } from '../../constants';
@@ -176,6 +178,9 @@ export default function AbuseAlerts() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'reviewed' | 'dismissed' | 'all'>('pending');
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [localUpdates, setLocalUpdates] = useState<Map<string, { reviewed?: boolean; dismissed?: boolean }>>(new Map());
 
   // KPI summary
   const kpis = useMemo(() => {
@@ -197,10 +202,29 @@ export default function AbuseAlerts() {
     return counts;
   }, [logs]);
 
+  // Apply local updates to logs (for optimistic UI after review/dismiss)
+  const effectiveLogs = useMemo(() => {
+    if (!logs) return [];
+    if (localUpdates.size === 0) return logs;
+    return logs.map((log) => {
+      const update = localUpdates.get(log.id);
+      return update ? { ...log, ...update } : log;
+    });
+  }, [logs, localUpdates]);
+
   // Filter + sort
   const filtered = useMemo(() => {
-    if (!logs) return [];
-    let result = logs;
+    if (!effectiveLogs.length) return [];
+    let result = effectiveLogs;
+
+    // Status filter
+    if (statusFilter === 'pending') {
+      result = result.filter((l) => !l.reviewed && !l.dismissed);
+    } else if (statusFilter === 'reviewed') {
+      result = result.filter((l) => l.reviewed === true);
+    } else if (statusFilter === 'dismissed') {
+      result = result.filter((l) => l.dismissed === true);
+    }
 
     // Date preset filter
     const threshold = getDateThreshold(datePreset);
@@ -232,7 +256,41 @@ export default function AbuseAlerts() {
     });
 
     return result;
-  }, [logs, datePreset, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
+  }, [effectiveLogs, statusFilter, datePreset, typeFilter, collectionFilter, userSearch, sortField, sortDir]);
+
+  // User alert stats (computed from all loaded logs, not filtered)
+  const userAlertCounts = useMemo(() => {
+    if (!logs) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const log of logs) {
+      counts.set(log.userId, (counts.get(log.userId) ?? 0) + 1);
+    }
+    return counts;
+  }, [logs]);
+
+  const handleReview = async (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActionInProgress(logId);
+    try {
+      await reviewAbuseLog(logId);
+      setLocalUpdates((prev) => new Map(prev).set(logId, { ...prev.get(logId), reviewed: true }));
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Error reviewing abuse log:', err);
+    }
+    setActionInProgress(null);
+  };
+
+  const handleDismiss = async (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActionInProgress(logId);
+    try {
+      await dismissAbuseLog(logId);
+      setLocalUpdates((prev) => new Map(prev).set(logId, { ...prev.get(logId), dismissed: true }));
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Error dismissing abuse log:', err);
+    }
+    setActionInProgress(null);
+  };
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -251,11 +309,12 @@ export default function AbuseAlerts() {
     setCollectionFilter('');
     setUserSearch('');
     setDatePreset('all');
+    setStatusFilter('pending');
     setVisibleCount(PAGE_SIZE);
   };
 
   const hasActiveFilters =
-    typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all';
+    typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all' || statusFilter !== 'pending';
 
   // Trend icon for today vs yesterday
   const trendIcon = useMemo(() => {
@@ -309,6 +368,25 @@ export default function AbuseAlerts() {
             variant={datePreset === preset.key ? 'filled' : 'outlined'}
             color={datePreset === preset.key ? 'primary' : 'default'}
             onClick={() => setDatePreset(datePreset === preset.key ? 'all' : preset.key)}
+          />
+        ))}
+      </Box>
+
+      {/* Status filter */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        {([
+          { key: 'pending' as const, label: 'Pendientes', color: 'warning' as const },
+          { key: 'reviewed' as const, label: 'Revisadas', color: 'success' as const },
+          { key: 'dismissed' as const, label: 'Descartadas', color: 'default' as const },
+          { key: 'all' as const, label: 'Todas', color: 'default' as const },
+        ]).map((opt) => (
+          <Chip
+            key={opt.key}
+            label={opt.label}
+            size="small"
+            variant={statusFilter === opt.key ? 'filled' : 'outlined'}
+            color={statusFilter === opt.key ? opt.color : 'default'}
+            onClick={() => setStatusFilter(opt.key)}
           />
         ))}
       </Box>
@@ -437,64 +515,112 @@ export default function AbuseAlerts() {
               <TableBody>
                 {visible.map((log) => {
                   const isExpanded = expandedId === log.id;
+                  const userTotal = userAlertCounts.get(log.userId) ?? 0;
+                  const isRecidivist = userTotal > 3;
                   return (
-                    <TableRow
-                      key={log.id}
-                      hover
-                      sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
-                      onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                    >
-                      <TableCell padding="checkbox">
-                        <IconButton size="small">
-                          {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={ABUSE_TYPE_LABELS[log.type]}
-                          color={ABUSE_TYPE_COLORS[log.type]}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                        {log.userId.slice(0, 12)}
-                      </TableCell>
-                      <TableCell>{log.collection}</TableCell>
-                      <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {log.detail}
-                      </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {formatDateShort(log.timestamp)}
-                      </TableCell>
-                    </TableRow>
+                    <>
+                      <TableRow
+                        key={log.id}
+                        hover
+                        sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
+                        onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                      >
+                        <TableCell padding="checkbox">
+                          <IconButton size="small">
+                            {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={ABUSE_TYPE_LABELS[log.type]}
+                            color={ABUSE_TYPE_COLORS[log.type]}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                          {log.userId.slice(0, 12)}
+                        </TableCell>
+                        <TableCell>{log.collection}</TableCell>
+                        <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {log.detail}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {formatDateShort(log.timestamp)}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow key={`detail-${log.id}`}>
+                          <TableCell colSpan={6} sx={{ py: 0, px: 1 }}>
+                            <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1, my: 1 }}>
+                              <Typography variant="subtitle2" gutterBottom>Detalle completo</Typography>
+                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                {log.detail}
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  Usuario: {log.userId}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Colección: {log.collection}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Fecha: {log.timestamp.toLocaleString()}
+                                </Typography>
+                                <Chip
+                                  label={`${userTotal} alerta${userTotal !== 1 ? 's' : ''} totales`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                                {isRecidivist && (
+                                  <Chip
+                                    icon={<WarningAmberIcon />}
+                                    label="Reincidente"
+                                    size="small"
+                                    color="error"
+                                    variant="outlined"
+                                  />
+                                )}
+                                {log.reviewed && (
+                                  <Chip label="Revisada" size="small" color="success" variant="outlined" />
+                                )}
+                                {log.dismissed && (
+                                  <Chip label="Descartada" size="small" variant="outlined" />
+                                )}
+                              </Box>
+                              {!log.reviewed && !log.dismissed && (
+                                <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="success"
+                                    startIcon={<CheckCircleOutlineIcon />}
+                                    disabled={actionInProgress === log.id}
+                                    onClick={(e) => handleReview(log.id, e)}
+                                  >
+                                    Revisar
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="inherit"
+                                    startIcon={<DeleteOutlineIcon />}
+                                    disabled={actionInProgress === log.id}
+                                    onClick={(e) => handleDismiss(log.id, e)}
+                                  >
+                                    Descartar
+                                  </Button>
+                                </Box>
+                              )}
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   );
                 })}
               </TableBody>
             </Table>
           </TableContainer>
-
-          {/* Expanded detail */}
-          {visible.map((log) => (
-            <Collapse key={`detail-${log.id}`} in={expandedId === log.id} timeout="auto" unmountOnExit>
-              <Paper variant="outlined" sx={{ p: 2, my: 1, bgcolor: 'action.hover' }}>
-                <Typography variant="subtitle2" gutterBottom>Detalle completo</Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {log.detail}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Usuario: {log.userId}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Colección: {log.collection}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Fecha: {log.timestamp.toLocaleString()}
-                  </Typography>
-                </Box>
-              </Paper>
-            </Collapse>
-          ))}
 
           {/* Load more */}
           {hasMore && (

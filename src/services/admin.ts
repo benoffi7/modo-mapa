@@ -8,10 +8,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  updateDoc,
   query,
   orderBy,
   limit,
   where,
+  serverTimestamp,
 } from 'firebase/firestore';
 import type { QueryConstraint } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -236,6 +238,19 @@ export async function fetchAbuseLogs(count: number): Promise<AbuseLog[]> {
     ),
   );
   return snap.docs.map((d) => d.data());
+}
+
+export async function reviewAbuseLog(logId: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.ABUSE_LOGS, logId), {
+    reviewed: true,
+    reviewedAt: serverTimestamp(),
+  });
+}
+
+export async function dismissAbuseLog(logId: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.ABUSE_LOGS, logId), {
+    dismissed: true,
+  });
 }
 
 // ── Auth Stats (callable) ─────────────────────────────────────────────
