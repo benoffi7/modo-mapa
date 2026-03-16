@@ -58,6 +58,7 @@ const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
 const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
 const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
+const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 
 function SectionLoader() {
@@ -213,6 +214,11 @@ export default function SideMenu({ open, onClose }: Props) {
                   </Box>
                 )}
               </Box>
+              {user && !user.isAnonymous && (
+                <Suspense fallback={null}>
+                  <OnboardingChecklist />
+                </Suspense>
+              )}
               <Divider />
 
               {/* Navigation */}
