@@ -66,7 +66,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
 - **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
-- **Admin** (`/admin`): 9 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos
+- **Admin** (`/admin`): 11 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (métricas por funcionalidad con gráficos 30 días)
 - **Cloud Functions**: 12 callable + 14 triggers + 6 scheduled
 - **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
