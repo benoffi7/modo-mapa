@@ -17,6 +17,7 @@ import UsersPanel from './UsersPanel';
 import BackupsPanel from './BackupsPanel';
 import PhotoReviewPanel from './PhotoReviewPanel';
 import PerformancePanel from './PerformancePanel';
+import FeaturesPanel from './FeaturesPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -45,6 +46,7 @@ export default function AdminLayout() {
         <Tab label="Backups" />
         <Tab label="Fotos" />
         <Tab label="Performance" />
+        <Tab label="Features" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {tab === 0 && <DashboardOverview />}
@@ -57,6 +59,7 @@ export default function AdminLayout() {
         {tab === 7 && <BackupsPanel />}
         {tab === 8 && <PhotoReviewPanel />}
         {tab === 9 && <PerformancePanel />}
+        {tab === 10 && <FeaturesPanel />}
       </Box>
     </Box>
   );
