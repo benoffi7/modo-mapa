@@ -92,8 +92,9 @@ export default function SharedListsView({ onNavigate }: Props) {
       setNewDesc('');
       toast.success('Lista creada');
       await loadLists();
-    } catch {
-      toast.error('No se pudo crear la lista');
+    } catch (err) {
+      console.error('Create list error:', err);
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
     setIsCreating(false);
   };
