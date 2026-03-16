@@ -35,14 +35,8 @@ interface FeatureCard {
 }
 
 function getWritesByDay(metrics: DailyMetrics[], field: keyof AdminCounters): { today: number; yesterday: number } {
-  // dailyMetrics are sorted desc (newest first)
-  const todayMetrics = metrics[0] as Record<string, unknown> | undefined;
-  const yesterdayMetrics = metrics[1] as Record<string, unknown> | undefined;
-
-  // Use writesByCollection if available, otherwise estimate from counters delta
-  const todayWrites = (todayMetrics?.writesByCollection as Record<string, number> | undefined)?.[field] ?? 0;
-  const yesterdayWrites = (yesterdayMetrics?.writesByCollection as Record<string, number> | undefined)?.[field] ?? 0;
-
+  const todayWrites = metrics[0]?.writesByCollection?.[field] ?? 0;
+  const yesterdayWrites = metrics[1]?.writesByCollection?.[field] ?? 0;
   return { today: todayWrites, yesterday: yesterdayWrites };
 }
 
@@ -125,7 +119,7 @@ export default function FeaturesPanel() {
 
   const activeUsers = useMemo(() => {
     if (!data?.dailyMetrics.length) return 0;
-    return (data.dailyMetrics[0] as unknown as Record<string, number>).activeUsers ?? 0;
+    return data.dailyMetrics[0].activeUsers ?? 0;
   }, [data]);
 
   return (
