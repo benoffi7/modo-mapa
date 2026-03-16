@@ -274,7 +274,10 @@ export default function AbuseAlerts() {
     try {
       await reviewAbuseLog(logId);
       setLocalUpdates((prev) => new Map(prev).set(logId, { ...prev.get(logId), reviewed: true }));
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('Error reviewing abuse log:', err);
+      window.alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    }
     setActionInProgress(null);
   };
 
@@ -284,7 +287,10 @@ export default function AbuseAlerts() {
     try {
       await dismissAbuseLog(logId);
       setLocalUpdates((prev) => new Map(prev).set(logId, { ...prev.get(logId), dismissed: true }));
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('Error dismissing abuse log:', err);
+      window.alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    }
     setActionInProgress(null);
   };
 
