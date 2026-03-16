@@ -23,6 +23,10 @@ export default function RankingsView() {
   const { ranking, loading, error, periodType, setPeriodType, refetch, positionChanges } = useRankings();
   const [selectedProfile, setSelectedProfile] = useState<{ entry: UserRankingEntry; position: number } | null>(null);
 
+  useEffect(() => {
+    localStorage.setItem('onboarding_ranking_viewed', 'true');
+  }, []);
+
   const maxScore = ranking?.rankings[0]?.score ?? 0;
   const currentUserEntry = ranking?.rankings.find((e) => e.userId === user?.uid);
   const currentUserPosition = ranking?.rankings.findIndex((e) => e.userId === user?.uid);
