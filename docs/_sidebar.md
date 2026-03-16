@@ -181,6 +181,8 @@
     - [Changelog](/feat/social/custom-user-tags/changelog.md)
   - [Listas Compartidas](/feat/social/listas-compartidas/)
     - [PRD](/feat/social/listas-compartidas/prd.md)
+    - [Specs](/feat/social/listas-compartidas/specs.md)
+    - [Plan](/feat/social/listas-compartidas/plan.md)
   - [Menu Comentarios](/feat/social/menu-comentarios/)
     - [PRD](/feat/social/menu-comentarios/prd.md)
     - [Specs](/feat/social/menu-comentarios/specs.md)
