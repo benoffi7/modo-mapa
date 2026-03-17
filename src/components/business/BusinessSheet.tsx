@@ -90,6 +90,8 @@ export default function BusinessSheet() {
             placement="top"
           >
             <Box
+              role="button"
+              aria-label="Cerrar detalles"
               onClick={handleClose}
               sx={{
                 display: 'flex',
@@ -116,6 +118,7 @@ export default function BusinessSheet() {
                   opacity: 0.6,
                   mt: 0.25,
                   animation: 'pulseUp 1.5s ease-in-out infinite',
+                  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
                   '@keyframes pulseUp': {
                     '0%, 100%': { transform: 'translateY(0)', opacity: 0.6 },
                     '50%': { transform: 'translateY(-3px)', opacity: 1 },

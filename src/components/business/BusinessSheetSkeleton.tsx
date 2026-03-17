@@ -2,7 +2,7 @@ import { Box, Divider, Skeleton } from '@mui/material';
 
 export default function BusinessSheetSkeleton() {
   return (
-    <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
+    <Box role="status" aria-busy aria-label="Cargando comercio" sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
       {/* Name */}
       <Skeleton variant="text" width="70%" height={28} />
       {/* Category chip */}

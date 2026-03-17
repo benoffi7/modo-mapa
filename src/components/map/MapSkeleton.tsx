@@ -3,6 +3,9 @@ import { Box, Skeleton } from '@mui/material';
 export default function MapSkeleton() {
   return (
     <Box
+      role="status"
+      aria-busy
+      aria-label="Cargando mapa"
       sx={{
         position: 'absolute',
         inset: 0,
