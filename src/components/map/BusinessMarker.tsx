@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { CATEGORY_COLORS } from '../../constants/map';
 import type { Business } from '../../types';
@@ -7,26 +7,50 @@ interface Props {
   business: Business;
   isSelected: boolean;
   onClick: (id: string) => void;
+  averageRating: number | null;
 }
 
-const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onClick }: Props) {
+const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onClick, averageRating }: Props) {
   const color = CATEGORY_COLORS[business.category] || CATEGORY_COLORS.restaurant;
 
   const handleClick = useCallback(() => {
     onClick(business.id);
   }, [onClick, business.id]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick(business.id);
+    }
+  }, [onClick, business.id]);
+
+  const ariaLabel = useMemo(() => {
+    if (averageRating != null) {
+      return `${business.name}, ${averageRating.toFixed(1)} estrellas`;
+    }
+    return `${business.name}, sin calificaciones`;
+  }, [business.name, averageRating]);
+
   return (
     <AdvancedMarker
       position={{ lat: business.lat, lng: business.lng }}
       onClick={handleClick}
     >
-      <Pin
-        background={color}
-        borderColor={isSelected ? '#fff' : color}
-        glyphColor="#fff"
-        scale={isSelected ? 1.3 : 1}
-      />
+      <div
+        tabIndex={0}
+        role="button"
+        aria-label={ariaLabel}
+        onKeyDown={handleKeyDown}
+        style={{ outline: 'none' }}
+        className={`marker-focus ${isSelected ? 'marker-selected' : ''}`}
+      >
+        <Pin
+          background={color}
+          borderColor={isSelected ? '#fff' : color}
+          glyphColor="#fff"
+          scale={isSelected ? 1.3 : 1}
+        />
+      </div>
     </AdvancedMarker>
   );
 });

@@ -56,6 +56,8 @@ export default function BusinessSheet() {
           maxHeight: '85dvh',
           overflow: 'hidden',
         },
+        role: 'dialog' as const,
+        'aria-label': selectedBusiness ? `Detalle de ${selectedBusiness.name}` : undefined,
       }}
     >
       {selectedBusiness && (
