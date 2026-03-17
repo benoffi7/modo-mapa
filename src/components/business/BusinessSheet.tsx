@@ -15,6 +15,7 @@ import BusinessComments from './BusinessComments';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
+import BusinessSheetSkeleton from './BusinessSheetSkeleton';
 
 export default function BusinessSheet() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ export default function BusinessSheet() {
   const data = useBusinessData(businessId);
   const { recordVisit } = useVisitHistory();
   const [listDialogOpen, setListDialogOpen] = useState(false);
+  const showSkeleton = data.isLoading;
 
   useEffect(() => {
     if (selectedBusiness) {
@@ -74,7 +76,18 @@ export default function BusinessSheet() {
             />
           </Box>
 
-          <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
+          {showSkeleton ? (
+            <BusinessSheetSkeleton />
+          ) : (
+          <Box sx={{
+            px: 2,
+            pb: 'calc(24px + env(safe-area-inset-bottom))',
+            '@keyframes fadeIn': {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
+            },
+            animation: 'fadeIn 200ms ease-in',
+          }}>
             <BusinessHeader
               business={selectedBusiness}
               favoriteButton={
@@ -134,6 +147,7 @@ export default function BusinessSheet() {
               onCommentsChange={() => data.refetch('comments')}
             />
           </Box>
+          )}
         </Box>
       )}
     </SwipeableDrawer>

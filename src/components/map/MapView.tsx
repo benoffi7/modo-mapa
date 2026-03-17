@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { Map, useMap } from '@vis.gl/react-google-maps';
@@ -6,6 +6,7 @@ import { useSelection, useFilters } from '../../context/MapContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
+import MapSkeleton from './MapSkeleton';
 
 export default function MapView() {
   const map = useMap();
@@ -15,6 +16,7 @@ export default function MapView() {
   const { businesses } = useBusinesses();
   const hasActiveFilters = searchQuery.trim().length > 0 || activeFilters.length > 0;
   const hasInitialLocation = useRef(false);
+  const [mapReady, setMapReady] = useState(false);
 
   // Stable ref for businesses so handleMarkerClick doesn't invalidate memo'd markers
   const businessesRef = useRef(businesses);
@@ -61,6 +63,7 @@ export default function MapView() {
         disableDefaultUI
         clickableIcons={false}
         onClick={handleMapClick}
+        onTilesLoaded={() => setMapReady(true)}
         style={{ width: '100%', height: '100%' }}
       >
         {businesses.map((business) => (
@@ -73,6 +76,7 @@ export default function MapView() {
           />
         ))}
       </Map>
+      {!mapReady && <MapSkeleton />}
       {hasActiveFilters && businesses.length === 0 && (
         <Box
           sx={{
