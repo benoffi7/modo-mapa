@@ -59,7 +59,7 @@ export default function AppShell() {
       <LocationFAB />
       <BusinessSheet />
       <NameDialog />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} initialSection={menuInitialSection} sharedListId={sharedListId} />
+      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
     </Box>
   );
 }
