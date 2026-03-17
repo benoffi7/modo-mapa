@@ -7,9 +7,10 @@ interface Props {
   userCommentsToday: number;
   isSubmitting: boolean;
   onSubmit: (text: string) => void;
+  onTextChange?: (text: string) => void;
 }
 
-export default memo(function CommentInput({ userCommentsToday, isSubmitting, onSubmit }: Props) {
+export default memo(function CommentInput({ userCommentsToday, isSubmitting, onSubmit, onTextChange }: Props) {
   const [text, setText] = useState('');
   const remaining = MAX_COMMENTS_PER_DAY - userCommentsToday;
 
@@ -25,6 +26,7 @@ export default memo(function CommentInput({ userCommentsToday, isSubmitting, onS
     if (!text.trim()) return;
     onSubmit(text.trim());
     setText('');
+    onTextChange?.('');
   };
 
   return (
@@ -34,7 +36,7 @@ export default memo(function CommentInput({ userCommentsToday, isSubmitting, onS
         size="small"
         placeholder="Dejá tu comentario..."
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); onTextChange?.(e.target.value); }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

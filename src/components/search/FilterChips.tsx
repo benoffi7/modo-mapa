@@ -8,11 +8,12 @@ export default function FilterChips() {
   const { activeFilters, toggleFilter, activePriceFilter, setPriceFilter } = useFilters();
 
   const chipSx = (isActive: boolean) => ({
-    backgroundColor: isActive ? undefined : 'background.paper',
+    bgcolor: isActive ? undefined : 'background.paper',
     boxShadow: 1,
     flexShrink: 0,
-    '&:hover': {
+    '&:hover, &.MuiChip-clickable:hover': {
       boxShadow: 2,
+      bgcolor: isActive ? undefined : 'background.paper',
     },
   });
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useRef, useMemo, useEffect, lazy, Suspense } from 'react';
 import {
   Autocomplete,
   Box,
@@ -26,7 +26,7 @@ const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
 
 const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
 
-function FeedbackSender() {
+function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<FeedbackCategory>('sugerencia');
@@ -37,6 +37,10 @@ function FeedbackSender() {
   const [selectedBusiness, setSelectedBusiness] = useState<{ id: string; name: string } | null>(null);
   const [businessQuery, setBusinessQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    onDirtyChange?.(message.trim().length > 0);
+  }, [message, onDirtyChange]);
 
   const suggestions = useMemo(() => {
     const q = businessQuery.toLowerCase().trim();
@@ -227,7 +231,7 @@ function FeedbackSender() {
   );
 }
 
-export default function FeedbackForm() {
+export default function FeedbackForm({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
   const [tab, setTab] = useState(0);
 
   return (
@@ -237,7 +241,7 @@ export default function FeedbackForm() {
         <Tab label="Mis envíos" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {tab === 0 && <FeedbackSender />}
+        {tab === 0 && <FeedbackSender {...(onDirtyChange && { onDirtyChange })} />}
         {tab === 1 && (
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={28} /></Box>}>
             <MyFeedbackList />

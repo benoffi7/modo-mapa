@@ -11,6 +11,7 @@
 - Filtro por nivel de gasto ($/$$/$$) con chips toggle
 - **Accesibilidad teclado**: markers focuseables con Tab (`tabIndex={0}`, `role="button"`), Enter/Space abre BusinessSheet, `aria-label` con nombre y rating, focus outline azul via `:focus-visible`
 - **Sugerencias contextuales**: hint "Tocá un comercio para calificarlo" para usuarios nuevos (aparece después de 4h si no calificaron). Toast post-primer-rating ("dejá un comentario") y post-primer-comentario ("guardá favoritos"). Basado en localStorage timestamps, sin queries a Firestore
+- **Skeleton loader**: overlay pulsante mientras cargan los tiles del mapa (dark mode aware)
 
 ---
 
@@ -30,6 +31,9 @@
 - Race condition fix con `patchedRef` para evitar que full loads sobreescriban refetches parciales
 - Escrituras via service layer (`src/services/`)
 - Visita registrada automaticamente en localStorage al abrir
+- **Skeleton loader**: mientras carga datos muestra skeleton gris que replica el layout del sheet (nombre, categoria, rating, tags, foto, comentarios). Fade-in de 200ms al cargar contenido
+- **Drag handle**: barra visible (48x5px, `text.secondary`), chevron animado con `pulseUp`, tooltip "Arrastrá hacia arriba" la primera vez (localStorage). Click en desktop cierra el sheet. Respeta `prefers-reduced-motion`
+- **Confirmación al salir**: si hay texto sin guardar en comentarios o feedback, dialog "Descartar cambios?" antes de cerrar. Hook reutilizable `useUnsavedChanges` + `DiscardDialog`
 
 ---
 

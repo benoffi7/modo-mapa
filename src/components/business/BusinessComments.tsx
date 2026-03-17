@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, memo } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, memo } from 'react';
 import {
   Box,
   Typography,
@@ -34,9 +34,10 @@ interface Props {
   userCommentLikes: Set<string>;
   isLoading: boolean;
   onCommentsChange: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
+export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
   const { user, displayName } = useAuth();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,11 +73,23 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
   const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
   const [optimisticLikeDelta, setOptimisticLikeDelta] = useState<Map<string, number>>(new Map());
 
+  // Track input text for dirty detection
+  const [commentInputText, setCommentInputText] = useState('');
+
   // Reply state
   const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null);
   const [replyText, setReplyText] = useState('');
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const replyInputRef = useRef<HTMLInputElement>(null);
+
+  // Notify parent of dirty state
+  useEffect(() => {
+    const isDirty =
+      commentInputText.trim().length > 0 ||
+      replyText.trim().length > 0 ||
+      editText.trim().length > 0;
+    onDirtyChange?.(isDirty);
+  }, [commentInputText, replyText, editText, onDirtyChange]);
 
   // Group comments: top-level and replies
   const { topLevelComments, repliesByParent } = useMemo(() => {
@@ -331,6 +344,7 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
           userCommentsToday={userCommentsToday}
           isSubmitting={isSubmitting}
           onSubmit={handleSubmitText}
+          onTextChange={setCommentInputText}
         />
       )}
 
