@@ -11,14 +11,6 @@
 
 ## Roadmap por Milestone
 
-### v2.15.0 — 17 mar – 23 mar
-
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#161](https://github.com/benoffi7/modo-mapa/issues/161) | Integración GA4 Data API + writesByCollection en dailyMetrics | analytics |
-| [#149](https://github.com/benoffi7/modo-mapa/issues/149) | Feedback de comercio: búsqueda de comercio y soporte PDF | UX |
-| [#162](https://github.com/benoffi7/modo-mapa/issues/162) | Abuse Alerts Fase 3: notificaciones realtime + vista reincidentes | seguridad |
-
 ### v2.16.0 — 24 mar – 30 mar
 
 | Issue | Título | Etiqueta |
@@ -85,7 +77,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 22 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144 (10) |
-| Versiones publicadas | v2.10.0 – v2.14.3 |
-| Milestones planificados | 9 (v2.15.0 – v3.0.0) |
+| Issues abiertos | 19 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162 (13) |
+| Versiones publicadas | v2.10.0 – v2.15.0 |
+| Milestones planificados | 8 (v2.16.0 – v3.0.0) |
