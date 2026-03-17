@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Snackbar, Alert, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -11,35 +11,58 @@ import NameDialog from '../auth/NameDialog';
 import SideMenu from './SideMenu';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useSelection } from '../../context/MapContext';
-import { useAuth } from '../../context/AuthContext';
-import { useUserProfile } from '../../hooks/useUserProfile';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { AUTO_DISMISS_MS } from '../../constants/timing';
-import { STORAGE_KEY_HINT_FIRST_RATING } from '../../constants/storage';
+import { AUTO_DISMISS_MS, ONBOARDING_HINT_DELAY_MS } from '../../constants/timing';
+import { STORAGE_KEY_ONBOARDING_CREATED_AT, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
 
-function MapHint() {
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(STORAGE_KEY_HINT_FIRST_RATING) === 'true',
-  );
-  const { user, displayName } = useAuth();
-  const { profile } = useUserProfile(user?.uid ?? null, displayName ?? undefined);
-  const { selectedBusiness } = useSelection();
+function useOnboardingHint() {
+  const [show, setShow] = useState(() => {
+    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return false;
+    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
+    if (!createdAt) return false;
+    return Date.now() - new Date(createdAt).getTime() >= ONBOARDING_HINT_DELAY_MS;
+  });
+
+  useEffect(() => {
+    if (show) {
+      localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
+      return;
+    }
+    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return;
+    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
+    if (!createdAt) return;
+
+    const remaining = ONBOARDING_HINT_DELAY_MS - (Date.now() - new Date(createdAt).getTime());
+    if (remaining <= 0) return;
+
+    const timer = setTimeout(() => {
+      if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) !== 'true') {
+        setShow(true);
+      }
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [show]);
 
   const dismiss = useCallback(() => {
-    setDismissed(true);
-    localStorage.setItem(STORAGE_KEY_HINT_FIRST_RATING, 'true');
+    setShow(false);
+    localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
   }, []);
 
-  // Close hint when a marker is selected
-  useEffect(() => {
-    if (selectedBusiness) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- dismiss hint when user taps a marker
-      dismiss();
-    }
-  }, [selectedBusiness, dismiss]);
+  return { show, dismiss };
+}
 
-  if (dismissed || !user) return null;
-  if (!profile || profile.stats.ratings > 0) return null;
+function MapHint() {
+  const { show, dismiss } = useOnboardingHint();
+  const { selectedBusiness } = useSelection();
+
+  // Close hint when a marker is selected
+  const prevBusiness = useRef(selectedBusiness);
+  useEffect(() => {
+    if (selectedBusiness && !prevBusiness.current && show) dismiss();
+    prevBusiness.current = selectedBusiness;
+  }, [selectedBusiness, show, dismiss]);
+
+  if (!show) return null;
 
   return (
     <Snackbar
@@ -57,7 +80,7 @@ function MapHint() {
           </IconButton>
         }
       >
-        Toca un comercio en el mapa para calificarlo
+        Tocá un comercio en el mapa para calificarlo
       </Alert>
     </Snackbar>
   );

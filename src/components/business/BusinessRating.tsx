@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { upsertRating, deleteRating, upsertCriteriaRating } from '../../services/ratings';
 import { RATING_CRITERIA } from '../../constants/criteria';
-import { STORAGE_KEY_HINT_POST_FIRST_RATING } from '../../constants/storage';
+import { STORAGE_KEY_HINT_POST_FIRST_RATING, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
 import type { Rating as RatingType, RatingCriteria, RatingCriterionId } from '../../types';
 import type { SvgIconComponent } from '@mui/icons-material';
 
@@ -96,9 +96,10 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     try {
       await upsertRating(user.uid, businessId, value);
       onRatingChange();
+      localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
       if (serverMyRating === null && localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_RATING) !== 'true') {
         localStorage.setItem(STORAGE_KEY_HINT_POST_FIRST_RATING, 'true');
-        toast.info('Genial! Tambien podes dejar un comentario.');
+        toast.info('¡Genial! También podés dejar un comentario.');
       }
     } catch {
       setPendingRating(null);
