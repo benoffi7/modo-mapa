@@ -241,7 +241,7 @@ export default function FeedbackForm({ onDirtyChange }: { onDirtyChange?: (dirty
         <Tab label="Mis envíos" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {tab === 0 && <FeedbackSender onDirtyChange={onDirtyChange} />}
+        {tab === 0 && <FeedbackSender {...(onDirtyChange && { onDirtyChange })} />}
         {tab === 1 && (
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={28} /></Box>}>
             <MyFeedbackList />
