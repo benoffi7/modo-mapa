@@ -11,14 +11,6 @@
 
 ## Roadmap por Milestone
 
-### v2.16.0 — 24 mar – 30 mar
-
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#152](https://github.com/benoffi7/modo-mapa/issues/152) | Gesto swipe para cerrar menú lateral | UX |
-| [#148](https://github.com/benoffi7/modo-mapa/issues/148) | Mapa navegable por teclado | UX |
-| [#134](https://github.com/benoffi7/modo-mapa/issues/134) | Sugerencias contextuales para usuarios nuevos | onboarding |
-
 ### v2.17.0 — 31 mar – 6 abr
 
 | Issue | Título | Etiqueta |
@@ -77,7 +69,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 19 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162 (13) |
-| Versiones publicadas | v2.10.0 – v2.15.0 |
-| Milestones planificados | 8 (v2.16.0 – v3.0.0) |
+| Issues abiertos | 16 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134 (16) |
+| Versiones publicadas | v2.10.0 – v2.16.0 |
+| Milestones planificados | 7 (v2.17.0 – v3.0.0) |
