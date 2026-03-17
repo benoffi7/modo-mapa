@@ -11,14 +11,6 @@
 
 ## Roadmap por Milestone
 
-### v2.17.0 — 31 mar – 6 abr
-
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#143](https://github.com/benoffi7/modo-mapa/issues/143) | Loading consistente: skeleton loaders en mapa y BusinessSheet | UI |
-| [#130](https://github.com/benoffi7/modo-mapa/issues/130) | Confirmación al salir de formulario con texto | UX |
-| [#128](https://github.com/benoffi7/modo-mapa/issues/128) | Drag handle del BusinessSheet poco visible | UI |
-
 ### v2.18.0 — 7 abr – 13 abr
 
 | Issue | Título | Etiqueta |
@@ -69,7 +61,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 16 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134 (16) |
-| Versiones publicadas | v2.10.0 – v2.16.0 |
-| Milestones planificados | 7 (v2.17.0 – v3.0.0) |
+| Issues abiertos | 13 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128 (19) |
+| Versiones publicadas | v2.10.0 – v2.17.0 |
+| Milestones planificados | 6 (v2.18.0 – v3.0.0) |
