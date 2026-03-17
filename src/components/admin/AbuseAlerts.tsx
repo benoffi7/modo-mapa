@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
@@ -265,8 +265,8 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
                       const userTotal = userAlertCounts.get(log.userId) ?? 0;
                       const severity = getSeverity(log);
                       return (
-                        <>
-                          <TableRow key={log.id} hover sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
+                        <Fragment key={log.id}>
+                          <TableRow hover sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
                             <TableCell padding="checkbox"><IconButton size="small">{isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton></TableCell>
                             <TableCell><Chip label={ABUSE_TYPE_LABELS[log.type]} color={ABUSE_TYPE_COLORS[log.type]} size="small" /></TableCell>
                             <TableCell><Chip label={SEVERITY_CONFIG[severity].label} color={SEVERITY_CONFIG[severity].color} size="small" variant="outlined" /></TableCell>
@@ -300,7 +300,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </TableBody>

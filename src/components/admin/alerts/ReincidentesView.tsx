@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
@@ -67,7 +67,8 @@ export default function ReincidentesView({ logs }: Props) {
       // Pending count
       const pendingCount = userLogs.filter((l) => !l.reviewed && !l.dismissed).length;
 
-      rows.push({ userId, totalAlerts: userLogs.length, topType, lastAlertDate, pendingCount, alerts: userLogs });
+      const sortedAlerts = [...userLogs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      rows.push({ userId, totalAlerts: userLogs.length, topType, lastAlertDate, pendingCount, alerts: sortedAlerts });
     }
 
     return rows.sort((a, b) => b.totalAlerts - a.totalAlerts);
@@ -127,9 +128,8 @@ export default function ReincidentesView({ logs }: Props) {
               {reincidentes.map((row) => {
                 const isExpanded = expandedUserId === row.userId;
                 return (
-                  <>
+                  <Fragment key={row.userId}>
                     <TableRow
-                      key={row.userId}
                       hover
                       sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }}
                       onClick={() => setExpandedUserId(isExpanded ? null : row.userId)}
@@ -174,7 +174,7 @@ export default function ReincidentesView({ logs }: Props) {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {[...row.alerts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).map((alert) => {
+                                {row.alerts.map((alert) => {
                                   const severity = getSeverity(alert);
                                   const isPending = !alert.reviewed && !alert.dismissed;
                                   return (
@@ -210,7 +210,7 @@ export default function ReincidentesView({ logs }: Props) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
