@@ -9,6 +9,8 @@
 - Busqueda por nombre/direccion/categoria
 - Filtro por tags predefinidos (chips)
 - Filtro por nivel de gasto ($/$$/$$) con chips toggle
+- **Accesibilidad teclado**: markers focuseables con Tab (`tabIndex={0}`, `role="button"`), Enter/Space abre BusinessSheet, `aria-label` con nombre y rating, focus outline azul via `:focus-visible`
+- **Sugerencias contextuales**: hint "Tocá un comercio para calificarlo" para usuarios nuevos (aparece después de 4h si no calificaron). Toast post-primer-rating ("dejá un comentario") y post-primer-comentario ("guardá favoritos"). Basado en localStorage timestamps, sin queries a Firestore
 
 ---
 
@@ -34,6 +36,7 @@
 ## Menu lateral (SideMenu)
 
 - Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count). **Onboarding gamificado**: card "Primeros pasos" con 5 tareas (calificar, comentar, favoritear, agregar tag, explorar ranking). Progress bar, checks verdes al completar. Dismiss permanente via localStorage. Toast de celebracion al completar todas. Solo para usuarios autenticados (no anonimos)
+- **Swipe**: `SwipeableDrawer` permite cerrar con swipe izquierdo y abrir desde el borde izquierdo (swipeAreaWidth=20px, optimizaciones iOS)
 - Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
