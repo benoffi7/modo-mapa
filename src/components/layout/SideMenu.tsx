@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
-  Drawer,
+  SwipeableDrawer,
   Box,
   Avatar,
   Typography,
@@ -67,6 +67,7 @@ declare const __APP_VERSION__: string;
 interface Props {
   open: boolean;
   onClose: () => void;
+  onOpen: () => void;
   initialSection?: string | undefined;
   sharedListId?: string | undefined;
 }
@@ -88,7 +89,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, initialSection, sharedListId }: Props) {
+export default function SideMenu({ open, onClose, onOpen, initialSection, sharedListId }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -180,10 +181,15 @@ export default function SideMenu({ open, onClose, initialSection, sharedListId }
 
   return (
     <>
-      <Drawer
+      <SwipeableDrawer
         anchor="left"
         open={open}
         onClose={handleClose}
+        onOpen={onOpen}
+        swipeAreaWidth={20}
+        disableSwipeToOpen={false}
+        disableBackdropTransition
+        disableDiscovery
       >
         <Box sx={{ width: 'min(300px, 80vw)', height: '100%', display: 'flex', flexDirection: 'column' }}>
           {activeSection === 'nav' ? (
@@ -347,7 +353,7 @@ export default function SideMenu({ open, onClose, initialSection, sharedListId }
             </>
           )}
         </Box>
-      </Drawer>
+      </SwipeableDrawer>
 
       {/* Email auth dialog */}
       <Suspense fallback={null}>

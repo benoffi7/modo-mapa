@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, Snackbar, Alert, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import MapView from '../map/MapView';
 import LocationFAB from '../map/LocationFAB';
 import SearchBar from '../search/SearchBar';
@@ -11,6 +12,79 @@ import SideMenu from './SideMenu';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { AUTO_DISMISS_MS, ONBOARDING_HINT_DELAY_MS } from '../../constants/timing';
+import { STORAGE_KEY_ONBOARDING_CREATED_AT, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
+
+function useOnboardingHint() {
+  const [show, setShow] = useState(() => {
+    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return false;
+    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
+    if (!createdAt) return false;
+    return Date.now() - new Date(createdAt).getTime() >= ONBOARDING_HINT_DELAY_MS;
+  });
+
+  useEffect(() => {
+    if (show) {
+      localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
+      return;
+    }
+    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return;
+    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
+    if (!createdAt) return;
+
+    const remaining = ONBOARDING_HINT_DELAY_MS - (Date.now() - new Date(createdAt).getTime());
+    if (remaining <= 0) return;
+
+    const timer = setTimeout(() => {
+      if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) !== 'true') {
+        setShow(true);
+      }
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [show]);
+
+  const dismiss = useCallback(() => {
+    setShow(false);
+    localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
+  }, []);
+
+  return { show, dismiss };
+}
+
+function MapHint() {
+  const { show, dismiss } = useOnboardingHint();
+  const { selectedBusiness } = useSelection();
+
+  // Close hint when a marker is selected
+  const prevBusiness = useRef(selectedBusiness);
+  useEffect(() => {
+    if (selectedBusiness && !prevBusiness.current && show) dismiss();
+    prevBusiness.current = selectedBusiness;
+  }, [selectedBusiness, show, dismiss]);
+
+  if (!show) return null;
+
+  return (
+    <Snackbar
+      open
+      autoHideDuration={AUTO_DISMISS_MS}
+      onClose={dismiss}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    >
+      <Alert
+        severity="info"
+        variant="filled"
+        action={
+          <IconButton size="small" color="inherit" onClick={dismiss}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      >
+        Tocá un comercio en el mapa para calificarlo
+      </Alert>
+    </Snackbar>
+  );
+}
 
 export default function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,7 +133,8 @@ export default function AppShell() {
       <LocationFAB />
       <BusinessSheet />
       <NameDialog />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} initialSection={menuInitialSection} sharedListId={sharedListId} />
+      <MapHint />
+      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
     </Box>
   );
 }

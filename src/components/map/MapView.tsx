@@ -69,6 +69,7 @@ export default function MapView() {
             business={business}
             isSelected={business.id === selectedId}
             onClick={handleMarkerClick}
+            averageRating={null}
           />
         ))}
       </Map>

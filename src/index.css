@@ -16,3 +16,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.marker-focus:focus-visible {
+  outline: 3px solid var(--mui-palette-primary-main, #1976d2);
+  outline-offset: 2px;
+  border-radius: 50%;
+}

@@ -1,77 +1,83 @@
 # Specs: Sugerencias contextuales para usuarios nuevos
 
 **PRD:** [PRD](./prd.md)
-**Estado:** Borrador
+**Estado:** Aprobado
 
 ---
 
-## S1: Tooltip en el mapa (0 ratings)
+## S1: Hint de calificación basado en tiempo + onboarding flag
 
-**Componente:** `MapTooltip` (nuevo, dentro de `AppShell.tsx`)
+### Modelo de datos (localStorage)
 
-**Condiciones para mostrar:**
-- Usuario autenticado (`useAuth().user` no null)
-- `profile.stats.ratings === 0` (vía `useUserProfile`)
-- `localStorage` key `hint_shown_first_rating` no es `'true'`
+Dos keys nuevas:
 
-**UI:** `Snackbar` de MUI con `Alert severity="info"`, posicionado en bottom-center (mismo estilo que `ToastContext`).
+| Key | Tipo | Seteado cuando | Descripción |
+|-----|------|----------------|-------------|
+| `onboarding_created_at` | ISO timestamp string | Usuario cierra NameDialog (omitir o guardar) | Marca el inicio de la sesión del usuario |
+| `onboarding_completed` | `'true'` | Usuario califica un comercio O se le muestra el hint | Previene que el hint vuelva a aparecer |
 
-**Mensaje:** `"Toca un comercio en el mapa para calificarlo"`
+### Lógica en `AppShell.tsx` — componente `MapHint`
 
-**Comportamiento:**
-- `autoHideDuration={5000}` (usa constante `AUTO_DISMISS_MS` de `constants/timing.ts`)
-- Se cierra al tocar cualquier marker (cuando `selectedBusiness` cambia de null a un valor)
-- Se cierra manualmente con botón X
-- Al cerrarse (por cualquier vía), setea `localStorage.setItem('hint_shown_first_rating', 'true')`
+```
+al montar:
+  si onboarding_completed === 'true' → no mostrar
+  si onboarding_created_at no existe → no mostrar (usuario pre-existente)
+  calcular elapsed = now - onboarding_created_at
+  si elapsed < ONBOARDING_HINT_DELAY → no mostrar
+  si elapsed >= ONBOARDING_HINT_DELAY → mostrar Snackbar
+    al mostrarse → setear onboarding_completed = 'true'
+```
 
-**Decisiones de diseno:**
-- NO se usa un tooltip real de Leaflet/Google Maps (complejidad innecesaria para apuntar a un marker).
-- Se reutiliza el patron `Snackbar + Alert` que ya usa `ToastContext`, pero como instancia independiente para no competir con toasts del sistema.
-- NO se usa `useToast()` porque el toast del sistema tiene `autoHideDuration={4000}` fijo y un solo slot — una sugerencia lo bloquearía.
+### Constantes
+
+En `constants/timing.ts`:
+- `ONBOARDING_HINT_DELAY_MS`: `10_000` en staging, cambiar a `4 * 60 * 60 * 1000` (4 horas) antes del merge a main
+
+### Snackbar UI
+
+- `Snackbar` propio (no `useToast`) — bottom-center
+- `Alert severity="info" variant="filled"`: "Tocá un comercio en el mapa para calificarlo"
+- `autoHideDuration={5000}` — auto-dismiss en 5 segundos
+- Botón X para cerrar manualmente
+- Se cierra también al seleccionar un marker (`selectedBusiness` cambia)
+
+### Seteo de `onboarding_created_at`
+
+En `NameDialog.tsx` — al hacer click en "Omitir" o "Guardar":
+- Si `onboarding_created_at` no existe en localStorage → setearlo a `new Date().toISOString()`
+- No sobreescribir si ya existe (usuario que reabre el dialog)
+
+### Seteo de `onboarding_completed` por rating
+
+En `BusinessRating.tsx` — en `handleRate` después de `upsertRating` exitoso:
+- Si `onboarding_completed` no es `'true'` → setearlo a `'true'`
 
 ---
 
 ## S2: Sugerencia post-primer-rating
 
-**Ubicacion:** Dentro de `BusinessRating.tsx`, despues de `handleRate` exitoso.
+**Ubicación:** `BusinessRating.tsx`, después de `handleRate` exitoso.
 
 **Condiciones:**
 - `localStorage` key `hint_shown_post_first_rating` no es `'true'`
-- El rating recien guardado es el primero del usuario (se detecta porque `serverMyRating` era `null` antes del `handleRate`)
+- `serverMyRating` era `null` antes del rating (es el primer rating del usuario para este comercio)
 
-**Mensaje:** `"Genial! Tambien podes dejar un comentario."`
+**Mensaje:** `"¡Genial! También podés dejar un comentario."`
 
-**Mecanismo:** Llamar `toast.info(mensaje)` desde `handleRate` despues del `await upsertRating` exitoso. Setear `localStorage.setItem('hint_shown_post_first_rating', 'true')` inmediatamente.
-
-**Por que toast y no Snackbar propio:** Aca no hay conflicto — el toast de "calificacion guardada" no existe (el rating es optimistic sin feedback textual), asi que el slot esta libre.
+**Mecanismo:** `toast.info(mensaje)` + setear `localStorage.setItem('hint_shown_post_first_rating', 'true')`
 
 ---
 
 ## S3: Sugerencia post-primer-comentario
 
-**Ubicacion:** Dentro de `BusinessComments.tsx`, despues del `addComment` exitoso.
+**Ubicación:** `BusinessComments.tsx`, después de `addComment` exitoso.
 
 **Condiciones:**
 - `localStorage` key `hint_shown_post_first_comment` no es `'true'`
 
-**Mensaje:** `"Guarda tus favoritos tocando el corazon."`
+**Mensaje:** `"Guardá tus favoritos tocando el ♡"`
 
-**Mecanismo:** Igual que S2 — `toast.info(mensaje)` post-submit. No se puede saber si es el primer comentario global del usuario sin una query extra, pero el localStorage flag garantiza que se muestra como maximo una vez. Si el usuario ya comento antes, el flag ya existe y no se muestra.
-
-**Seteo del flag:** `localStorage.setItem('hint_shown_post_first_comment', 'true')` al mostrar.
-
----
-
-## Relacion con OnboardingChecklist
-
-`OnboardingChecklist` (en `SideMenu`) es un checklist persistente visible en el menu lateral. Las sugerencias contextuales son tooltips efimeros en el mapa/sheet. No se solapan:
-
-| Aspecto | OnboardingChecklist | Sugerencias contextuales |
-|---------|-------------------|------------------------|
-| Ubicacion | SideMenu (drawer) | Mapa / BusinessSheet |
-| Persistencia | Visible hasta dismiss/completar | Una sola vez, auto-dismiss |
-| Trigger | Abrir menu | Cargar mapa / completar accion |
-| localStorage keys | `onboarding_dismissed`, `onboarding_ranking_viewed`, `onboarding_celebrated` | `hint_shown_first_rating`, `hint_shown_post_first_rating`, `hint_shown_post_first_comment` |
+**Mecanismo:** `toast.info(mensaje)` + setear `localStorage.setItem('hint_shown_post_first_comment', 'true')`
 
 ---
 
@@ -79,40 +85,23 @@
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/layout/AppShell.tsx` | Agregar `MapHint` (Snackbar para tooltip de 0 ratings) |
-| `src/components/business/BusinessRating.tsx` | Agregar toast post-primer-rating en `handleRate` |
-| `src/components/business/BusinessComments.tsx` | Agregar toast post-primer-comentario en submit handler |
-| `src/constants/storage.ts` | Agregar 3 keys de localStorage |
-
-**Archivos nuevos:** Ninguno. `MapHint` se define como componente local dentro de `AppShell.tsx` (~30 lineas).
-
----
-
-## Tipos nuevos
-
-Ninguno. Se usan tipos existentes (`UserProfileData.stats` para contadores).
+| `src/components/layout/AppShell.tsx` | Reescribir `MapHint` con lógica de timestamp + onboarding flag |
+| `src/components/auth/NameDialog.tsx` | Setear `onboarding_created_at` al omitir/guardar |
+| `src/components/business/BusinessRating.tsx` | Setear `onboarding_completed` al calificar + toast post-primer-rating |
+| `src/components/business/BusinessComments.tsx` | Toast post-primer-comentario |
+| `src/constants/storage.ts` | Reemplazar keys por `ONBOARDING_CREATED_AT`, `ONBOARDING_COMPLETED` |
+| `src/constants/timing.ts` | Agregar `ONBOARDING_HINT_DELAY_MS` |
 
 ---
 
-## Dependencias nuevas
+## Eliminaciones
 
-**Imports adicionales en AppShell:**
-- `Snackbar`, `Alert`, `IconButton` de `@mui/material`
-- `CloseIcon` de `@mui/icons-material/Close`
-- `useAuth` de `AuthContext`
-- `useUserProfile` de `hooks/useUserProfile`
-
-No se agregan dependencias npm nuevas.
+- Eliminar `useUserProfile` y `useAuth` de `MapHint` — ya no se necesita consultar Firestore
+- Eliminar `STORAGE_KEY_HINT_FIRST_RATING` de `storage.ts` (reemplazada por `ONBOARDING_COMPLETED`)
 
 ---
 
 ## Impacto en performance
 
-- `useUserProfile` en `AppShell`: ya se usa en `OnboardingChecklist` (dentro de `SideMenu`). Agregar una segunda instancia en `AppShell` implica un fetch duplicado. **Mitigacion:** el fetch solo se hace si el localStorage flag no existe (short-circuit antes del hook? No, hooks no se pueden condicionar). El costo es un solo read extra de ~6 queries al montar `AppShell`, pero solo afecta a usuarios que aun no vieron el hint (nuevos).
-- Toasts en S2/S3: costo zero, son llamadas a `setState` ya existentes.
-
----
-
-## Tests
-
-No se agregan tests nuevos. La logica es trivial (check localStorage + show toast). Se verifica manualmente.
+- Cero queries a Firestore — todo basado en localStorage
+- Un `setInterval` o check en mount para comparar timestamps — negligible

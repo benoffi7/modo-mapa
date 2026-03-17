@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { STORAGE_KEY_ONBOARDING_CREATED_AT } from '../../constants/storage';
 
 export default function NameDialog() {
   const { user, displayName, setDisplayName, isLoading } = useAuth();
@@ -17,15 +18,23 @@ export default function NameDialog() {
 
   const isOpen = !isLoading && user !== null && displayName === null;
 
+  const markOnboardingStart = () => {
+    if (!localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT)) {
+      localStorage.setItem(STORAGE_KEY_ONBOARDING_CREATED_AT, new Date().toISOString());
+    }
+  };
+
   const handleSubmit = async () => {
     if (!name.trim()) return;
     setIsSubmitting(true);
     await setDisplayName(name.trim());
+    markOnboardingStart();
     setIsSubmitting(false);
   };
 
   const handleSkip = async () => {
     await setDisplayName('Anónimo');
+    markOnboardingStart();
   };
 
   return (
