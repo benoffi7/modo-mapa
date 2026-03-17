@@ -23,6 +23,7 @@ import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import type { Comment } from '../../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -140,6 +141,10 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
       await addComment(user.uid, displayName || 'Anónimo', businessId, text);
       onCommentsChange();
       toast.success('Comentario publicado');
+      if (localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT) !== 'true') {
+        localStorage.setItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT, 'true');
+        toast.info('Guarda tus favoritos tocando el corazon.');
+      }
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding comment:', error);
       toast.error('No se pudo publicar el comentario');
