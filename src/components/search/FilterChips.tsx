@@ -13,6 +13,7 @@ export default function FilterChips() {
     flexShrink: 0,
     '&:hover': {
       boxShadow: 2,
+      backgroundColor: isActive ? undefined : 'background.paper',
     },
   });
 

@@ -90,11 +90,14 @@ export default function BusinessSheet() {
             placement="top"
           >
             <Box
+              onClick={handleClose}
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 py: 1.5,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
               }}
             >
               <Box
