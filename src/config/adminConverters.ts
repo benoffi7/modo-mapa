@@ -88,6 +88,9 @@ export const abuseLogConverter: FirestoreDataConverter<AbuseLog> = {
       reviewed: d.reviewed === true,
       dismissed: d.dismissed === true,
       reviewedAt: d.reviewedAt ? toDate(d.reviewedAt) : undefined,
+      severity: (d.severity === 'low' || d.severity === 'medium' || d.severity === 'high')
+        ? d.severity
+        : undefined,
     };
   },
 };

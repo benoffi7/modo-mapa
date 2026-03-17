@@ -23,11 +23,13 @@ import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import { useAsyncData } from '../../hooks/useAsyncData';
-import { fetchDailyMetrics, fetchCounters } from '../../services/admin';
+import { fetchDailyMetrics, fetchCounters, fetchAnalyticsReport } from '../../services/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import LineChartCard from './charts/LineChartCard';
 import type { ReactElement } from 'react';
-import type { AdminCounters, DailyMetrics } from '../../types/admin';
+import type { AdminCounters, DailyMetrics, GA4EventCount } from '../../types/admin';
+
+// ── Firestore feature definitions ─────────────────────────────────────
 
 interface FeatureDef {
   key: string;
@@ -47,14 +49,26 @@ const FEATURES: FeatureDef[] = [
   { key: 'feedback', name: 'Feedback', icon: <FeedbackOutlinedIcon />, getValue: (c) => c.feedback, collectionKey: 'feedback', color: '#4CAF50' },
 ];
 
-const GA4_FEATURES: { name: string; icon: ReactElement; description: string }[] = [
-  { name: 'Sorpréndeme', icon: <CasinoIcon />, description: 'surprise_me' },
-  { name: 'Listas', icon: <BookmarkBorderIcon />, description: 'list_created, list_item_added' },
-  { name: 'Búsqueda', icon: <SearchIcon />, description: 'business_search' },
-  { name: 'Compartir', icon: <ShareIcon />, description: 'business_share' },
-  { name: 'Fotos', icon: <CameraAltOutlinedIcon />, description: 'menu_photo_upload' },
-  { name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, description: 'dark_mode_toggle' },
+// ── GA4 feature definitions ───────────────────────────────────────────
+
+interface GA4FeatureDef {
+  key: string;
+  name: string;
+  icon: ReactElement;
+  eventNames: string[];
+  color: string;
+}
+
+const GA4_FEATURES: GA4FeatureDef[] = [
+  { key: 'surprise', name: 'Sorprendeme', icon: <CasinoIcon />, eventNames: ['surprise_me'], color: '#FF5722' },
+  { key: 'lists', name: 'Listas', icon: <BookmarkBorderIcon />, eventNames: ['list_created', 'list_item_added'], color: '#795548' },
+  { key: 'search', name: 'Busqueda', icon: <SearchIcon />, eventNames: ['business_search'], color: '#607D8B' },
+  { key: 'share', name: 'Compartir', icon: <ShareIcon />, eventNames: ['business_share'], color: '#00BCD4' },
+  { key: 'photos', name: 'Fotos', icon: <CameraAltOutlinedIcon />, eventNames: ['menu_photo_upload'], color: '#8BC34A' },
+  { key: 'darkMode', name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, eventNames: ['dark_mode_toggle'], color: '#424242' },
 ];
+
+// ── Shared components ─────────────────────────────────────────────────
 
 function TrendIcon({ today, yesterday }: { today: number; yesterday: number }) {
   if (today > yesterday) return <TrendingUpIcon fontSize="small" sx={{ color: 'success.main' }} />;
@@ -62,23 +76,71 @@ function TrendIcon({ today, yesterday }: { today: number; yesterday: number }) {
   return <TrendingFlatIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────
+
 function buildFeatureTrend(metrics: DailyMetrics[], collectionKey: string): { date: string; value: number }[] {
-  // metrics sorted desc, reverse for chart (oldest first)
   return [...metrics].reverse().map((m) => ({
     date: (m as unknown as { id?: string }).id ?? '',
     value: m.writesByCollection?.[collectionKey] ?? 0,
   }));
 }
 
+function buildGA4FeatureData(
+  events: GA4EventCount[],
+  eventNames: string[],
+): { today: number; yesterday: number; total: number; trend: { date: string; value: number }[] } {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const yesterdayDate = new Date(now);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10).replace(/-/g, '');
+
+  const relevant = events.filter((e) => eventNames.includes(e.eventName));
+
+  const byDate = new Map<string, number>();
+  let total = 0;
+  for (const e of relevant) {
+    byDate.set(e.date, (byDate.get(e.date) ?? 0) + e.eventCount);
+    total += e.eventCount;
+  }
+
+  const todayCount = byDate.get(todayStr) ?? 0;
+  const yesterdayCount = byDate.get(yesterdayStr) ?? 0;
+
+  const trend = [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, value]) => ({
+      date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`,
+      value,
+    }));
+
+  return { today: todayCount, yesterday: yesterdayCount, total, trend };
+}
+
+// ── Main component ────────────────────────────────────────────────────
+
 export default function FeaturesPanel() {
   const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
 
   const fetcher = useCallback(async () => {
-    const [counters, dailyMetrics] = await Promise.all([
-      fetchCounters(),
-      fetchDailyMetrics('desc', 30),
+    const [firestoreResult, ga4Result] = await Promise.allSettled([
+      Promise.all([fetchCounters(), fetchDailyMetrics('desc', 30)]),
+      fetchAnalyticsReport(),
     ]);
-    return { counters, dailyMetrics };
+
+    const firestoreData = firestoreResult.status === 'fulfilled' ? firestoreResult.value : null;
+    const ga4Data = ga4Result.status === 'fulfilled' ? ga4Result.value : null;
+
+    if (!firestoreData) {
+      throw new Error('Error cargando datos de Firestore');
+    }
+
+    return {
+      counters: firestoreData[0],
+      dailyMetrics: firestoreData[1],
+      analyticsReport: ga4Data,
+      ga4Error: ga4Result.status === 'rejected' ? true : false,
+    };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -89,7 +151,7 @@ export default function FeaturesPanel() {
   }, [data]);
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando métricas de features.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando metricas de features.">
       {data?.counters && (
         <>
           {/* Summary */}
@@ -100,11 +162,12 @@ export default function FeaturesPanel() {
           </Box>
 
           {/* Feature cards */}
-          <Typography variant="h6" gutterBottom>Métricas por funcionalidad</Typography>
+          <Typography variant="h6" gutterBottom>Metricas por funcionalidad</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Tocá una card para ver el gráfico de los últimos 30 días.
+            Toca una card para ver el grafico de los ultimos 30 dias.
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* Firestore features */}
             {FEATURES.map((feature) => {
               const total = feature.getValue(data.counters!);
               const today = data.dailyMetrics[0]?.writesByCollection?.[feature.collectionKey] ?? 0;
@@ -139,8 +202,59 @@ export default function FeaturesPanel() {
                     <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                       <Box sx={{ px: 2, pb: 2 }}>
                         <LineChartCard
-                          title={`${feature.name} — últimos 30 días`}
+                          title={`${feature.name} — ultimos 30 dias`}
                           data={trendData}
+                          lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
+                          xAxisKey="date"
+                        />
+                      </Box>
+                    </Collapse>
+                  </Card>
+                </Grid>
+              );
+            })}
+
+            {/* GA4 features */}
+            {data.ga4Error && (
+              <Grid size={{ xs: 12 }}>
+                <Alert severity="warning">
+                  No se pudieron cargar las metricas de GA4. Los datos de colecciones estan disponibles.
+                </Alert>
+              </Grid>
+            )}
+            {data.analyticsReport && GA4_FEATURES.map((feature) => {
+              const ga4Data = buildGA4FeatureData(data.analyticsReport!.events, feature.eventNames);
+              const isExpanded = expandedFeature === feature.key;
+
+              return (
+                <Grid key={feature.key} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Card
+                    variant="outlined"
+                    sx={{ borderLeft: `4px solid ${feature.color}`, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 2 } }}
+                    onClick={() => setExpandedFeature(isExpanded ? null : feature.key)}
+                  >
+                    <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Box sx={{ color: feature.color }}>{feature.icon}</Box>
+                        <Typography variant="subtitle2">{feature.name}</Typography>
+                        {(ga4Data.today > 0 || ga4Data.yesterday > 0) && (
+                          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <TrendIcon today={ga4Data.today} yesterday={ga4Data.yesterday} />
+                          </Box>
+                        )}
+                      </Box>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {ga4Data.today}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        hoy (GA4) · {ga4Data.total.toLocaleString()} ultimos 30d
+                      </Typography>
+                    </CardContent>
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <Box sx={{ px: 2, pb: 2 }}>
+                        <LineChartCard
+                          title={`${feature.name} — ultimos 30 dias`}
+                          data={ga4Data.trend}
                           lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
                           xAxisKey="date"
                         />
@@ -152,32 +266,8 @@ export default function FeaturesPanel() {
             })}
           </Grid>
 
-          {/* GA4-only features */}
-          <Typography variant="h6" gutterBottom>Features solo en GA4</Typography>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Estos eventos se trackean en Firebase Analytics (GA4) pero no tienen agregación server-side todavía.
-            Se pueden traer via Google Analytics Data API con una Cloud Function callable (mejora futura).
-          </Alert>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            {GA4_FEATURES.map((feature) => (
-              <Grid key={feature.name} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card variant="outlined" sx={{ opacity: 0.7 }}>
-                  <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {feature.icon}
-                      <Typography variant="subtitle2">{feature.name}</Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Eventos: {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-
           {/* Adoption */}
-          <Typography variant="h6" gutterBottom>Adopción</Typography>
+          <Typography variant="h6" gutterBottom>Adopcion</Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <Card variant="outlined">

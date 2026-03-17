@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
@@ -7,12 +8,19 @@ import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Dialog from '@mui/material/Dialog';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
 import { fetchRecentFeedback } from '../../services/admin';
 import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from '../../services/adminFeedback';
 import { useAsyncData } from '../../hooks/useAsyncData';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
 import { FEEDBACK_STATUSES, MAX_ADMIN_RESPONSE_LENGTH } from '../../constants/feedback';
-import type { Feedback, FeedbackCategory, FeedbackStatus } from '../../types';
+import type { Feedback, FeedbackCategory, FeedbackStatus, Business } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
 
@@ -39,12 +47,27 @@ export default function FeedbackList() {
   const { data: feedback, loading, error, refetch } = useAsyncData<Feedback[]>(fetcher);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [businessFilter, setBusinessFilter] = useState<string | null>(null);
+  const [businessDetailId, setBusinessDetailId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [mediaOpen, setMediaOpen] = useState<string | null>(null);
 
-  const filtered = feedback?.filter((f) => statusFilter === 'all' || f.status === statusFilter) ?? [];
+  const filtered = feedback?.filter((f) => {
+    if (statusFilter !== 'all' && f.status !== statusFilter) return false;
+    if (businessFilter && f.businessId !== businessFilter) return false;
+    return true;
+  }) ?? [];
+
+  const handleOpenBusiness = (businessId: string) => {
+    setBusinessDetailId(businessId);
+  };
+
+  const businessDetail = useMemo(() => {
+    if (!businessDetailId) return null;
+    return allBusinesses.find((b) => b.id === businessDetailId) ?? null;
+  }, [businessDetailId]);
 
   const handleRespond = async (feedbackId: string) => {
     const trimmed = responseText.trim();
@@ -97,17 +120,48 @@ export default function FeedbackList() {
             />
           ))}
         </Box>
+        <Autocomplete<Business, false, false, false>
+          options={allBusinesses}
+          getOptionLabel={(b) => b.name}
+          value={allBusinesses.find((b) => b.id === businessFilter) ?? null}
+          onChange={(_e, value) => setBusinessFilter(value?.id ?? null)}
+          renderInput={(params) => (
+            <TextField {...params} placeholder="Filtrar por comercio" size="small" />
+          )}
+          size="small"
+          sx={{ mb: 2, maxWidth: 300 }}
+        />
         <ActivityTable
           items={filtered}
           columns={[
             { label: 'Usuario', render: (f) => f.userId.slice(0, 8) },
             { label: 'Categoría', render: (f) => <Chip label={f.category} size="small" color={categoryColor(f.category)} /> },
             {
+              label: 'Comercio',
+              render: (f) => f.businessName ? (
+                <Chip
+                  label={f.businessName}
+                  size="small"
+                  color="warning"
+                  variant="outlined"
+                  onClick={() => handleOpenBusiness(f.businessId!)}
+                  clickable
+                />
+              ) : (
+                <Typography variant="caption" color="text.disabled">&mdash;</Typography>
+              ),
+            },
+            {
               label: 'Mensaje',
               render: (f) => (
                 <Box>
                   <Typography variant="body2">{f.message}</Typography>
-                  {f.mediaUrl && (
+                  {f.mediaUrl && f.mediaType === 'pdf' ? (
+                    <Link href={f.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <PictureAsPdfIcon color="error" fontSize="small" />
+                      <Typography variant="caption">PDF adjunto</Typography>
+                    </Link>
+                  ) : f.mediaUrl ? (
                     <Box
                       component="img"
                       src={f.mediaUrl}
@@ -115,7 +169,7 @@ export default function FeedbackList() {
                       onClick={() => setMediaOpen(f.mediaUrl!)}
                       sx={{ maxHeight: 60, borderRadius: 0.5, mt: 0.5, cursor: 'pointer', objectFit: 'cover' }}
                     />
-                  )}
+                  ) : null}
                 </Box>
               ),
             },
@@ -227,6 +281,35 @@ export default function FeedbackList() {
               sx={{ maxWidth: '100%', maxHeight: '80vh', display: 'block' }}
             />
           )}
+        </Dialog>
+        <Dialog open={!!businessDetailId} onClose={() => setBusinessDetailId(null)} maxWidth="xs" fullWidth>
+          {businessDetail ? (
+            <>
+              <DialogTitle>{businessDetail.name}</DialogTitle>
+              <DialogContent>
+                <List dense disablePadding>
+                  <ListItem disableGutters><ListItemText primary="ID" secondary={businessDetail.id} /></ListItem>
+                  {businessDetail.address && <ListItem disableGutters><ListItemText primary="Dirección" secondary={businessDetail.address} /></ListItem>}
+                  {businessDetail.tags && businessDetail.tags.length > 0 && (
+                    <ListItem disableGutters>
+                      <ListItemText primary="Tags" secondary={
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                          {businessDetail.tags.map((t) => <Chip key={t} label={t} size="small" />)}
+                        </Box>
+                      } />
+                    </ListItem>
+                  )}
+                </List>
+              </DialogContent>
+            </>
+          ) : businessDetailId ? (
+            <>
+              <DialogTitle>Comercio no encontrado</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2" color="text.secondary">ID: {businessDetailId}</Typography>
+              </DialogContent>
+            </>
+          ) : null}
         </Dialog>
       </Box>
     </AdminPanelWrapper>

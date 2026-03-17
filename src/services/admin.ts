@@ -30,7 +30,7 @@ import {
   menuPhotoConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats } from '../types/admin';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel } from '../types';
 
@@ -331,6 +331,14 @@ export async function fetchPerfMetrics(maxDocs = 200): Promise<PerfMetricsDoc[]>
 
 export async function fetchStorageStats(): Promise<StorageStats> {
   const fn = httpsCallable<void, StorageStats>(functions, 'getStorageStats');
+  const result = await fn();
+  return result.data;
+}
+
+// ── Analytics Report (callable) ──────────────────────────────────────
+
+export async function fetchAnalyticsReport(): Promise<AnalyticsReportResponse> {
+  const fn = httpsCallable<void, AnalyticsReportResponse>(functions, 'getAnalyticsReport');
   const result = await fn();
   return result.data;
 }

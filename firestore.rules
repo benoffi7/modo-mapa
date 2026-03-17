@@ -152,12 +152,14 @@ service cloud.firestore {
     // category debe ser uno de: bug, sugerencia, otro.
     match /feedback/{docId} {
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType'])
+        && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType', 'businessId', 'businessName'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
         && request.resource.data.category in ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro']
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{3}$')))
+        && (!('businessName' in request.resource.data) || (request.resource.data.businessName is string && request.resource.data.businessName.size() > 0 && request.resource.data.businessName.size() <= 100));
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
       allow update: if isAdmin()

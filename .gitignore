@@ -40,3 +40,4 @@ functions/lib/
 !.claude/commands/
 !.claude/README.md
 *.tsbuildinfo
+sa-key.json

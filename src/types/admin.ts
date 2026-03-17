@@ -53,6 +53,8 @@ export interface SettingsAggregates {
   analyticsEnabled: number;
 }
 
+export type AbuseSeverity = 'low' | 'medium' | 'high';
+
 export interface AbuseLog {
   id: string;
   userId: string;
@@ -63,10 +65,23 @@ export interface AbuseLog {
   reviewed?: boolean | undefined;
   dismissed?: boolean | undefined;
   reviewedAt?: Date | undefined;
+  severity?: AbuseSeverity | undefined;
 }
 
 export interface StorageStats {
   totalBytes: number;
   fileCount: number;
   updatedAt: string;
+}
+
+export interface GA4EventCount {
+  eventName: string;
+  date: string;
+  eventCount: number;
+}
+
+export interface AnalyticsReportResponse {
+  events: GA4EventCount[];
+  cachedAt: string;
+  fromCache: boolean;
 }

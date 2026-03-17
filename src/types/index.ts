@@ -118,8 +118,10 @@ export interface Feedback {
   respondedBy?: string;
   viewedByUser?: boolean;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'pdf';
   githubIssueUrl?: string;
+  businessId?: string;
+  businessName?: string;
 }
 
 import { PREDEFINED_TAGS } from '../constants/tags';

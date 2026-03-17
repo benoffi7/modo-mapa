@@ -6,6 +6,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Badge from '@mui/material/Badge';
 import { useAuth } from '../../context/AuthContext';
 import DashboardOverview from './DashboardOverview';
 import ActivityFeed from './ActivityFeed';
@@ -21,6 +22,7 @@ import FeaturesPanel from './FeaturesPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
+  const [alertsPendingCount, setAlertsPendingCount] = useState(0);
   const { signOut } = useAuth();
 
   return (
@@ -36,17 +38,21 @@ export default function AdminLayout() {
         </Toolbar>
       </AppBar>
       <Tabs value={tab} onChange={(_, v: number) => setTab(v)} variant="scrollable" scrollButtons="auto">
-        <Tab label="Overview" />
+        <Tab label="Resumen" />
         <Tab label="Actividad" />
         <Tab label="Feedback" />
         <Tab label="Tendencias" />
         <Tab label="Usuarios" />
-        <Tab label="Firebase Usage" />
-        <Tab label="Alertas" />
+        <Tab label="Uso Firebase" />
+        <Tab label={
+          <Badge badgeContent={alertsPendingCount} color="error" max={99}>
+            Alertas
+          </Badge>
+        } />
         <Tab label="Backups" />
         <Tab label="Fotos" />
-        <Tab label="Performance" />
-        <Tab label="Features" />
+        <Tab label="Rendimiento" />
+        <Tab label="Funcionalidades" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {tab === 0 && <DashboardOverview />}
@@ -55,7 +61,7 @@ export default function AdminLayout() {
         {tab === 3 && <TrendsPanel />}
         {tab === 4 && <UsersPanel />}
         {tab === 5 && <FirebaseUsage />}
-        {tab === 6 && <AbuseAlerts />}
+        {tab === 6 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
         {tab === 7 && <BackupsPanel />}
         {tab === 8 && <PhotoReviewPanel />}
         {tab === 9 && <PerformancePanel />}

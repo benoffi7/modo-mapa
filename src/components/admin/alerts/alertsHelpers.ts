@@ -1,11 +1,35 @@
 import { ABUSE_TYPE_LABELS } from '../../../constants';
-import type { AbuseLog } from '../../../types/admin';
+import type { AbuseLog, AbuseSeverity } from '../../../types/admin';
 
 export type AbuseType = AbuseLog['type'];
 export type SortField = 'timestamp' | 'type' | 'collection';
 export type SortDir = 'asc' | 'desc';
 export type DatePreset = 'all' | 'today' | 'week' | 'month';
 export type StatusFilter = 'pending' | 'reviewed' | 'dismissed' | 'all';
+export type SeverityFilter = AbuseSeverity | 'all';
+
+export const SEVERITY_MAP: Record<AbuseLog['type'], AbuseSeverity> = {
+  rate_limit: 'low',
+  top_writers: 'medium',
+  flagged: 'high',
+};
+
+export function getSeverity(log: AbuseLog): AbuseSeverity {
+  return log.severity ?? SEVERITY_MAP[log.type];
+}
+
+export const SEVERITY_CONFIG: Record<AbuseSeverity, { label: string; color: 'default' | 'warning' | 'error' }> = {
+  low: { label: 'Baja', color: 'default' },
+  medium: { label: 'Media', color: 'warning' },
+  high: { label: 'Alta', color: 'error' },
+};
+
+export const SEVERITY_FILTER_OPTIONS: { key: SeverityFilter; label: string }[] = [
+  { key: 'all', label: 'Todas' },
+  { key: 'high', label: 'Alta' },
+  { key: 'medium', label: 'Media' },
+  { key: 'low', label: 'Baja' },
+];
 
 export const ALL_TYPES: AbuseType[] = ['rate_limit', 'flagged', 'top_writers'];
 export const PAGE_SIZE = 20;
@@ -75,12 +99,13 @@ export function getDateThreshold(preset: DatePreset): Date | null {
 }
 
 export function exportToCsv(logs: AbuseLog[], filename: string): void {
-  const header = 'Tipo,Usuario,Colección,Detalle,Fecha';
+  const header = 'Tipo,Severidad,Usuario,Colección,Detalle,Fecha';
   const rows = logs.map((log) => {
     const type = ABUSE_TYPE_LABELS[log.type] ?? log.type;
+    const severity = SEVERITY_CONFIG[getSeverity(log)].label;
     const detail = `"${log.detail.replace(/"/g, '""')}"`;
     const date = log.timestamp.toLocaleString();
-    return `${type},${log.userId},${log.collection},${detail},${date}`;
+    return `${type},${severity},${log.userId},${log.collection},${detail},${date}`;
   });
   const csv = [header, ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
