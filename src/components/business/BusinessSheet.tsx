@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { SwipeableDrawer, Box, Divider, IconButton } from '@mui/material';
+import { SwipeableDrawer, Box, Divider, IconButton, Tooltip } from '@mui/material';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
@@ -30,6 +31,17 @@ export default function BusinessSheet() {
   const [commentsDirty, setCommentsDirty] = useState(false);
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
+  const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
+
+  useEffect(() => {
+    if (showTooltip && isOpen) {
+      const timer = setTimeout(() => {
+        setShowTooltip(false);
+        localStorage.setItem('dragHandleSeen', '1');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTooltip, isOpen]);
 
   useEffect(() => {
     if (selectedBusiness) {
@@ -71,16 +83,44 @@ export default function BusinessSheet() {
       {selectedBusiness && (
         <Box sx={{ overflow: 'auto', maxHeight: '85dvh' }}>
           {/* Drag handle */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+          <Tooltip
+            title="Arrastrá hacia arriba para ver más"
+            open={showTooltip && isOpen}
+            arrow
+            placement="top"
+          >
             <Box
               sx={{
-                width: 40,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: 'divider',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                py: 1.5,
               }}
-            />
-          </Box>
+            >
+              <Box
+                sx={{
+                  width: 48,
+                  height: 5,
+                  borderRadius: 2.5,
+                  backgroundColor: 'text.secondary',
+                  opacity: 0.5,
+                }}
+              />
+              <KeyboardArrowUpIcon
+                sx={{
+                  fontSize: 20,
+                  color: 'text.secondary',
+                  opacity: 0.6,
+                  mt: 0.25,
+                  animation: 'pulseUp 1.5s ease-in-out infinite',
+                  '@keyframes pulseUp': {
+                    '0%, 100%': { transform: 'translateY(0)', opacity: 0.6 },
+                    '50%': { transform: 'translateY(-3px)', opacity: 1 },
+                  },
+                }}
+              />
+            </Box>
+          </Tooltip>
 
           {showSkeleton ? (
             <BusinessSheetSkeleton />
