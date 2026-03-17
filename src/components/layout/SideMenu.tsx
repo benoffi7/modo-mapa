@@ -37,6 +37,8 @@ import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { distanceKm } from '../../utils/distance';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
+import DiscardDialog from '../common/DiscardDialog';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 
 // Lazy-loaded section components (P1.3 — keeps them out of the main chunk)
 const FavoritesList = lazy(() => import('../menu/FavoritesList'));
@@ -121,6 +123,10 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
     }
   };
   const [feedbackKey, setFeedbackKey] = useState(0);
+  const [feedbackDirty, setFeedbackDirty] = useState(false);
+  const { confirmClose, dialogProps } = useUnsavedChanges(
+    activeSection === 'feedback' && feedbackDirty ? 'x' : '',
+  );
 
   const handleSurprise = () => {
     const visitedIds = new Set(visits.map((v) => v.businessId));
@@ -156,9 +162,11 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
   const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
 
   const handleClose = () => {
-    onClose();
-    // Reset to nav after drawer closes
-    setTimeout(() => setActiveSection('nav'), 300);
+    confirmClose(() => {
+      onClose();
+      // Reset to nav after drawer closes
+      setTimeout(() => setActiveSection('nav'), 300);
+    });
   };
 
   const handleOpenNameDialog = () => {
@@ -342,7 +350,7 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                   {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
-                  {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} />}
+                  {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} onDirtyChange={setFeedbackDirty} />}
                   {activeSection === 'rankings' && <RankingsView />}
                   {activeSection === 'stats' && <StatsView />}
                   {activeSection === 'settings' && <SettingsPanel />}
@@ -397,6 +405,8 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DiscardDialog {...dialogProps} />
     </>
   );
 }

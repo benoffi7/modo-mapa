@@ -16,6 +16,8 @@ import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
+import DiscardDialog from '../common/DiscardDialog';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 
 export default function BusinessSheet() {
   const { user } = useAuth();
@@ -25,6 +27,8 @@ export default function BusinessSheet() {
   const data = useBusinessData(businessId);
   const { recordVisit } = useVisitHistory();
   const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [commentsDirty, setCommentsDirty] = useState(false);
+  const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
 
   useEffect(() => {
@@ -38,7 +42,9 @@ export default function BusinessSheet() {
     }
   }, [selectedBusiness, recordVisit]);
 
-  const handleClose = () => setSelectedBusiness(null);
+  const handleClose = () => {
+    confirmClose(() => setSelectedBusiness(null));
+  };
   const handleOpen = () => {};
 
   return (
@@ -145,12 +151,14 @@ export default function BusinessSheet() {
               userCommentLikes={data.userCommentLikes}
               isLoading={data.isLoading}
               onCommentsChange={() => data.refetch('comments')}
+              onDirtyChange={setCommentsDirty}
             />
           </Box>
           )}
         </Box>
       )}
     </SwipeableDrawer>
+    <DiscardDialog {...dialogProps} />
     {selectedBusiness && (
       <AddToListDialog
         open={listDialogOpen}
