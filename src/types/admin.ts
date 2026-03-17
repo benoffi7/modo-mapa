@@ -70,3 +70,15 @@ export interface StorageStats {
   fileCount: number;
   updatedAt: string;
 }
+
+export interface GA4EventCount {
+  eventName: string;
+  date: string;
+  eventCount: number;
+}
+
+export interface AnalyticsReportResponse {
+  events: GA4EventCount[];
+  cachedAt: string;
+  fromCache: boolean;
+}

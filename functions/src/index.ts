@@ -29,3 +29,4 @@ export { getAuthStats } from './admin/authStats';
 export { setAdminClaim, removeAdminClaim } from './admin/claims';
 export { getStorageStats } from './admin/storageStats';
 export { writePerfMetrics } from './admin/perfMetrics';
+export { getAnalyticsReport } from './admin/analyticsReport';
