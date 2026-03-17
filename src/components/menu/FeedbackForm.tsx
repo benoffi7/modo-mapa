@@ -1,5 +1,6 @@
-import { useState, useRef, lazy, Suspense } from 'react';
+import { useState, useRef, useMemo, lazy, Suspense } from 'react';
 import {
+  Autocomplete,
   Box,
   Typography,
   TextField,
@@ -14,14 +15,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloseIcon from '@mui/icons-material/Close';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
 import { sendFeedback } from '../../services/feedback';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
-import type { FeedbackCategory } from '../../types';
+import type { FeedbackCategory, Business } from '../../types';
 
 const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
 
-const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp';
+const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
 
 function FeedbackSender() {
   const { user } = useAuth();
@@ -31,7 +34,17 @@ function FeedbackSender() {
   const [sent, setSent] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<{ id: string; name: string } | null>(null);
+  const [businessQuery, setBusinessQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = useMemo(() => {
+    const q = businessQuery.toLowerCase().trim();
+    if (!q || q.length < 2) return [];
+    return allBusinesses
+      .filter((b) => b.name.toLowerCase().includes(q) || b.address.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [businessQuery]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,8 +70,10 @@ function FeedbackSender() {
     if (!user || !message.trim()) return;
     setIsSubmitting(true);
     try {
-      await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined);
+      await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined, selectedBusiness ?? undefined);
       setSent(true);
+      setSelectedBusiness(null);
+      setBusinessQuery('');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error sending feedback:', error);
     }
@@ -101,6 +116,47 @@ function FeedbackSender() {
         ))}
       </Box>
 
+      {category === 'datos_comercio' && (
+        <Box sx={{ mb: 2 }}>
+          {selectedBusiness ? (
+            <Chip
+              label={selectedBusiness.name}
+              onDelete={() => setSelectedBusiness(null)}
+              color="primary"
+              size="small"
+            />
+          ) : (
+            <Autocomplete<Business, false, false, false>
+              options={suggestions}
+              getOptionLabel={(b) => b.name}
+              renderOption={(props, b) => (
+                <li {...props} key={b.id}>
+                  <Box>
+                    <Typography variant="body2">{b.name}</Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {b.address}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              inputValue={businessQuery}
+              onInputChange={(_e, value) => setBusinessQuery(value)}
+              onChange={(_e, value) => {
+                if (value) {
+                  setSelectedBusiness({ id: value.id, name: value.name });
+                  setBusinessQuery('');
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Buscar comercio (opcional)" size="small" />
+              )}
+              noOptionsText={businessQuery.length < 2 ? 'Escribí al menos 2 letras' : 'Sin resultados'}
+              size="small"
+            />
+          )}
+        </Box>
+      )}
+
       <TextField
         fullWidth
         multiline
@@ -120,7 +176,17 @@ function FeedbackSender() {
         onChange={handleFileChange}
       />
 
-      {mediaPreview ? (
+      {mediaFile && mediaFile.type === 'application/pdf' ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <PictureAsPdfIcon color="error" />
+          <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+            {mediaFile.name}
+          </Typography>
+          <IconButton size="small" onClick={clearMedia}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ) : mediaPreview ? (
         <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
           <Box
             component="img"
@@ -144,7 +210,7 @@ function FeedbackSender() {
           onClick={() => fileInputRef.current?.click()}
           sx={{ mb: 2 }}
         >
-          Adjuntar imagen
+          Adjuntar archivo
         </Button>
       )}
 

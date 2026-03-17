@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
+  Link,
   List,
   ListItemButton,
   ListItemText,
@@ -11,6 +12,7 @@ import {
   Divider,
 } from '@mui/material';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
 import { fetchUserFeedback, markFeedbackViewed } from '../../services/feedback';
 import { FEEDBACK_STATUSES } from '../../constants/feedback';
@@ -109,14 +111,19 @@ export default function MyFeedbackList() {
           </ListItemButton>
           <Collapse in={expandedId === fb.id}>
             <Box sx={{ px: 2, pb: 2 }}>
-              {fb.mediaUrl && (
+              {fb.mediaUrl && fb.mediaType === 'pdf' ? (
+                <Link href={fb.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                  <PictureAsPdfIcon color="error" fontSize="small" />
+                  <Typography variant="body2">Ver PDF adjunto</Typography>
+                </Link>
+              ) : fb.mediaUrl ? (
                 <Box
                   component="img"
                   src={fb.mediaUrl}
                   alt="Adjunto"
                   sx={{ maxHeight: 150, maxWidth: '100%', borderRadius: 1, objectFit: 'cover', mb: 1, display: 'block' }}
                 />
-              )}
+              ) : null}
               {fb.adminResponse && (
                 <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5, mt: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>

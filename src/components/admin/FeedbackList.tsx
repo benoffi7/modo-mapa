@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
@@ -7,12 +8,15 @@ import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Dialog from '@mui/material/Dialog';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { useNavigate } from 'react-router-dom';
 import { fetchRecentFeedback } from '../../services/admin';
 import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from '../../services/adminFeedback';
 import { useAsyncData } from '../../hooks/useAsyncData';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
 import { FEEDBACK_STATUSES, MAX_ADMIN_RESPONSE_LENGTH } from '../../constants/feedback';
-import type { Feedback, FeedbackCategory, FeedbackStatus } from '../../types';
+import type { Feedback, FeedbackCategory, FeedbackStatus, Business } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
 
@@ -38,13 +42,23 @@ export default function FeedbackList() {
   const fetcher = useCallback(() => fetchRecentFeedback(50), []);
   const { data: feedback, loading, error, refetch } = useAsyncData<Feedback[]>(fetcher);
 
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [businessFilter, setBusinessFilter] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [mediaOpen, setMediaOpen] = useState<string | null>(null);
 
-  const filtered = feedback?.filter((f) => statusFilter === 'all' || f.status === statusFilter) ?? [];
+  const filtered = feedback?.filter((f) => {
+    if (statusFilter !== 'all' && f.status !== statusFilter) return false;
+    if (businessFilter && f.businessId !== businessFilter) return false;
+    return true;
+  }) ?? [];
+
+  const handleOpenBusiness = (businessId: string) => {
+    navigate(`/?business=${businessId}`);
+  };
 
   const handleRespond = async (feedbackId: string) => {
     const trimmed = responseText.trim();
@@ -97,17 +111,48 @@ export default function FeedbackList() {
             />
           ))}
         </Box>
+        <Autocomplete<Business, false, false, false>
+          options={allBusinesses}
+          getOptionLabel={(b) => b.name}
+          value={allBusinesses.find((b) => b.id === businessFilter) ?? null}
+          onChange={(_e, value) => setBusinessFilter(value?.id ?? null)}
+          renderInput={(params) => (
+            <TextField {...params} placeholder="Filtrar por comercio" size="small" />
+          )}
+          size="small"
+          sx={{ mb: 2, maxWidth: 300 }}
+        />
         <ActivityTable
           items={filtered}
           columns={[
             { label: 'Usuario', render: (f) => f.userId.slice(0, 8) },
             { label: 'Categoría', render: (f) => <Chip label={f.category} size="small" color={categoryColor(f.category)} /> },
             {
+              label: 'Comercio',
+              render: (f) => f.businessName ? (
+                <Chip
+                  label={f.businessName}
+                  size="small"
+                  color="warning"
+                  variant="outlined"
+                  onClick={() => handleOpenBusiness(f.businessId!)}
+                  clickable
+                />
+              ) : (
+                <Typography variant="caption" color="text.disabled">&mdash;</Typography>
+              ),
+            },
+            {
               label: 'Mensaje',
               render: (f) => (
                 <Box>
                   <Typography variant="body2">{f.message}</Typography>
-                  {f.mediaUrl && (
+                  {f.mediaUrl && f.mediaType === 'pdf' ? (
+                    <Link href={f.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <PictureAsPdfIcon color="error" fontSize="small" />
+                      <Typography variant="caption">PDF adjunto</Typography>
+                    </Link>
+                  ) : f.mediaUrl ? (
                     <Box
                       component="img"
                       src={f.mediaUrl}
@@ -115,7 +160,7 @@ export default function FeedbackList() {
                       onClick={() => setMediaOpen(f.mediaUrl!)}
                       sx={{ maxHeight: 60, borderRadius: 0.5, mt: 0.5, cursor: 'pointer', objectFit: 'cover' }}
                     />
-                  )}
+                  ) : null}
                 </Box>
               ),
             },

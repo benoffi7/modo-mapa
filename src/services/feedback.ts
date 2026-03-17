@@ -11,13 +11,14 @@ import { VALID_CATEGORIES, MAX_FEEDBACK_MEDIA_SIZE } from '../constants/feedback
 import { MAX_FEEDBACK_LENGTH } from '../constants/validation';
 import type { FeedbackCategory, Feedback } from '../types';
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 export async function sendFeedback(
   userId: string,
   message: string,
   category: FeedbackCategory,
   mediaFile?: File,
+  business?: { id: string; name: string },
 ): Promise<void> {
   const trimmed = message.trim();
   if (!trimmed || trimmed.length > MAX_FEEDBACK_LENGTH) {
@@ -28,27 +29,33 @@ export async function sendFeedback(
   }
 
   if (mediaFile) {
-    if (!ALLOWED_IMAGE_TYPES.includes(mediaFile.type)) {
-      throw new Error('Formato no soportado. Usa JPG, PNG o WebP.');
+    if (!ALLOWED_MEDIA_TYPES.includes(mediaFile.type)) {
+      throw new Error('Formato no soportado. Usa JPG, PNG, WebP o PDF.');
     }
     if (mediaFile.size > MAX_FEEDBACK_MEDIA_SIZE) {
       throw new Error('La imagen es muy grande. Máximo 10 MB.');
     }
   }
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.FEEDBACK), {
+  const docData: Record<string, unknown> = {
     userId,
     message: trimmed,
     category,
     createdAt: serverTimestamp(),
-  });
+  };
+  if (business) {
+    docData.businessId = business.id;
+    docData.businessName = business.name;
+  }
+  const docRef = await addDoc(collection(db, COLLECTIONS.FEEDBACK), docData);
 
   if (mediaFile) {
     const storagePath = `feedback-media/${docRef.id}/${mediaFile.name}`;
     const storageRef = ref(storage, storagePath);
     await uploadBytes(storageRef, mediaFile, { contentType: mediaFile.type });
     const mediaUrl = await getDownloadURL(storageRef);
-    await updateDoc(docRef, { mediaUrl, mediaType: 'image' });
+    const mediaType = mediaFile.type === 'application/pdf' ? 'pdf' : 'image';
+    await updateDoc(docRef, { mediaUrl, mediaType });
   }
 
   trackEvent('feedback_submit', { category });
