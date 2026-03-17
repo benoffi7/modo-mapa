@@ -53,6 +53,8 @@ export interface SettingsAggregates {
   analyticsEnabled: number;
 }
 
+export type AbuseSeverity = 'low' | 'medium' | 'high';
+
 export interface AbuseLog {
   id: string;
   userId: string;
@@ -63,6 +65,7 @@ export interface AbuseLog {
   reviewed?: boolean | undefined;
   dismissed?: boolean | undefined;
   reviewedAt?: Date | undefined;
+  severity?: AbuseSeverity | undefined;
 }
 
 export interface StorageStats {

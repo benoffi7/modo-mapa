@@ -6,6 +6,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Badge from '@mui/material/Badge';
 import { useAuth } from '../../context/AuthContext';
 import DashboardOverview from './DashboardOverview';
 import ActivityFeed from './ActivityFeed';
@@ -21,6 +22,7 @@ import FeaturesPanel from './FeaturesPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
+  const [alertsPendingCount, setAlertsPendingCount] = useState(0);
   const { signOut } = useAuth();
 
   return (
@@ -42,7 +44,11 @@ export default function AdminLayout() {
         <Tab label="Tendencias" />
         <Tab label="Usuarios" />
         <Tab label="Firebase Usage" />
-        <Tab label="Alertas" />
+        <Tab label={
+          <Badge badgeContent={alertsPendingCount} color="error" max={99}>
+            Alertas
+          </Badge>
+        } />
         <Tab label="Backups" />
         <Tab label="Fotos" />
         <Tab label="Performance" />
@@ -55,7 +61,7 @@ export default function AdminLayout() {
         {tab === 3 && <TrendsPanel />}
         {tab === 4 && <UsersPanel />}
         {tab === 5 && <FirebaseUsage />}
-        {tab === 6 && <AbuseAlerts />}
+        {tab === 6 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
         {tab === 7 && <BackupsPanel />}
         {tab === 8 && <PhotoReviewPanel />}
         {tab === 9 && <PerformancePanel />}
