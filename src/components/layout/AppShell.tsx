@@ -38,7 +38,7 @@ function MapHint() {
     }
   }, [selectedBusiness, dismiss]);
 
-  if (dismissed || !user || user.isAnonymous) return null;
+  if (dismissed || !user) return null;
   if (!profile || profile.stats.ratings > 0) return null;
 
   return (
