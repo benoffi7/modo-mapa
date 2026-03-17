@@ -197,6 +197,12 @@
     - [PRD](/feat/social/listas-compartidas/prd.md)
     - [Specs](/feat/social/listas-compartidas/specs.md)
     - [Plan](/feat/social/listas-compartidas/plan.md)
+  - [Mejoras Lista Compartida](/feat/social/mejoras-lista-compartida/)
+    - [PRD](/feat/social/mejoras-lista-compartida/prd.md)
+  - [Listas Sugeridas](/feat/social/listas-sugeridas/)
+    - [PRD](/feat/social/listas-sugeridas/prd.md)
+  - [Listas Colaborativas](/feat/social/listas-colaborativas/)
+    - [PRD](/feat/social/listas-colaborativas/prd.md)
   - [Menu Comentarios](/feat/social/menu-comentarios/)
     - [PRD](/feat/social/menu-comentarios/prd.md)
     - [Specs](/feat/social/menu-comentarios/specs.md)
@@ -233,6 +239,10 @@
     - [PRD](/feat/ux/onboarding-interactivo/prd.md)
   - [Sugerencias Contextuales](/feat/ux/sugerencias-contextuales/)
     - [PRD](/feat/ux/sugerencias-contextuales/prd.md)
+  - [Onboarding Cuenta](/feat/ux/onboarding-cuenta/)
+    - [PRD](/feat/ux/onboarding-cuenta/prd.md)
+  - [Localidad Usuario](/feat/ux/localidad-usuario/)
+    - [PRD](/feat/ux/localidad-usuario/prd.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
