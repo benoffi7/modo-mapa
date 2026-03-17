@@ -1,0 +1,13 @@
+# Changelog — Modo Mapa
+
+*Historial de versiones implementadas. Actualizado automáticamente post-merge.*
+
+---
+
+| Version | Issues | Descripción |
+|---------|--------|-------------|
+| v2.14.0 | [#159](https://github.com/benoffi7/modo-mapa/issues/159) | Features panel en admin + PerformancePanel decomposition |
+| v2.13.0 | [#142](https://github.com/benoffi7/modo-mapa/issues/142) | Listas compartidas: CRUD, público/privado, deep link, AddToListDialog |
+| v2.12.0 | [#139](https://github.com/benoffi7/modo-mapa/issues/139), Abuse Alerts Fase 2 | Botón Sorpréndeme (con proximidad GPS), acciones revisar/descartar en alertas |
+| v2.11.0 | [#145](https://github.com/benoffi7/modo-mapa/issues/145), [#147](https://github.com/benoffi7/modo-mapa/issues/147), [#146](https://github.com/benoffi7/modo-mapa/issues/146) | Onboarding gamificado, distancia al usuario, pull-to-refresh global |
+| v2.10.0 | [#138](https://github.com/benoffi7/modo-mapa/issues/138), [#133](https://github.com/benoffi7/modo-mapa/issues/133) | Toast global de error/éxito, pre-check rate limit en comentarios, FavoriteButton optimistic UI |

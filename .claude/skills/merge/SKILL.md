@@ -186,17 +186,34 @@ Output a final summary:
 - Branch cleaned: remote + local
 ```
 
-## Phase 7: Update Backlog de Producto
+## Phase 7: Update Backlog & Changelog
 
-**MANDATORY** — Update `docs/reports/backlog-producto.md` with:
+**MANDATORY** — Update both product tracking documents:
 
-1. Add the merged feature to the "Implementado" table (version, issues, description)
-2. Move completed issues from backlog sections to implemented
-3. Update "En desarrollo / Próximo" if priorities changed
-4. Update "Métricas de progreso" counts
-5. Commit and push: `git add docs/reports/backlog-producto.md && git commit -m "docs: update backlog de producto post-merge" && git push origin main`
+### 7a. Changelog (`docs/reports/changelog.md`)
 
-This file is the **single source of truth** for product roadmap and issue tracking.
+Add the new version at the **top** of the table (newest first):
+
+```markdown
+| vX.Y.Z | [#N](url) | Description of what was implemented |
+```
+
+### 7b. Backlog (`docs/reports/backlog-producto.md`)
+
+1. Remove completed issues from their milestone section
+2. If a milestone has no remaining issues, remove the milestone section
+3. Update "Métricas de progreso" counts (issues abiertos, cerrados)
+4. Update the date at the top of the file
+
+### 7c. Commit and push
+
+```bash
+git add docs/reports/backlog-producto.md docs/reports/changelog.md
+git commit -m "docs: update backlog and changelog post-merge"
+git push origin main
+```
+
+These files are the **single source of truth** for product roadmap and release history.
 Referenced by: workflow.md, memory (feedback_features_vs_backlog.md).
 
 ## Phase 8: Post-merge review

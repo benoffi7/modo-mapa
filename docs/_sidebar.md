@@ -39,6 +39,9 @@
     - [PRD](/feat/admin/enhanced-abuse-alerts/)
     - [Specs](/feat/admin/enhanced-abuse-alerts/specs.md)
     - [Plan](/feat/admin/enhanced-abuse-alerts/plan.md)
+    - [PRD Fase 3](/feat/admin/enhanced-abuse-alerts/prd-fase3.md)
+    - [Specs Fase 3](/feat/admin/enhanced-abuse-alerts/specs-fase3.md)
+    - [Plan Fase 3](/feat/admin/enhanced-abuse-alerts/plan-fase3.md)
   - [Staging Environment](/feat/admin/staging-environment/)
     - [Plan](/feat/admin/staging-environment/plan.md)
 
@@ -63,6 +66,8 @@
     - [Changelog](/feat/content/help-section/changelog.md)
   - [Feedback Comercio Search](/feat/content/feedback-comercio-search/)
     - [PRD](/feat/content/feedback-comercio-search/prd.md)
+    - [Specs](/feat/content/feedback-comercio-search/specs.md)
+    - [Plan](/feat/content/feedback-comercio-search/plan.md)
   - [Menu/Feedback/Ratings](/feat/content/menu-feedback-ratings-version/)
     - [PRD](/feat/content/menu-feedback-ratings-version/prd.md)
     - [Specs](/feat/content/menu-feedback-ratings-version/specs.md)
@@ -126,6 +131,8 @@
     - [PRD](/feat/infra/skeleton-loaders/prd.md)
   - [GA4 API](/feat/infra/ga4-api/)
     - [PRD](/feat/infra/ga4-api/prd.md)
+    - [Specs](/feat/infra/ga4-api/specs.md)
+    - [Plan](/feat/infra/ga4-api/plan.md)
   - [Métricas + Panel](/feat/infra/metricas-panel/)
     - [PRD](/feat/infra/metricas-panel/prd.md)
     - [Specs](/feat/infra/metricas-panel/specs.md)
@@ -240,6 +247,7 @@
 
 - **[Reports](/reports/)**
   - [Backlog de Producto](/reports/backlog-producto.md)
+  - [Changelog](/reports/changelog.md)
   - [Tech Debt Backlog](/reports/tech-debt.md)
 
 - **[Issues](/issues/)**
