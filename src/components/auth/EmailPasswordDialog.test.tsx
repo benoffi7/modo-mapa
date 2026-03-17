@@ -18,8 +18,7 @@ vi.mock('../../services/emailAuth', () => ({
   getAuthErrorMessage: () => 'Error de prueba.',
 }));
 
-// skip: flaky timeout on low-resource CI (passes in isolation)
-describe.skip('EmailPasswordDialog', () => {
+describe('EmailPasswordDialog', () => {
   const defaultProps = {
     open: true,
     onClose: vi.fn(),

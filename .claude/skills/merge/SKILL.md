@@ -116,6 +116,16 @@ git checkout main
 git merge <branch-name> --no-ff -m "merge message summarizing the feature/fix"
 ```
 
+### 4a. Reinstall dependencies if changed
+
+After merging, check if `functions/package.json` changed and reinstall:
+
+```bash
+git diff HEAD~1 --name-only | grep -q 'functions/package.json' && (cd functions && npm ci)
+```
+
+This is critical when cherry-picking from worktrees — `node_modules` don't transfer.
+
 ## Phase 5: Post-merge
 
 ### 5a. Version bump
@@ -218,5 +228,5 @@ Referenced by: workflow.md, memory (feedback_features_vs_backlog.md).
 
 ## Phase 8: Post-merge review
 
-Ask: "¿Hay algo que mejorar de los agentes, del flujo de trabajo o permisos?"
-If improvements identified, implement or save to memory.
+Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
+List 2-3 concrete improvements. Save actionable ones to memory. Report summary to the user.
