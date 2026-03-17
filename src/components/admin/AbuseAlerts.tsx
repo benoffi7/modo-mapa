@@ -186,34 +186,58 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
 
       {innerTab === 'alerts' && (
         <>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {DATE_PRESETS.map((p) => <Chip key={p.key} label={p.label} size="small" variant={datePreset === p.key ? 'filled' : 'outlined'} color={datePreset === p.key ? 'primary' : 'default'} onClick={() => setDatePreset(datePreset === p.key ? 'all' : p.key)} />)}
-          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
+            {/* Row 1: Periodo + Estado */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Periodo</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {DATE_PRESETS.map((p) => <Chip key={p.key} label={p.label} size="small" variant={datePreset === p.key ? 'filled' : 'outlined'} color={datePreset === p.key ? 'primary' : 'default'} onClick={() => setDatePreset(datePreset === p.key ? 'all' : p.key)} />)}
+              </Box>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Estado</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {STATUS_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={statusFilter === o.key ? 'filled' : 'outlined'} color={statusFilter === o.key ? o.color : 'default'} onClick={() => setStatusFilter(o.key)} />)}
+              </Box>
+            </Box>
 
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-            {STATUS_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={statusFilter === o.key ? 'filled' : 'outlined'} color={statusFilter === o.key ? o.color : 'default'} onClick={() => setStatusFilter(o.key)} />)}
-          </Box>
+            {/* Row 2: Tipo + Severidad */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Tipo</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                <Badge badgeContent={logs?.length ?? 0} max={999} sx={{ '& .MuiBadge-badge': { bgcolor: 'text.primary', color: 'background.paper' } }}>
+                  <Chip label="Todas" variant={typeFilter === 'all' ? 'filled' : 'outlined'} onClick={() => setTypeFilter('all')} size="small" />
+                </Badge>
+                {ALL_TYPES.map((type) => (
+                  <Badge key={type} badgeContent={typeCounts[type]} color={ABUSE_TYPE_COLORS[type]} max={999}>
+                    <Chip label={ABUSE_TYPE_LABELS[type]} color={ABUSE_TYPE_COLORS[type]} variant={typeFilter === type ? 'filled' : 'outlined'} onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)} size="small" />
+                  </Badge>
+                ))}
+              </Box>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Severidad</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {SEVERITY_FILTER_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={severityFilter === o.key ? 'filled' : 'outlined'} color={severityFilter === o.key && o.key !== 'all' ? SEVERITY_CONFIG[o.key].color : 'default'} onClick={() => setSeverityFilter(o.key)} />)}
+              </Box>
+            </Box>
 
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-            {SEVERITY_FILTER_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={severityFilter === o.key ? 'filled' : 'outlined'} color={severityFilter === o.key && o.key !== 'all' ? SEVERITY_CONFIG[o.key].color : 'default'} onClick={() => setSeverityFilter(o.key)} />)}
-          </Box>
-
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
-            <Badge badgeContent={logs?.length ?? 0} max={999} sx={{ '& .MuiBadge-badge': { bgcolor: 'text.primary', color: 'background.paper' } }}>
-              <Chip label="Todas" variant={typeFilter === 'all' ? 'filled' : 'outlined'} onClick={() => setTypeFilter('all')} size="small" />
-            </Badge>
-            {ALL_TYPES.map((type) => (
-              <Badge key={type} badgeContent={typeCounts[type]} color={ABUSE_TYPE_COLORS[type]} max={999}>
-                <Chip label={ABUSE_TYPE_LABELS[type]} color={ABUSE_TYPE_COLORS[type]} variant={typeFilter === type ? 'filled' : 'outlined'} onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)} size="small" />
-              </Badge>
-            ))}
-          </Box>
-
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
-            {collections.length > 0 && <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>{collections.map((col) => <Chip key={col} label={col} size="small" variant={collectionFilter === col ? 'filled' : 'outlined'} onClick={() => setCollectionFilter(collectionFilter === col ? '' : col)} />)}</Box>}
-            <TextField size="small" placeholder="Buscar por userId..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} sx={{ minWidth: 200, ml: 'auto' }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }} />
-            {hasActiveFilters && <Button size="small" onClick={clearFilters}>Limpiar filtros</Button>}
-            <Tooltip title="Exportar CSV"><span><IconButton size="small" onClick={handleExport} disabled={filtered.length === 0}><FileDownloadIcon fontSize="small" /></IconButton></span></Tooltip>
+            {/* Row 3: Colección + búsqueda + acciones — full width */}
+            <Box sx={{ gridColumn: { md: '1 / -1' }, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+              {collections.length > 0 && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Colección</Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {collections.map((col) => <Chip key={col} label={col} size="small" variant={collectionFilter === col ? 'filled' : 'outlined'} onClick={() => setCollectionFilter(collectionFilter === col ? '' : col)} />)}
+                  </Box>
+                </Box>
+              )}
+              <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}>
+                <TextField size="small" placeholder="Buscar por userId..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} sx={{ minWidth: 200 }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }} />
+                {hasActiveFilters && <Button size="small" onClick={clearFilters}>Limpiar</Button>}
+                <Tooltip title="Exportar CSV"><span><IconButton size="small" onClick={handleExport} disabled={filtered.length === 0}><FileDownloadIcon fontSize="small" /></IconButton></span></Tooltip>
+              </Box>
+            </Box>
           </Box>
 
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>{filtered.length} alerta{filtered.length !== 1 ? 's' : ''}{hasActiveFilters ? ' (filtrado)' : ''}</Typography>

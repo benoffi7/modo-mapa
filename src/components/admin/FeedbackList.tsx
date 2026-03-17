@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -9,7 +9,11 @@ import Link from '@mui/material/Link';
 import Dialog from '@mui/material/Dialog';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { useNavigate } from 'react-router-dom';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
 import { fetchRecentFeedback } from '../../services/admin';
 import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from '../../services/adminFeedback';
 import { useAsyncData } from '../../hooks/useAsyncData';
@@ -42,9 +46,9 @@ export default function FeedbackList() {
   const fetcher = useCallback(() => fetchRecentFeedback(50), []);
   const { data: feedback, loading, error, refetch } = useAsyncData<Feedback[]>(fetcher);
 
-  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [businessFilter, setBusinessFilter] = useState<string | null>(null);
+  const [businessDetailId, setBusinessDetailId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -57,8 +61,13 @@ export default function FeedbackList() {
   }) ?? [];
 
   const handleOpenBusiness = (businessId: string) => {
-    navigate(`/?business=${businessId}`);
+    setBusinessDetailId(businessId);
   };
+
+  const businessDetail = useMemo(() => {
+    if (!businessDetailId) return null;
+    return allBusinesses.find((b) => b.id === businessDetailId) ?? null;
+  }, [businessDetailId]);
 
   const handleRespond = async (feedbackId: string) => {
     const trimmed = responseText.trim();
@@ -272,6 +281,35 @@ export default function FeedbackList() {
               sx={{ maxWidth: '100%', maxHeight: '80vh', display: 'block' }}
             />
           )}
+        </Dialog>
+        <Dialog open={!!businessDetailId} onClose={() => setBusinessDetailId(null)} maxWidth="xs" fullWidth>
+          {businessDetail ? (
+            <>
+              <DialogTitle>{businessDetail.name}</DialogTitle>
+              <DialogContent>
+                <List dense disablePadding>
+                  <ListItem disableGutters><ListItemText primary="ID" secondary={businessDetail.id} /></ListItem>
+                  {businessDetail.address && <ListItem disableGutters><ListItemText primary="Dirección" secondary={businessDetail.address} /></ListItem>}
+                  {businessDetail.tags && businessDetail.tags.length > 0 && (
+                    <ListItem disableGutters>
+                      <ListItemText primary="Tags" secondary={
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                          {businessDetail.tags.map((t) => <Chip key={t} label={t} size="small" />)}
+                        </Box>
+                      } />
+                    </ListItem>
+                  )}
+                </List>
+              </DialogContent>
+            </>
+          ) : businessDetailId ? (
+            <>
+              <DialogTitle>Comercio no encontrado</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2" color="text.secondary">ID: {businessDetailId}</Typography>
+              </DialogContent>
+            </>
+          ) : null}
         </Dialog>
       </Box>
     </AdminPanelWrapper>
