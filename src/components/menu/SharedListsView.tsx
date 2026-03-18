@@ -15,6 +15,9 @@ import {
   Chip,
   CircularProgress,
   Collapse,
+  Card,
+  CardActionArea,
+  CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -37,6 +40,7 @@ import {
   removeBusinessFromList,
   toggleListPublic,
   copyList,
+  fetchFeaturedLists,
 } from '../../services/sharedLists';
 import { addFavoritesBatch } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -94,6 +98,28 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Featured lists
+  const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
+
+  useEffect(() => {
+    fetchFeaturedLists().then(setFeaturedLists).catch(() => {});
+  }, []);
+
+  const handleOpenFeatured = (listId: string) => {
+    // Reuse the shared list deep-link mechanism by loading the list inline
+    setLoadingShared(true);
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId).withConverter(sharedListConverter));
+        if (!snap.exists()) { setLoadingShared(false); return; }
+        setSharedList(snap.data());
+        const items = await fetchListItems(listId);
+        setSharedItems(items);
+      } catch { /* ignore */ }
+      setLoadingShared(false);
+    })();
+  };
 
   const loadLists = useCallback(async () => {
     if (!user) return;
@@ -246,8 +272,8 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
     );
   }
 
-  // Show shared list from deep link
-  if (sharedListId && (loadingShared || sharedList)) {
+  // Show shared list from deep link or featured list click
+  if ((sharedListId || sharedList) && (loadingShared || sharedList)) {
     return (
       <Box sx={{ px: 2, py: 1 }}>
         {loadingShared ? (
@@ -256,6 +282,11 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
           </Box>
         ) : sharedList ? (
           <>
+            {!sharedListId && (
+              <Button size="small" onClick={() => { setSharedList(null); setSharedItems([]); }} sx={{ mb: 0.5 }}>
+                ← Volver a listas
+              </Button>
+            )}
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
               {sharedList.name}
             </Typography>
@@ -319,6 +350,28 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
 
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
+      {/* Featured lists */}
+      {featuredLists.length > 0 && (
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>Destacadas</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, px: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
+            {featuredLists.map((fl) => (
+              <Card key={fl.id} variant="outlined" sx={{ minWidth: 170, flexShrink: 0 }}>
+                <CardActionArea onClick={() => handleOpenFeatured(fl.id)}>
+                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    <Chip label="Destacada" size="small" color="primary" sx={{ mb: 0.5, height: 20, fontSize: '0.65rem' }} />
+                    <Typography variant="subtitle2" noWrap>{fl.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {fl.itemCount} comercio{fl.itemCount !== 1 ? 's' : ''}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            ))}
+          </Box>
+        </Box>
+      )}
+
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}>
         <Typography variant="body2" color="text.secondary">

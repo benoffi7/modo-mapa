@@ -89,6 +89,7 @@ export interface SharedList {
   name: string;
   description: string;
   isPublic: boolean;
+  featured: boolean;
   itemCount: number;
   createdAt: Date;
   updatedAt: Date;

@@ -9,6 +9,7 @@ import {
   getDocs,
   query,
   where,
+  orderBy,
   serverTimestamp,
   increment,
 } from 'firebase/firestore';
@@ -139,4 +140,15 @@ export async function copyList(sourceListId: string, targetUserId: string): Prom
 
   trackEvent('list_copied', { source_list_id: sourceListId, item_count: items.length });
   return newListId;
+}
+
+export async function fetchFeaturedLists(): Promise<SharedList[]> {
+  const snap = await getDocs(
+    query(
+      getSharedListsCollection(),
+      where('featured', '==', true),
+      orderBy('updatedAt', 'desc'),
+    ),
+  );
+  return snap.docs.map((d) => d.data());
 }

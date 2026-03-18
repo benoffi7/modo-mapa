@@ -301,11 +301,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // Listas compartidas — owner puede leer siempre, otros solo si isPublic.
-    // Owner puede crear, actualizar y eliminar.
+    // Listas compartidas — owner puede leer siempre, otros si isPublic o featured.
+    // Owner puede crear, actualizar y eliminar. Featured solo via admin SDK.
     match /sharedLists/{docId} {
       allow read: if request.auth != null
-        && (resource.data.ownerId == request.auth.uid || resource.data.isPublic == true);
+        && (resource.data.ownerId == request.auth.uid
+            || resource.data.isPublic == true
+            || resource.data.get('featured', false) == true);
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['ownerId', 'name', 'description', 'isPublic', 'itemCount', 'createdAt', 'updatedAt'])
         && request.resource.data.ownerId == request.auth.uid

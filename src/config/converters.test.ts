@@ -433,7 +433,7 @@ describe('userSettingsConverter', () => {
 describe('sharedListConverter', () => {
   const full = {
     ownerId: 'u1', name: 'My List', description: 'Desc',
-    isPublic: true, itemCount: 3, createdAt: NOW, updatedAt: NOW,
+    isPublic: true, featured: false, itemCount: 3, createdAt: NOW, updatedAt: NOW,
   };
 
   it('toFirestore serializes all fields', () => {
