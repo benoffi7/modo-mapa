@@ -93,17 +93,31 @@ export default function AppShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
 
-  // Navigate back to shared list when BusinessSheet closes
-  const prevBiz = useRef(currentBusiness);
+  // Reopen shared list when BusinessSheet closes.
+  // A ref stores the list ID to return to — immune to React batching/closure issues.
+  const returnToListId = useRef<string | null>(null);
+  const hadBusiness = useRef(false);
+
   useEffect(() => {
-    if (prevBiz.current && !currentBusiness && activeSharedListId) {
-      setSharedListId(activeSharedListId);
+    if (activeSharedListId) {
+      returnToListId.current = activeSharedListId;
+    }
+  }, [activeSharedListId]);
+
+  useEffect(() => {
+    if (currentBusiness) {
+      hadBusiness.current = true;
+    } else if (hadBusiness.current && returnToListId.current) {
+      // BusinessSheet just closed AND we have a list to return to
+      const listId = returnToListId.current;
+      returnToListId.current = null;
+      hadBusiness.current = false;
+      setActiveSharedListId(null);
+      setSharedListId(listId);
       setMenuInitialSection('lists');
       setMenuOpen(true);
-      setActiveSharedListId(null);
     }
-    prevBiz.current = currentBusiness;
-  }, [currentBusiness, activeSharedListId, setActiveSharedListId]);
+  }, [currentBusiness, setActiveSharedListId]);
 
   // Deep link: ?business=biz_001 opens the business sheet
   // Deep link: ?list=xxx opens SideMenu on lists section
