@@ -245,8 +245,11 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
     setIsCopying(true);
     try {
       await copyList(sharedList.id, user.uid);
-      toast.success('Lista copiada a Mis Listas');
+      // Exit shared list view so user sees their lists with the new copy
+      setSharedList(null);
+      setSharedItems([]);
       await loadLists();
+      toast.success('Lista copiada a Mis Listas');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo copiar');
     }

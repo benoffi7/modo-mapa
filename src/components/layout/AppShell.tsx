@@ -100,9 +100,10 @@ export default function AppShell() {
       setSharedListId(activeSharedListId);
       setMenuInitialSection('lists');
       setMenuOpen(true);
+      setActiveSharedListId(null); // Clear after reopening
     }
     prevBiz.current = currentBusiness;
-  }, [currentBusiness, activeSharedListId]);
+  }, [currentBusiness, activeSharedListId, setActiveSharedListId]);
 
   // Deep link: ?business=biz_001 opens the business sheet
   // Deep link: ?list=xxx opens SideMenu on lists section
@@ -145,7 +146,21 @@ export default function AppShell() {
       <BusinessSheet />
       <NameDialog />
       <MapHint />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); setActiveSharedListId(null); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
+      <SideMenu
+        open={menuOpen}
+        onClose={() => {
+          setMenuOpen(false);
+          setMenuInitialSection(undefined);
+          // Only clear shared list state if not navigating to a business from a list
+          if (!currentBusiness) {
+            setSharedListId(undefined);
+            setActiveSharedListId(null);
+          }
+        }}
+        onOpen={() => setMenuOpen(true)}
+        initialSection={menuInitialSection}
+        sharedListId={sharedListId}
+      />
     </Box>
   );
 }
