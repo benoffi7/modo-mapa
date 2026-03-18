@@ -268,7 +268,6 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
 
               {/* Navigation */}
               <SideMenuNav
-                isAuthenticated={!!user && !user.isAnonymous}
                 unreadReplyCount={unreadReplyCount}
                 onNavigate={setActiveSection}
                 onSurprise={handleSurprise}

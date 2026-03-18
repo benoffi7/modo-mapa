@@ -16,14 +16,13 @@ import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/u
 import type { Section } from './SideMenu';
 
 interface Props {
-  isAuthenticated: boolean;
   unreadReplyCount: number;
   onNavigate: (section: Section) => void;
   onSurprise: () => void;
   onFeedback: () => void;
 }
 
-export default function SideMenuNav({ isAuthenticated, unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
+export default function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
   return (
     <>
       <List>
@@ -32,12 +31,10 @@ export default function SideMenuNav({ isAuthenticated, unreadReplyCount, onNavig
           <ListItemText primary="Favoritos" />
         </ListItemButton>
 
-        {isAuthenticated && (
-          <ListItemButton onClick={() => onNavigate('lists')}>
-            <ListItemIcon><BookmarkBorderIcon sx={{ color: 'info.main' }} /></ListItemIcon>
-            <ListItemText primary="Mis Listas" />
-          </ListItemButton>
-        )}
+        <ListItemButton onClick={() => onNavigate('lists')}>
+          <ListItemIcon><BookmarkBorderIcon sx={{ color: 'info.main' }} /></ListItemIcon>
+          <ListItemText primary="Mis Listas" />
+        </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('recent')}>
           <ListItemIcon><HistoryIcon sx={{ color: 'warning.main' }} /></ListItemIcon>
