@@ -25,11 +25,11 @@ jobs:
 
       - run: npm run lint
 
-      - run: npm run test:run
+      - run: npm run test:coverage
 
-      - name: Run functions tests
+      - name: Run functions tests with coverage
         run: |
-          cd functions && npm ci && npm run test:run
+          cd functions && npm ci && npm run test:coverage
 
       - run: npm run build
         env:

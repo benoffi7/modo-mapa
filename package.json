@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest --maxWorkers=4",
     "test:run": "vitest run --maxWorkers=4",
+    "test:coverage": "vitest run --coverage --maxWorkers=4",
     "seed": "cp scripts/seed-admin-data.ts functions/seed.ts && cd functions && npx tsx seed.ts; rm -f seed.ts",
     "analyze": "ANALYZE=true vite build",
     "prepare": "husky"

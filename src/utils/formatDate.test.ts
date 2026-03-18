@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { toDate, formatRelativeTime, formatDateFull } from './formatDate';
+import {
+  toDate,
+  formatDateShort,
+  formatDateMedium,
+  formatRelativeTime,
+  formatDateFull,
+} from './formatDate';
 
 describe('toDate', () => {
   it('converts Firestore Timestamp-like objects', () => {
@@ -24,6 +30,24 @@ describe('toDate', () => {
   it('returns current date for primitive values', () => {
     expect(toDate(42)).toBeInstanceOf(Date);
     expect(toDate('string')).toBeInstanceOf(Date);
+  });
+});
+
+describe('formatDateShort', () => {
+  it('formats a date with day, month, hour and minute in es-AR locale', () => {
+    const date = new Date('2025-03-15T14:30:00');
+    const result = formatDateShort(date);
+    expect(result).toContain('15');
+    expect(result).toContain('3');
+  });
+});
+
+describe('formatDateMedium', () => {
+  it('formats a date with day, short month and year in es-AR locale', () => {
+    const date = new Date('2025-06-01T10:00:00');
+    const result = formatDateMedium(date);
+    expect(result).toContain('1');
+    expect(result).toContain('2025');
   });
 });
 

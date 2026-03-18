@@ -10,6 +10,7 @@
     "build:watch": "tsc --watch",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "@types/sharp": "^0.31.1",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^9.39.1",
     "typescript": "~5.9.3",
     "vitest": "^4.0.18"

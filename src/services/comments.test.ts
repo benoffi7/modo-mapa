@@ -12,17 +12,20 @@ const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
 const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  addDoc: (...args: unknown[]) => mockAddDoc(...args),
-  deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
-  updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
-  setDoc: (...args: unknown[]) => mockSetDoc(...args),
-  doc: vi.fn().mockReturnValue({}),
-  serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
-}));
+vi.mock('firebase/firestore', () => {
+  const withConverterFn = vi.fn(function (this: unknown) { return this; });
+  return {
+    collection: vi.fn().mockReturnValue({ withConverter: withConverterFn }),
+    addDoc: (...args: unknown[]) => mockAddDoc(...args),
+    deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
+    updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
+    setDoc: (...args: unknown[]) => mockSetDoc(...args),
+    doc: vi.fn().mockReturnValue({}),
+    serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
+  };
+});
 
-import { addComment, editComment, deleteComment } from './comments';
+import { addComment, editComment, deleteComment, getCommentsCollection, likeComment, unlikeComment } from './comments';
 
 describe('addComment — input validation', () => {
   it('throws on empty text', async () => {
@@ -98,6 +101,33 @@ describe('editComment — input validation', () => {
 describe('deleteComment', () => {
   it('calls deleteDoc', async () => {
     await deleteComment('c1', 'u1');
+    expect(mockDeleteDoc).toHaveBeenCalled();
+  });
+});
+
+describe('getCommentsCollection', () => {
+  it('returns a collection reference with the comment converter applied', () => {
+    const result = getCommentsCollection();
+    expect(result).toBeDefined();
+    expect(result).toHaveProperty('withConverter');
+  });
+});
+
+describe('likeComment', () => {
+  it('creates a like document with composite key userId__commentId', async () => {
+    mockSetDoc.mockClear();
+    await likeComment('u1', 'c1');
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ userId: 'u1', commentId: 'c1', createdAt: 'SERVER_TIMESTAMP' }),
+    );
+  });
+});
+
+describe('unlikeComment', () => {
+  it('deletes the like document', async () => {
+    mockDeleteDoc.mockClear();
+    await unlikeComment('u1', 'c1');
     expect(mockDeleteDoc).toHaveBeenCalled();
   });
 });

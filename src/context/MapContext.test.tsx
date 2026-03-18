@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { MapProvider, useSelection, useFilters } from './MapContext';
+import { MapProvider, useSelection, useFilters, useMapContext } from './MapContext';
 import type { Business } from '../types';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -116,6 +116,86 @@ describe('MapContext', () => {
       act(() => result.current.setUserLocation({ lat: -34.6, lng: -58.3 }));
       act(() => result.current.setUserLocation(null));
       expect(result.current.userLocation).toBeNull();
+    });
+  });
+
+  describe('setPriceFilter', () => {
+    it('has null activePriceFilter by default', () => {
+      const { result } = renderHook(() => useFilters(), { wrapper });
+      expect(result.current.activePriceFilter).toBeNull();
+    });
+
+    it('sets price level when different from current', () => {
+      const { result } = renderHook(() => useFilters(), { wrapper });
+
+      act(() => result.current.setPriceFilter(2));
+      expect(result.current.activePriceFilter).toBe(2);
+    });
+
+    it('toggles price level to null when same as current', () => {
+      const { result } = renderHook(() => useFilters(), { wrapper });
+
+      act(() => result.current.setPriceFilter(2));
+      expect(result.current.activePriceFilter).toBe(2);
+
+      act(() => result.current.setPriceFilter(2));
+      expect(result.current.activePriceFilter).toBeNull();
+    });
+
+    it('switches to a different price level', () => {
+      const { result } = renderHook(() => useFilters(), { wrapper });
+
+      act(() => result.current.setPriceFilter(1));
+      expect(result.current.activePriceFilter).toBe(1);
+
+      act(() => result.current.setPriceFilter(3));
+      expect(result.current.activePriceFilter).toBe(3);
+    });
+
+    it('handles explicit null to clear price filter', () => {
+      const { result } = renderHook(() => useFilters(), { wrapper });
+
+      act(() => result.current.setPriceFilter(2));
+      act(() => result.current.setPriceFilter(null));
+      expect(result.current.activePriceFilter).toBeNull();
+    });
+  });
+
+  describe('useMapContext (deprecated)', () => {
+    it('returns merged selection and filters context', () => {
+      const { result } = renderHook(() => useMapContext(), { wrapper });
+
+      expect(result.current).toHaveProperty('selectedBusiness');
+      expect(result.current).toHaveProperty('setSelectedBusiness');
+      expect(result.current).toHaveProperty('searchQuery');
+      expect(result.current).toHaveProperty('setSearchQuery');
+      expect(result.current).toHaveProperty('activeFilters');
+      expect(result.current).toHaveProperty('toggleFilter');
+      expect(result.current).toHaveProperty('activePriceFilter');
+      expect(result.current).toHaveProperty('setPriceFilter');
+      expect(result.current).toHaveProperty('userLocation');
+      expect(result.current).toHaveProperty('setUserLocation');
+    });
+
+    it('selection updates are reflected in useMapContext', () => {
+      const { result } = renderHook(() => useMapContext(), { wrapper });
+      const business = makeBusiness({ name: 'Merged Test' });
+
+      act(() => result.current.setSelectedBusiness(business));
+      expect(result.current.selectedBusiness).toEqual(business);
+    });
+
+    it('filter updates are reflected in useMapContext', () => {
+      const { result } = renderHook(() => useMapContext(), { wrapper });
+
+      act(() => result.current.setSearchQuery('pizza'));
+      expect(result.current.searchQuery).toBe('pizza');
+
+      act(() => result.current.toggleFilter('vegano'));
+      expect(result.current.activeFilters).toEqual(['vegano']);
+
+      act(() => result.current.setPriceFilter(1));
+      expect(result.current.activePriceFilter).toBe(1);
     });
   });
 

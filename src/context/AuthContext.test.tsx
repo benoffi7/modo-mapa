@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
+import { auth } from '../config/firebase';
 
 const mockUser = { uid: 'test-uid-123', isAnonymous: true, providerData: [], emailVerified: false, reload: vi.fn() };
 
@@ -16,12 +17,16 @@ const mockSignOutAndReset = vi.fn();
 const mockResendVerificationEmail = vi.fn();
 const mockChangePasswordService = vi.fn();
 
+const mockSignInWithPopup = vi.fn();
+
 vi.mock('firebase/auth', () => ({
   signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args),
   onAuthStateChanged: (_auth: unknown, cb: (user: unknown) => void) => {
     authStateCallback = cb;
     return vi.fn();
   },
+  GoogleAuthProvider: vi.fn(),
+  signInWithPopup: (...args: unknown[]) => mockSignInWithPopup(...args),
   getAuth: vi.fn(),
   connectAuthEmulator: vi.fn(),
 }));
@@ -78,6 +83,14 @@ function wrapper({ children }: { children: ReactNode }) {
   );
 }
 
+function adminWrapper({ children }: { children: ReactNode }) {
+  return (
+    <MemoryRouter initialEntries={['/admin/dashboard']}>
+      <AuthProvider>{children}</AuthProvider>
+    </MemoryRouter>
+  );
+}
+
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,6 +105,8 @@ describe('AuthContext', () => {
     mockResendVerificationEmail.mockResolvedValue(undefined);
     mockChangePasswordService.mockResolvedValue(undefined);
     mockUser.reload.mockResolvedValue(undefined);
+    mockSignInWithPopup.mockResolvedValue({ user: { uid: 'google-uid' } });
+    (auth as unknown as Record<string, unknown>).currentUser = null;
   });
 
   describe('initial state', () => {
@@ -447,6 +462,222 @@ describe('AuthContext', () => {
       });
 
       expect(result.current.authError).toBe('Contraseña actual incorrecta.');
+    });
+  });
+
+  describe('auth flow on admin route', () => {
+    it('does NOT call signInAnonymously on admin route when no user', async () => {
+      renderHook(() => useAuth(), { wrapper: adminWrapper });
+
+      await act(async () => {
+        authStateCallback?.(null);
+      });
+
+      expect(mockSignInAnonymously).not.toHaveBeenCalled();
+    });
+
+    it('sets user to null on admin route when no user', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper: adminWrapper });
+
+      await act(async () => {
+        authStateCallback?.(null);
+      });
+
+      await waitFor(() => {
+        expect(result.current.user).toBeNull();
+        expect(result.current.isLoading).toBe(false);
+      });
+    });
+  });
+
+  describe('authMethod - additional branches', () => {
+    it('returns "anonymous" when user is null', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper: adminWrapper });
+
+      await act(async () => {
+        authStateCallback?.(null);
+      });
+
+      await waitFor(() => {
+        expect(result.current.authMethod).toBe('anonymous');
+      });
+    });
+
+    it('returns "anonymous" for non-anonymous user with unknown provider', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.({
+          uid: 'unknown-uid',
+          isAnonymous: false,
+          providerData: [{ providerId: 'apple.com' }],
+          emailVerified: false,
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.authMethod).toBe('anonymous');
+      });
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    it('returns user on successful Google sign-in', async () => {
+      const googleUser = { uid: 'google-uid', displayName: 'Google User' };
+      mockSignInWithPopup.mockResolvedValue({ user: googleUser });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      let returnedUser: unknown;
+      await act(async () => {
+        returnedUser = await result.current.signInWithGoogle();
+      });
+
+      expect(returnedUser).toEqual(googleUser);
+      expect(mockSignInWithPopup).toHaveBeenCalled();
+    });
+
+    it('sets authError and returns null when Google sign-in fails with Error', async () => {
+      mockSignInWithPopup.mockRejectedValue(new Error('popup closed by user'));
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      let returnedUser: unknown;
+      await act(async () => {
+        returnedUser = await result.current.signInWithGoogle();
+      });
+
+      expect(returnedUser).toBeNull();
+      expect(result.current.authError).toBe('popup closed by user');
+    });
+
+    it('sets default authError when Google sign-in fails with non-Error', async () => {
+      mockSignInWithPopup.mockRejectedValue('unknown error');
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      let returnedUser: unknown;
+      await act(async () => {
+        returnedUser = await result.current.signInWithGoogle();
+      });
+
+      expect(returnedUser).toBeNull();
+      expect(result.current.authError).toBe('Error al iniciar sesión con Google');
+    });
+  });
+
+  describe('refreshEmailVerified - no user', () => {
+    it('returns false when no user is logged in', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      let verified: boolean | undefined;
+      await act(async () => {
+        verified = await result.current.refreshEmailVerified();
+      });
+
+      expect(verified).toBe(false);
+      expect(mockUser.reload).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('linkEmailPassword - refresh branch', () => {
+    it('updates authMethod and emailVerified when auth.currentUser exists after linking', async () => {
+      const refreshedUser = {
+        uid: 'test-uid-123',
+        isAnonymous: false,
+        providerData: [{ providerId: 'password' }],
+        emailVerified: false,
+      };
+      (auth as unknown as Record<string, unknown>).currentUser = refreshedUser;
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.linkEmailPassword('test@example.com', 'password123');
+      });
+
+      expect(result.current.authMethod).toBe('email');
+    });
+  });
+
+  describe('resendVerification - error branch', () => {
+    it('sets authError and rethrows on resendVerification failure', async () => {
+      mockResendVerificationEmail.mockRejectedValue(
+        Object.assign(new Error('resend fail'), { code: 'auth/too-many-requests' }),
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await expect(result.current.resendVerification()).rejects.toThrow('resend fail');
+      });
+
+      expect(result.current.authError).toBe('Ocurrió un error. Intentá de nuevo.');
+    });
+  });
+
+  describe('signOut - error branch', () => {
+    it('handles signOut error gracefully', async () => {
+      mockSignOutAndReset.mockRejectedValue(new Error('sign out failed'));
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        await result.current.signOut();
+      });
+
+      expect(mockSignOutAndReset).toHaveBeenCalled();
+    });
+  });
+
+  describe('setDisplayName - doc existence branches', () => {
+    it('calls updateDoc when user doc exists', async () => {
+      mockGetDoc
+        .mockResolvedValueOnce({ exists: () => true, data: () => ({ displayName: 'Old' }) })
+        .mockResolvedValueOnce({ exists: () => true });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.setDisplayName('NewName');
+      });
+
+      expect(mockUpdateDoc).toHaveBeenCalledWith(mockDocRef, { displayName: 'NewName' });
+      expect(mockSetDoc).not.toHaveBeenCalled();
+    });
+
+    it('calls setDoc when user doc does not exist', async () => {
+      mockGetDoc
+        .mockResolvedValueOnce({ exists: () => false })
+        .mockResolvedValueOnce({ exists: () => false });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await act(async () => {
+        await result.current.setDisplayName('NewName');
+      });
+
+      expect(mockSetDoc).toHaveBeenCalledWith(mockDocRef, {
+        displayName: 'NewName',
+        createdAt: 'server-timestamp',
+      });
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
     });
   });
 });

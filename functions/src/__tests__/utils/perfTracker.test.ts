@@ -1,8 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// We import only the pure function — trackFunctionTiming requires Firestore
-// and is tested via integration tests
-import { calculatePercentile } from '../../utils/perfTracker';
+// --- Firestore mock setup for trackFunctionTiming tests ---
+const mockTxGet = vi.fn();
+const mockTxSet = vi.fn();
+const mockRunTransaction = vi.fn();
+const mockDocRef = { path: 'config/perfCounters' };
+const mockDoc = vi.fn().mockReturnValue(mockDocRef);
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: () => ({
+    doc: mockDoc,
+    runTransaction: mockRunTransaction,
+  }),
+}));
+
+import { calculatePercentile, trackFunctionTiming } from '../../utils/perfTracker';
 
 describe('calculatePercentile', () => {
   it('returns 0 for empty array', () => {
@@ -43,5 +55,86 @@ describe('calculatePercentile', () => {
 
   it('works with duplicate values', () => {
     expect(calculatePercentile([5, 5, 5, 5], 50)).toBe(5);
+  });
+});
+
+describe('trackFunctionTiming', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // By default, runTransaction executes the callback with our mock tx
+    mockRunTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+      await cb({ get: mockTxGet, set: mockTxSet });
+    });
+  });
+
+  it('creates a new array when function name does not exist yet', async () => {
+    mockTxGet.mockResolvedValue({ data: () => ({}) });
+
+    await trackFunctionTiming('myFunction', performance.now() - 10);
+
+    expect(mockTxSet).toHaveBeenCalledTimes(1);
+    const [docRef, data, options] = mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>, unknown];
+    expect(docRef).toBe(mockDocRef);
+    expect(options).toEqual({ merge: true });
+    // Should be an array with exactly one number (the elapsed time)
+    const samples = data['myFunction'] as number[];
+    expect(Array.isArray(samples)).toBe(true);
+    expect(samples).toHaveLength(1);
+    expect(typeof samples[0]).toBe('number');
+  });
+
+  it('appends to an existing array of samples', async () => {
+    mockTxGet.mockResolvedValue({ data: () => ({ myFunction: [100, 200] }) });
+
+    await trackFunctionTiming('myFunction', performance.now() - 5);
+
+    expect(mockTxSet).toHaveBeenCalledTimes(1);
+    const data = (mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>])[1];
+    const samples = data['myFunction'] as number[];
+    expect(samples).toHaveLength(3);
+    // First two should be the existing values
+    expect(samples[0]).toBe(100);
+    expect(samples[1]).toBe(200);
+    expect(typeof samples[2]).toBe('number');
+  });
+
+  it('does not write when samples array is at MAX_SAMPLES_PER_FUNCTION (5000)', async () => {
+    const fullArray = Array.from({ length: 5000 }, (_, i) => i);
+    mockTxGet.mockResolvedValue({ data: () => ({ myFunction: fullArray }) });
+
+    await trackFunctionTiming('myFunction', performance.now() - 5);
+
+    // Transaction callback should return early without calling set
+    expect(mockTxSet).not.toHaveBeenCalled();
+  });
+
+  it('treats non-array field value as empty array and creates a new one', async () => {
+    // data[functionName] exists but is not an array (e.g. corrupted data)
+    mockTxGet.mockResolvedValue({ data: () => ({ myFunction: 'not-an-array' }) });
+
+    await trackFunctionTiming('myFunction', performance.now() - 5);
+
+    expect(mockTxSet).toHaveBeenCalledTimes(1);
+    const data = (mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>])[1];
+    const samples = data['myFunction'] as number[];
+    expect(samples).toHaveLength(1);
+  });
+
+  it('handles missing document (snap.data() returns undefined)', async () => {
+    mockTxGet.mockResolvedValue({ data: () => undefined });
+
+    await trackFunctionTiming('myFunction', performance.now() - 5);
+
+    expect(mockTxSet).toHaveBeenCalledTimes(1);
+    const data = (mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>])[1];
+    const samples = data['myFunction'] as number[];
+    expect(samples).toHaveLength(1);
+  });
+
+  it('does not throw when the transaction rejects (silent catch)', async () => {
+    mockRunTransaction.mockRejectedValue(new Error('Firestore unavailable'));
+
+    // Should resolve without throwing
+    await expect(trackFunctionTiming('myFunction', performance.now())).resolves.toBeUndefined();
   });
 });
