@@ -25,14 +25,25 @@ const toggleFeatured = httpsCallable<{ listId: string; featured: boolean }, { su
 );
 
 async function fetchPublicLists(): Promise<SharedList[]> {
-  const snap = await getDocs(
-    query(
-      collection(db, 'sharedLists').withConverter(sharedListConverter),
-      where('isPublic', '==', true),
-      orderBy('updatedAt', 'desc'),
-    ),
-  );
-  return snap.docs.map((d) => d.data());
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'sharedLists').withConverter(sharedListConverter),
+        where('isPublic', '==', true),
+        orderBy('updatedAt', 'desc'),
+      ),
+    );
+    return snap.docs.map((d) => d.data());
+  } catch {
+    // Fallback without orderBy if index not ready
+    const snap = await getDocs(
+      query(
+        collection(db, 'sharedLists').withConverter(sharedListConverter),
+        where('isPublic', '==', true),
+      ),
+    );
+    return snap.docs.map((d) => d.data());
+  }
 }
 
 export default function FeaturedListsPanel() {
