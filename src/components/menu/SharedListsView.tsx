@@ -290,11 +290,9 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
           </Box>
         ) : sharedList ? (
           <>
-            {!sharedListId && (
-              <Button size="small" onClick={() => { setSharedList(null); setSharedItems([]); }} sx={{ mb: 0.5 }}>
-                ← Volver a listas
-              </Button>
-            )}
+            <Button size="small" onClick={() => { setSharedList(null); setSharedItems([]); loadLists(); }} sx={{ mb: 0.5 }}>
+              ← Volver a listas
+            </Button>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
               {sharedList.name}
             </Typography>
@@ -322,7 +320,7 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
                   onClick={handleAddAllFavorites}
                   disabled={isAddingFavs}
                 >
-                  Favoritos
+                  Marcar todos como favoritos
                 </Button>
               )}
             </Box>
