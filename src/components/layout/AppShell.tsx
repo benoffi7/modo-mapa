@@ -100,7 +100,7 @@ export default function AppShell() {
       setSharedListId(activeSharedListId);
       setMenuInitialSection('lists');
       setMenuOpen(true);
-      setActiveSharedListId(null); // Clear after reopening
+      setActiveSharedListId(null);
     }
     prevBiz.current = currentBusiness;
   }, [currentBusiness, activeSharedListId, setActiveSharedListId]);
@@ -139,7 +139,12 @@ export default function AppShell() {
       }}
     >
       <OfflineIndicator />
-      <SearchBar onMenuClick={() => setMenuOpen(true)} />
+      <SearchBar onMenuClick={() => {
+        setSharedListId(undefined);
+        setActiveSharedListId(null);
+        setMenuInitialSection(undefined);
+        setMenuOpen(true);
+      }} />
       <FilterChips />
       <MapView />
       <LocationFAB />
@@ -151,11 +156,9 @@ export default function AppShell() {
         onClose={() => {
           setMenuOpen(false);
           setMenuInitialSection(undefined);
-          // Only clear shared list state if not navigating to a business from a list
-          if (!currentBusiness) {
-            setSharedListId(undefined);
-            setActiveSharedListId(null);
-          }
+          // Don't clear sharedListId/activeSharedListId here —
+          // they get cleared by the navigate-back effect or when the menu
+          // opens fresh from hamburger button.
         }}
         onOpen={() => setMenuOpen(true)}
         initialSection={menuInitialSection}
