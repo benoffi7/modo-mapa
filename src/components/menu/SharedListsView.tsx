@@ -58,9 +58,11 @@ import type { SharedList, ListItem, Business } from '../../types';
 interface Props {
   onNavigate: () => void;
   sharedListId?: string | undefined;
+  /** Called by parent to check if we're showing a shared list and should clear it instead of navigating back */
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
-export default function SharedListsView({ onNavigate, sharedListId }: Props) {
+export default function SharedListsView({ onNavigate, sharedListId, onRegisterBackHandler }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness, setActiveSharedListId } = useSelection();
   const toast = useToast();
@@ -71,10 +73,11 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
   const [expandedItems, setExpandedItems] = useState<Map<string, ListItem[]>>(new Map());
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
 
-  // Shared list from deep link
+  // Shared list from deep link or featured list click
   const [sharedList, setSharedList] = useState<SharedList | null>(null);
   const [sharedItems, setSharedItems] = useState<ListItem[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
+
 
   useEffect(() => {
     if (!sharedListId) return;
@@ -139,6 +142,21 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
     }
     setIsLoading(false);
   }, [user]);
+
+  // Register back handler: if showing a shared list, clear it and show user's lists
+  useEffect(() => {
+    onRegisterBackHandler?.(() => {
+      if (sharedList || loadingShared) {
+        setSharedList(null);
+        setSharedItems([]);
+        setLoadingShared(false);
+        loadLists();
+        return true; // handled
+      }
+      return false; // not handled, parent should go to nav
+    });
+    return () => onRegisterBackHandler?.(null);
+  }); // runs every render to keep closure fresh
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
@@ -290,9 +308,6 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
           </Box>
         ) : sharedList ? (
           <>
-            <Button size="small" onClick={() => { setSharedList(null); setSharedItems([]); loadLists(); }} sx={{ mb: 0.5 }}>
-              ← Volver a listas
-            </Button>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
               {sharedList.name}
             </Typography>

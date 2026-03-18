@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import {
   SwipeableDrawer,
   Box,
@@ -183,7 +183,15 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
     setNameDialogOpen(false);
   };
 
-  const handleBackToNav = () => setActiveSection('nav');
+  // Back handler for lists section: first clears shared list view, then goes to nav
+  const listsBackHandler = useRef<(() => boolean) | null>(null);
+
+  const handleBackToNav = () => {
+    if (activeSection === 'lists' && listsBackHandler.current?.()) {
+      return; // SharedListsView handled it (cleared shared list → showing user's lists)
+    }
+    setActiveSection('nav');
+  };
 
   const userName = displayName || 'Anónimo';
 
@@ -344,7 +352,7 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={(h) => { listsBackHandler.current = h; }} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
