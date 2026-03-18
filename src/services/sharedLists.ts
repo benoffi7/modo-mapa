@@ -74,11 +74,12 @@ export async function deleteList(listId: string, ownerId: string): Promise<void>
   trackEvent('list_deleted', { list_id: listId });
 }
 
-export async function addBusinessToList(listId: string, businessId: string): Promise<void> {
+export async function addBusinessToList(listId: string, businessId: string, addedBy?: string): Promise<void> {
   const itemId = `${listId}__${businessId}`;
   await setDoc(doc(db, COLLECTIONS.LIST_ITEMS, itemId), {
     listId,
     businessId,
+    ...(addedBy ? { addedBy } : {}),
     createdAt: serverTimestamp(),
   });
   await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), {
@@ -147,6 +148,17 @@ export async function fetchFeaturedLists(): Promise<SharedList[]> {
     query(
       getSharedListsCollection(),
       where('featured', '==', true),
+      orderBy('updatedAt', 'desc'),
+    ),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
+  const snap = await getDocs(
+    query(
+      getSharedListsCollection(),
+      where('editorIds', 'array-contains', userId),
       orderBy('updatedAt', 'desc'),
     ),
   );

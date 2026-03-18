@@ -29,6 +29,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import GroupIcon from '@mui/icons-material/Group';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useToast } from '../../context/ToastContext';
@@ -41,6 +42,7 @@ import {
   toggleListPublic,
   copyList,
   fetchFeaturedLists,
+  fetchSharedWithMe,
 } from '../../services/sharedLists';
 import { addFavoritesBatch } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -101,10 +103,13 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
 
   // Featured lists
   const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
+  // Shared with me (collaborative)
+  const [sharedWithMe, setSharedWithMe] = useState<SharedList[]>([]);
 
   useEffect(() => {
     fetchFeaturedLists().then(setFeaturedLists).catch(() => {});
-  }, []);
+    if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch(() => {});
+  }, [user]);
 
   const handleOpenFeatured = (listId: string) => {
     // Reuse the shared list deep-link mechanism by loading the list inline
@@ -425,6 +430,9 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
                     primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                    {list.editorIds.length > 0 && (
+                      <Chip label={`${list.editorIds.length}`} icon={<GroupIcon />} size="small" variant="outlined" sx={{ height: 22, '& .MuiChip-icon': { fontSize: 14 } }} />
+                    )}
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePublic(list); }} aria-label={list.isPublic ? 'Hacer privada' : 'Hacer pública'}>
                       {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
                     </IconButton>
@@ -481,6 +489,33 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
             );
           })}
         </List>
+      )}
+
+      {/* Shared with me */}
+      {sharedWithMe.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>
+            Compartidas conmigo
+          </Typography>
+          <List disablePadding>
+            {sharedWithMe.map((list) => (
+              <ListItemButton key={list.id} onClick={() => handleOpenFeatured(list.id)} sx={{ pr: 1 }}>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <GroupIcon fontSize="small" color="action" />
+                      <span>{list.name}</span>
+                    </Box>
+                  }
+                  secondary={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
+                  primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                />
+                <Chip label="Colaborativa" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
       )}
 
       {/* Create dialog */}

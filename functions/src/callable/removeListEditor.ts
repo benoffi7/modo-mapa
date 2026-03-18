@@ -1,0 +1,34 @@
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { IS_EMULATOR } from '../helpers/env';
+
+export const removeListEditor = onCall(
+  { enforceAppCheck: !IS_EMULATOR },
+  async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
+
+    const { listId, targetUid } = request.data as { listId: string; targetUid: string };
+    if (!listId || typeof listId !== 'string') {
+      throw new HttpsError('invalid-argument', 'listId required');
+    }
+    if (!targetUid || typeof targetUid !== 'string') {
+      throw new HttpsError('invalid-argument', 'targetUid required');
+    }
+
+    const db = getFirestore();
+    const listSnap = await db.doc(`sharedLists/${listId}`).get();
+    if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
+
+    const list = listSnap.data()!;
+    if (list.ownerId !== request.auth.uid) {
+      throw new HttpsError('permission-denied', 'Solo el creador puede remover editores');
+    }
+
+    await db.doc(`sharedLists/${listId}`).update({
+      editorIds: FieldValue.arrayRemove(targetUid),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  },
+);

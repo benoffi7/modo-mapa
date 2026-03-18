@@ -433,7 +433,7 @@ describe('userSettingsConverter', () => {
 describe('sharedListConverter', () => {
   const full = {
     ownerId: 'u1', name: 'My List', description: 'Desc',
-    isPublic: true, featured: false, itemCount: 3, createdAt: NOW, updatedAt: NOW,
+    isPublic: true, featured: false, editorIds: [], itemCount: 3, createdAt: NOW, updatedAt: NOW,
   };
 
   it('toFirestore serializes all fields', () => {
@@ -468,7 +468,7 @@ describe('sharedListConverter', () => {
 // ---------------------------------------------------------------------------
 describe('listItemConverter', () => {
   it('toFirestore serializes without id', () => {
-    const item = { id: 'li1', listId: 'sl1', businessId: 'b1', createdAt: NOW };
+    const item = { id: 'li1', listId: 'sl1', businessId: 'b1', addedBy: '', createdAt: NOW };
     const result = listItemConverter.toFirestore(item);
     expect(result).not.toHaveProperty('id');
     expect(result.listId).toBe('sl1');

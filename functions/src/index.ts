@@ -32,3 +32,7 @@ export { getStorageStats } from './admin/storageStats';
 export { writePerfMetrics } from './admin/perfMetrics';
 export { getAnalyticsReport } from './admin/analyticsReport';
 export { toggleFeaturedList } from './admin/featuredLists';
+
+// Callable
+export { inviteListEditor } from './callable/inviteListEditor';
+export { removeListEditor } from './callable/removeListEditor';
