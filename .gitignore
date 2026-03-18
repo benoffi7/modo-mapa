@@ -41,3 +41,6 @@ functions/lib/
 !.claude/README.md
 *.tsbuildinfo
 sa-key.json
+
+# Test coverage
+coverage/
