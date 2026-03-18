@@ -3,12 +3,17 @@ import {
   Box,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Switch,
   Chip,
   Typography,
+  Collapse,
+  CircularProgress,
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 import { useAsyncData } from '../../hooks/useAsyncData';
@@ -17,7 +22,10 @@ import AdminPanelWrapper from './AdminPanelWrapper';
 import { getDocs, query, where, collection, orderBy } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { sharedListConverter } from '../../config/converters';
-import type { SharedList } from '../../types';
+import { fetchListItems } from '../../services/sharedLists';
+import { allBusinesses } from '../../hooks/useBusinesses';
+import { CATEGORY_LABELS } from '../../types';
+import type { SharedList, ListItem as ListItemType } from '../../types';
 
 const toggleFeatured = httpsCallable<{ listId: string; featured: boolean }, { success: boolean }>(
   functions,
@@ -51,6 +59,9 @@ export default function FeaturedListsPanel() {
   const { data, loading, error, refetch } = useAsyncData(fetcher);
   const toast = useToast();
   const [toggling, setToggling] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Map<string, ListItemType[]>>(new Map());
+  const [loadingItems, setLoadingItems] = useState<string | null>(null);
 
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
@@ -62,6 +73,24 @@ export default function FeaturedListsPanel() {
       toast.error(err instanceof Error ? err.message : 'Error al cambiar estado');
     }
     setToggling(null);
+  };
+
+  const handleToggleExpand = async (listId: string) => {
+    if (expandedId === listId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(listId);
+    if (!expandedItems.has(listId)) {
+      setLoadingItems(listId);
+      try {
+        const items = await fetchListItems(listId);
+        setExpandedItems((prev) => new Map(prev).set(listId, items));
+      } catch {
+        /* ignore */
+      }
+      setLoadingItems(null);
+    }
   };
 
   return (
@@ -80,29 +109,70 @@ export default function FeaturedListsPanel() {
         </Typography>
       ) : (
         <List>
-          {data.map((list) => (
-            <ListItem
-              key={list.id}
-              secondaryAction={
-                <Switch
-                  edge="end"
-                  checked={list.featured}
-                  onChange={() => handleToggle(list)}
-                  disabled={toggling === list.id}
-                />
-              }
-            >
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {list.name}
-                    {list.featured && <Chip label="Destacada" size="small" color="primary" />}
+          {data.map((list) => {
+            const isExpanded = expandedId === list.id;
+            const items = expandedItems.get(list.id) ?? [];
+            return (
+              <Box key={list.id}>
+                <ListItem
+                  disablePadding
+                  secondaryAction={
+                    <Switch
+                      edge="end"
+                      checked={list.featured}
+                      onChange={() => handleToggle(list)}
+                      disabled={toggling === list.id}
+                    />
+                  }
+                >
+                  <ListItemButton onClick={() => handleToggleExpand(list.id)} sx={{ pr: 8 }}>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {list.name}
+                          {list.featured && <Chip label="Destacada" size="small" color="primary" />}
+                          {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </Box>
+                      }
+                      secondary={`${list.itemCount} comercios · Owner: ${list.ownerId.slice(0, 8)}…`}
+                    />
+                  </ListItemButton>
+                </ListItem>
+
+                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                  <Box sx={{ pl: 4, pr: 2, pb: 1 }}>
+                    {loadingItems === list.id ? (
+                      <Box sx={{ py: 1, textAlign: 'center' }}>
+                        <CircularProgress size={20} />
+                      </Box>
+                    ) : items.length === 0 ? (
+                      <Typography variant="caption" color="text.secondary" sx={{ py: 1, display: 'block' }}>
+                        Lista vacía.
+                      </Typography>
+                    ) : (
+                      <List disablePadding dense>
+                        {items.map((item) => {
+                          const business = allBusinesses.find((b) => b.id === item.businessId);
+                          if (!business) return null;
+                          return (
+                            <ListItem key={item.id} disablePadding>
+                              <ListItemText
+                                primary={business.name}
+                                secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
+                                primaryTypographyProps={{ fontSize: '0.85rem' }}
+                                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                                sx={{ pl: 1, py: 0.5 }}
+                              />
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    )}
                   </Box>
-                }
-                secondary={`${list.itemCount} comercios · Owner: ${list.ownerId}`}
-              />
-            </ListItem>
-          ))}
+                </Collapse>
+              </Box>
+            );
+          })}
         </List>
       )}
     </AdminPanelWrapper>

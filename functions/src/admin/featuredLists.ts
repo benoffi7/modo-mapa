@@ -6,7 +6,7 @@ import { IS_EMULATOR } from '../helpers/env';
 export const toggleFeaturedList = onCall(
   { enforceAppCheck: !IS_EMULATOR },
   async (request) => {
-    assertAdmin(request.auth as never);
+    assertAdmin(request.auth);
 
     const { listId, featured } = request.data as { listId: string; featured: boolean };
     if (!listId || typeof listId !== 'string') {
