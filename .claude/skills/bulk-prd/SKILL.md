@@ -14,21 +14,39 @@ Issue numbers: $ARGUMENTS
 
 ## Process
 
-1. Fetch each issue from GitHub: `gh issue view <number> --json title,body,labels`
+### Step 0: Read reference docs
 
-2. For each issue, determine category from labels or content:
-   - `social` — social features (comments, follows, recommendations)
-   - `content` — content/data features (menus, photos, search)
-   - `infra` — infrastructure (offline, performance, loading)
-   - `ux` — UX improvements (onboarding, accessibility, drag)
-   - `admin` — admin panel features
-   - `security` — security features
-   - `fix` — bug fixes
+Before creating any PRD, read these files to understand the current state of the project:
 
-3. Create directory: `docs/feat/{category}/{slug}/`
-   - Slug: kebab-case from issue title
+- `docs/reference/project-reference.md` — stack, features, patterns (understand what exists)
+- `docs/reference/features.md` — detailed feature list (avoid duplicating existing functionality)
+- `docs/reference/security.md` — security checklist (identify relevant security considerations)
+- `docs/reference/tests.md` — testing policy and patterns (determine what tests the feature needs)
+- `docs/reference/patterns.md` — existing conventions (align the solution with project patterns)
 
-4. Create `prd.md` using this template:
+### Step 1: Fetch issues
+
+For each issue, fetch from GitHub: `gh issue view <number> --json title,body,labels`
+
+### Step 2: Determine category
+
+From labels or content:
+
+- `social` — social features (comments, follows, recommendations)
+- `content` — content/data features (menus, photos, search)
+- `infra` — infrastructure (offline, performance, loading)
+- `ux` — UX improvements (onboarding, accessibility, drag)
+- `admin` — admin panel features
+- `security` — security features
+- `fix` — bug fixes
+
+### Step 3: Create directory
+
+`docs/feat/{category}/{slug}/` — Slug: kebab-case from issue title
+
+### Step 4: Create `prd.md`
+
+Use this template, informed by the reference docs read in Step 0:
 
 ```markdown
 # PRD: {title}
@@ -43,7 +61,7 @@ Issue numbers: $ARGUMENTS
 
 ## Contexto
 
-{1-2 sentences based on issue body and project context}
+{1-2 sentences based on issue body and project context from reference docs}
 
 ## Problema
 
@@ -51,7 +69,9 @@ Issue numbers: $ARGUMENTS
 
 ## Solución
 
-{High-level solution sections with S1, S2, S3 format}
+{High-level solution sections with S1, S2, S3 format.
+Reference existing patterns from patterns.md where applicable.
+Note any security considerations from security.md.}
 
 ---
 
@@ -70,21 +90,51 @@ Issue numbers: $ARGUMENTS
 
 ---
 
+## Tests
+
+{Based on docs/reference/tests.md policy — ≥80% coverage for new code}
+
+### Archivos que necesitarán tests
+
+| Archivo | Tipo | Qué testear |
+|---------|------|-------------|
+
+### Criterios de testing
+
+- Cobertura ≥ 80% del código nuevo
+- Tests de validación para todos los inputs del usuario
+- Todos los paths condicionales cubiertos
+- Side effects verificados (cache, analytics, notifications)
+
+---
+
+## Seguridad
+
+{Based on security.md checklist — only include items relevant to this feature}
+
+- [ ] {relevant security items}
+
+---
+
 ## Success Criteria
 
 {4-5 numbered criteria}
 ```
 
-5. Update `docs/_sidebar.md` — add entries for each new PRD under the correct category section.
+### Step 5: Update sidebar
 
-6. Commit all PRDs in a single commit:
-   ```
-   docs: add PRDs for issues #X, #Y, #Z
-   ```
+Update `docs/_sidebar.md` — add entries for each new PRD under the correct category section.
 
-7. Push to main (docs-only, per workflow rules).
+### Step 6: Commit and push
 
-8. Comment on each issue with the GH Pages link:
-   ```
-   gh issue comment <number> --body "📄 [PRD](https://benoffi7.github.io/modo-mapa/#/feat/{category}/{slug}/prd)"
-   ```
+```text
+docs: add PRDs for issues #X, #Y, #Z
+```
+
+Push to main (docs-only, per workflow rules).
+
+### Step 7: Comment on issues
+
+```bash
+gh issue comment <number> --body "📄 [PRD](https://benoffi7.github.io/modo-mapa/#/feat/{category}/{slug}/prd)"
+```

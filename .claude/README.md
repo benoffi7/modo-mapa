@@ -95,7 +95,7 @@ Memory files persist learnings across conversations. They are NOT in the repo be
 3. /merge            ← runs full checklist automatically:
    - Quality gates (tsc, lint, tests, build)
    - Automated audits (dark-mode, help-docs)
-   - Doc updates (PROJECT_REFERENCE, seed, privacy)
+   - Doc updates (project-reference, seed, privacy)
    - Merge to main (no-ff)
    - Version bump (semver)
    - Push + CI verify

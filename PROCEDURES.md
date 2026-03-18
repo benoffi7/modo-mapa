@@ -47,17 +47,20 @@ En GitHub repo Settings > Secrets and variables > Actions, agregar:
 
 Toda funcionalidad nueva sigue estas etapas con aprobación del usuario en cada paso:
 
-1. **PRD (Product Requirements Document)** — Claude lo crea incluyendo:
-   - Descripción de la funcionalidad
-   - Contexto del proyecto y estructura actual
-   - Requisitos funcionales y no funcionales
-   - Buenas prácticas y consideraciones UX
+1. **PRD (Product Requirements Document)** — Claude lo crea leyendo primero los docs de referencia relevantes:
+   - `docs/reference/project-reference.md` — stack, funcionalidades actuales, patrones clave
+   - `docs/reference/features.md` — qué ya existe (evitar duplicar)
+   - `docs/reference/security.md` — checklist de seguridad
+   - `docs/reference/tests.md` — política de testing (≥80% cobertura)
+   - `docs/reference/patterns.md` — patrones y convenciones existentes
+   - El PRD incluye: descripción, contexto, requisitos, consideraciones UX, y **sección de Tests**
 2. **Aprobación del usuario** — No avanzar sin OK
 3. **Especificaciones técnicas** — Detalle de implementación:
    - Modelos de datos / interfaces
    - Componentes a crear o modificar
    - Interacciones con Firebase
-   - Consideraciones de seguridad (ver `docs/SECURITY_GUIDELINES.md`)
+   - Consideraciones de seguridad (ver `docs/reference/security.md`)
+   - **Sección de Tests** (archivos a testear, casos, mock strategy, criterio ≥80%)
 4. **Aprobación del usuario** — No avanzar sin OK
 5. **Plan técnico** — Pasos ordenados de implementación
 6. **Implementación** — Siguiendo el flujo de ramas/PR habitual
@@ -118,11 +121,11 @@ Esto permite que cada agente tenga su propio directorio con su propia rama, sin 
 Después de mergear un PR a `main`:
 
 1. **Verificar CI** — Esperar a que GitHub Actions termine y confirmar que pasa. Si falla, diagnosticar y fixear inmediatamente. Main nunca debe quedar roto.
-2. **Bump de versión** — Incrementar en `package.json` y `docs/reference/PROJECT_REFERENCE.md`:
+2. **Bump de versión** — Incrementar en `package.json` y `docs/reference/project-reference.md`:
    - PATCH (1.1.x) para fixes
    - MINOR (1.x.0) para features
    - MAJOR (x.0.0) cada 10 iteraciones
-3. **Actualizar `docs/reference/PROJECT_REFERENCE.md`** — Agregar el issue y PR a la tabla de issues resueltos
+3. **Actualizar `docs/reference/project-reference.md`** — Agregar el issue y PR a la tabla de issues resueltos
 4. **Auditar política de privacidad** — Ejecutar el agente `privacy-policy` para verificar que la política siga actualizada respecto a los cambios mergeados. Si hay discrepancias, actualizarla en el mismo merge o en un commit inmediato.
 
 ### Convenciones de naming
@@ -140,7 +143,7 @@ Después de mergear un PR a `main`:
 - [ ] Testeado en local con `npm run dev`
 - [ ] Testeado en mobile (Chrome DevTools responsive)
 - [ ] Sin secretos en el código
-- [ ] **Verificación de seguridad** — Evaluar según `docs/SECURITY_GUIDELINES.md`:
+- [ ] **Verificación de seguridad** — Evaluar según `docs/reference/security.md`:
   - Firestore rules validan auth, ownership y longitud de campos
   - Collection names usan constantes de `src/config/collections.ts`
   - Operaciones async tienen error handling visible al usuario

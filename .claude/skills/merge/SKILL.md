@@ -86,7 +86,7 @@ Check what changed and update these files as needed:
 |------|-------------|
 | `docs/reference/features.md` | Any user-visible feature added/changed |
 | `docs/reference/patterns.md` | New hook, context, UI pattern, or convention |
-| `docs/reference/PROJECT_REFERENCE.md` | Version, date, feature summary, test count |
+| `docs/reference/project-reference.md` | Version, date, feature summary, test count |
 | `src/components/menu/HelpSection.tsx` | Any user-facing behavior change |
 
 ### 3b. Check privacy policy
@@ -192,7 +192,7 @@ Output a final summary:
 | privacy-policy | ... |
 
 ### Docs updated
-- features.md, patterns.md, PROJECT_REFERENCE.md, HelpSection.tsx
+- features.md, patterns.md, project-reference.md, HelpSection.tsx
 - Branch cleaned: remote + local
 ```
 
