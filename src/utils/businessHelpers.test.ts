@@ -1,0 +1,41 @@
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('../hooks/useBusinesses', () => ({
+  allBusinesses: [
+    { id: 'biz1', name: 'Café Central' },
+    { id: 'biz2', name: 'Pizzería Roma' },
+  ],
+}));
+
+vi.mock('../types', () => ({
+  PREDEFINED_TAGS: [
+    { id: 'barato', label: 'Barato' },
+    { id: 'rapido', label: 'Rápido' },
+  ],
+}));
+
+import { getBusinessName, getTagLabel } from './businessHelpers';
+
+describe('getBusinessName', () => {
+  it('returns name for existing business', () => {
+    expect(getBusinessName('biz1')).toBe('Café Central');
+  });
+
+  it('returns id as fallback for unknown business', () => {
+    expect(getBusinessName('unknown')).toBe('unknown');
+  });
+
+  it('returns empty string for empty id', () => {
+    expect(getBusinessName('')).toBe('');
+  });
+});
+
+describe('getTagLabel', () => {
+  it('returns label for existing tag', () => {
+    expect(getTagLabel('barato')).toBe('Barato');
+  });
+
+  it('returns id as fallback for unknown tag', () => {
+    expect(getTagLabel('unknown_tag')).toBe('unknown_tag');
+  });
+});
