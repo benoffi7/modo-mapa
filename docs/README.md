@@ -4,22 +4,23 @@ Documentacion tecnica del proyecto Modo Mapa.
 
 ## Secciones
 
-### [Reference](reference/PROJECT_REFERENCE.md)
+### [Reference](reference/project-reference.md)
 
 Arquitectura, patrones, archivos, Firestore schema, issues, features.
 
-- [PROJECT_REFERENCE](reference/PROJECT_REFERENCE.md)
+- [Project Reference](reference/project-reference.md)
 - [Features](reference/features.md)
 - [Architecture](reference/architecture.md)
 - [Files](reference/files.md)
 - [Firestore](reference/firestore.md)
 - [Data Layer](reference/data-layer.md)
 - [Patterns](reference/patterns.md)
+- [Coding Standards](reference/coding-standards.md)
 - [Security](reference/security.md)
+- [Tests](reference/tests.md)
 - [DevOps](reference/devops.md)
 - [Issues](reference/issues.md)
-- [Coding Standards](reference/CODING_STANDARDS.md)
-- [Security Guidelines](reference/SECURITY_GUIDELINES.md)
+- [Workflow](reference/workflow.md)
 
 ### Features
 
@@ -30,6 +31,7 @@ PRDs, specs y planes de implementacion agrupados por categoria.
 - [Infra](feat/infra/)
 - [Security](feat/security/)
 - [Social](feat/social/)
+- [UX](feat/ux/)
 
 ### [Fixes](fix/)
 

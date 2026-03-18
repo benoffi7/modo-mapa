@@ -14,7 +14,7 @@ VITE_FIREBASE_STORAGE_BUCKET=    # *.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 
-# App Check con reCAPTCHA Enterprise (ver docs/SECURITY_GUIDELINES.md)
+# App Check con reCAPTCHA Enterprise (ver docs/reference/security.md)
 VITE_RECAPTCHA_ENTERPRISE_SITE_KEY=
 ```
 

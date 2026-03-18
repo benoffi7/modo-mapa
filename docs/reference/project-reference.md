@@ -42,15 +42,17 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 
 | Archivo | Contenido |
 |---------|-----------|
-| [architecture.md](reference/architecture.md) | Arbol de componentes, capas, Cloud Functions structure, flujo de datos, tema visual |
-| [files.md](reference/files.md) | Estructura completa de archivos (`src/`, `functions/`, config, scripts) |
-| [data-layer.md](reference/data-layer.md) | Service layer, hooks compartidos, utilidades, AdminPanelWrapper, filtros |
-| [firestore.md](reference/firestore.md) | Colecciones, tipos TypeScript, converters, Cloud Storage (fotos + backups) |
-| [security.md](reference/security.md) | App Check, Firestore rules, Cloud Functions seguridad, CSP, Storage rules |
-| [features.md](reference/features.md) | Funcionalidades: mapa, business sheet, menu lateral, admin dashboard, Cloud Functions (callable + triggers + scheduled) |
-| [patterns.md](reference/patterns.md) | Patrones y convenciones: auth, datos, cache, UI, uploads, server-side, TypeScript, dark mode |
-| [devops.md](reference/devops.md) | Variables de entorno, scripts npm, dev-env.sh, CI/CD, IAM roles, flujo de feature, versionado |
-| [issues.md](reference/issues.md) | Issues resueltos (tabla completa), documentacion por feature (carpetas `docs/`) |
+| [architecture.md](architecture.md) | Arbol de componentes, capas, Cloud Functions structure, flujo de datos, tema visual |
+| [files.md](files.md) | Estructura completa de archivos (`src/`, `functions/`, config, scripts) |
+| [data-layer.md](data-layer.md) | Service layer, hooks compartidos, utilidades, AdminPanelWrapper, filtros |
+| [firestore.md](firestore.md) | Colecciones, tipos TypeScript, converters, Cloud Storage (fotos + backups) |
+| [security.md](security.md) | Seguridad unificada: App Check, Firestore rules, Cloud Functions, CSP, Storage rules, checklist por commit |
+| [features.md](features.md) | Funcionalidades: mapa, business sheet, menu lateral, admin dashboard, Cloud Functions (callable + triggers + scheduled) |
+| [patterns.md](patterns.md) | Patrones y convenciones: auth, datos, cache, UI, uploads, server-side, TypeScript, dark mode |
+| [coding-standards.md](coding-standards.md) | Arquitectura, convenciones TypeScript, naming, SOLID, patrones de componentes |
+| [tests.md](tests.md) | Inventario de tests, política de cobertura (≥80%), patrones de mock, template para PRDs |
+| [devops.md](devops.md) | Variables de entorno, scripts npm, dev-env.sh, CI/CD, IAM roles, flujo de feature, versionado |
+| [issues.md](issues.md) | Issues resueltos (tabla completa), documentacion por feature (carpetas `docs/`) |
 
 ---
 
@@ -90,4 +92,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 230+ tests (173 frontend + 59 backend) cubriendo triggers, services, hooks, contexts, auth components
+- **Tests**: 338 tests (248 frontend + 90 backend) cubriendo utils, services, hooks, contexts, auth components, triggers, aggregates, helpers. Política: ≥80% cobertura para features nuevas. Ver [tests.md](tests.md)

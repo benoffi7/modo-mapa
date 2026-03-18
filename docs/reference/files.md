@@ -204,8 +204,9 @@ src/
 | `scripts/dev-env.sh` | Gestion de entorno dev: status, start, stop, restart, seed, health, logs. Self-contained PATH, robust health checks |
 | `scripts/seed-admin-data.mjs` | Seed de datos de prueba para emuladores |
 | `functions/seed-prod-ranking.mjs` | Script para computar y guardar ranking mensual en Firestore produccion |
-| `docs/CODING_STANDARDS.md` | Estandares de codigo: service layer, patrones de componentes, convenciones TS |
-| `docs/SECURITY_GUIDELINES.md` | Guia de seguridad: App Check, timestamps, converters, patrones |
+| `docs/reference/coding-standards.md` | Estandares de codigo: service layer, patrones de componentes, convenciones TS |
+| `docs/reference/security.md` | Seguridad unificada: App Check, Firestore rules, Cloud Functions, CSP, Storage, checklist |
+| `docs/reference/tests.md` | Inventario de tests, política de cobertura (≥80%), patrones de mock, template para PRDs |
 | `docs/INFORME_SEGURIDAD.md` | Informe de auditoria de seguridad |
 | `docs/INFORME_MEJORAS_FUNCIONALES_v1.md` | Informe de mejoras funcionales con estado de implementacion |
 | `docs/reports/security-audit-v1.4.md` | Auditoria de seguridad v1.4 |

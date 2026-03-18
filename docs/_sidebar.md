@@ -1,20 +1,20 @@
 - [Inicio](/)
 
 - **[Reference](/reference/)**
-  - [PROJECT_REFERENCE](/reference/PROJECT_REFERENCE.md)
+  - [Project Reference](/reference/project-reference.md)
   - [Features](/reference/features.md)
   - [Architecture](/reference/architecture.md)
   - [Files](/reference/files.md)
   - [Firestore](/reference/firestore.md)
   - [Data Layer](/reference/data-layer.md)
   - [Patterns](/reference/patterns.md)
+  - [Coding Standards](/reference/coding-standards.md)
   - [Security](/reference/security.md)
+  - [Tests](/reference/tests.md)
   - [DevOps](/reference/devops.md)
   - [Issues](/reference/issues.md)
   - [Workflow](/reference/workflow.md)
-  - [Coding Standards](/reference/CODING_STANDARDS.md)
   - [File Size Directive](/reference/file-size-directive.md)
-  - [Security Guidelines](/reference/SECURITY_GUIDELINES.md)
 
 - **[Admin](/feat/admin/)**
   - [Admin Backups](/feat/admin/admin-backups/)

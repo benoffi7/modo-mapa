@@ -374,8 +374,9 @@ Services validate input before sending to Firestore (even though rules also vali
 2. **Service**: Add CRUD functions in `src/services/` (new file or existing).
 3. **Hook** (if needed): Create a custom hook in `src/hooks/`.
 4. **Component**: Build the UI component.
-5. **Integration**: Wire into existing layout (routes, menus, admin tabs).
-6. **Update PROJECT_REFERENCE.md** with new files, types, and patterns.
+5. **Tests**: Write tests (≥80% coverage). See [tests.md](tests.md) for patterns.
+6. **Integration**: Wire into existing layout (routes, menus, admin tabs).
+7. **Update project-reference.md** with new files, types, and patterns.
 
 ### Checklist
 
@@ -388,6 +389,7 @@ Services validate input before sending to Firestore (even though rules also vali
 - [ ] Imports ordered correctly
 - [ ] `npx tsc --noEmit` passes
 - [ ] `npm run lint` has no errors
+- [ ] Tests pass (`npm run test:run`) with ≥80% coverage on new code
 - [ ] Firestore rules: `keys().hasOnly()` on create, ownership on update/delete, userId immutability
 - [ ] Service queries use `limit()` (max 200)
 - [ ] Cloud Function triggers: rate limit + moderation + counters
