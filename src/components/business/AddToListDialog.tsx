@@ -17,6 +17,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { MAX_LISTS } from '../../constants/lists';
 import {
   getSharedListsCollection,
   createList,
@@ -197,7 +198,7 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
                 startIcon={<AddIcon />}
                 onClick={() => setShowCreate(true)}
                 sx={{ mt: 1 }}
-                disabled={lists.length >= 10}
+                disabled={lists.length >= MAX_LISTS}
               >
                 Nueva lista
               </Button>

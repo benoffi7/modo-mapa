@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   addDoc,
   updateDoc,
@@ -17,6 +18,7 @@ import { COLLECTIONS } from '../config/collections';
 import { sharedListConverter, listItemConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import { MAX_LISTS } from '../constants/lists';
 import type { SharedList, ListItem } from '../types';
 
 export function getSharedListsCollection(): CollectionReference<SharedList> {
@@ -103,4 +105,38 @@ export async function fetchListItems(listId: string): Promise<ListItem[]> {
     ),
   );
   return snap.docs.map((d) => d.data());
+}
+
+export async function copyList(sourceListId: string, targetUserId: string): Promise<string> {
+  // Check user list count
+  const userLists = await getDocs(
+    query(collection(db, COLLECTIONS.SHARED_LISTS), where('ownerId', '==', targetUserId)),
+  );
+  if (userLists.size >= MAX_LISTS) {
+    throw new Error('Límite de 10 listas alcanzado');
+  }
+
+  // Fetch source list
+  const sourceSnap = await getDoc(
+    doc(db, COLLECTIONS.SHARED_LISTS, sourceListId).withConverter(sharedListConverter),
+  );
+  if (!sourceSnap.exists()) throw new Error('Lista no encontrada');
+  const source = sourceSnap.data();
+
+  // Verify source is public or caller is owner
+  if (!source.isPublic && source.ownerId !== targetUserId) {
+    throw new Error('No se puede copiar una lista privada');
+  }
+
+  // Create new list
+  const newListId = await createList(targetUserId, source.name, source.description);
+
+  // Copy items
+  const items = await fetchListItems(sourceListId);
+  for (const item of items) {
+    await addBusinessToList(newListId, item.businessId);
+  }
+
+  trackEvent('list_copied', { source_list_id: sourceListId, item_count: items.length });
+  return newListId;
 }

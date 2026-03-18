@@ -91,7 +91,18 @@ export default function AppShell() {
   const [menuInitialSection, setMenuInitialSection] = useState<string | undefined>(undefined);
   const [sharedListId, setSharedListId] = useState<string | undefined>(undefined);
   const [searchParams, setSearchParams] = useSearchParams();
-  const { setSelectedBusiness } = useSelection();
+  const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
+
+  // Navigate back to shared list when BusinessSheet closes
+  const prevBiz = useRef(currentBusiness);
+  useEffect(() => {
+    if (prevBiz.current && !currentBusiness && activeSharedListId) {
+      setSharedListId(activeSharedListId);
+      setMenuInitialSection('lists');
+      setMenuOpen(true);
+    }
+    prevBiz.current = currentBusiness;
+  }, [currentBusiness, activeSharedListId]);
 
   // Deep link: ?business=biz_001 opens the business sheet
   // Deep link: ?list=xxx opens SideMenu on lists section
@@ -134,7 +145,7 @@ export default function AppShell() {
       <BusinessSheet />
       <NameDialog />
       <MapHint />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
+      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); setActiveSharedListId(null); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
     </Box>
   );
 }

@@ -24,6 +24,8 @@ import PublicIcon from '@mui/icons-material/Public';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useToast } from '../../context/ToastContext';
@@ -34,7 +36,9 @@ import {
   fetchListItems,
   removeBusinessFromList,
   toggleListPublic,
+  copyList,
 } from '../../services/sharedLists';
+import { addFavoritesBatch } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { getDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -42,6 +46,7 @@ import { COLLECTIONS } from '../../config/collections';
 import { sharedListConverter } from '../../config/converters';
 import { CATEGORY_LABELS } from '../../types';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { MAX_LISTS } from '../../constants/lists';
 import type { SharedList, ListItem, Business } from '../../types';
 
 interface Props {
@@ -49,11 +54,9 @@ interface Props {
   sharedListId?: string | undefined;
 }
 
-const MAX_LISTS = 10;
-
 export default function SharedListsView({ onNavigate, sharedListId }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useSelection();
+  const { setSelectedBusiness, setActiveSharedListId } = useSelection();
   const toast = useToast();
 
   const [lists, setLists] = useState<SharedList[]>([]);
@@ -196,9 +199,42 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
     }
   };
 
-  const handleSelectBusiness = (business: Business) => {
+  const handleSelectBusiness = (business: Business, fromListId?: string) => {
+    if (fromListId) setActiveSharedListId(fromListId);
     setSelectedBusiness(business);
     onNavigate();
+  };
+
+  // Copy & favorites state for shared list view
+  const [isCopying, setIsCopying] = useState(false);
+  const [isAddingFavs, setIsAddingFavs] = useState(false);
+
+  const handleCopyList = async () => {
+    if (!user || !sharedList) return;
+    setIsCopying(true);
+    try {
+      await copyList(sharedList.id, user.uid);
+      toast.success('Lista copiada a Mis Listas');
+      await loadLists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo copiar');
+    }
+    setIsCopying(false);
+  };
+
+  const handleAddAllFavorites = async () => {
+    if (!user) return;
+    setIsAddingFavs(true);
+    try {
+      const bizIds = sharedItems.map((i) => i.businessId);
+      const added = await addFavoritesBatch(user.uid, bizIds);
+      toast.success(added > 0
+        ? `${added} favorito${added !== 1 ? 's' : ''} agregado${added !== 1 ? 's' : ''}`
+        : 'Ya tenés todos como favoritos');
+    } catch {
+      toast.error('Error al agregar favoritos');
+    }
+    setIsAddingFavs(false);
   };
 
   if (isLoading) {
@@ -228,7 +264,29 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
                 {sharedList.description}
               </Typography>
             )}
-            <Chip label={`${sharedItems.length} comercio${sharedItems.length !== 1 ? 's' : ''}`} size="small" sx={{ mb: 1.5 }} />
+            <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Chip label={`${sharedItems.length} comercio${sharedItems.length !== 1 ? 's' : ''}`} size="small" />
+              {user && sharedList.ownerId !== user.uid && (
+                <Button
+                  size="small"
+                  startIcon={isCopying ? <CircularProgress size={14} /> : <ContentCopyIcon />}
+                  onClick={handleCopyList}
+                  disabled={isCopying}
+                >
+                  Copiar lista
+                </Button>
+              )}
+              {sharedItems.length > 0 && (
+                <Button
+                  size="small"
+                  startIcon={isAddingFavs ? <CircularProgress size={14} /> : <FavoriteIcon />}
+                  onClick={handleAddAllFavorites}
+                  disabled={isAddingFavs}
+                >
+                  Favoritos
+                </Button>
+              )}
+            </Box>
             {sharedItems.length === 0 ? (
               <Typography variant="body2" color="text.secondary">Lista vacía.</Typography>
             ) : (
@@ -237,7 +295,7 @@ export default function SharedListsView({ onNavigate, sharedListId }: Props) {
                   const business = allBusinesses.find((b) => b.id === item.businessId);
                   if (!business) return null;
                   return (
-                    <ListItemButton key={item.id} onClick={() => handleSelectBusiness(business)} sx={{ borderRadius: 1 }}>
+                    <ListItemButton key={item.id} onClick={() => handleSelectBusiness(business, sharedListId)} sx={{ borderRadius: 1 }}>
                       <ListItemText
                         primary={business.name}
                         secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
