@@ -312,7 +312,7 @@ service cloud.firestore {
       }
 
       allow read: if request.auth != null
-        && (isListOwner() || isListEditor()
+        && (isAdmin() || isListOwner() || isListEditor()
             || resource.data.isPublic == true
             || resource.data.get('featured', false) == true);
       allow create: if request.auth != null
