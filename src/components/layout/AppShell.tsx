@@ -175,6 +175,7 @@ export default function AppShell() {
           // opens fresh from hamburger button.
         }}
         onOpen={() => setMenuOpen(true)}
+        onClearSharedList={() => { setSharedListId(undefined); setActiveSharedListId(null); }}
         initialSection={menuInitialSection}
         sharedListId={sharedListId}
       />

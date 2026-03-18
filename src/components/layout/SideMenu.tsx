@@ -70,6 +70,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onOpen: () => void;
+  onClearSharedList?: () => void;
   initialSection?: string | undefined;
   sharedListId?: string | undefined;
 }
@@ -91,7 +92,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, onOpen, initialSection, sharedListId }: Props) {
+export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -117,8 +118,9 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
   }, [initialSection, open]);
 
   const setActiveSection = (section: Section) => {
-    // When navigating to lists from nav, clear any stale shared list view
+    // When navigating to lists from nav, clear any stale shared list state
     if (section === 'lists') {
+      onClearSharedList?.();
       listsBackHandler.current?.();
     }
     setActiveSectionRaw(section);
