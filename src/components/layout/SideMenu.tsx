@@ -117,6 +117,10 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
   }, [initialSection, open]);
 
   const setActiveSection = (section: Section) => {
+    // When navigating to lists from nav, clear any stale shared list view
+    if (section === 'lists') {
+      listsBackHandler.current?.();
+    }
     setActiveSectionRaw(section);
     if (section !== 'nav') {
       trackEvent('side_menu_section', { section });
@@ -185,6 +189,7 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
 
   // Back handler for lists section: first clears shared list view, then goes to nav
   const listsBackHandler = useRef<(() => boolean) | null>(null);
+  const registerListsBackHandler = useMemo(() => (h: (() => boolean) | null) => { listsBackHandler.current = h; }, []);
 
   const handleBackToNav = () => {
     if (activeSection === 'lists' && listsBackHandler.current?.()) {
@@ -352,7 +357,7 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={(h) => { listsBackHandler.current = h; }} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
