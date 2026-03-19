@@ -13,6 +13,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { trackEvent } from '../../utils/analytics';
 import { STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED } from '../../constants/storage';
+import {
+  EVT_VERIFICATION_NUDGE_SHOWN,
+  EVT_VERIFICATION_NUDGE_RESEND,
+  EVT_VERIFICATION_NUDGE_DISMISSED,
+} from '../../constants/analyticsEvents';
 
 export default function VerificationNudge() {
   const { authMethod, emailVerified, resendVerification, refreshEmailVerified } = useAuth();
@@ -23,7 +28,10 @@ export default function VerificationNudge() {
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
 
-  // Reset dismissal on new session if still unverified
+  // Session reset pattern: sessionStorage tracks "already shown this session" so the nudge
+  // doesn't re-appear mid-session after dismissal. On a new browser session (sessionStorage
+  // cleared), we reset the localStorage dismissed flag so the nudge reappears for
+  // still-unverified users — nudging once per session until they verify.
   useEffect(() => {
     if (authMethod === 'email' && !emailVerified) {
       const sessionKey = 'verification_nudge_session';
@@ -38,7 +46,7 @@ export default function VerificationNudge() {
   const show = authMethod === 'email' && !emailVerified && !dismissed;
 
   useEffect(() => {
-    if (show) trackEvent('verification_nudge_shown');
+    if (show) trackEvent(EVT_VERIFICATION_NUDGE_SHOWN);
   }, [show]);
 
   if (!show) return null;
@@ -48,7 +56,7 @@ export default function VerificationNudge() {
     try {
       await resendVerification();
       toast.success('Email de verificación enviado');
-      trackEvent('verification_nudge_resend');
+      trackEvent(EVT_VERIFICATION_NUDGE_RESEND);
     } catch {
       toast.error('No se pudo enviar el email');
     } finally {
@@ -74,7 +82,7 @@ export default function VerificationNudge() {
   const handleDismiss = () => {
     setDismissed(true);
     localStorage.setItem(STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED, 'true');
-    trackEvent('verification_nudge_dismissed');
+    trackEvent(EVT_VERIFICATION_NUDGE_DISMISSED);
   };
 
   return (

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { trackEvent } from '../utils/analytics';
+import { EVT_ACTIVITY_REMINDER_SHOWN } from '../constants/analyticsEvents';
 import {
   STORAGE_KEY_ACTIVITY_REMINDER_SHOWN,
   STORAGE_KEY_ANON_RATING_COUNT,
@@ -30,32 +31,41 @@ function shouldShowReminder(authMethod: string): boolean {
 /**
  * Returns whether the activity reminder should be shown.
  * Re-evaluates on each 'anon-interaction' event (fired after rating).
+ * Uses refs for stable event listener registration (no churn).
  */
 export function useActivityReminder(): { showReminder: boolean; dismissReminder: () => void } {
   const { authMethod } = useAuth();
-  const [showReminder, setShowReminder] = useState(() => {
-    const show = shouldShowReminder(authMethod);
-    if (show) {
-      localStorage.setItem(STORAGE_KEY_ACTIVITY_REMINDER_SHOWN, 'true');
-      const count = parseInt(localStorage.getItem(STORAGE_KEY_ANON_RATING_COUNT) ?? '0', 10);
-      trackEvent('activity_reminder_shown', { ratings_count: count });
-    }
-    return show;
-  });
+  const [showReminder, setShowReminder] = useState(() => shouldShowReminder(authMethod));
 
-  const handleInteraction = useCallback(() => {
-    if (!showReminder && shouldShowReminder(authMethod)) {
-      setShowReminder(true);
-      localStorage.setItem(STORAGE_KEY_ACTIVITY_REMINDER_SHOWN, 'true');
-      const count = parseInt(localStorage.getItem(STORAGE_KEY_ANON_RATING_COUNT) ?? '0', 10);
-      trackEvent('activity_reminder_shown', { ratings_count: count });
-    }
-  }, [showReminder, authMethod]);
+  // Refs for stable event handler — avoids re-registering listener on state changes
+  const showReminderRef = useRef(showReminder);
+  useEffect(() => { showReminderRef.current = showReminder; }, [showReminder]);
+  const authMethodRef = useRef(authMethod);
+  useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
 
+  // Track analytics once per hook lifetime to avoid duplicates on StrictMode remount
+  const analyticsTracked = useRef(false);
+
+  // Fire analytics when reminder first becomes visible
   useEffect(() => {
-    window.addEventListener('anon-interaction', handleInteraction);
-    return () => window.removeEventListener('anon-interaction', handleInteraction);
-  }, [handleInteraction]);
+    if (showReminder && !analyticsTracked.current) {
+      analyticsTracked.current = true;
+      localStorage.setItem(STORAGE_KEY_ACTIVITY_REMINDER_SHOWN, 'true');
+      const count = parseInt(localStorage.getItem(STORAGE_KEY_ANON_RATING_COUNT) ?? '0', 10);
+      trackEvent(EVT_ACTIVITY_REMINDER_SHOWN, { ratings_count: count });
+    }
+  }, [showReminder]);
+
+  // Stable event listener — registered once, reads from refs
+  useEffect(() => {
+    const handler = () => {
+      if (!showReminderRef.current && shouldShowReminder(authMethodRef.current)) {
+        setShowReminder(true);
+      }
+    };
+    window.addEventListener('anon-interaction', handler);
+    return () => window.removeEventListener('anon-interaction', handler);
+  }, []);
 
   const dismissReminder = () => {
     setShowReminder(false);

@@ -1,6 +1,7 @@
 import { Snackbar, Alert, Button, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { trackEvent } from '../../utils/analytics';
+import { EVT_ACTIVITY_REMINDER_CLICKED } from '../../constants/analyticsEvents';
 
 interface Props {
   open: boolean;
@@ -12,7 +13,7 @@ export default function ActivityReminder({ open, onCreateAccount, onDismiss }: P
   if (!open) return null;
 
   const handleClick = () => {
-    trackEvent('activity_reminder_clicked');
+    trackEvent(EVT_ACTIVITY_REMINDER_CLICKED);
     onDismiss();
     onCreateAccount();
   };

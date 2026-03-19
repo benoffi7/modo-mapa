@@ -74,9 +74,11 @@ interface Props {
   onClearSharedList?: () => void;
   initialSection?: string | undefined;
   sharedListId?: string | undefined;
-  onCreateAccount?: (source: 'banner' | 'menu' | 'settings') => void;
-  emailDialogOpen?: boolean;
-  onEmailDialogClose?: () => void;
+  onCreateAccount: (source: 'banner' | 'menu' | 'settings') => void;
+  onLogin: () => void;
+  emailDialogOpen: boolean;
+  emailDialogTab: 'register' | 'login';
+  onEmailDialogClose: () => void;
 }
 
 export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
@@ -96,7 +98,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, emailDialogOpen: externalEmailDialogOpen, onEmailDialogClose }: Props) {
+export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, onLogin, emailDialogOpen, emailDialogTab, onEmailDialogClose }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -166,10 +168,6 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  // Email auth dialog
-  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
 
   const handleClose = () => {
     confirmClose(() => {
@@ -263,14 +261,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                       variant="contained"
                       size="small"
                       fullWidth
-                      onClick={() => {
-                        if (onCreateAccount) {
-                          onCreateAccount('menu');
-                        } else {
-                          setEmailDialogTab('register');
-                          setEmailDialogOpen(true);
-                        }
-                      }}
+                      onClick={() => onCreateAccount('menu')}
                     >
                       Crear cuenta
                     </Button>
@@ -278,7 +269,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                       variant="text"
                       size="small"
                       fullWidth
-                      onClick={() => { setEmailDialogTab('login'); setEmailDialogOpen(true); }}
+                      onClick={onLogin}
                     >
                       Ya tengo cuenta
                     </Button>
@@ -393,12 +384,12 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
         </Box>
       </SwipeableDrawer>
 
-      {/* Email auth dialog — can be controlled externally (benefits flow) or locally */}
+      {/* Email auth dialog — fully controlled by AppShell */}
       <Suspense fallback={null}>
-        {(emailDialogOpen || externalEmailDialogOpen) && (
+        {emailDialogOpen && (
           <EmailPasswordDialog
-            open={emailDialogOpen || !!externalEmailDialogOpen}
-            onClose={() => { setEmailDialogOpen(false); onEmailDialogClose?.(); }}
+            open
+            onClose={onEmailDialogClose}
             initialTab={emailDialogTab}
           />
         )}

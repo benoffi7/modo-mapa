@@ -15,6 +15,7 @@ import RankingsEmptyState from './RankingsEmptyState';
 import UserProfileModal from './UserProfileModal';
 import UserScoreCard from './UserScoreCard';
 import { PERIOD_OPTIONS } from '../../constants/rankings';
+import { STORAGE_KEY_ONBOARDING_RANKING_VIEWED } from '../../constants/storage';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { UserRankingEntry } from '../../types';
 
@@ -24,7 +25,7 @@ export default function RankingsView() {
   const [selectedProfile, setSelectedProfile] = useState<{ entry: UserRankingEntry; position: number } | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('onboarding_ranking_viewed', 'true');
+    localStorage.setItem(STORAGE_KEY_ONBOARDING_RANKING_VIEWED, 'true');
   }, []);
 
   const maxScore = ranking?.rankings[0]?.score ?? 0;
