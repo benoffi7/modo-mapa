@@ -366,6 +366,38 @@ Services validate input before sending to Firestore (even though rules also vali
 - Use `FieldValue.increment()` for atomic counter updates
 - Implement cascade deletes if the doc has child relationships
 
+### Cloud Functions — Checklist for New Callable Functions
+
+See full procedures in [docs/procedures/cloud-functions-staging.md](../procedures/cloud-functions-staging.md).
+
+- Use `getDb(databaseId)` from `helpers/env.ts`, **never** `getFirestore()` directly
+- Use `enforceAppCheck: ENFORCE_APP_CHECK` from `helpers/env.ts`, **never** `!IS_EMULATOR`
+- Accept optional `databaseId` parameter from the client for staging DB support
+- Admin-only functions: use `assertAdmin(request.auth)` for authentication
+- Export the function in `functions/src/index.ts`
+- Update test mocks to include `getDb` in the `helpers/env` mock
+- **Never** use `as never` type casts — fix the types properly
+- **Never** use `.catch(() => {})` — always log errors: `.catch((err) => console.error(...))`
+
+### Cloud Functions — Admin Panel Queries
+
+- **Collections with simple rules (1-2 conditions):** Direct Firestore queries from the frontend are OK.
+- **Collections with complex rules (3+ OR conditions):** **Must** use a Cloud Function with Admin SDK.
+  Complex OR rules (e.g., `isOwner || isEditor || isPublic || isFeatured`) block Firestore collection queries
+  even when the filter matches a permitted condition. This is a Firestore security rules limitation.
+
+### Staging Compatibility
+
+The project uses a separate Firestore database (`staging`) for the staging environment.
+Cloud Functions are shared between prod and staging (single Firebase project).
+
+- **Triggers/scheduled functions:** Always operate on the default DB. Staging data in the `staging` DB
+  will NOT trigger these functions.
+- **Callable functions:** Must accept optional `databaseId` from the client. The staging frontend passes
+  `VITE_FIRESTORE_DATABASE_ID` to callable functions so they query the correct database.
+- **Deploy:** `deploy-staging.yml` auto-deploys functions when `functions/src/` changes.
+- **Validation:** Run `scripts/pre-staging-check.sh` before pushing to staging.
+
 ---
 
 ## How to Add a New Feature
@@ -393,6 +425,9 @@ Services validate input before sending to Firestore (even though rules also vali
 - [ ] Firestore rules: `keys().hasOnly()` on create, ownership on update/delete, userId immutability
 - [ ] Service queries use `limit()` (max 200)
 - [ ] Cloud Function triggers: rate limit + moderation + counters
+- [ ] Cloud Function callables: `getDb(databaseId)` + `ENFORCE_APP_CHECK` + no `as never` casts
+- [ ] No silent `.catch(() => {})` — always log errors
 - [ ] Constants in `src/constants/` (no magic numbers)
 - [ ] Privacy policy updated if new user data is collected
 - [ ] Seed script updated for new collections (`scripts/seed-admin-data.mjs`)
+- [ ] Run `scripts/pre-staging-check.sh` before pushing to staging

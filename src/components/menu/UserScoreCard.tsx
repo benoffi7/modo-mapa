@@ -99,7 +99,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
     let cancelled = false;
     fetchUserScoreHistory(userId, periodType).then((h) => {
       if (!cancelled) setScoreHistory(h);
-    }).catch(() => {/* ignore */});
+    }).catch((err) => console.error('[UserScoreCard] fetchUserScoreHistory failed:', err));
     return () => { cancelled = true; };
   }, [userId, periodType]);
 

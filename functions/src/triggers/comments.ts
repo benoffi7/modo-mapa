@@ -1,5 +1,6 @@
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
@@ -12,7 +13,7 @@ export const onCommentCreated = onDocumentCreated(
   'comments/{commentId}',
   async (event) => {
     const startMs = performance.now();
-    const db = getFirestore();
+    const db = getDb();
     const snap = event.data;
     if (!snap) return;
 
@@ -97,7 +98,7 @@ export const onCommentCreated = onDocumentCreated(
 export const onCommentUpdated = onDocumentUpdated(
   'comments/{commentId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const after = event.data?.after;
     const before = event.data?.before;
     if (!after || !before) return;
@@ -128,7 +129,7 @@ export const onCommentUpdated = onDocumentUpdated(
 export const onCommentDeleted = onDocumentDeleted(
   'comments/{commentId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const data = event.data?.data();
     const commentId = event.params.commentId;
 

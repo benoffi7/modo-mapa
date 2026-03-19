@@ -42,8 +42,8 @@ export function useUserSettings() {
 
       setOptimistic((prev) => ({ ...prev, [key]: value }));
 
-      updateUserSettings(user.uid, { [key]: value }).catch(() => {
-        // Revert on error
+      updateUserSettings(user.uid, { [key]: value }).catch((err) => {
+        console.error('[useUserSettings] updateUserSettings failed:', err);
         setOptimistic((prev) => {
           const next = { ...prev };
           delete next[key];

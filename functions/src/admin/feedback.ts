@@ -1,9 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { createNotification } from '../utils/notifications';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { IS_EMULATOR } from '../helpers/env';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 const MAX_RESPONSE_LENGTH = 500;
 
 const GITHUB_OWNER = defineString('GITHUB_OWNER', {
@@ -14,7 +14,7 @@ const GITHUB_REPO = defineString('GITHUB_REPO', {
 });
 
 export const respondToFeedback = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -26,7 +26,7 @@ export const respondToFeedback = onCall(
       throw new HttpsError('invalid-argument', `response must be 1-${MAX_RESPONSE_LENGTH} chars`);
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const feedbackRef = db.collection('feedback').doc(feedbackId);
     const feedbackSnap = await feedbackRef.get();
     if (!feedbackSnap.exists) {
@@ -54,7 +54,7 @@ export const respondToFeedback = onCall(
 );
 
 export const resolveFeedback = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -63,7 +63,7 @@ export const resolveFeedback = onCall(
       throw new HttpsError('invalid-argument', 'feedbackId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const feedbackRef = db.collection('feedback').doc(feedbackId);
     const feedbackSnap = await feedbackRef.get();
     if (!feedbackSnap.exists) {
@@ -86,7 +86,7 @@ export const resolveFeedback = onCall(
 );
 
 export const createGithubIssueFromFeedback = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30 },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -95,7 +95,7 @@ export const createGithubIssueFromFeedback = onCall(
       throw new HttpsError('invalid-argument', 'feedbackId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const feedbackRef = db.collection('feedback').doc(feedbackId);
     const feedbackSnap = await feedbackRef.get();
     if (!feedbackSnap.exists) {

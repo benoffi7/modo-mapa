@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import {
   SwipeableDrawer,
   Box,
@@ -70,6 +70,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onOpen: () => void;
+  onClearSharedList?: () => void;
   initialSection?: string | undefined;
   sharedListId?: string | undefined;
 }
@@ -91,7 +92,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, onOpen, initialSection, sharedListId }: Props) {
+export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -117,6 +118,11 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
   }, [initialSection, open]);
 
   const setActiveSection = (section: Section) => {
+    // When navigating to lists from nav, clear any stale shared list state
+    if (section === 'lists') {
+      onClearSharedList?.();
+      listsBackHandler.current?.();
+    }
     setActiveSectionRaw(section);
     if (section !== 'nav') {
       trackEvent('side_menu_section', { section });
@@ -183,7 +189,16 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
     setNameDialogOpen(false);
   };
 
-  const handleBackToNav = () => setActiveSection('nav');
+  // Back handler for lists section: first clears shared list view, then goes to nav
+  const listsBackHandler = useRef<(() => boolean) | null>(null);
+  const registerListsBackHandler = useMemo(() => (h: (() => boolean) | null) => { listsBackHandler.current = h; }, []);
+
+  const handleBackToNav = () => {
+    if (activeSection === 'lists' && listsBackHandler.current?.()) {
+      return; // SharedListsView handled it (cleared shared list → showing user's lists)
+    }
+    setActiveSection('nav');
+  };
 
   const userName = displayName || 'Anónimo';
 
@@ -268,7 +283,6 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
 
               {/* Navigation */}
               <SideMenuNav
-                isAuthenticated={!!user && !user.isAnonymous}
                 unreadReplyCount={unreadReplyCount}
                 onNavigate={setActiveSection}
                 onSurprise={handleSurprise}
@@ -345,7 +359,7 @@ export default function SideMenu({ open, onClose, onOpen, initialSection, shared
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} />}
+                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}

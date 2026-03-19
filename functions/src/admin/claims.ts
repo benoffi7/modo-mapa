@@ -2,7 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { defineString } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
-import { IS_EMULATOR } from '../helpers/env';
+import { IS_EMULATOR, ENFORCE_APP_CHECK } from '../helpers/env';
 import { assertAdmin } from '../helpers/assertAdmin';
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
@@ -10,7 +10,7 @@ const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
 });
 
 export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: true }>>(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     const { targetUid } = request.data ?? {};
     if (!targetUid || typeof targetUid !== 'string') {
@@ -44,7 +44,7 @@ export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: tr
 );
 
 export const removeAdminClaim = onCall<{ targetUid: string }, Promise<{ success: true }>>(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     const { targetUid } = request.data ?? {};
     if (!targetUid || typeof targetUid !== 'string') {

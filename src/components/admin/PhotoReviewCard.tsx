@@ -28,7 +28,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
     if (!path) return;
     getDownloadURL(ref(storage, path))
       .then(setImageUrl)
-      .catch(() => setImageUrl(null));
+      .catch((err) => { console.error('[PhotoReviewCard] getDownloadURL failed:', err); setImageUrl(null); });
   }, [photo]);
 
   const handleApprove = async () => {

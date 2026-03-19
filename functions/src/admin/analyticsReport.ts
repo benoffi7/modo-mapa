@@ -1,11 +1,10 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { getFirestore } from 'firebase-admin/firestore';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { IS_EMULATOR } from '../helpers/env';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -42,7 +41,7 @@ const CACHE_DOC_PATH = 'config/analyticsCache';
 // ── Cloud Function ────────────────────────────────────────────────────
 
 export const getAnalyticsReport = onCall(
-  { enforceAppCheck: !IS_EMULATOR, secrets: ['GA4_PROPERTY_ID'] },
+  { enforceAppCheck: ENFORCE_APP_CHECK, secrets: ['GA4_PROPERTY_ID'] },
   async (request: CallableRequest): Promise<AnalyticsReportResponse> => {
     assertAdmin(request.auth);
 
@@ -51,7 +50,7 @@ export const getAnalyticsReport = onCall(
       throw new HttpsError('failed-precondition', 'GA4_PROPERTY_ID not configured');
     }
 
-    const db = getFirestore();
+    const db = getDb();
 
     // Check cache
     const cacheRef = db.doc(CACHE_DOC_PATH);

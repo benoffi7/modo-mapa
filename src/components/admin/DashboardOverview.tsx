@@ -39,9 +39,9 @@ export default function DashboardOverview() {
     const [counters, customTags, authStats, notificationStats, commentStats] = await Promise.all([
       fetchCounters(),
       fetchAllCustomTags(),
-      fetchAuthStats().catch(() => null),
-      fetchNotificationStats().catch(() => null),
-      fetchCommentStats().catch(() => null),
+      fetchAuthStats().catch((err) => { console.error('[DashboardOverview] fetchAuthStats failed:', err); return null; }),
+      fetchNotificationStats().catch((err) => { console.error('[DashboardOverview] fetchNotificationStats failed:', err); return null; }),
+      fetchCommentStats().catch((err) => { console.error('[DashboardOverview] fetchCommentStats failed:', err); return null; }),
     ]);
 
     const labelMap = new Map<string, number>();

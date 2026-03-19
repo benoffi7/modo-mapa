@@ -1,6 +1,6 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { getStorage } from 'firebase-admin/storage';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import sharp from 'sharp';
 import { incrementCounter, trackWrite } from '../utils/counters';
 
@@ -11,7 +11,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     if (!snap) return;
     const data = snap.data();
     const photoId = event.params.photoId;
-    const db = getFirestore();
+    const db = getDb();
 
     // Generate thumbnail
     try {

@@ -59,8 +59,8 @@ export function usePriceLevelFilter() {
       globalPriceMap = map;
       cacheTimestamp = Date.now();
       setPriceMap(map);
-    }).catch(() => {
-      // Silently fail — price filter just won't work
+    }).catch((err) => {
+      console.error('[usePriceLevelFilter] fetchPriceLevels failed:', err);
     });
   }, []);
 

@@ -1,5 +1,5 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite } from '../utils/counters';
@@ -8,7 +8,7 @@ import { logAbuse } from '../utils/abuseLogger';
 export const onFeedbackCreated = onDocumentCreated(
   'feedback/{feedbackId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const snap = event.data;
     if (!snap) return;
 

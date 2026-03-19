@@ -20,6 +20,7 @@ export { dailyMetrics } from './scheduled/dailyMetrics';
 export { cleanupRejectedPhotos } from './scheduled/cleanupPhotos';
 export { computeWeeklyRanking, computeMonthlyRanking, computeAlltimeRanking } from './scheduled/rankings';
 export { cleanupExpiredNotifications } from './scheduled/cleanupNotifications';
+export { generateFeaturedLists } from './scheduled/featuredLists';
 
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';
@@ -30,3 +31,8 @@ export { setAdminClaim, removeAdminClaim } from './admin/claims';
 export { getStorageStats } from './admin/storageStats';
 export { writePerfMetrics } from './admin/perfMetrics';
 export { getAnalyticsReport } from './admin/analyticsReport';
+export { toggleFeaturedList, getPublicLists, getFeaturedLists } from './admin/featuredLists';
+
+// Callable
+export { inviteListEditor } from './callable/inviteListEditor';
+export { removeListEditor } from './callable/removeListEditor';

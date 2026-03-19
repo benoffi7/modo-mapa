@@ -311,6 +311,8 @@ export const sharedListConverter: FirestoreDataConverter<SharedList> = {
       name: list.name,
       description: list.description,
       isPublic: list.isPublic,
+      featured: list.featured,
+      editorIds: list.editorIds,
       itemCount: list.itemCount,
       createdAt: list.createdAt,
       updatedAt: list.updatedAt,
@@ -324,6 +326,8 @@ export const sharedListConverter: FirestoreDataConverter<SharedList> = {
       name: String(d.name ?? ''),
       description: String(d.description ?? ''),
       isPublic: d.isPublic === true,
+      featured: d.featured === true,
+      editorIds: Array.isArray(d.editorIds) ? d.editorIds as string[] : [],
       itemCount: Number(d.itemCount ?? 0),
       createdAt: toDate(d.createdAt),
       updatedAt: toDate(d.updatedAt),
@@ -336,6 +340,7 @@ export const listItemConverter: FirestoreDataConverter<ListItem> = {
     return {
       listId: item.listId,
       businessId: item.businessId,
+      addedBy: item.addedBy,
       createdAt: item.createdAt,
     };
   },
@@ -345,6 +350,7 @@ export const listItemConverter: FirestoreDataConverter<ListItem> = {
       id: snapshot.id,
       listId: String(d.listId ?? ''),
       businessId: String(d.businessId ?? ''),
+      addedBy: String(d.addedBy ?? ''),
       createdAt: toDate(d.createdAt),
     };
   },

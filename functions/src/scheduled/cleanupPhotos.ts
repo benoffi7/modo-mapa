@@ -1,11 +1,11 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { getStorage } from 'firebase-admin/storage';
 
 export const cleanupRejectedPhotos = onSchedule(
   { schedule: '0 4 * * *', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const bucket = getStorage().bucket();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

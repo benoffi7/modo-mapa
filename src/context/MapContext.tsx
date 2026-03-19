@@ -7,11 +7,15 @@ import type { Business } from '../types';
 interface SelectionContextType {
   selectedBusiness: Business | null;
   setSelectedBusiness: (business: Business | null) => void;
+  activeSharedListId: string | null;
+  setActiveSharedListId: (id: string | null) => void;
 }
 
 const SelectionContext = createContext<SelectionContextType>({
   selectedBusiness: null,
   setSelectedBusiness: () => {},
+  activeSharedListId: null,
+  setActiveSharedListId: () => {},
 });
 
 /* ─── Filters context (changes on search/filter/location) ─── */
@@ -42,6 +46,7 @@ const FiltersContext = createContext<FiltersContextType>({
 
 export function MapProvider({ children }: { children: ReactNode }) {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [activeSharedListId, setActiveSharedListId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [activePriceFilter, setActivePriceFilter] = useState<number | null>(null);
@@ -60,7 +65,9 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const selectionValue = useMemo<SelectionContextType>(() => ({
     selectedBusiness,
     setSelectedBusiness,
-  }), [selectedBusiness]);
+    activeSharedListId,
+    setActiveSharedListId,
+  }), [selectedBusiness, activeSharedListId]);
 
   const filtersValue = useMemo<FiltersContextType>(() => ({
     searchQuery,

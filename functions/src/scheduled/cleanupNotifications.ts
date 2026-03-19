@@ -1,10 +1,10 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 
 export const cleanupExpiredNotifications = onSchedule(
   { schedule: '0 5 * * *', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const now = new Date();
 
     const expired = await db.collection('notifications')

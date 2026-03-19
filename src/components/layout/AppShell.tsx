@@ -91,7 +91,33 @@ export default function AppShell() {
   const [menuInitialSection, setMenuInitialSection] = useState<string | undefined>(undefined);
   const [sharedListId, setSharedListId] = useState<string | undefined>(undefined);
   const [searchParams, setSearchParams] = useSearchParams();
-  const { setSelectedBusiness } = useSelection();
+  const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
+
+  // Reopen shared list when BusinessSheet closes.
+  // A ref stores the list ID to return to — immune to React batching/closure issues.
+  const returnToListId = useRef<string | null>(null);
+  const hadBusiness = useRef(false);
+
+  useEffect(() => {
+    if (activeSharedListId) {
+      returnToListId.current = activeSharedListId;
+    }
+  }, [activeSharedListId]);
+
+  useEffect(() => {
+    if (currentBusiness) {
+      hadBusiness.current = true;
+    } else if (hadBusiness.current && returnToListId.current) {
+      // BusinessSheet just closed AND we have a list to return to
+      const listId = returnToListId.current;
+      returnToListId.current = null;
+      hadBusiness.current = false;
+      setActiveSharedListId(null);
+      setSharedListId(listId);
+      setMenuInitialSection('lists');
+      setMenuOpen(true);
+    }
+  }, [currentBusiness, setActiveSharedListId]);
 
   // Deep link: ?business=biz_001 opens the business sheet
   // Deep link: ?list=xxx opens SideMenu on lists section
@@ -127,14 +153,32 @@ export default function AppShell() {
       }}
     >
       <OfflineIndicator />
-      <SearchBar onMenuClick={() => setMenuOpen(true)} />
+      <SearchBar onMenuClick={() => {
+        setSharedListId(undefined);
+        setActiveSharedListId(null);
+        setMenuInitialSection(undefined);
+        setMenuOpen(true);
+      }} />
       <FilterChips />
       <MapView />
       <LocationFAB />
       <BusinessSheet />
       <NameDialog />
       <MapHint />
-      <SideMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSection(undefined); setSharedListId(undefined); }} onOpen={() => setMenuOpen(true)} initialSection={menuInitialSection} sharedListId={sharedListId} />
+      <SideMenu
+        open={menuOpen}
+        onClose={() => {
+          setMenuOpen(false);
+          setMenuInitialSection(undefined);
+          // Don't clear sharedListId/activeSharedListId here —
+          // they get cleared by the navigate-back effect or when the menu
+          // opens fresh from hamburger button.
+        }}
+        onOpen={() => setMenuOpen(true)}
+        onClearSharedList={() => { setSharedListId(undefined); setActiveSharedListId(null); }}
+        initialSection={menuInitialSection}
+        sharedListId={sharedListId}
+      />
     </Box>
   );
 }

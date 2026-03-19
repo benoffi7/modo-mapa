@@ -19,6 +19,7 @@ import BackupsPanel from './BackupsPanel';
 import PhotoReviewPanel from './PhotoReviewPanel';
 import PerformancePanel from './PerformancePanel';
 import FeaturesPanel from './FeaturesPanel';
+import FeaturedListsPanel from './FeaturedListsPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -37,7 +38,7 @@ export default function AdminLayout() {
           </Button>
         </Toolbar>
       </AppBar>
-      <Tabs value={tab} onChange={(_, v: number) => setTab(v)} variant="scrollable" scrollButtons="auto">
+      <Tabs value={tab} onChange={(_, v: number) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
         <Tab label="Resumen" />
         <Tab label="Actividad" />
         <Tab label="Feedback" />
@@ -51,6 +52,7 @@ export default function AdminLayout() {
         } />
         <Tab label="Backups" />
         <Tab label="Fotos" />
+        <Tab label="Listas" />
         <Tab label="Rendimiento" />
         <Tab label="Funcionalidades" />
       </Tabs>
@@ -64,8 +66,9 @@ export default function AdminLayout() {
         {tab === 6 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
         {tab === 7 && <BackupsPanel />}
         {tab === 8 && <PhotoReviewPanel />}
-        {tab === 9 && <PerformancePanel />}
-        {tab === 10 && <FeaturesPanel />}
+        {tab === 9 && <FeaturedListsPanel />}
+        {tab === 10 && <PerformancePanel />}
+        {tab === 11 && <FeaturesPanel />}
       </Box>
     </Box>
   );

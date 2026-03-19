@@ -43,7 +43,8 @@ export function useSuggestions(): {
       .then((data) => {
         if (!cancelled) setState({ favorites: data.favorites, ratings: data.ratings, userTags: data.userTags, isLoading: false, error: false });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[useSuggestions] fetchUserSuggestionData failed:', err);
         if (!cancelled) setState((prev) => ({ ...prev, isLoading: false, error: true }));
       });
 

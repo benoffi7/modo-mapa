@@ -1,5 +1,5 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { updateRatingAggregates } from '../utils/aggregates';
 import { trackFunctionTiming } from '../utils/perfTracker';
@@ -8,7 +8,7 @@ export const onRatingWritten = onDocumentWritten(
   'ratings/{ratingId}',
   async (event) => {
     const startMs = performance.now();
-    const db = getFirestore();
+    const db = getDb();
     const before = event.data?.before;
     const after = event.data?.after;
     const beforeExists = before?.exists;

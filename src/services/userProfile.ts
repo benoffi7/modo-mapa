@@ -73,8 +73,8 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
 
   // User doc may not be readable (rules restrict to owner/admin).
   // Fetch it best-effort; the rest of the data is public.
-  const userDocPromise = getDoc(userDocRef).catch(() => null);
-  const rankingPromise = fetchLatestRanking('monthly').catch(() => null);
+  const userDocPromise = getDoc(userDocRef).catch((err) => { console.error('[userProfile] getDoc failed:', err); return null; });
+  const rankingPromise = fetchLatestRanking('monthly').catch((err) => { console.error('[userProfile] fetchLatestRanking failed:', err); return null; });
 
   const [userSnap, commentsSnap, ratingsSnap, favoritesSnap, customTagsSnap, photosSnap, monthlyRanking] =
     await Promise.all([

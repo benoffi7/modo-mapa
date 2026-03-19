@@ -1,4 +1,4 @@
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 
 /**
  * Tracks Cloud Function execution times in a counter doc.
@@ -11,7 +11,7 @@ const MAX_SAMPLES_PER_FUNCTION = 5000;
 export async function trackFunctionTiming(functionName: string, startMs: number): Promise<void> {
   try {
     const elapsed = Math.round(performance.now() - startMs);
-    const db = getFirestore();
+    const db = getDb();
     const docRef = db.doc('config/perfCounters');
 
     await db.runTransaction(async (tx) => {

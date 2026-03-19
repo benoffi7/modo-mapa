@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   addDoc,
   updateDoc,
@@ -8,6 +9,7 @@ import {
   getDocs,
   query,
   where,
+  orderBy,
   serverTimestamp,
   increment,
 } from 'firebase/firestore';
@@ -17,6 +19,7 @@ import { COLLECTIONS } from '../config/collections';
 import { sharedListConverter, listItemConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import { MAX_LISTS } from '../constants/lists';
 import type { SharedList, ListItem } from '../types';
 
 export function getSharedListsCollection(): CollectionReference<SharedList> {
@@ -71,11 +74,12 @@ export async function deleteList(listId: string, ownerId: string): Promise<void>
   trackEvent('list_deleted', { list_id: listId });
 }
 
-export async function addBusinessToList(listId: string, businessId: string): Promise<void> {
+export async function addBusinessToList(listId: string, businessId: string, addedBy?: string): Promise<void> {
   const itemId = `${listId}__${businessId}`;
   await setDoc(doc(db, COLLECTIONS.LIST_ITEMS, itemId), {
     listId,
     businessId,
+    ...(addedBy ? { addedBy } : {}),
     createdAt: serverTimestamp(),
   });
   await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), {
@@ -100,6 +104,73 @@ export async function fetchListItems(listId: string): Promise<ListItem[]> {
     query(
       collection(db, COLLECTIONS.LIST_ITEMS).withConverter(listItemConverter),
       where('listId', '==', listId),
+    ),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+export async function copyList(sourceListId: string, targetUserId: string): Promise<string> {
+  // Check user list count
+  const userLists = await getDocs(
+    query(collection(db, COLLECTIONS.SHARED_LISTS), where('ownerId', '==', targetUserId)),
+  );
+  if (userLists.size >= MAX_LISTS) {
+    throw new Error('Límite de 10 listas alcanzado');
+  }
+
+  // Fetch source list
+  const sourceSnap = await getDoc(
+    doc(db, COLLECTIONS.SHARED_LISTS, sourceListId).withConverter(sharedListConverter),
+  );
+  if (!sourceSnap.exists()) throw new Error('Lista no encontrada');
+  const source = sourceSnap.data();
+
+  // Verify source is public or caller is owner
+  if (!source.isPublic && source.ownerId !== targetUserId) {
+    throw new Error('No se puede copiar una lista privada');
+  }
+
+  // Create new list
+  const newListId = await createList(targetUserId, source.name, source.description);
+
+  // Copy items
+  const items = await fetchListItems(sourceListId);
+  for (const item of items) {
+    await addBusinessToList(newListId, item.businessId);
+  }
+
+  trackEvent('list_copied', { source_list_id: sourceListId, item_count: items.length });
+  return newListId;
+}
+
+export async function fetchFeaturedLists(): Promise<SharedList[]> {
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ databaseId?: string }, { lists: SharedList[] }>(functions, 'getFeaturedLists');
+  const result = await fn({ databaseId });
+  return result.data.lists.map((l) => ({
+    ...l,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    editorIds: l.editorIds ?? [],
+  }));
+}
+
+export async function removeEditor(listId: string, targetUid: string): Promise<void> {
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ listId: string; targetUid: string; databaseId?: string }, { success: boolean }>(functions, 'removeListEditor');
+  await fn({ listId, targetUid, databaseId });
+}
+
+export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
+  const snap = await getDocs(
+    query(
+      getSharedListsCollection(),
+      where('editorIds', 'array-contains', userId),
+      orderBy('updatedAt', 'desc'),
     ),
   );
   return snap.docs.map((d) => d.data());

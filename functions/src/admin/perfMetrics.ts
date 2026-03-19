@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import type { CallableRequest } from 'firebase-functions/v2/https';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { IS_EMULATOR } from '../helpers/env';
+import { FieldValue } from 'firebase-admin/firestore';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
 const MAX_WRITES_PER_DAY = 5;
 const RATE_LIMIT_WINDOW_MS = 86_400_000; // 24 hours
@@ -15,7 +15,7 @@ interface PerfMetricsPayload {
 }
 
 export const writePerfMetrics = onCall<PerfMetricsPayload>(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request: CallableRequest<PerfMetricsPayload>) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Requires authentication');
@@ -33,7 +33,7 @@ export const writePerfMetrics = onCall<PerfMetricsPayload>(
       throw new HttpsError('invalid-argument', 'invalid appVersion');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const uid = request.auth.uid;
 
     // Rate limit: max N writes per 24h per user

@@ -1,5 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { calculatePercentile } from '../utils/perfTracker';
 
 function getStartOfDay(): Date {
@@ -70,7 +71,7 @@ export const dailyMetrics = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const today = new Date().toISOString().slice(0, 10);
     const startOfDay = getStartOfDay();
 
