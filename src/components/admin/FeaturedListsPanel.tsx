@@ -24,18 +24,20 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../types';
 import type { SharedList, ListItem as ListItemType } from '../../types';
 
-const toggleFeatured = httpsCallable<{ listId: string; featured: boolean }, { success: boolean }>(
-  functions,
-  'toggleFeaturedList',
-);
+const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
 
-const getPublicListsFn = httpsCallable<void, { lists: SharedList[] }>(
-  functions,
-  'getPublicLists',
-);
+const toggleFeatured = httpsCallable<
+  { listId: string; featured: boolean; databaseId?: string },
+  { success: boolean }
+>(functions, 'toggleFeaturedList');
+
+const getPublicListsFn = httpsCallable<
+  { databaseId?: string },
+  { lists: SharedList[] }
+>(functions, 'getPublicLists');
 
 async function fetchPublicLists(): Promise<SharedList[]> {
-  const result = await getPublicListsFn();
+  const result = await getPublicListsFn({ databaseId });
   return result.data.lists.map((l) => ({
     ...l,
     createdAt: new Date(),
@@ -56,7 +58,7 @@ export default function FeaturedListsPanel() {
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
     try {
-      await toggleFeatured({ listId: list.id, featured: !list.featured });
+      await toggleFeatured({ listId: list.id, featured: !list.featured, databaseId });
       toast.success(list.featured ? 'Quitada de destacadas' : 'Marcada como destacada');
       refetch();
     } catch (err) {
