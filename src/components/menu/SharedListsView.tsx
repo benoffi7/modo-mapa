@@ -30,6 +30,7 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import GroupIcon from '@mui/icons-material/Group';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useToast } from '../../context/ToastContext';
@@ -82,7 +83,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   useEffect(() => {
     if (!sharedListId) return;
     let ignore = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch
+     
     setLoadingShared(true);
     (async () => {
       try {
@@ -103,6 +104,11 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Invite editor dialog
+  const [inviteOpen, setInviteOpen] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
 
   // Featured lists
   const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
@@ -159,7 +165,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   }); // runs every render to keep closure fresh
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
+     
     loadLists();
   }, [loadLists]);
 
@@ -211,6 +217,25 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
     } else {
       navigator.clipboard.writeText(url).then(() => toast.success('Link copiado'));
     }
+  };
+
+  const handleInvite = async () => {
+    if (!inviteOpen || !inviteEmail.trim()) return;
+    setIsInviting(true);
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../config/firebase');
+      const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+      const fn = httpsCallable<{ listId: string; targetEmail: string; databaseId?: string }, { success: boolean }>(functions, 'inviteListEditor');
+      await fn({ listId: inviteOpen, targetEmail: inviteEmail.trim(), databaseId });
+      toast.success(`Editor invitado: ${inviteEmail.trim()}`);
+      setInviteOpen(null);
+      setInviteEmail('');
+      await loadLists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo invitar');
+    }
+    setIsInviting(false);
   };
 
   const handleToggleExpand = async (listId: string) => {
@@ -457,6 +482,9 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
                         <ShareIcon fontSize="small" />
                       </IconButton>
                     )}
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setInviteOpen(list.id); }} aria-label="Invitar editor">
+                      <PersonAddIcon fontSize="small" />
+                    </IconButton>
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(list); }} aria-label="Eliminar lista" sx={{ color: 'error.main' }}>
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -561,6 +589,31 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
           <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
           <Button onClick={handleCreate} variant="contained" disabled={isCreating || !newName.trim()}>
             {isCreating ? <CircularProgress size={20} /> : 'Crear'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Invite editor dialog */}
+      <Dialog open={!!inviteOpen} onClose={() => { setInviteOpen(null); setInviteEmail(''); }} maxWidth="xs" fullWidth>
+        <DialogTitle>Invitar editor</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            El editor podrá agregar y quitar comercios de tu lista.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Email del usuario"
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setInviteOpen(null); setInviteEmail(''); }}>Cancelar</Button>
+          <Button onClick={handleInvite} variant="contained" disabled={isInviting || !inviteEmail.trim()}>
+            {isInviting ? <CircularProgress size={20} /> : 'Invitar'}
           </Button>
         </DialogActions>
       </Dialog>
