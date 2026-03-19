@@ -30,3 +30,42 @@ export const toggleFeaturedList = onCall(
     return { success: true };
   },
 );
+
+interface ListData {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  isPublic: boolean;
+  featured: boolean;
+  itemCount: number;
+}
+
+export const getPublicLists = onCall(
+  { enforceAppCheck: !IS_EMULATOR },
+  async (request) => {
+    assertAdmin(request.auth);
+
+    const db = getFirestore();
+    const snap = await db
+      .collection('sharedLists')
+      .where('isPublic', '==', true)
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const lists: ListData[] = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ownerId: String(data.ownerId ?? ''),
+        name: String(data.name ?? ''),
+        description: String(data.description ?? ''),
+        isPublic: true,
+        featured: data.featured === true,
+        itemCount: Number(data.itemCount ?? 0),
+      };
+    });
+
+    return { lists };
+  },
+);

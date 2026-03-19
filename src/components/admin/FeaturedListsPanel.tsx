@@ -19,9 +19,6 @@ import { functions } from '../../config/firebase';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useToast } from '../../context/ToastContext';
 import AdminPanelWrapper from './AdminPanelWrapper';
-import { getDocs, query, where, collection, orderBy } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { sharedListConverter } from '../../config/converters';
 import { fetchListItems } from '../../services/sharedLists';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../types';
@@ -32,26 +29,19 @@ const toggleFeatured = httpsCallable<{ listId: string; featured: boolean }, { su
   'toggleFeaturedList',
 );
 
+const getPublicListsFn = httpsCallable<void, { lists: SharedList[] }>(
+  functions,
+  'getPublicLists',
+);
+
 async function fetchPublicLists(): Promise<SharedList[]> {
-  try {
-    const snap = await getDocs(
-      query(
-        collection(db, 'sharedLists').withConverter(sharedListConverter),
-        where('isPublic', '==', true),
-        orderBy('updatedAt', 'desc'),
-      ),
-    );
-    return snap.docs.map((d) => d.data());
-  } catch {
-    // Fallback without orderBy if index not ready
-    const snap = await getDocs(
-      query(
-        collection(db, 'sharedLists').withConverter(sharedListConverter),
-        where('isPublic', '==', true),
-      ),
-    );
-    return snap.docs.map((d) => d.data());
-  }
+  const result = await getPublicListsFn();
+  return result.data.lists.map((l) => ({
+    ...l,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    editorIds: l.editorIds ?? [],
+  }));
 }
 
 export default function FeaturedListsPanel() {
