@@ -98,19 +98,26 @@ export default function AppShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
 
-  // Onboarding: benefits dialog + account creation flow
+  // Onboarding: benefits dialog + account creation flow (single source of truth)
   const [benefitsOpen, setBenefitsOpen] = useState(false);
   const [benefitsSource, setBenefitsSource] = useState<'banner' | 'menu' | 'settings'>('banner');
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
   const { showReminder, dismissReminder } = useActivityReminder();
 
   const handleCreateAccount = useCallback((source: 'banner' | 'menu' | 'settings' = 'banner') => {
+    setEmailDialogTab('register');
     if (localStorage.getItem(STORAGE_KEY_BENEFITS_SHOWN) === 'true') {
       setEmailDialogOpen(true);
     } else {
       setBenefitsSource(source);
       setBenefitsOpen(true);
     }
+  }, []);
+
+  const handleLogin = useCallback(() => {
+    setEmailDialogTab('login');
+    setEmailDialogOpen(true);
   }, []);
 
   const handleBenefitsContinue = useCallback(() => {
@@ -220,7 +227,9 @@ export default function AppShell() {
         initialSection={menuInitialSection}
         sharedListId={sharedListId}
         onCreateAccount={handleCreateAccount}
+        onLogin={handleLogin}
         emailDialogOpen={emailDialogOpen}
+        emailDialogTab={emailDialogTab}
         onEmailDialogClose={() => setEmailDialogOpen(false)}
       />
     </Box>

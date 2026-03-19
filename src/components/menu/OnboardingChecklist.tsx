@@ -25,10 +25,13 @@ import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import { useAuth } from '../../context/AuthContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useToast } from '../../context/ToastContext';
+import {
+  STORAGE_KEY_ONBOARDING_DISMISSED,
+  STORAGE_KEY_ONBOARDING_RANKING_VIEWED,
+  STORAGE_KEY_ONBOARDING_CELEBRATED,
+  STORAGE_KEY_ONBOARDING_EXPANDED,
+} from '../../constants/storage';
 import type { SvgIconComponent } from '@mui/icons-material';
-
-const DISMISSED_KEY = 'onboarding_dismissed';
-const RANKING_VIEWED_KEY = 'onboarding_ranking_viewed';
 
 interface Task {
   id: string;
@@ -51,9 +54,10 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
     if (menuOpen && !prevOpen.current) refetch();
     prevOpen.current = menuOpen;
   }, [menuOpen, refetch]);
+
   const toast = useToast();
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === 'true');
-  const [expanded, setExpanded] = useState(() => localStorage.getItem('onboarding_expanded') !== 'false');
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(STORAGE_KEY_ONBOARDING_DISMISSED) === 'true');
+  const [expanded, setExpanded] = useState(() => localStorage.getItem(STORAGE_KEY_ONBOARDING_EXPANDED) !== 'false');
 
   const tasks: Task[] = useMemo(() => [
     {
@@ -84,33 +88,35 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
       id: 'ranking',
       label: 'Explor\u00e1 el ranking',
       icon: EmojiEventsOutlinedIcon,
-      isComplete: localStorage.getItem(RANKING_VIEWED_KEY) === 'true',
+      isComplete: localStorage.getItem(STORAGE_KEY_ONBOARDING_RANKING_VIEWED) === 'true',
     },
   ], [profile]);
 
   const completed = tasks.filter((t) => t.isComplete).length;
   const allDone = completed === tasks.length;
 
-  // Show celebration toast when all complete
-  const [celebrated, setCelebrated] = useState(() => localStorage.getItem('onboarding_celebrated') === 'true');
-  if (allDone && !celebrated) {
-    setCelebrated(true);
-    localStorage.setItem('onboarding_celebrated', 'true');
-    // Use setTimeout to avoid setState during render issues with toast
-    setTimeout(() => toast.success('\u00a1Completaste todos los primeros pasos!'), 0);
-  }
+  // Celebration toast — in useEffect to avoid side effects during render
+  const [celebrated, setCelebrated] = useState(() => localStorage.getItem(STORAGE_KEY_ONBOARDING_CELEBRATED) === 'true');
+  useEffect(() => {
+    if (allDone && !celebrated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time celebration on completion
+      setCelebrated(true);
+      localStorage.setItem(STORAGE_KEY_ONBOARDING_CELEBRATED, 'true');
+      toast.success('\u00a1Completaste todos los primeros pasos!');
+    }
+  }, [allDone, celebrated, toast]);
 
   if (dismissed || allDone || !profile) return null;
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISSED_KEY, 'true');
+    localStorage.setItem(STORAGE_KEY_ONBOARDING_DISMISSED, 'true');
     setDismissed(true);
   };
 
   const toggleExpanded = () => {
     const next = !expanded;
     setExpanded(next);
-    localStorage.setItem('onboarding_expanded', String(next));
+    localStorage.setItem(STORAGE_KEY_ONBOARDING_EXPANDED, String(next));
   };
 
   return (
@@ -129,7 +135,7 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={expanded ? 'Colapsar' : 'Expandir'}>
+            <IconButton size="small" sx={{ p: 0.25 }} aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}>
               {expanded ? <ExpandLessIcon sx={{ fontSize: 18 }} /> : <ExpandMoreIcon sx={{ fontSize: 18 }} />}
             </IconButton>
             <IconButton

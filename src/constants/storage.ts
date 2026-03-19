@@ -10,3 +10,7 @@ export const STORAGE_KEY_BENEFITS_SHOWN = 'benefits_screen_shown';
 export const STORAGE_KEY_ACTIVITY_REMINDER_SHOWN = 'activity_reminder_shown';
 export const STORAGE_KEY_ANON_RATING_COUNT = 'anon_rating_count';
 export const STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED = 'verification_nudge_dismissed';
+export const STORAGE_KEY_ONBOARDING_DISMISSED = 'onboarding_dismissed';
+export const STORAGE_KEY_ONBOARDING_RANKING_VIEWED = 'onboarding_ranking_viewed';
+export const STORAGE_KEY_ONBOARDING_CELEBRATED = 'onboarding_celebrated';
+export const STORAGE_KEY_ONBOARDING_EXPANDED = 'onboarding_expanded';

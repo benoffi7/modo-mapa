@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Snackbar, Alert, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
@@ -7,6 +7,11 @@ import {
   STORAGE_KEY_ACCOUNT_BANNER_DISMISSED,
   STORAGE_KEY_HINT_POST_FIRST_RATING,
 } from '../../constants/storage';
+import {
+  EVT_ONBOARDING_BANNER_SHOWN,
+  EVT_ONBOARDING_BANNER_CLICKED,
+  EVT_ONBOARDING_BANNER_DISMISSED,
+} from '../../constants/analyticsEvents';
 
 function shouldShow(authMethod: string): boolean {
   if (authMethod !== 'anonymous') return false;
@@ -22,20 +27,24 @@ export default function AccountBanner({ onCreateAccount }: Props) {
   const { authMethod } = useAuth();
   const [visible, setVisible] = useState(() => shouldShow(authMethod));
 
-  // Re-evaluate when user rates a business (fires 'anon-interaction' custom event)
-  const handleInteraction = useCallback(() => {
-    if (!visible && shouldShow(authMethod)) {
-      setVisible(true);
-    }
-  }, [visible, authMethod]);
+  // Stable event listener via refs (avoids re-registration on state change)
+  const visibleRef = useRef(visible);
+  useEffect(() => { visibleRef.current = visible; }, [visible]);
+  const authMethodRef = useRef(authMethod);
+  useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
 
   useEffect(() => {
-    window.addEventListener('anon-interaction', handleInteraction);
-    return () => window.removeEventListener('anon-interaction', handleInteraction);
-  }, [handleInteraction]);
+    const handler = () => {
+      if (!visibleRef.current && shouldShow(authMethodRef.current)) {
+        setVisible(true);
+      }
+    };
+    window.addEventListener('anon-interaction', handler);
+    return () => window.removeEventListener('anon-interaction', handler);
+  }, []);
 
   useEffect(() => {
-    if (visible) trackEvent('onboarding_banner_shown');
+    if (visible) trackEvent(EVT_ONBOARDING_BANNER_SHOWN);
   }, [visible]);
 
   if (!visible || authMethod !== 'anonymous') return null;
@@ -43,11 +52,11 @@ export default function AccountBanner({ onCreateAccount }: Props) {
   const handleDismiss = () => {
     setVisible(false);
     localStorage.setItem(STORAGE_KEY_ACCOUNT_BANNER_DISMISSED, 'true');
-    trackEvent('onboarding_banner_dismissed');
+    trackEvent(EVT_ONBOARDING_BANNER_DISMISSED);
   };
 
   const handleClick = () => {
-    trackEvent('onboarding_banner_clicked');
+    trackEvent(EVT_ONBOARDING_BANNER_CLICKED);
     onCreateAccount();
   };
 

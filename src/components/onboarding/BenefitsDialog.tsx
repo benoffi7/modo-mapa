@@ -16,6 +16,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { trackEvent } from '../../utils/analytics';
 import { STORAGE_KEY_BENEFITS_SHOWN } from '../../constants/storage';
+import { EVT_BENEFITS_SCREEN_SHOWN, EVT_BENEFITS_SCREEN_CONTINUE } from '../../constants/analyticsEvents';
 
 const BENEFITS = [
   { icon: SyncIcon, text: 'Sincronizá tus datos entre dispositivos' },
@@ -31,14 +32,20 @@ interface Props {
   source: 'banner' | 'menu' | 'settings';
 }
 
+/**
+ * Shown to anonymous users before the account creation flow.
+ * STORAGE_KEY_BENEFITS_SHOWN is a permanent flag: once set (on Continue or close),
+ * the benefits screen is skipped on all future invocations — the user goes
+ * directly to EmailPasswordDialog.
+ */
 export default function BenefitsDialog({ open, onContinue, onClose, source }: Props) {
   useEffect(() => {
-    if (open) trackEvent('benefits_screen_shown', { source });
+    if (open) trackEvent(EVT_BENEFITS_SCREEN_SHOWN, { source });
   }, [open, source]);
 
   const handleContinue = () => {
     localStorage.setItem(STORAGE_KEY_BENEFITS_SHOWN, 'true');
-    trackEvent('benefits_screen_continue');
+    trackEvent(EVT_BENEFITS_SCREEN_CONTINUE);
     onContinue();
   };
 
