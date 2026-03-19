@@ -1,9 +1,9 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.17.0
+**Version:** 2.18.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-17
+**Ultima actualizacion:** 2026-03-19
 
 ---
 
@@ -92,4 +92,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 338 tests (248 frontend + 90 backend) cubriendo utils, services, hooks, contexts, auth components, triggers, aggregates, helpers. Política: ≥80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 531 tests (410 frontend + 121 backend) cubriendo utils, services, hooks, contexts, auth components, onboarding, triggers, aggregates, helpers. Política: ≥80% cobertura para features nuevas. Ver [tests.md](tests.md)
