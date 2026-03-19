@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Snackbar, Alert, IconButton, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +21,18 @@ interface Props {
 export default function AccountBanner({ onCreateAccount }: Props) {
   const { authMethod } = useAuth();
   const [visible, setVisible] = useState(() => shouldShow(authMethod));
+
+  // Re-evaluate when user rates a business (fires 'anon-interaction' custom event)
+  const handleInteraction = useCallback(() => {
+    if (!visible && shouldShow(authMethod)) {
+      setVisible(true);
+    }
+  }, [visible, authMethod]);
+
+  useEffect(() => {
+    window.addEventListener('anon-interaction', handleInteraction);
+    return () => window.removeEventListener('anon-interaction', handleInteraction);
+  }, [handleInteraction]);
 
   useEffect(() => {
     if (visible) trackEvent('onboarding_banner_shown');

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import AccountBanner from './AccountBanner';
 
 const mockTrackEvent = vi.fn();
@@ -61,5 +61,17 @@ describe('AccountBanner', () => {
     fireEvent.click(screen.getByRole('button', { name: '' })); // IconButton with no text
     expect(localStorage.getItem('account_banner_dismissed')).toBe('true');
     expect(mockTrackEvent).toHaveBeenCalledWith('onboarding_banner_dismissed');
+  });
+
+  it('appears after anon-interaction event when conditions are met', () => {
+    // Initially no interaction
+    const { container } = render(<AccountBanner onCreateAccount={onCreateAccount} />);
+    expect(container.querySelector('.MuiSnackbar-root')).toBeNull();
+
+    // Simulate rating setting the hint key + dispatching event
+    localStorage.setItem('hint_shown_post_first_rating', 'true');
+    act(() => { window.dispatchEvent(new Event('anon-interaction')); });
+
+    expect(screen.getByText('Creá tu cuenta para no perder tus datos')).toBeInTheDocument();
   });
 });

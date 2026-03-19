@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { incrementAnonRatingCount, useActivityReminder } from './useActivityReminder';
 
 const mockTrackEvent = vi.fn();
@@ -75,7 +75,26 @@ describe('useActivityReminder', () => {
     localStorage.setItem('anon_rating_count', '5');
     const { result } = renderHook(() => useActivityReminder());
     expect(result.current.showReminder).toBe(true);
-    result.current.dismissReminder();
-    // Note: need to re-read after state update
+    act(() => result.current.dismissReminder());
+  });
+
+  it('incrementAnonRatingCount dispatches anon-interaction event', () => {
+    const handler = vi.fn();
+    window.addEventListener('anon-interaction', handler);
+    incrementAnonRatingCount();
+    expect(handler).toHaveBeenCalled();
+    window.removeEventListener('anon-interaction', handler);
+  });
+
+  it('shows reminder after anon-interaction event when conditions are met', () => {
+    localStorage.setItem('account_banner_dismissed', 'true');
+    localStorage.setItem('anon_rating_count', '4'); // below threshold
+    const { result } = renderHook(() => useActivityReminder());
+    expect(result.current.showReminder).toBe(false);
+
+    // Simulate reaching threshold
+    localStorage.setItem('anon_rating_count', '5');
+    act(() => { window.dispatchEvent(new Event('anon-interaction')); });
+    expect(result.current.showReminder).toBe(true);
   });
 });
