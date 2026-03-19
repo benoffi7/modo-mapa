@@ -26,6 +26,7 @@ describe('EmailPasswordDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     mockLinkEmailPassword.mockResolvedValue(undefined);
     mockSignInWithEmail.mockResolvedValue(undefined);
     mockSendResetEmail.mockResolvedValue(undefined);
@@ -51,21 +52,13 @@ describe('EmailPasswordDialog', () => {
 
   it('validates email format', () => {
     render(<EmailPasswordDialog {...defaultProps} />);
-    const emailInput = screen.getByLabelText('Email');
-    fireEvent.change(emailInput, { target: { value: 'invalid' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'invalid' } });
     expect(screen.getByText('Formato de email inválido')).toBeInTheDocument();
-  });
-
-  it('validates password minimum length', () => {
-    render(<EmailPasswordDialog {...defaultProps} />);
-    const passwordInput = screen.getByLabelText('Contraseña');
-    fireEvent.change(passwordInput, { target: { value: 'short' } });
-    expect(screen.getByText('Mínimo 8 caracteres')).toBeInTheDocument();
   });
 
   it('validates password confirmation match', () => {
     render(<EmailPasswordDialog {...defaultProps} />);
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'Password1!' } });
     fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'different' } });
     expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument();
   });
@@ -77,20 +70,18 @@ describe('EmailPasswordDialog', () => {
 
   it('calls linkEmailPassword on register submit', async () => {
     render(<EmailPasswordDialog {...defaultProps} />);
-
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'Password1!' } });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'Password1!' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 
     await waitFor(() => {
-      expect(mockLinkEmailPassword).toHaveBeenCalledWith('test@example.com', 'password123');
+      expect(mockLinkEmailPassword).toHaveBeenCalledWith('test@example.com', 'Password1!');
     });
   });
 
   it('calls signInWithEmail on login submit', async () => {
     render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
-
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
@@ -110,13 +101,13 @@ describe('EmailPasswordDialog', () => {
     expect(screen.queryByText(/se van a perder/)).not.toBeInTheDocument();
   });
 
-  it('resets form on tab change', () => {
+  // S1: Email preserved on tab change
+  it('preserves email on tab change', () => {
     render(<EmailPasswordDialog {...defaultProps} />);
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
     fireEvent.click(screen.getByRole('tab', { name: 'Iniciar sesión' }));
-
     const emailInput = screen.getByLabelText('Email') as HTMLInputElement;
-    expect(emailInput.value).toBe('');
+    expect(emailInput.value).toBe('test@example.com');
   });
 
   it('resets form on close', () => {
@@ -155,5 +146,50 @@ describe('EmailPasswordDialog', () => {
       expect(screen.getByText(/Ingresá tu email/)).toBeInTheDocument();
     });
     expect(mockSendResetEmail).not.toHaveBeenCalled();
+  });
+
+  // S2: Password visibility toggle
+  it('shows password visibility toggles', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
+    const toggles = screen.getAllByLabelText('Mostrar contraseña');
+    expect(toggles.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // S3: Password strength indicator on register
+  it('shows password strength checks on register', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'abc' } });
+    expect(screen.getByText('8+ caracteres')).toBeInTheDocument();
+    expect(screen.getByText('Una mayúscula')).toBeInTheDocument();
+    expect(screen.getByText('Un número')).toBeInTheDocument();
+    expect(screen.getByText('Un símbolo')).toBeInTheDocument();
+  });
+
+  it('does not show password strength on login', () => {
+    render(<EmailPasswordDialog {...defaultProps} initialTab="login" />);
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'abc' } });
+    expect(screen.queryByText('8+ caracteres')).not.toBeInTheDocument();
+  });
+
+  // S3: Complexity validation on register
+  it('requires complex password for register', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password' } });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'password' } });
+    expect(screen.getByRole('button', { name: 'Crear cuenta' })).toBeDisabled();
+  });
+
+  // S6: Remember email
+  it('loads remembered email from localStorage', () => {
+    localStorage.setItem('remembered_email', 'saved@example.com');
+    render(<EmailPasswordDialog {...defaultProps} />);
+    const emailInput = screen.getByLabelText('Email') as HTMLInputElement;
+    expect(emailInput.value).toBe('saved@example.com');
+  });
+
+  it('shows remember email checkbox', () => {
+    render(<EmailPasswordDialog {...defaultProps} />);
+    expect(screen.getByLabelText('Recordar mi email')).toBeInTheDocument();
   });
 });

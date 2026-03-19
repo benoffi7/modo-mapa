@@ -92,4 +92,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 531 tests (410 frontend + 121 backend) cubriendo utils, services, hooks, contexts, auth components, onboarding, triggers, aggregates, helpers. Política: ≥80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 550 tests (429 frontend + 121 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, triggers, aggregates, helpers. Política: ≥80% cobertura para features nuevas. Ver [tests.md](tests.md)

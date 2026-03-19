@@ -33,43 +33,58 @@ describe('ChangePasswordDialog', () => {
     expect(screen.getByRole('button', { name: 'Cambiar contraseña' })).toBeDisabled();
   });
 
-  it('validates new password minimum length', () => {
+  it('validates new password complexity', () => {
     render(<ChangePasswordDialog {...defaultProps} />);
-    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'short' } });
-    expect(screen.getByText('Mínimo 8 caracteres')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Contraseña actual'), { target: { value: 'oldpass' } });
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'simple' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'simple' } });
+    expect(screen.getByRole('button', { name: 'Cambiar contraseña' })).toBeDisabled();
+  });
+
+  it('shows password strength indicator for new password', () => {
+    render(<ChangePasswordDialog {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'abc' } });
+    expect(screen.getByText('8+ caracteres')).toBeInTheDocument();
+    expect(screen.getByText('Una mayúscula')).toBeInTheDocument();
+    expect(screen.getByText('Un número')).toBeInTheDocument();
+    expect(screen.getByText('Un símbolo')).toBeInTheDocument();
   });
 
   it('validates password confirmation match', () => {
     render(<ChangePasswordDialog {...defaultProps} />);
-    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'NewPass1!' } });
     fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'different' } });
     expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument();
   });
 
-  it('calls changePassword on submit', async () => {
+  it('calls changePassword on submit with complex password', async () => {
     render(<ChangePasswordDialog {...defaultProps} />);
-
     fireEvent.change(screen.getByLabelText('Contraseña actual'), { target: { value: 'oldpass123' } });
-    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'newpass123' } });
-    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'newpass123' } });
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'NewPass1!' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'NewPass1!' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
 
     await waitFor(() => {
-      expect(mockChangePassword).toHaveBeenCalledWith('oldpass123', 'newpass123');
+      expect(mockChangePassword).toHaveBeenCalledWith('oldpass123', 'NewPass1!');
     });
   });
 
   it('shows success message after password change', async () => {
     render(<ChangePasswordDialog {...defaultProps} />);
-
     fireEvent.change(screen.getByLabelText('Contraseña actual'), { target: { value: 'oldpass123' } });
-    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'newpass123' } });
-    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'newpass123' } });
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'NewPass1!' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'NewPass1!' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
 
     await waitFor(() => {
       expect(screen.getByText('Contraseña actualizada.')).toBeInTheDocument();
     });
+  });
+
+  it('shows visibility toggle on all password fields', () => {
+    render(<ChangePasswordDialog {...defaultProps} />);
+    const toggleButtons = screen.getAllByLabelText('Mostrar contraseña');
+    expect(toggleButtons).toHaveLength(3);
   });
 
   it('resets form on close', () => {
