@@ -148,7 +148,7 @@ export default function EmailPasswordDialog({
   const error = localError ?? authError;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth scroll="paper">
       <DialogTitle sx={{ pb: 0 }}>Cuenta</DialogTitle>
       <Tabs value={tab} onChange={handleTabChange} sx={{ px: 3 }}>
         <Tab label="Crear cuenta" value="register" />

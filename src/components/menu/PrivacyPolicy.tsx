@@ -128,8 +128,10 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu navegador
-            (tema claro/oscuro, visitas recientes, preferencia de analytics). Estos datos
-            no se envían a ningún servidor.
+            (tema claro/oscuro, visitas recientes, preferencia de analytics, y opcionalmente
+            tu email si activás &quot;Recordar mi email&quot;). Estos datos no se envían a
+            ningún servidor y podés borrarlos en cualquier momento desde la configuración
+            del navegador o desactivando la opción.
           </Li>
         </Box>
       </Section>

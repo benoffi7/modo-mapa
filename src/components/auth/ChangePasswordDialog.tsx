@@ -60,7 +60,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth scroll="paper">
       <DialogTitle>Cambiar contraseña</DialogTitle>
       <DialogContent>
         {success && (

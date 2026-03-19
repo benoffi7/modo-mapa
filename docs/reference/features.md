@@ -86,9 +86,9 @@
 - **Recuperacion de contrasena**: `sendPasswordResetEmail()` desde dialog de login ("Olvide mi contrasena")
 - **Cambio de contrasena**: `reauthenticateWithCredential()` + `updatePassword()` desde SettingsPanel
 - **Logout**: `signOut()` + limpieza localStorage (visitas). Crea nueva cuenta anonima automaticamente
-- **Componentes**: `EmailPasswordDialog` (registro/login con tabs), `ChangePasswordDialog`, seccion Cuenta en SettingsPanel
+- **Componentes**: `EmailPasswordDialog` (registro/login con tabs, ojito visibilidad, indicador fortaleza, recordar email, fade tabs, Enter submit, autofocus), `ChangePasswordDialog` (ojito en 3 campos, indicador fortaleza en nueva contraseña, Enter submit, autofocus), `PasswordField` (TextField con toggle visibilidad), `PasswordStrength` (indicador visual de requisitos), seccion Cuenta en SettingsPanel
 - **Service layer**: `services/emailAuth.ts` (link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage)
-- **Constantes**: `constants/auth.ts` (PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS en espanol)
+- **Constantes**: `constants/auth.ts` (PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS en espanol, PASSWORD_RULES con complejidad: 8+ chars + numero + mayuscula + simbolo, validatePassword())
 - **Analytics**: `account_created`, `email_sign_in`, `sign_out`, `password_changed`, user property `auth_type`. **Onboarding conversion** (#157): `onboarding_banner_shown/clicked/dismissed`, `benefits_screen_shown/continue`, `activity_reminder_shown/clicked`, `verification_nudge_shown/resend/dismissed`
 - **Seguridad**: mensajes genericos para prevenir email enumeration, cooldown en re-envio verificacion, re-auth antes de cambio de contrasena
 
