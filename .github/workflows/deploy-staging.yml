@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -52,6 +54,15 @@ jobs:
 
       - name: Deploy Firestore rules and indexes to staging database
         run: bash scripts/deploy-staging-rules.sh
+
+      - name: Deploy Cloud Functions (if changed)
+        run: |
+          if git diff origin/main -- functions/src/ functions/package.json | grep -q .; then
+            echo "Functions changed — deploying..."
+            npx firebase-tools deploy --only functions --project modo-mapa-app --force
+          else
+            echo "No function changes detected — skipping deploy."
+          fi
 
       - name: Deploy staging hosting
         run: npx firebase-tools deploy --only hosting:staging --project modo-mapa-app

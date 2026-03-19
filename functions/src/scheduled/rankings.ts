@@ -1,5 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 
 const SCORING = {
   comments: 3,
@@ -158,7 +159,7 @@ export const computeWeeklyRanking = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const now = new Date();
 
     // Compute for the previous week
@@ -185,7 +186,7 @@ export const computeMonthlyRanking = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const now = new Date();
 
     // Compute for the previous month
@@ -215,7 +216,7 @@ export const computeAlltimeRanking = onSchedule(
     timeoutSeconds: 540,
   },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     const allTimeStart = new Date(2020, 0, 1);
     const now = new Date();
     const endDate = new Date(now.getFullYear() + 1, 0, 1);

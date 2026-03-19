@@ -1,21 +1,24 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
 import { assertAdmin } from '../helpers/assertAdmin';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
-/** Resolve Firestore instance — uses named DB when databaseId is provided (staging). */
-function resolveDb(databaseId?: string) {
-  return databaseId ? getFirestore(databaseId) : getFirestore();
+/** Extract optional databaseId from callable request data. */
+function extractDbId(data: unknown): string | undefined {
+  if (data && typeof data === 'object' && 'databaseId' in data) {
+    const id = (data as { databaseId?: unknown }).databaseId;
+    return typeof id === 'string' ? id : undefined;
+  }
+  return undefined;
 }
 
 export const toggleFeaturedList = onCall(
-  { enforceAppCheck: false },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     assertAdmin(request.auth);
 
-    const { listId, featured, databaseId } = request.data as {
+    const { listId, featured } = request.data as {
       listId: string;
       featured: boolean;
-      databaseId?: string;
     };
     if (!listId || typeof listId !== 'string') {
       throw new HttpsError('invalid-argument', 'listId required');
@@ -24,7 +27,7 @@ export const toggleFeaturedList = onCall(
       throw new HttpsError('invalid-argument', 'featured must be boolean');
     }
 
-    const db = resolveDb(databaseId);
+    const db = getDb(extractDbId(request.data));
     const listRef = db.doc(`sharedLists/${listId}`);
     const snap = await listRef.get();
 
@@ -50,12 +53,11 @@ interface ListData {
 }
 
 export const getPublicLists = onCall(
-  { enforceAppCheck: false },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     assertAdmin(request.auth);
 
-    const { databaseId } = (request.data ?? {}) as { databaseId?: string };
-    const db = resolveDb(databaseId);
+    const db = getDb(extractDbId(request.data));
     const snap = await db
       .collection('sharedLists')
       .where('isPublic', '==', true)
@@ -81,14 +83,13 @@ export const getPublicLists = onCall(
 
 /** Public callable — returns featured lists for any authenticated user. */
 export const getFeaturedLists = onCall(
-  { enforceAppCheck: false },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
 
-    const { databaseId } = (request.data ?? {}) as { databaseId?: string };
-    const db = resolveDb(databaseId);
+    const db = getDb(extractDbId(request.data));
     const snap = await db
       .collection('sharedLists')
       .where('featured', '==', true)

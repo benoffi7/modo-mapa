@@ -4,6 +4,8 @@ const mockIsEmulator = vi.hoisted(() => ({ value: true }));
 
 vi.mock('../../helpers/env', () => ({
   get IS_EMULATOR() { return mockIsEmulator.value; },
+  ENFORCE_APP_CHECK: false,
+  getDb: () => ({}),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -19,11 +21,12 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 const mockUpdate = vi.fn().mockResolvedValue(undefined);
 const mockGet = vi.fn();
+const mockDb = { doc: () => ({ get: mockGet, update: mockUpdate }) };
 
-vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: () => ({
-    doc: () => ({ get: mockGet, update: mockUpdate }),
-  }),
+vi.mock('../../helpers/env', () => ({
+  get IS_EMULATOR() { return mockIsEmulator.value; },
+  ENFORCE_APP_CHECK: false,
+  getDb: () => mockDb,
 }));
 
 vi.mock('../../helpers/assertAdmin', () => ({

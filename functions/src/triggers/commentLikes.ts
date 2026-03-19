@@ -1,5 +1,6 @@
 import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
@@ -7,7 +8,7 @@ import { createNotification } from '../utils/notifications';
 export const onCommentLikeCreated = onDocumentCreated(
   'commentLikes/{docId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const snap = event.data;
     if (!snap) return;
 
@@ -64,7 +65,7 @@ export const onCommentLikeCreated = onDocumentCreated(
 export const onCommentLikeDeleted = onDocumentDeleted(
   'commentLikes/{docId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const snap = event.data;
     if (!snap) return;
 

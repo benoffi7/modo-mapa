@@ -1,12 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { createNotification } from '../utils/notifications';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { IS_EMULATOR } from '../helpers/env';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
 export const approveMenuPhoto = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
   async (request) => {
     const admin = assertAdmin(request.auth);
 
@@ -15,7 +15,7 @@ export const approveMenuPhoto = onCall(
       throw new HttpsError('invalid-argument', 'photoId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const photoRef = db.collection('menuPhotos').doc(photoId);
     const photoSnap = await photoRef.get();
     if (!photoSnap.exists) {
@@ -64,7 +64,7 @@ export const approveMenuPhoto = onCall(
 );
 
 export const rejectMenuPhoto = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
   async (request) => {
     const admin = assertAdmin(request.auth);
 
@@ -73,7 +73,7 @@ export const rejectMenuPhoto = onCall(
       throw new HttpsError('invalid-argument', 'photoId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const photoRef = db.collection('menuPhotos').doc(photoId);
     const photoSnap = await photoRef.get();
     if (!photoSnap.exists) {
@@ -106,7 +106,7 @@ export const rejectMenuPhoto = onCall(
 );
 
 export const deleteMenuPhoto = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -115,7 +115,7 @@ export const deleteMenuPhoto = onCall(
       throw new HttpsError('invalid-argument', 'photoId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const photoRef = db.collection('menuPhotos').doc(photoId);
     const photoSnap = await photoRef.get();
     if (!photoSnap.exists) {
@@ -142,7 +142,7 @@ export const deleteMenuPhoto = onCall(
  * Increments reportCount. Uses a subcollection to prevent duplicate reports.
  */
 export const reportMenuPhoto = onCall(
-  { enforceAppCheck: !IS_EMULATOR, timeoutSeconds: 30 },
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30 },
   async (request) => {
     const { auth } = request;
     if (!auth) {
@@ -154,7 +154,7 @@ export const reportMenuPhoto = onCall(
       throw new HttpsError('invalid-argument', 'photoId required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const photoRef = db.collection('menuPhotos').doc(photoId);
     const photoSnap = await photoRef.get();
     if (!photoSnap.exists) {

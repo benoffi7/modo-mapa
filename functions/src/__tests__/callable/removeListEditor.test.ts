@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../helpers/env', () => ({ IS_EMULATOR: true }));
+const mockGet = vi.fn();
+const mockUpdate = vi.fn().mockResolvedValue(undefined);
+const mockDb = {
+  doc: () => ({ get: mockGet, update: mockUpdate }),
+};
+
+vi.mock('../../helpers/env', () => ({ IS_EMULATOR: true, ENFORCE_APP_CHECK: false, getDb: () => mockDb }));
 
 vi.mock('firebase-functions/v2/https', () => ({
   onCall: (_opts: unknown, handler: (...args: unknown[]) => unknown) => handler,
@@ -13,13 +19,7 @@ vi.mock('firebase-functions/v2/https', () => ({
   },
 }));
 
-const mockGet = vi.fn();
-const mockUpdate = vi.fn().mockResolvedValue(undefined);
-
 vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: () => ({
-    doc: () => ({ get: mockGet, update: mockUpdate }),
-  }),
   FieldValue: {
     arrayRemove: vi.fn((v: string) => ({ __arrayRemove: v })),
     serverTimestamp: vi.fn(() => 'SERVER_TS'),

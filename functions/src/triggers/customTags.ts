@@ -1,5 +1,5 @@
 import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
@@ -8,7 +8,7 @@ import { logAbuse } from '../utils/abuseLogger';
 export const onCustomTagCreated = onDocumentCreated(
   'customTags/{tagId}',
   async (event) => {
-    const db = getFirestore();
+    const db = getDb();
     const snap = event.data;
     if (!snap) return;
 
@@ -57,7 +57,7 @@ export const onCustomTagCreated = onDocumentCreated(
 export const onCustomTagDeleted = onDocumentDeleted(
   'customTags/{tagId}',
   async () => {
-    const db = getFirestore();
+    const db = getDb();
     await incrementCounter(db, 'customTags', -1);
     await trackDelete(db, 'customTags');
   },

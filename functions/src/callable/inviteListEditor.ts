@@ -1,11 +1,11 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { IS_EMULATOR } from '../helpers/env';
+import { FieldValue } from 'firebase-admin/firestore';
+import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
 const MAX_EDITORS = 5;
 
 export const inviteListEditor = onCall(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
 
@@ -17,7 +17,7 @@ export const inviteListEditor = onCall(
       throw new HttpsError('invalid-argument', 'email required');
     }
 
-    const db = getFirestore();
+    const db = getDb();
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
 

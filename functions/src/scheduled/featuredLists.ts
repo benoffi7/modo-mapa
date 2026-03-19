@@ -1,5 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getDb } from '../helpers/env';
 import { logger } from 'firebase-functions/v2';
 
 const SYSTEM_OWNER = 'system';
@@ -47,7 +48,7 @@ export function buildFeaturedLists(agg: Record<string, unknown>): FeaturedListDe
 export const generateFeaturedLists = onSchedule(
   { schedule: '0 5 * * 1', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    const db = getFirestore();
+    const db = getDb();
 
     const aggSnap = await db.doc('config/aggregates').get();
     const agg = (aggSnap.data() ?? {}) as Record<string, unknown>;
