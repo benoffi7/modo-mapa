@@ -10,10 +10,13 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
+  Collapse,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -39,6 +42,7 @@ export default function OnboardingChecklist() {
   const { profile } = useUserProfile(user?.uid ?? null, displayName ?? undefined);
   const toast = useToast();
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === 'true');
+  const [expanded, setExpanded] = useState(() => localStorage.getItem('onboarding_expanded') !== 'false');
 
   const tasks: Task[] = useMemo(() => [
     {
@@ -92,18 +96,37 @@ export default function OnboardingChecklist() {
     setDismissed(true);
   };
 
+  const toggleExpanded = () => {
+    const next = !expanded;
+    setExpanded(next);
+    localStorage.setItem('onboarding_expanded', String(next));
+  };
+
   return (
     <Card variant="outlined" sx={{ mx: 2, mb: 1, borderRadius: 2 }}>
       <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-            Primeros pasos
-          </Typography>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+          onClick={toggleExpanded}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+              Primeros pasos
+            </Typography>
             <Typography variant="caption" color="text.secondary">
               {completed}/{tasks.length}
             </Typography>
-            <IconButton size="small" onClick={handleDismiss} aria-label="Cerrar primeros pasos" sx={{ p: 0.25 }}>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+            <IconButton size="small" sx={{ p: 0.25 }} aria-label={expanded ? 'Colapsar' : 'Expandir'}>
+              {expanded ? <ExpandLessIcon sx={{ fontSize: 18 }} /> : <ExpandMoreIcon sx={{ fontSize: 18 }} />}
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+              aria-label="Cerrar primeros pasos"
+              sx={{ p: 0.25 }}
+            >
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Box>
@@ -111,30 +134,32 @@ export default function OnboardingChecklist() {
         <LinearProgress
           variant="determinate"
           value={(completed / tasks.length) * 100}
-          sx={{ mb: 1, borderRadius: 1, height: 6 }}
+          sx={{ mt: 0.5, borderRadius: 1, height: 6 }}
         />
-        <List disablePadding dense>
-          {tasks.map((task) => (
-            <ListItem key={task.id} disablePadding sx={{ py: 0.25 }}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                {task.isComplete ? (
-                  <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                ) : (
-                  <RadioButtonUncheckedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                )}
-              </ListItemIcon>
-              <ListItemText
-                primary={task.label}
-                primaryTypographyProps={{
-                  variant: 'body2',
-                  fontSize: '0.8rem',
-                  sx: task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined,
-                }}
-              />
-              <task.icon sx={{ fontSize: 16, color: task.isComplete ? 'text.disabled' : 'text.secondary' }} />
-            </ListItem>
-          ))}
-        </List>
+        <Collapse in={expanded}>
+          <List disablePadding dense sx={{ mt: 0.5 }}>
+            {tasks.map((task) => (
+              <ListItem key={task.id} disablePadding sx={{ py: 0.25 }}>
+                <ListItemIcon sx={{ minWidth: 28 }}>
+                  {task.isComplete ? (
+                    <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                  ) : (
+                    <RadioButtonUncheckedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={task.label}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontSize: '0.8rem',
+                    sx: task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined,
+                  }}
+                />
+                <task.icon sx={{ fontSize: 16, color: task.isComplete ? 'text.disabled' : 'text.secondary' }} />
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
       </CardContent>
     </Card>
   );
