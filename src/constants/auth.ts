@@ -1,6 +1,29 @@
 export const PASSWORD_MIN_LENGTH = 8;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const PASSWORD_RULES = {
+  minLength: 8,
+  requireNumber: /\d/,
+  requireUppercase: /[A-Z]/,
+  requireSymbol: /[!@#$%^&*()_+\-=[\]{}|;:',.<>?/~`]/,
+};
+
+export interface PasswordValidation {
+  length: boolean;
+  number: boolean;
+  uppercase: boolean;
+  symbol: boolean;
+  valid: boolean;
+}
+
+export function validatePassword(password: string): PasswordValidation {
+  const length = password.length >= PASSWORD_RULES.minLength;
+  const number = PASSWORD_RULES.requireNumber.test(password);
+  const uppercase = PASSWORD_RULES.requireUppercase.test(password);
+  const symbol = PASSWORD_RULES.requireSymbol.test(password);
+  return { length, number, uppercase, symbol, valid: length && number && uppercase && symbol };
+}
+
 export const AUTH_ERRORS: Record<string, string> = {
   'auth/email-already-in-use': 'No se pudo crear la cuenta. Si ya tenés una, intentá iniciar sesión.',
   'auth/invalid-email': 'El formato del email no es válido.',

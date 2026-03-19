@@ -14,3 +14,4 @@ export const STORAGE_KEY_ONBOARDING_DISMISSED = 'onboarding_dismissed';
 export const STORAGE_KEY_ONBOARDING_RANKING_VIEWED = 'onboarding_ranking_viewed';
 export const STORAGE_KEY_ONBOARDING_CELEBRATED = 'onboarding_celebrated';
 export const STORAGE_KEY_ONBOARDING_EXPANDED = 'onboarding_expanded';
+export const STORAGE_KEY_REMEMBERED_EMAIL = 'remembered_email';

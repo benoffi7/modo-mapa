@@ -5,13 +5,14 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   Alert,
   Box,
   CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { PASSWORD_MIN_LENGTH } from '../../constants/auth';
+import { validatePassword } from '../../constants/auth';
+import PasswordField from './PasswordField';
+import PasswordStrength from './PasswordStrength';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -26,7 +27,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const newPasswordValid = newPassword.length >= PASSWORD_MIN_LENGTH;
+  const newPasswordValid = validatePassword(newPassword).valid;
   const confirmValid = newPassword === confirmPassword;
   const formDisabled = !currentPassword || !newPasswordValid || !confirmValid || !confirmPassword || loading;
 
@@ -42,7 +43,8 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     onClose();
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (formDisabled) return;
     setLoading(true);
     setSuccess(false);
@@ -71,39 +73,29 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
             {authError}
           </Alert>
         )}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <PasswordField
             label="Contraseña actual"
-            type="password"
-            autoComplete="current-password"
-            fullWidth
-            size="small"
             value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
+            onChange={setCurrentPassword}
+            autoComplete="current-password"
+            autoFocus
+            name="current-password"
           />
-          <TextField
+          <PasswordField
             label="Nueva contraseña"
-            type="password"
-            autoComplete="new-password"
-            fullWidth
-            size="small"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            error={newPassword.length > 0 && !newPasswordValid}
-            helperText={
-              newPassword.length > 0 && !newPasswordValid
-                ? `Mínimo ${PASSWORD_MIN_LENGTH} caracteres`
-                : undefined
-            }
-          />
-          <TextField
-            label="Confirmar nueva contraseña"
-            type="password"
+            onChange={setNewPassword}
             autoComplete="new-password"
-            fullWidth
-            size="small"
+            name="new-password"
+          />
+          <PasswordStrength password={newPassword} />
+          <PasswordField
+            label="Confirmar nueva contraseña"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={setConfirmPassword}
+            autoComplete="new-password"
+            name="confirm-password"
             error={confirmPassword.length > 0 && !confirmValid}
             helperText={
               confirmPassword.length > 0 && !confirmValid
@@ -118,7 +110,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
           Cancelar
         </Button>
         <Button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit()}
           variant="contained"
           disabled={formDisabled}
           startIcon={loading ? <CircularProgress size={16} /> : undefined}
