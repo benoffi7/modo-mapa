@@ -17,6 +17,7 @@
 |-------|--------|----------|
 | [#153](https://github.com/benoffi7/modo-mapa/issues/153) | Mejoras visuales del menú lateral | UI |
 | [#163](https://github.com/benoffi7/modo-mapa/issues/163) | Mejoras UX en EmailPasswordDialog | UX |
+| [#164](https://github.com/benoffi7/modo-mapa/issues/164) | Mejoras UX en ChangePasswordDialog | UX |
 
 ### v2.21.0 — 21 abr – 27 abr
 
@@ -53,7 +54,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 10 |
+| Issues abiertos | 11 |
 | Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157 (23) |
 | Versiones publicadas | v2.10.0 – v2.19.0 |
 | Milestones planificados | 5 (v2.20.0 – v3.0.0) |
