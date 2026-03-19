@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockIsEmulator = vi.hoisted(() => ({ value: true }));
+const mockUpdate = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockGet = vi.hoisted(() => vi.fn());
 
 vi.mock('../../helpers/env', () => ({
   get IS_EMULATOR() { return mockIsEmulator.value; },
   ENFORCE_APP_CHECK: false,
-  getDb: () => ({}),
+  getDb: () => ({ doc: () => ({ get: mockGet, update: mockUpdate }) }),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -17,16 +19,6 @@ vi.mock('firebase-functions/v2/https', () => ({
       this.code = code;
     }
   },
-}));
-
-const mockUpdate = vi.fn().mockResolvedValue(undefined);
-const mockGet = vi.fn();
-const mockDb = { doc: () => ({ get: mockGet, update: mockUpdate }) };
-
-vi.mock('../../helpers/env', () => ({
-  get IS_EMULATOR() { return mockIsEmulator.value; },
-  ENFORCE_APP_CHECK: false,
-  getDb: () => mockDb,
 }));
 
 vi.mock('../../helpers/assertAdmin', () => ({
