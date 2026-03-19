@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 
 const MAX_EDITORS = 5;
@@ -26,15 +27,14 @@ export const inviteListEditor = onCall(
       throw new HttpsError('permission-denied', 'Solo el creador puede invitar editores');
     }
 
-    // Find user by email
-    const usersSnap = await db.collection('users')
-      .where('email', '==', targetEmail.toLowerCase().trim())
-      .limit(1).get();
-    if (usersSnap.empty) {
-      throw new HttpsError('not-found', 'Usuario no encontrado');
+    // Find user by email via Firebase Auth (users collection doesn't store email)
+    let targetUid: string;
+    try {
+      const userRecord = await getAuth().getUserByEmail(targetEmail.toLowerCase().trim());
+      targetUid = userRecord.uid;
+    } catch {
+      throw new HttpsError('not-found', 'Usuario no encontrado con ese email');
     }
-
-    const targetUid = usersSnap.docs[0].id;
     if (targetUid === request.auth.uid) {
       throw new HttpsError('invalid-argument', 'No podés invitarte a vos mismo');
     }
