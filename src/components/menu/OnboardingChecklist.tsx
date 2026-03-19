@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
@@ -37,9 +37,20 @@ interface Task {
   isComplete: boolean;
 }
 
-export default function OnboardingChecklist() {
+interface Props {
+  menuOpen?: boolean;
+}
+
+export default function OnboardingChecklist({ menuOpen }: Props) {
   const { user, displayName } = useAuth();
-  const { profile } = useUserProfile(user?.uid ?? null, displayName ?? undefined);
+  const { profile, refetch } = useUserProfile(user?.uid ?? null, displayName ?? undefined);
+
+  // Refetch profile each time the side menu opens
+  const prevOpen = useRef(menuOpen);
+  useEffect(() => {
+    if (menuOpen && !prevOpen.current) refetch();
+    prevOpen.current = menuOpen;
+  }, [menuOpen, refetch]);
   const toast = useToast();
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === 'true');
   const [expanded, setExpanded] = useState(() => localStorage.getItem('onboarding_expanded') !== 'false');

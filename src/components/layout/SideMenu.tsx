@@ -289,7 +289,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                 <Box sx={{ flexShrink: 0 }}>
                   <VerificationNudge />
                   <Suspense fallback={null}>
-                    <OnboardingChecklist />
+                    <OnboardingChecklist menuOpen={open} />
                   </Suspense>
                 </Box>
               )}
