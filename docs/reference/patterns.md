@@ -13,7 +13,8 @@
 
 | Patron | Descripcion |
 | ------ | ----------- |
-| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth). Barrel re-export en `constants/index.ts`. |
+| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents). Barrel re-export en `constants/index.ts`. |
+| **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
 | **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
 
@@ -63,6 +64,8 @@
 | **Debounce con useDeferredValue** | `useBusinesses`, `useListFilters` y `CommentsList` usan `useDeferredValue` de React 19 para debounce de busqueda. |
 | **`usePaginatedQuery` constraints genericos** | El hook acepta `QueryConstraint[]` o `string` (backward compat con userId). `cacheKey` obligatorio para cache compat. Incluye `loadAll(maxItems)` con `hasMoreRef` para loops async seguros. |
 | **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
+| **Stable event listeners via refs** | Cuando un event listener necesita acceder a state reactivo, usar `useRef` para mantener valores actualizados sin recrear el callback. El listener se registra una sola vez (`useEffect(fn, [])`). Usado en `AccountBanner` y `useActivityReminder` para el evento `anon-interaction`. |
+| **Unified account creation flow** | AppShell es el single source of truth para el flujo register/login. SideMenu no tiene estado local de email dialog — todo se controla via props (`onCreateAccount`, `onLogin`, `emailDialogOpen`, `emailDialogTab`). El flujo es: CTA → BenefitsDialog (primera vez) → EmailPasswordDialog. |
 
 ## Uploads y media
 
