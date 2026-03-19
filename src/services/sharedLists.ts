@@ -144,14 +144,17 @@ export async function copyList(sourceListId: string, targetUserId: string): Prom
 }
 
 export async function fetchFeaturedLists(): Promise<SharedList[]> {
-  const snap = await getDocs(
-    query(
-      getSharedListsCollection(),
-      where('featured', '==', true),
-      orderBy('updatedAt', 'desc'),
-    ),
-  );
-  return snap.docs.map((d) => d.data());
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ databaseId?: string }, { lists: SharedList[] }>(functions, 'getFeaturedLists');
+  const result = await fn({ databaseId });
+  return result.data.lists.map((l) => ({
+    ...l,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    editorIds: l.editorIds ?? [],
+  }));
 }
 
 export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {

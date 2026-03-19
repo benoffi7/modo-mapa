@@ -110,7 +110,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   const [sharedWithMe, setSharedWithMe] = useState<SharedList[]>([]);
 
   useEffect(() => {
-    fetchFeaturedLists().then(setFeaturedLists).catch(() => {});
+    fetchFeaturedLists().then(setFeaturedLists).catch((err) => console.error('[SharedListsView] fetchFeaturedLists failed:', err));
     if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch(() => {});
   }, [user]);
 

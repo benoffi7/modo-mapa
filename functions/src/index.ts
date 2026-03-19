@@ -31,7 +31,7 @@ export { setAdminClaim, removeAdminClaim } from './admin/claims';
 export { getStorageStats } from './admin/storageStats';
 export { writePerfMetrics } from './admin/perfMetrics';
 export { getAnalyticsReport } from './admin/analyticsReport';
-export { toggleFeaturedList, getPublicLists } from './admin/featuredLists';
+export { toggleFeaturedList, getPublicLists, getFeaturedLists } from './admin/featuredLists';
 
 // Callable
 export { inviteListEditor } from './callable/inviteListEditor';

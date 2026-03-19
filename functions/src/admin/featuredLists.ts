@@ -78,3 +78,36 @@ export const getPublicLists = onCall(
     return { lists };
   },
 );
+
+/** Public callable — returns featured lists for any authenticated user. */
+export const getFeaturedLists = onCall(
+  { enforceAppCheck: false },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Must be signed in');
+    }
+
+    const { databaseId } = (request.data ?? {}) as { databaseId?: string };
+    const db = resolveDb(databaseId);
+    const snap = await db
+      .collection('sharedLists')
+      .where('featured', '==', true)
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const lists: ListData[] = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ownerId: String(data.ownerId ?? ''),
+        name: String(data.name ?? ''),
+        description: String(data.description ?? ''),
+        isPublic: data.isPublic === true,
+        featured: true,
+        itemCount: Number(data.itemCount ?? 0),
+      };
+    });
+
+    return { lists };
+  },
+);
