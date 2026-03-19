@@ -28,7 +28,8 @@ export function usePublicMetrics(): UsePublicMetricsReturn {
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[usePublicMetrics] fetch failed:', err);
         if (ignore) return;
         setError(true);
         setLoading(false);

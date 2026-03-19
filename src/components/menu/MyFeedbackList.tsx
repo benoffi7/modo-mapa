@@ -45,7 +45,7 @@ export default function MyFeedbackList() {
     if (!user) return;
     fetchUserFeedback(user.uid)
       .then(setItems)
-      .catch(() => {})
+      .catch((err) => console.error('[MyFeedbackList] fetchUserFeedback failed:', err))
       .finally(() => setLoading(false));
   }, [user]);
 

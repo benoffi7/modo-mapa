@@ -111,7 +111,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
 
   useEffect(() => {
     fetchFeaturedLists().then(setFeaturedLists).catch((err) => console.error('[SharedListsView] fetchFeaturedLists failed:', err));
-    if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch(() => {});
+    if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch((err) => console.error('[SharedListsView] fetchSharedWithMe failed:', err));
   }, [user]);
 
   const handleOpenFeatured = (listId: string) => {
@@ -207,7 +207,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   const handleShare = (list: SharedList) => {
     const url = `${window.location.origin}/?list=${list.id}`;
     if (navigator.share) {
-      navigator.share({ title: list.name, url }).catch(() => {});
+      navigator.share({ title: list.name, url }).catch((err) => console.error('[SharedListsView] share failed:', err));
     } else {
       navigator.clipboard.writeText(url).then(() => toast.success('Link copiado'));
     }

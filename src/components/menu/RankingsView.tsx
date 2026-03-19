@@ -46,7 +46,8 @@ export default function RankingsView() {
       .then((entry) => {
         if (!cancelled) setLiveEntry(entry.score > 0 ? entry : null);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[RankingsView] fetchUserLiveScore failed:', err);
         if (!cancelled) setLiveEntry(null);
       });
 

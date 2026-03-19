@@ -123,8 +123,8 @@ export default function UsersPanel() {
   const fetcher = useCallback(async () => {
     const [raw, authStats, settingsAggregates] = await Promise.all([
       fetchUsersPanelData(500),
-      fetchAuthStats().catch(() => null),
-      fetchSettingsAggregates().catch(() => null),
+      fetchAuthStats().catch((err) => { console.error('[UsersPanel] fetchAuthStats failed:', err); return null; }),
+      fetchSettingsAggregates().catch((err) => { console.error('[UsersPanel] fetchSettingsAggregates failed:', err); return null; }),
     ]);
     return { raw, authStats, settingsAggregates };
   }, []);

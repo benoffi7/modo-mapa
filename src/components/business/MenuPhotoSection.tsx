@@ -35,7 +35,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     if (!path) return;
     getDownloadURL(ref(storage, path))
       .then(setPhotoUrl)
-      .catch(() => setPhotoUrl(null));
+      .catch((err) => { console.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
   }, [menuPhoto]);
 
   // Check if user has pending photos
@@ -46,7 +46,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     }
     getUserPendingPhotos(user.uid, businessId)
       .then((photos) => setHasPending(photos.length > 0))
-      .catch(() => setHasPending(false));
+      .catch((err) => { console.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); setHasPending(false); });
   }, [user, businessId]);
 
   // Staleness is based on reviewedAt which is stable per photo — safe to derive
