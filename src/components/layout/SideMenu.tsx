@@ -55,7 +55,7 @@ const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
-const VerificationNudge = lazy(() => import('../onboarding/VerificationNudge'));
+import VerificationNudge from '../onboarding/VerificationNudge';
 
 function SectionLoader() {
   return (
@@ -286,10 +286,12 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                 )}
               </Box>
               {user && !user.isAnonymous && (
-                <Suspense fallback={null}>
+                <>
                   <VerificationNudge />
-                  <OnboardingChecklist />
-                </Suspense>
+                  <Suspense fallback={null}>
+                    <OnboardingChecklist />
+                  </Suspense>
+                </>
               )}
               <Divider />
 
