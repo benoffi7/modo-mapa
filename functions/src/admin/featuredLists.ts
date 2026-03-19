@@ -1,7 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { IS_EMULATOR } from '../helpers/env';
 
 /** Resolve Firestore instance — uses named DB when databaseId is provided (staging). */
 function resolveDb(databaseId?: string) {
@@ -9,7 +8,7 @@ function resolveDb(databaseId?: string) {
 }
 
 export const toggleFeaturedList = onCall(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: false },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -51,7 +50,7 @@ interface ListData {
 }
 
 export const getPublicLists = onCall(
-  { enforceAppCheck: !IS_EMULATOR },
+  { enforceAppCheck: false },
   async (request) => {
     assertAdmin(request.auth);
 
