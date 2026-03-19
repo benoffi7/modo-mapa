@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { validatePassword } from '../../constants/auth';
+import { usePasswordConfirmation } from '../../hooks/usePasswordConfirmation';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
 
@@ -20,16 +21,22 @@ interface ChangePasswordDialogProps {
 }
 
 export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProps) {
-  const { changePassword, authError } = useAuth();
+  const { changePassword, authError, clearAuthError } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const confirmation = usePasswordConfirmation(newPassword, confirmPassword);
   const newPasswordValid = validatePassword(newPassword).valid;
-  const confirmValid = newPassword === confirmPassword;
-  const formDisabled = !currentPassword || !newPasswordValid || !confirmValid || !confirmPassword || loading;
+  const formDisabled = !currentPassword || !newPasswordValid || !confirmation.isValid || !confirmPassword || loading;
+
+  // Cleanup timeout on unmount
+  useEffect(() => () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  }, []);
 
   const resetForm = () => {
     setCurrentPassword('');
@@ -39,7 +46,9 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
   };
 
   const handleClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     resetForm();
+    clearAuthError();
     onClose();
   };
 
@@ -51,7 +60,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     try {
       await changePassword(currentPassword, newPassword);
       setSuccess(true);
-      setTimeout(handleClose, 1500);
+      closeTimerRef.current = setTimeout(handleClose, 1500);
     } catch {
       // authError is set by context
     } finally {
@@ -96,12 +105,8 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
             onChange={setConfirmPassword}
             autoComplete="new-password"
             name="confirm-password"
-            error={confirmPassword.length > 0 && !confirmValid}
-            helperText={
-              confirmPassword.length > 0 && !confirmValid
-                ? 'Las contraseñas no coinciden'
-                : undefined
-            }
+            error={confirmation.error}
+            helperText={confirmation.helperText}
           />
         </Box>
       </DialogContent>

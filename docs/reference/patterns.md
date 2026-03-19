@@ -66,6 +66,7 @@
 | **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
 | **Stable event listeners via refs** | Cuando un event listener necesita acceder a state reactivo, usar `useRef` para mantener valores actualizados sin recrear el callback. El listener se registra una sola vez (`useEffect(fn, [])`). Usado en `AccountBanner` y `useActivityReminder` para el evento `anon-interaction`. |
 | **Unified account creation flow** | AppShell es el single source of truth para el flujo register/login. SideMenu no tiene estado local de email dialog — todo se controla via props (`onCreateAccount`, `onLogin`, `emailDialogOpen`, `emailDialogTab`). El flujo es: CTA → BenefitsDialog (primera vez) → EmailPasswordDialog. |
+| **Auth dialog hooks** | `usePasswordConfirmation(password, confirm)` para validación de confirmación compartida entre EmailPasswordDialog y ChangePasswordDialog. `useRememberedEmail()` aísla lógica de localStorage para "recordar email". `clearAuthError()` en AuthContext limpia errores stale al cerrar/cambiar tab. Timeout cleanup con `useRef` + `useEffect` en ChangePasswordDialog. Focus con `useLayoutEffect` + `requestAnimationFrame`. |
 
 ## Uploads y media
 

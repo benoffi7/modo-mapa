@@ -10,6 +10,7 @@ vi.mock('../../context/AuthContext', () => ({
     linkEmailPassword: mockLinkEmailPassword,
     signInWithEmail: mockSignInWithEmail,
     authError: null,
+    clearAuthError: vi.fn(),
   }),
 }));
 

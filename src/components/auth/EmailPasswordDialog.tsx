@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useLayoutEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,8 +17,9 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX, validatePassword } from '../../constants/auth';
-import { STORAGE_KEY_REMEMBERED_EMAIL } from '../../constants/storage';
 import { sendResetEmail, getAuthErrorMessage } from '../../services/emailAuth';
+import { usePasswordConfirmation } from '../../hooks/usePasswordConfirmation';
+import { useRememberedEmail } from '../../hooks/useRememberedEmail';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
 
@@ -35,40 +36,40 @@ export default function EmailPasswordDialog({
   onClose,
   initialTab = 'register',
 }: EmailPasswordDialogProps) {
-  const { linkEmailPassword, signInWithEmail, authError } = useAuth();
+  const { linkEmailPassword, signInWithEmail, authError, clearAuthError } = useAuth();
   const [tab, setTab] = useState<TabValue>(initialTab);
-  const [email, setEmail] = useState(() => localStorage.getItem(STORAGE_KEY_REMEMBERED_EMAIL) ?? '');
+  const { email, setEmail, remember, toggleRemember, save: saveEmail, reset: resetEmail } = useRememberedEmail();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
-  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem(STORAGE_KEY_REMEMBERED_EMAIL));
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // S1: Preserve email on tab change, only reset passwords
+  const confirmation = usePasswordConfirmation(password, confirmPassword);
+
+  // Preserve email on tab change, only reset passwords
   const handleTabChange = (_: unknown, value: TabValue) => {
     setTab(value);
     setPassword('');
     setConfirmPassword('');
     setLocalError(null);
     setResetSent(false);
+    clearAuthError();
   };
 
-  // Refocus email on tab change
-  useEffect(() => {
-    if (open) {
-      const timer = setTimeout(() => emailRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
-    }
+  // Refocus email on tab change — useLayoutEffect for immediate focus
+  useLayoutEffect(() => {
+    if (open) requestAnimationFrame(() => emailRef.current?.focus());
   }, [tab, open]);
 
   const handleClose = () => {
-    setEmail(localStorage.getItem(STORAGE_KEY_REMEMBERED_EMAIL) ?? '');
+    resetEmail();
     setPassword('');
     setConfirmPassword('');
     setLocalError(null);
     setResetSent(false);
+    clearAuthError();
     onClose();
   };
 
@@ -76,16 +77,9 @@ export default function EmailPasswordDialog({
   const passwordValidation = validatePassword(password);
   // Register: full complexity. Login: just non-empty (legacy passwords allowed)
   const passwordValid = tab === 'register' ? passwordValidation.valid : password.length > 0;
-  const confirmValid = tab === 'login' || password === confirmPassword;
 
-  const registerDisabled = !emailValid || !passwordValid || !confirmValid || !confirmPassword || loading;
+  const registerDisabled = !emailValid || !passwordValid || !confirmation.isValid || !confirmPassword || loading;
   const loginDisabled = !emailValid || !password || loading;
-
-  const saveRememberedEmail = () => {
-    if (rememberEmail) {
-      localStorage.setItem(STORAGE_KEY_REMEMBERED_EMAIL, email);
-    }
-  };
 
   const handleRegister = async () => {
     if (registerDisabled) return;
@@ -93,7 +87,7 @@ export default function EmailPasswordDialog({
     setLoading(true);
     try {
       await linkEmailPassword(email, password);
-      saveRememberedEmail();
+      saveEmail(email);
       handleClose();
     } catch {
       // authError is set by context
@@ -108,7 +102,7 @@ export default function EmailPasswordDialog({
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-      saveRememberedEmail();
+      saveEmail(email);
       handleClose();
     } catch {
       // authError is set by context
@@ -136,13 +130,8 @@ export default function EmailPasswordDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tab === 'register') handleRegister();
-    else handleLogin();
-  };
-
-  const handleRememberChange = (_: unknown, checked: boolean) => {
-    setRememberEmail(checked);
-    if (!checked) localStorage.removeItem(STORAGE_KEY_REMEMBERED_EMAIL);
+    if (tab === 'register' && !registerDisabled) handleRegister();
+    else if (tab === 'login' && !loginDisabled) handleLogin();
   };
 
   const error = localError ?? authError;
@@ -191,9 +180,10 @@ export default function EmailPasswordDialog({
                 helperText={email.length > 0 && !emailValid ? 'Formato de email inválido' : undefined}
               />
               <FormControlLabel
-                control={<Checkbox size="small" checked={rememberEmail} onChange={handleRememberChange} />}
+                control={<Checkbox size="small" checked={remember} onChange={toggleRemember} />}
                 label="Recordar mi email"
-                sx={{ mt: -1.5, mb: -1, '& .MuiTypography-root': { fontSize: '0.8rem' } }}
+                slotProps={{ typography: { variant: 'caption' } }}
+                sx={{ mt: -1.5, mb: -1 }}
               />
               <PasswordField
                 label="Contraseña"
@@ -210,12 +200,8 @@ export default function EmailPasswordDialog({
                   onChange={setConfirmPassword}
                   autoComplete="new-password"
                   name="confirm-password"
-                  error={confirmPassword.length > 0 && !confirmValid}
-                  helperText={
-                    confirmPassword.length > 0 && !confirmValid
-                      ? 'Las contraseñas no coinciden'
-                      : undefined
-                  }
+                  error={confirmation.error}
+                  helperText={confirmation.helperText}
                 />
               )}
               {tab === 'login' && (
