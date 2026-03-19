@@ -11,28 +11,28 @@
 
 ## Roadmap por Milestone
 
-### v2.19.0 — 14 abr – 20 abr
+### v2.20.0 — 14 abr – 20 abr
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
-| [#157](https://github.com/benoffi7/modo-mapa/issues/157) | Onboarding de cuenta: beneficios de verificar email | onboarding |
 | [#153](https://github.com/benoffi7/modo-mapa/issues/153) | Mejoras visuales del menú lateral | UI |
+| [#163](https://github.com/benoffi7/modo-mapa/issues/163) | Mejoras UX en EmailPasswordDialog | UX |
 
-### v2.20.0 — 21 abr – 27 abr
+### v2.21.0 — 21 abr – 27 abr
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
 | [#154](https://github.com/benoffi7/modo-mapa/issues/154) | Localidad del usuario: ubicación por defecto para mapa y Sorpréndeme | geo |
 | [#137](https://github.com/benoffi7/modo-mapa/issues/137) | Ordenar comercios por cercanía | geo |
 
-### v2.21.0 — 28 abr – 4 may
+### v2.22.0 — 28 abr – 4 may
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
 | [#140](https://github.com/benoffi7/modo-mapa/issues/140) | Trending: comercios populares esta semana | discovery |
 | [#127](https://github.com/benoffi7/modo-mapa/issues/127) | Preguntas y respuestas en comercios | social |
 
-### v2.22.0 — 5 may – 11 may
+### v2.23.0 — 5 may – 11 may
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
@@ -54,6 +54,6 @@
 | Métrica | Valor |
 |---------|-------|
 | Issues abiertos | 10 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160 (22) |
-| Versiones publicadas | v2.10.0 – v2.18.0 |
-| Milestones planificados | 5 (v2.19.0 – v3.0.0) |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157 (23) |
+| Versiones publicadas | v2.10.0 – v2.19.0 |
+| Milestones planificados | 5 (v2.20.0 – v3.0.0) |
