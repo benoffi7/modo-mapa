@@ -39,6 +39,7 @@ interface AuthContextType {
   setDisplayName: (name: string) => Promise<void>;
   isLoading: boolean;
   authError: string | null;
+  clearAuthError: () => void;
   signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
   authMethod: AuthMethod;
@@ -56,6 +57,7 @@ const AuthContext = createContext<AuthContextType>({
   setDisplayName: async () => {},
   isLoading: true,
   authError: null,
+  clearAuthError: () => {},
   signInWithGoogle: async () => null,
   signOut: async () => {},
   authMethod: 'anonymous',
@@ -121,6 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setDisplayNameState(trimmed);
   }, [user]);
+
+  const clearAuthError = useCallback(() => setAuthError(null), []);
 
   const signInWithGoogle = useCallback(async (): Promise<User | null> => {
     setAuthError(null);
@@ -212,10 +216,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authMethod]);
 
   const value = useMemo<AuthContextType>(() => ({
-    user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
+    user, displayName, setDisplayName, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
     authMethod, emailVerified, linkEmailPassword, signInWithEmail,
     resendVerification, refreshEmailVerified, changePassword,
-  }), [user, displayName, setDisplayName, isLoading, authError, signInWithGoogle, signOut,
+  }), [user, displayName, setDisplayName, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
     authMethod, emailVerified, linkEmailPassword, signInWithEmail,
     resendVerification, refreshEmailVerified, changePassword]);
 

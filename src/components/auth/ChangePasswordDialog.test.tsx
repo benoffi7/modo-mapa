@@ -7,6 +7,7 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     changePassword: mockChangePassword,
     authError: null,
+    clearAuthError: vi.fn(),
   }),
 }));
 

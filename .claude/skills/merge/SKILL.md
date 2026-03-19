@@ -228,7 +228,25 @@ git push origin main
 These files are the **single source of truth** for product roadmap and release history.
 Referenced by: workflow.md, memory (feedback_features_vs_backlog.md).
 
-## Phase 8: Post-merge review
+## Phase 8: Post-merge review — MANDATORY, DO NOT SKIP
+
+**⚠️ This phase is as mandatory as Phase 3 (docs). Do NOT end the conversation without completing it.**
+
+### 8a. Tech debt issue
+
+If any audit (Phase 2) identified tech debt, architectural improvements, or non-blocking warnings:
+
+```bash
+gh issue create --title "Tech debt: <summary>" --body "<consolidated list>" --label "enhancement"
+```
+
+Do NOT just report tech debt in the merge summary — create a trackable issue.
+
+### 8b. Self-reflection
 
 Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
 List 2-3 concrete improvements. Save actionable ones to memory. Report summary to the user.
+
+### 8c. Ask the user
+
+Ask: "¿Algún feedback o mejora sobre el proceso de hoy?"
