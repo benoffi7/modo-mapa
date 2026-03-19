@@ -7,7 +7,7 @@ export const removeListEditor = onCall(
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
 
-    const { listId, targetUid } = request.data as { listId: string; targetUid: string };
+    const { listId, targetUid, databaseId } = request.data as { listId: string; targetUid: string; databaseId?: string };
     if (!listId || typeof listId !== 'string') {
       throw new HttpsError('invalid-argument', 'listId required');
     }
@@ -15,7 +15,7 @@ export const removeListEditor = onCall(
       throw new HttpsError('invalid-argument', 'targetUid required');
     }
 
-    const db = getDb();
+    const db = getDb(databaseId);
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
 
