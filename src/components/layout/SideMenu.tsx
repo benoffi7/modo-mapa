@@ -222,7 +222,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
           {activeSection === 'nav' ? (
             <>
               {/* User header */}
-              <Box sx={{ p: 2, pb: 1.5 }}>
+              <Box sx={{ p: 2, pb: 1.5, flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
                     {userName.charAt(0).toUpperCase()}
@@ -286,22 +286,24 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                 )}
               </Box>
               {user && !user.isAnonymous && (
-                <>
+                <Box sx={{ flexShrink: 0 }}>
                   <VerificationNudge />
                   <Suspense fallback={null}>
                     <OnboardingChecklist />
                   </Suspense>
-                </>
+                </Box>
               )}
-              <Divider />
+              <Divider sx={{ flexShrink: 0 }} />
 
-              {/* Navigation */}
-              <SideMenuNav
-                unreadReplyCount={unreadReplyCount}
-                onNavigate={setActiveSection}
-                onSurprise={handleSurprise}
-                onFeedback={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}
-              />
+              {/* Navigation — scrollable when onboarding cards take space */}
+              <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+                <SideMenuNav
+                  unreadReplyCount={unreadReplyCount}
+                  onNavigate={setActiveSection}
+                  onSurprise={handleSurprise}
+                  onFeedback={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}
+                />
+              </Box>
 
               {/* Version footer + dark mode toggle */}
               <Box sx={{ mt: 'auto' }}>
