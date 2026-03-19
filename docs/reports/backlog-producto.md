@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-17*
+*Actualizado: 2026-03-19*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -10,14 +10,6 @@
 ---
 
 ## Roadmap por Milestone
-
-### v2.18.0 — 7 abr – 13 abr
-
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#160](https://github.com/benoffi7/modo-mapa/issues/160) | Mejoras en vista de lista compartida: copiar lista, favoritos masivos, persistencia | listas |
-| [#156](https://github.com/benoffi7/modo-mapa/issues/156) | Listas sugeridas por la plataforma | listas |
-| [#155](https://github.com/benoffi7/modo-mapa/issues/155) | Listas colaborativas: múltiples editores por lista | listas |
 
 ### v2.19.0 — 14 abr – 20 abr
 
@@ -61,7 +53,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 13 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128 (19) |
-| Versiones publicadas | v2.10.0 – v2.17.0 |
-| Milestones planificados | 6 (v2.18.0 – v3.0.0) |
+| Issues abiertos | 10 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160 (22) |
+| Versiones publicadas | v2.10.0 – v2.18.0 |
+| Milestones planificados | 5 (v2.19.0 – v3.0.0) |
