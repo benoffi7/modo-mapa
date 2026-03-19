@@ -55,6 +55,7 @@ const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
+const VerificationNudge = lazy(() => import('../onboarding/VerificationNudge'));
 
 function SectionLoader() {
   return (
@@ -73,6 +74,9 @@ interface Props {
   onClearSharedList?: () => void;
   initialSection?: string | undefined;
   sharedListId?: string | undefined;
+  onCreateAccount?: (source: 'banner' | 'menu' | 'settings') => void;
+  emailDialogOpen?: boolean;
+  onEmailDialogClose?: () => void;
 }
 
 export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
@@ -92,7 +96,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   privacy: 'Política de privacidad',
 };
 
-export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId }: Props) {
+export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, emailDialogOpen: externalEmailDialogOpen, onEmailDialogClose }: Props) {
   const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -259,7 +263,14 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                       variant="contained"
                       size="small"
                       fullWidth
-                      onClick={() => { setEmailDialogTab('register'); setEmailDialogOpen(true); }}
+                      onClick={() => {
+                        if (onCreateAccount) {
+                          onCreateAccount('menu');
+                        } else {
+                          setEmailDialogTab('register');
+                          setEmailDialogOpen(true);
+                        }
+                      }}
                     >
                       Crear cuenta
                     </Button>
@@ -276,6 +287,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
               </Box>
               {user && !user.isAnonymous && (
                 <Suspense fallback={null}>
+                  <VerificationNudge />
                   <OnboardingChecklist />
                 </Suspense>
               )}
@@ -377,12 +389,12 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
         </Box>
       </SwipeableDrawer>
 
-      {/* Email auth dialog */}
+      {/* Email auth dialog — can be controlled externally (benefits flow) or locally */}
       <Suspense fallback={null}>
-        {emailDialogOpen && (
+        {(emailDialogOpen || externalEmailDialogOpen) && (
           <EmailPasswordDialog
-            open={emailDialogOpen}
-            onClose={() => setEmailDialogOpen(false)}
+            open={emailDialogOpen || !!externalEmailDialogOpen}
+            onClose={() => { setEmailDialogOpen(false); onEmailDialogClose?.(); }}
             initialTab={emailDialogTab}
           />
         )}
