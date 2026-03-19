@@ -64,10 +64,19 @@ export default function PrivacyPolicy() {
             ser cualquier nombre, no tiene que ser real).
           </Li>
           <Li>
-            <strong>Contenido generado:</strong> comentarios (incluyendo respuestas en hilos),
+            <strong>Contenido generado:</strong> listas de comercios (nombre, descripción, contenido),
+            comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
             imágenes adjuntas opcionales) y votos de nivel de gasto.
+          </Li>
+          <Li>
+            <strong>Listas colaborativas:</strong> si invitás editores a tus listas, se
+            registra la relación de edición (UIDs de los editores). Para invitar un editor,
+            se busca su cuenta por email en Firebase Authentication. Los editores pueden
+            agregar y quitar comercios de la lista, y se registra quién agregó cada
+            comercio. Las listas pueden ser públicas (visibles para cualquier usuario
+            autenticado) o privadas.
           </Li>
           <Li>
             <strong>Datos de ranking y logros:</strong> tu actividad en la app se utiliza para
@@ -109,9 +118,9 @@ export default function PrivacyPolicy() {
       <Section title="Almacenamiento">
         <Box component="ul" sx={{ pl: 1, mt: 0 }}>
           <Li>
-            <strong>Cloud Firestore:</strong> almacena datos estructurados (comentarios,
-            calificaciones, favoritos, rankings de usuarios, logros, métricas de rendimiento, etc.) en servidores
-            de Google Cloud.
+            <strong>Cloud Firestore:</strong> almacena datos estructurados (listas de comercios,
+            comentarios, calificaciones, favoritos, rankings de usuarios, logros, métricas
+            de rendimiento, etc.) en servidores de Google Cloud.
           </Li>
           <Li>
             <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
@@ -136,7 +145,8 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Reglas de acceso:</strong> cada usuario solo puede modificar su propio
-            contenido. Los datos de otros usuarios son de solo lectura.
+            contenido. Los editores invitados a una lista colaborativa pueden agregar y
+            quitar comercios de esa lista. Los datos de otros usuarios son de solo lectura.
           </Li>
           <Li>
             <strong>Límites de uso:</strong> se aplican límites para prevenir abuso
@@ -163,10 +173,10 @@ export default function PrivacyPolicy() {
           contenido del mensaje. Ningún otro dato personal se comparte con terceros.
         </P>
         <P>
-          Podés compartir voluntariamente tu posición y puntaje en el ranking usando
-          la función de compartir. Esto utiliza la Web Share API de tu navegador o copia
-          el texto al portapapeles, y se envía a la aplicación que elijas. Esta acción
-          es completamente voluntaria.
+          Podés compartir voluntariamente tu posición y puntaje en el ranking, así como
+          listas de comercios públicas, usando la función de compartir. Esto utiliza la
+          Web Share API de tu navegador o copia el link al portapapeles, y se envía a la
+          aplicación que elijas. Esta acción es completamente voluntaria.
         </P>
       </Section>
 
@@ -181,12 +191,18 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Eliminar tu contenido:</strong> podés borrar tus comentarios,
-            calificaciones, favoritos, likes y etiquetas desde la app. Los datos de ranking
-            son generados automáticamente a partir de tu actividad y se actualizan periódicamente.
+            calificaciones, favoritos, likes, etiquetas y listas de comercios desde la app.
+            Los datos de ranking son generados automáticamente a partir de tu actividad y se
+            actualizan periódicamente.
           </Li>
           <Li>
             <strong>Controlar tu perfil:</strong> podés elegir si tu perfil es público
             o privado desde Configuración.
+          </Li>
+          <Li>
+            <strong>Controlar tus listas:</strong> podés elegir si cada lista es pública o
+            privada, invitar o remover editores, y eliminar la lista completa junto con
+            su contenido.
           </Li>
           <Li>
             <strong>Controlar notificaciones:</strong> podés activar o desactivar las
