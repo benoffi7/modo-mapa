@@ -29,8 +29,10 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import EditorsDialog from './EditorsDialog';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useToast } from '../../context/ToastContext';
@@ -45,7 +47,7 @@ import {
   fetchFeaturedLists,
   fetchSharedWithMe,
 } from '../../services/sharedLists';
-import { addFavoritesBatch } from '../../services/favorites';
+import { addFavoritesBatch, addFavorite, removeFavorite } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { getDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -109,6 +111,9 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   const [inviteOpen, setInviteOpen] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
+
+  // Editors dialog
+  const [editorsDialogList, setEditorsDialogList] = useState<SharedList | null>(null);
 
   // Featured lists
   const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
@@ -249,6 +254,19 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
       try {
         const items = await fetchListItems(listId);
         setExpandedItems((prev) => new Map(prev).set(listId, items));
+
+        // Fetch editor display names if collaborative
+        const list = lists.find((l) => l.id === listId);
+        if (list && list.editorIds.length > 0) {
+          const uidsToFetch = [...new Set(items.map((i) => i.addedBy).filter(Boolean))].filter((uid) => !editorNames.has(uid));
+          for (const uid of uidsToFetch) {
+            try {
+              const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+              const data = snap.data() as { displayName?: string } | undefined;
+              setEditorNames((prev) => new Map(prev).set(uid, data?.displayName ?? 'Usuario'));
+            } catch { /* ignore */ }
+          }
+        }
       } catch {
         /* ignore */
       }
@@ -282,6 +300,43 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
   // Copy & favorites state for shared list view
   const [isCopying, setIsCopying] = useState(false);
   const [isAddingFavs, setIsAddingFavs] = useState(false);
+
+  // Individual favorites for shared list items
+  const [userFavIds, setUserFavIds] = useState<Set<string>>(new Set());
+
+  // Editor names for addedBy display
+  const [editorNames, setEditorNames] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!user || !sharedList) return;
+    let ignore = false;
+    (async () => {
+      try {
+        const { getFavoritesCollection } = await import('../../services/favorites');
+        const snap = await getDocs(query(getFavoritesCollection(), where('userId', '==', user.uid)));
+        if (!ignore) setUserFavIds(new Set(snap.docs.map((d) => d.data().businessId)));
+      } catch (err) {
+        console.error('[SharedListsView] load favorites failed:', err);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [user, sharedList]);
+
+  const handleToggleFavorite = async (businessId: string) => {
+    if (!user) return;
+    const isFav = userFavIds.has(businessId);
+    try {
+      if (isFav) {
+        await removeFavorite(user.uid, businessId);
+        setUserFavIds((prev) => { const next = new Set(prev); next.delete(businessId); return next; });
+      } else {
+        await addFavorite(user.uid, businessId);
+        setUserFavIds((prev) => new Set(prev).add(businessId));
+      }
+    } catch {
+      toast.error('Error al actualizar favorito');
+    }
+  };
 
   const handleCopyList = async () => {
     if (!user || !sharedList) return;
@@ -379,6 +434,16 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
                         primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}
                         secondaryTypographyProps={{ fontSize: '0.75rem' }}
                       />
+                      {user && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); handleToggleFavorite(item.businessId); }}
+                          sx={{ color: userFavIds.has(item.businessId) ? 'error.main' : 'action.disabled' }}
+                          aria-label={userFavIds.has(item.businessId) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                        >
+                          {userFavIds.has(item.businessId) ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                        </IconButton>
+                      )}
                     </ListItemButton>
                   );
                 })}
@@ -472,7 +537,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
                     {list.editorIds.length > 0 && (
-                      <Chip label={`${list.editorIds.length}`} icon={<GroupIcon />} size="small" variant="outlined" sx={{ height: 22, '& .MuiChip-icon': { fontSize: 14 } }} />
+                      <Chip label={`${list.editorIds.length}`} icon={<GroupIcon />} size="small" variant="outlined" sx={{ height: 22, '& .MuiChip-icon': { fontSize: 14 }, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setEditorsDialogList(list); }} />
                     )}
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePublic(list); }} aria-label={list.isPublic ? 'Hacer privada' : 'Hacer pública'}>
                       {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
@@ -511,7 +576,16 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
                             <ListItemButton key={item.id} onClick={() => handleSelectBusiness(business)} sx={{ borderRadius: 1 }}>
                               <ListItemText
                                 primary={business.name}
-                                secondary={CATEGORY_LABELS[business.category]}
+                                secondary={
+                                  <>
+                                    {CATEGORY_LABELS[business.category]}
+                                    {list.editorIds.length > 0 && item.addedBy && editorNames.has(item.addedBy) && (
+                                      <Typography component="span" variant="caption" color="text.disabled">
+                                        {' · '}{editorNames.get(item.addedBy)}
+                                      </Typography>
+                                    )}
+                                  </>
+                                }
                                 primaryTypographyProps={{ fontSize: '0.85rem' }}
                                 secondaryTypographyProps={{ fontSize: '0.7rem' }}
                               />
@@ -617,6 +691,14 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
           </Button>
         </DialogActions>
       </Dialog>
+
+      <EditorsDialog
+        open={!!editorsDialogList}
+        onClose={() => setEditorsDialogList(null)}
+        listId={editorsDialogList?.id ?? ''}
+        editorIds={editorsDialogList?.editorIds ?? []}
+        onEditorRemoved={() => { setEditorsDialogList(null); loadLists(); }}
+      />
     </PullToRefreshWrapper>
   );
 }

@@ -157,6 +157,14 @@ export async function fetchFeaturedLists(): Promise<SharedList[]> {
   }));
 }
 
+export async function removeEditor(listId: string, targetUid: string): Promise<void> {
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ listId: string; targetUid: string; databaseId?: string }, { success: boolean }>(functions, 'removeListEditor');
+  await fn({ listId, targetUid, databaseId });
+}
+
 export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
   const snap = await getDocs(
     query(

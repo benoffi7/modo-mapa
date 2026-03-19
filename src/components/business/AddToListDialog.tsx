@@ -13,6 +13,7 @@ import {
   Box,
   Typography,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../context/AuthContext';
@@ -58,23 +59,39 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
 
     (async () => {
       try {
-        const snap = await getDocs(
+        // Owned lists
+        const ownedSnap = await getDocs(
           query(getSharedListsCollection(), where('ownerId', '==', user.uid), orderBy('updatedAt', 'desc')),
         );
         if (ignore) return;
-        const userLists = snap.docs.map((d) => d.data());
-        setLists(userLists);
+        const ownedLists = ownedSnap.docs.map((d) => d.data());
+
+        // Lists where I'm editor
+        let editorLists: SharedList[] = [];
+        try {
+          const editorSnap = await getDocs(
+            query(getSharedListsCollection(), where('editorIds', 'array-contains', user.uid)),
+          );
+          editorLists = editorSnap.docs.map((d) => d.data());
+        } catch (err) {
+          console.error('[AddToListDialog] editor lists query failed:', err);
+        }
+
+        // Merge without duplicates
+        const ownedIds = new Set(ownedLists.map((l) => l.id));
+        const allLists = [...ownedLists, ...editorLists.filter((l) => !ownedIds.has(l.id))];
+        setLists(allLists);
 
         const checked = new Set<string>();
-        for (const list of userLists) {
+        for (const list of allLists) {
           const items = await fetchListItems(list.id);
           if (items.some((item) => item.businessId === businessId)) {
             checked.add(list.id);
           }
         }
         if (!ignore) setCheckedIds(checked);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error('[AddToListDialog] load failed:', err);
       }
       if (!ignore) setIsLoading(false);
     })();
@@ -91,11 +108,13 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
         setCheckedIds((prev) => { const next = new Set(prev); next.delete(listId); return next; });
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l));
       } else {
-        await addBusinessToList(listId, businessId);
+        const list = lists.find((l) => l.id === listId);
+        await addBusinessToList(listId, businessId, list && user && list.ownerId !== user.uid ? user.uid : undefined);
         setCheckedIds((prev) => new Set(prev).add(listId));
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: l.itemCount + 1 } : l));
       }
-    } catch {
+    } catch (err) {
+      console.error('[AddToListDialog] toggle failed:', err);
       toast.error('No se pudo actualizar la lista');
     }
     setActionInProgress(null);
@@ -117,7 +136,8 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
       );
       setLists(snap.docs.map((d) => d.data()));
       setCheckedIds((prev) => new Set(prev).add(listId));
-    } catch {
+    } catch (err) {
+      console.error('[AddToListDialog] create failed:', err);
       toast.error('No se pudo crear la lista');
     }
     setIsCreating(false);
@@ -160,7 +180,14 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
                     />
                   </ListItemIcon>
                   <ListItemText
-                    primary={list.name}
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {list.name}
+                        {user && list.ownerId !== user.uid && (
+                          <Chip label="Colaborativa" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
+                        )}
+                      </Box>
+                    }
                     secondary={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
                     primaryTypographyProps={{ fontSize: '0.9rem' }}
                     secondaryTypographyProps={{ fontSize: '0.75rem' }}
