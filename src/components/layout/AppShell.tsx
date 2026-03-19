@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Snackbar, Alert, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -13,7 +13,12 @@ import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { AUTO_DISMISS_MS, ONBOARDING_HINT_DELAY_MS } from '../../constants/timing';
-import { STORAGE_KEY_ONBOARDING_CREATED_AT, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
+import { STORAGE_KEY_ONBOARDING_CREATED_AT, STORAGE_KEY_ONBOARDING_COMPLETED, STORAGE_KEY_BENEFITS_SHOWN } from '../../constants/storage';
+import { useActivityReminder } from '../../hooks/useActivityReminder';
+
+const AccountBanner = lazy(() => import('../onboarding/AccountBanner'));
+const ActivityReminder = lazy(() => import('../onboarding/ActivityReminder'));
+const BenefitsDialog = lazy(() => import('../onboarding/BenefitsDialog'));
 
 function useOnboardingHint() {
   const [show, setShow] = useState(() => {
@@ -93,6 +98,26 @@ export default function AppShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
 
+  // Onboarding: benefits dialog + account creation flow
+  const [benefitsOpen, setBenefitsOpen] = useState(false);
+  const [benefitsSource, setBenefitsSource] = useState<'banner' | 'menu' | 'settings'>('banner');
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const { showReminder, dismissReminder } = useActivityReminder();
+
+  const handleCreateAccount = useCallback((source: 'banner' | 'menu' | 'settings' = 'banner') => {
+    if (localStorage.getItem(STORAGE_KEY_BENEFITS_SHOWN) === 'true') {
+      setEmailDialogOpen(true);
+    } else {
+      setBenefitsSource(source);
+      setBenefitsOpen(true);
+    }
+  }, []);
+
+  const handleBenefitsContinue = useCallback(() => {
+    setBenefitsOpen(false);
+    setEmailDialogOpen(true);
+  }, []);
+
   // Reopen shared list when BusinessSheet closes.
   // A ref stores the list ID to return to — immune to React batching/closure issues.
   const returnToListId = useRef<string | null>(null);
@@ -165,6 +190,22 @@ export default function AppShell() {
       <BusinessSheet />
       <NameDialog />
       <MapHint />
+      <Suspense fallback={null}>
+        <AccountBanner onCreateAccount={() => handleCreateAccount('banner')} />
+        <ActivityReminder
+          open={showReminder}
+          onCreateAccount={() => handleCreateAccount('banner')}
+          onDismiss={dismissReminder}
+        />
+        {benefitsOpen && (
+          <BenefitsDialog
+            open={benefitsOpen}
+            onContinue={handleBenefitsContinue}
+            onClose={() => setBenefitsOpen(false)}
+            source={benefitsSource}
+          />
+        )}
+      </Suspense>
       <SideMenu
         open={menuOpen}
         onClose={() => {
@@ -178,6 +219,9 @@ export default function AppShell() {
         onClearSharedList={() => { setSharedListId(undefined); setActiveSharedListId(null); }}
         initialSection={menuInitialSection}
         sharedListId={sharedListId}
+        onCreateAccount={handleCreateAccount}
+        emailDialogOpen={emailDialogOpen}
+        onEmailDialogClose={() => setEmailDialogOpen(false)}
       />
     </Box>
   );

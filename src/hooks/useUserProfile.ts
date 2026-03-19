@@ -9,11 +9,12 @@ export function useUserProfile(userId: string | null, fallbackName?: string) {
     return fetchUserProfile(userId, fallbackName);
   }, [userId, fallbackName]);
 
-  const { data, loading, error } = useAsyncData(fetcher);
+  const { data, loading, error, refetch } = useAsyncData(fetcher);
 
   return {
     profile: data,
     loading: userId !== null && loading,
     error,
+    refetch,
   };
 }

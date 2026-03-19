@@ -11,6 +11,7 @@
 - Filtro por nivel de gasto ($/$$/$$) con chips toggle
 - **Accesibilidad teclado**: markers focuseables con Tab (`tabIndex={0}`, `role="button"`), Enter/Space abre BusinessSheet, `aria-label` con nombre y rating, focus outline azul via `:focus-visible`
 - **Sugerencias contextuales**: hint "Tocá un comercio para calificarlo" para usuarios nuevos (aparece después de 4h si no calificaron). Toast post-primer-rating ("dejá un comentario") y post-primer-comentario ("guardá favoritos"). Basado en localStorage timestamps, sin queries a Firestore
+- **Onboarding de cuenta** (#157): nudges para conversion anonimo → email. (S1) Banner en mapa "Creá tu cuenta para no perder tus datos" despues de primera interaccion, dismisseable. (S2) Pantalla de beneficios pre-registro (solo la primera vez). (S3) Recordatorio despues de 5 ratings como anonimo (solo si S1 fue dismisseado). Reactividad via custom event `anon-interaction`. 10 analytics events para tracking de conversion. Todos los componentes lazy-loaded
 - **Skeleton loader**: overlay pulsante mientras cargan los tiles del mapa (dark mode aware)
 
 ---
@@ -39,7 +40,7 @@
 
 ## Menu lateral (SideMenu)
 
-- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count). **Onboarding gamificado**: card "Primeros pasos" con 5 tareas (calificar, comentar, favoritear, agregar tag, explorar ranking). Progress bar, checks verdes al completar. Dismiss permanente via localStorage. Toast de celebracion al completar todas. Solo para usuarios autenticados (no anonimos)
+- Header con avatar, nombre, boton editar nombre, badge tipo de cuenta (temporal/email+verificado), botones "Crear cuenta" / "Ya tengo cuenta" (solo anonimos). Badge en icono de Comentarios con cantidad de respuestas no leidas (unread `comment_reply` count). **Onboarding gamificado**: card "Primeros pasos" con 5 tareas (calificar, comentar, favoritear, agregar tag, explorar ranking). Progress bar, checks verdes al completar. Colapsable con click en header (estado persiste en localStorage). Refetch del perfil en cada apertura del menu. Dismiss permanente via localStorage. Toast de celebracion al completar todas. Solo para usuarios autenticados (no anonimos). **Nudge de verificacion** (#157): card para usuarios con email no verificado con botones "Re-enviar email" y "Ya verifique". Dismisseable por sesion, reaparece en sesiones futuras si no verifico
 - **Swipe**: `SwipeableDrawer` permite cerrar con swipe izquierdo y abrir desde el borde izquierdo (swipeAreaWidth=20px, optimizaciones iOS)
 - Todas las secciones lazy-loaded via `React.lazy()` + `Suspense` con spinner fallback (reduce main chunk ~25%)
 - Secciones:
@@ -88,7 +89,7 @@
 - **Componentes**: `EmailPasswordDialog` (registro/login con tabs), `ChangePasswordDialog`, seccion Cuenta en SettingsPanel
 - **Service layer**: `services/emailAuth.ts` (link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage)
 - **Constantes**: `constants/auth.ts` (PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS en espanol)
-- **Analytics**: `account_created`, `email_sign_in`, `sign_out`, `password_changed`, user property `auth_type`
+- **Analytics**: `account_created`, `email_sign_in`, `sign_out`, `password_changed`, user property `auth_type`. **Onboarding conversion** (#157): `onboarding_banner_shown/clicked/dismissed`, `benefits_screen_shown/continue`, `activity_reminder_shown/clicked`, `verification_nudge_shown/resend/dismissed`
 - **Seguridad**: mensajes genericos para prevenir email enumeration, cooldown en re-envio verificacion, re-auth antes de cambio de contrasena
 
 ---
