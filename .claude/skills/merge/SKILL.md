@@ -59,9 +59,11 @@ npx vite build
 
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
-## Phase 2: Automated audits (run ALL in parallel via agents)
+## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)
 
-Launch ALL these agents in parallel using `subagent_type: Explore`. These produce warnings but don't block unless critical issues found:
+**IMPORTANT: Run audits in FOREGROUND (not background).** Wait for all results before proceeding. This ensures findings can influence the merge decision. ~60s total running in parallel is acceptable.
+
+Launch ALL these agents in parallel using their specialized `subagent_type`. These produce warnings but don't block unless critical issues found:
 
 1. **dark-mode-auditor** — scan changed `.tsx`/`.ts` files for hardcoded colors in NEW code
 2. **security** — XSS, query injection, race conditions, input validation in changed files
