@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| v2.21.0 | [#167](https://github.com/benoffi7/modo-mapa/issues/167) | Marker fijo de oficina en el mapa (circulo azul con icono edificio) + FAB para centrar mapa en oficina. Fix hover transparencia en FABs del mapa |
 | v2.20.2 | [#153](https://github.com/benoffi7/modo-mapa/issues/153) | Mejoras visuales menú lateral: fix divider huérfano sin onboarding, error messages externos en auth fields, neutralizar autofill background del browser, padding en rows de favoritos/calificaciones, card primeros pasos más espaciosa, íconos de task más sutiles, padding bottom en nav |
 | v2.20.1 | [#165](https://github.com/benoffi7/modo-mapa/issues/165) | Tech debt auth dialogs: extract usePasswordConfirmation y useRememberedEmail hooks, clearAuthError en AuthContext, fix setTimeout leak con useRef, focus con useLayoutEffect+rAF. Update /merge skill Phase 8 |
 | v2.20.0 | [#163](https://github.com/benoffi7/modo-mapa/issues/163), [#164](https://github.com/benoffi7/modo-mapa/issues/164) | Mejoras UX auth dialogs: preservar email entre tabs, ojito visibilidad contraseña, requisitos complejidad (número+mayúscula+símbolo) con indicador fortaleza visual, Enter submit, autofocus, recordar email, integración gestores contraseñas, fade tabs. ChangePasswordDialog: ojito en 3 campos, indicador fortaleza. Componentes compartidos: PasswordField, PasswordStrength, validatePassword. Workflow: /stage skill, /merge audits en foreground |
