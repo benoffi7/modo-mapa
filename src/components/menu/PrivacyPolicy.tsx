@@ -87,6 +87,12 @@ export default function PrivacyPolicy() {
             actividad y posición en el ranking.
           </Li>
           <Li>
+            <strong>Localidad (opcional):</strong> podés establecer tu zona (ciudad o barrio)
+            desde Configuración. Se guardan el nombre de la localidad y sus coordenadas
+            (latitud y longitud). Se usa como ubicación por defecto cuando no tenés GPS
+            activado, para centrar el mapa y filtrar comercios cercanos.
+          </Li>
+          <Li>
             <strong>Datos de comportamiento (local):</strong> para las sugerencias
             personalizadas, la app analiza tus favoritos, calificaciones y etiquetas
             en el dispositivo para recomendarte comercios. Este análisis es 100% local
