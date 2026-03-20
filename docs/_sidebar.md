@@ -14,7 +14,11 @@
   - [DevOps](/reference/devops.md)
   - [Issues](/reference/issues.md)
   - [Workflow](/reference/workflow.md)
+  - [Staging](/reference/staging.md)
   - [File Size Directive](/reference/file-size-directive.md)
+
+- **[Procedures](/procedures/)**
+  - [Worktree Workflow](/procedures/worktree-workflow.md)
 
 - **[Admin](/feat/admin/)**
   - [Admin Backups](/feat/admin/admin-backups/)

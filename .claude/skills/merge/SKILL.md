@@ -29,7 +29,7 @@ git merge origin/main --no-edit
 
 Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
 
-**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge.
+**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
 
 ### 1b. Lint
 
@@ -253,7 +253,14 @@ Do NOT just report tech debt in the merge summary — create a trackable issue.
 ### 8b. Self-reflection
 
 Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
-List 2-3 concrete improvements. Save actionable ones to memory. Report summary to the user.
+
+1. List 2-3 concrete improvements observed during this merge
+2. For each: classify as "agent fix", "skill update", "doc update", or "memory"
+3. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
+4. Save only non-formalizable insights to memory (user preferences, operational learnings)
+5. Report the summary to the user
+
+**Prefer formalizing improvements in agents/skills/docs over saving to memory.** Memory is for context that can't live elsewhere.
 
 ### 8c. Ask the user
 
