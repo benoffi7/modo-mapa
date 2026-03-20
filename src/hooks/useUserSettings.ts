@@ -11,6 +11,7 @@ type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes
 export function useUserSettings() {
   const { user } = useAuth();
   const [optimistic, setOptimistic] = useState<Partial<Record<BooleanSettingKey, boolean>>>({});
+  const [localityOverride, setLocalityOverride] = useState<{ locality: string; localityLat: number; localityLng: number } | null>(null);
 
   const fetcher = useCallback(async (): Promise<UserSettings> => {
     if (!user) return { ...DEFAULT_SETTINGS };
@@ -22,6 +23,7 @@ export function useUserSettings() {
   const settings: UserSettings = {
     ...(data ?? DEFAULT_SETTINGS),
     ...optimistic,
+    ...(localityOverride ?? {}),
   };
 
   // Sync analytics enabled state with the SDK
@@ -57,8 +59,10 @@ export function useUserSettings() {
   const updateLocality = useCallback(
     (locality: string, lat: number, lng: number) => {
       if (!user) return;
+      setLocalityOverride({ locality, localityLat: lat, localityLng: lng });
       updateUserSettings(user.uid, { locality, localityLat: lat, localityLng: lng }).catch((err) => {
         console.error('[useUserSettings] updateLocality failed:', err);
+        setLocalityOverride(null);
       });
     },
     [user],
@@ -67,8 +71,10 @@ export function useUserSettings() {
   const clearLocality = useCallback(
     () => {
       if (!user) return;
+      setLocalityOverride({ locality: '', localityLat: 0, localityLng: 0 });
       updateUserSettings(user.uid, { locality: '', localityLat: 0, localityLng: 0 }).catch((err) => {
         console.error('[useUserSettings] clearLocality failed:', err);
+        setLocalityOverride(null);
       });
     },
     [user],
