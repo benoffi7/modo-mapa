@@ -4,6 +4,7 @@ import { Box, Snackbar, Alert, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MapView from '../map/MapView';
 import LocationFAB from '../map/LocationFAB';
+import OfficeFAB from '../map/OfficeFAB';
 import SearchBar from '../search/SearchBar';
 import FilterChips from '../search/FilterChips';
 import BusinessSheet from '../business/BusinessSheet';
@@ -194,6 +195,7 @@ export default function AppShell() {
       <FilterChips />
       <MapView />
       <LocationFAB />
+      <OfficeFAB />
       <BusinessSheet />
       <NameDialog />
       <MapHint />
