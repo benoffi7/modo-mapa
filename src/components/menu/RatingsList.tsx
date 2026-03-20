@@ -12,7 +12,9 @@ import {
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { getRatingsCollection } from '../../services/ratings';
-import { useSelection } from '../../context/MapContext';
+import { useSelection, useFilters } from '../../context/MapContext';
+import { distanceKm, formatDistance } from '../../utils/distance';
+import { OFFICE_LOCATION } from '../../constants/map';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -28,6 +30,8 @@ interface Props {
 export default function RatingsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
+  const { userLocation } = useFilters();
+  const sortLocation = userLocation ?? OFFICE_LOCATION;
 
   const collectionRef = useMemo(() => getRatingsCollection(), []);
 
@@ -54,7 +58,7 @@ export default function RatingsList({ onNavigate }: Props) {
     setMinScore,
     sortBy,
     setSortBy,
-  } = useListFilters(ratings, { enableScoreFilter: true });
+  } = useListFilters(ratings, { enableScoreFilter: true, userLocation: sortLocation });
 
   const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
@@ -106,6 +110,7 @@ export default function RatingsList({ onNavigate }: Props) {
         sortBy={sortBy}
         onSortChange={setSortBy}
         showScoreFilter
+        showDistanceSort
         minScore={minScore}
         onMinScoreChange={setMinScore}
         resultCount={filtered.length}
@@ -131,6 +136,12 @@ export default function RatingsList({ onNavigate }: Props) {
                   />
                   <Typography component="span" variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
                     {formatDateMedium(item.updatedAt)}
+                    {item.business && (
+                      <>
+                        {' · '}
+                        {formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, item.business.lat, item.business.lng))}
+                      </>
+                    )}
                   </Typography>
                 </>
               }

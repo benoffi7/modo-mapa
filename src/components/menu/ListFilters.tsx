@@ -21,6 +21,7 @@ interface Props {
   sortBy: SortOption;
   onSortChange: (s: SortOption) => void;
   showScoreFilter?: boolean;
+  showDistanceSort?: boolean;
   minScore?: number | null;
   onMinScoreChange?: (s: number | null) => void;
   resultCount: number;
@@ -35,6 +36,7 @@ export default function ListFilters({
   sortBy,
   onSortChange,
   showScoreFilter,
+  showDistanceSort,
   minScore,
   onMinScoreChange,
   resultCount,
@@ -100,6 +102,7 @@ export default function ListFilters({
           onChange={(e) => onSortChange(e.target.value as SortOption)}
           sx={{ minWidth: 160, fontSize: '0.8rem' }}
         >
+          {showDistanceSort && <MenuItem value="distance-asc">Más cercano</MenuItem>}
           <MenuItem value="date-desc">Más reciente</MenuItem>
           <MenuItem value="date-asc">Más antiguo</MenuItem>
           <MenuItem value="name-asc">Nombre A-Z</MenuItem>
