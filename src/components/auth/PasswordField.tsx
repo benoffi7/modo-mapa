@@ -30,6 +30,12 @@ export default function PasswordField({ label, value, onChange, autoComplete, au
       error={error}
       helperText={helperText || ' '}
       name={name}
+      sx={{
+        '& .MuiInputLabel-shrink': {
+          backgroundColor: 'background.paper',
+          px: 0.5,
+        },
+      }}
       slotProps={{
         input: {
           endAdornment: (
