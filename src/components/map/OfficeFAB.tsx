@@ -25,7 +25,7 @@ export default function OfficeFAB() {
         backgroundColor: 'background.paper',
         color: 'text.secondary',
         '&:hover': {
-          backgroundColor: 'action.hover',
+          backgroundColor: 'background.default',
         },
         zIndex: 1000,
       }}
