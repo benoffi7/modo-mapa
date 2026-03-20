@@ -1,4 +1,4 @@
-import { List, ListItemButton, ListItemIcon, ListItemText, Badge, Divider } from '@mui/material';
+import { List, ListItemButton, ListItemIcon, ListItemText, Badge, Divider, Box } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
@@ -99,6 +99,7 @@ export default function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, 
           <ListItemText primary="Ayuda" />
         </ListItemButton>
       </List>
+      <Box sx={{ pb: 1 }} />
     </>
   );
 }

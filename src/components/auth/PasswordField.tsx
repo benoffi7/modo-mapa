@@ -28,7 +28,7 @@ export default function PasswordField({ label, value, onChange, autoComplete, au
       value={value}
       onChange={(e) => onChange(e.target.value)}
       error={error}
-      helperText={helperText}
+      helperText={helperText || ' '}
       name={name}
       slotProps={{
         input: {

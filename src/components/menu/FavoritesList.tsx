@@ -128,7 +128,7 @@ export default function FavoritesList({ onNavigate }: Props) {
           <ListItemButton
             key={fav.businessId}
             onClick={() => handleSelectBusiness(fav.business)}
-            sx={{ pr: 1 }}
+            sx={{ pr: 1, py: 1 }}
           >
             <ListItemText
               primary={fav.business.name}

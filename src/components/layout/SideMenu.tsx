@@ -282,9 +282,9 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   <Suspense fallback={null}>
                     <OnboardingChecklist menuOpen={open} />
                   </Suspense>
+                  <Divider />
                 </Box>
               )}
-              <Divider sx={{ flexShrink: 0 }} />
 
               {/* Navigation — scrollable when onboarding cards take space */}
               <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>

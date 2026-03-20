@@ -177,7 +177,7 @@ export default function EmailPasswordDialog({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 error={email.length > 0 && !emailValid}
-                helperText={email.length > 0 && !emailValid ? 'Formato de email inválido' : undefined}
+                helperText={email.length > 0 && !emailValid ? 'Formato de email inválido' : ' '}
               />
               <FormControlLabel
                 control={<Checkbox size="small" checked={remember} onChange={toggleRemember} />}

@@ -117,6 +117,7 @@ export default function RatingsList({ onNavigate }: Props) {
             key={item.businessId}
             onClick={() => handleSelectBusiness(item.business)}
             disabled={!item.business}
+            sx={{ py: 1 }}
           >
             <ListItemText
               primary={item.business?.name || 'Comercio desconocido'}
