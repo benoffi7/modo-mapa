@@ -121,7 +121,7 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
 
   return (
     <Card variant="outlined" sx={{ mx: 2, mb: 1, borderRadius: 2 }}>
-      <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+      <CardContent sx={{ py: 2, px: 2, '&:last-child': { pb: 2 } }}>
         <Box
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
           onClick={toggleExpanded}
@@ -156,7 +156,7 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
         <Collapse in={expanded}>
           <List disablePadding dense sx={{ mt: 0.5 }}>
             {tasks.map((task) => (
-              <ListItem key={task.id} disablePadding sx={{ py: 0.25 }}>
+              <ListItem key={task.id} disablePadding sx={{ py: 0.5 }}>
                 <ListItemIcon sx={{ minWidth: 28 }}>
                   {task.isComplete ? (
                     <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
@@ -172,7 +172,7 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
                     sx: task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined,
                   }}
                 />
-                <task.icon sx={{ fontSize: 16, color: task.isComplete ? 'text.disabled' : 'text.secondary' }} />
+                <task.icon sx={{ fontSize: 14, color: task.isComplete ? 'text.disabled' : 'text.secondary', opacity: 0.5 }} />
               </ListItem>
             ))}
           </List>

@@ -66,6 +66,18 @@ export function getDesignTokens(mode: 'light' | 'dark'): ThemeOptions {
           },
         },
       },
+      MuiInputBase: {
+        styleOverrides: {
+          input: {
+            '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+              WebkitBoxShadow: `0 0 0 100px ${isLight ? '#fff' : '#121212'} inset !important`,
+              WebkitTextFillColor: `${isLight ? '#000' : '#fff'} !important`,
+              transition: 'background-color 5000s ease-in-out 0s',
+              caretColor: isLight ? '#000' : '#fff',
+            },
+          },
+        },
+      },
     },
   };
 }
