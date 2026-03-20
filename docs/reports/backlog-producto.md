@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-19*
+*Actualizado: 2026-03-20*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -12,12 +12,6 @@
 ## Roadmap por Milestone
 
 ### v2.21.0 — 14 abr – 20 abr
-
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#153](https://github.com/benoffi7/modo-mapa/issues/153) | Mejoras visuales del menú lateral | UI |
-
-### v2.22.0 — 21 abr – 27 abr
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
@@ -52,7 +46,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 8 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165 (26) |
-| Versiones publicadas | v2.10.0 – v2.20.1 |
-| Milestones planificados | 4 (v2.21.0 – v3.0.0) |
+| Issues abiertos | 7 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153 (27) |
+| Versiones publicadas | v2.10.0 – v2.20.2 |
+| Milestones planificados | 3 (v2.21.0 – v3.0.0) |
