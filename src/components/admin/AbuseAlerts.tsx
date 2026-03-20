@@ -110,7 +110,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
     if (collectionFilter) result = result.filter((l) => l.collection === collectionFilter);
     if (userSearch.trim()) { const q = userSearch.trim().toLowerCase(); result = result.filter((l) => l.userId.toLowerCase().includes(q)); }
     return result.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       if (sortField === 'timestamp') cmp = a.timestamp.getTime() - b.timestamp.getTime();
       else if (sortField === 'type') cmp = a.type.localeCompare(b.type);
       else cmp = a.collection.localeCompare(b.collection);

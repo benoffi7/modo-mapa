@@ -106,10 +106,10 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          mui: ['@mui/material', '@mui/icons-material'],
-          recharts: ['recharts'],
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase/')) return 'firebase';
+          if (id.includes('node_modules/@mui/')) return 'mui';
+          if (id.includes('node_modules/recharts/')) return 'recharts';
         },
       },
     },
