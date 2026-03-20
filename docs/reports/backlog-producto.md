@@ -16,7 +16,6 @@
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
 | [#154](https://github.com/benoffi7/modo-mapa/issues/154) | Localidad del usuario: ubicación por defecto para mapa y Sorpréndeme | geo |
-| [#137](https://github.com/benoffi7/modo-mapa/issues/137) | Ordenar comercios por cercanía | geo |
 
 ### v2.23.0 — 28 abr – 4 may
 
@@ -47,6 +46,6 @@
 | Métrica | Valor |
 |---------|-------|
 | Issues abiertos | 7 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167 (28) |
-| Versiones publicadas | v2.10.0 – v2.21.0 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137 (29) |
+| Versiones publicadas | v2.10.0 – v2.22.0 |
 | Milestones planificados | 3 (v2.21.0 – v3.0.0) |
