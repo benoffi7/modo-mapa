@@ -68,7 +68,7 @@ function App() {
               path="/*"
               element={
                 <MapProvider>
-                  <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                  <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
                     <AppShell />
                   </APIProvider>
                 </MapProvider>
