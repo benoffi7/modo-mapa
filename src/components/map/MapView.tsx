@@ -6,6 +6,7 @@ import { useSelection, useFilters } from '../../context/MapContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
+import OfficeMarker from './OfficeMarker';
 import MapSkeleton from './MapSkeleton';
 
 export default function MapView() {
@@ -75,6 +76,7 @@ export default function MapView() {
             averageRating={null}
           />
         ))}
+        <OfficeMarker />
       </Map>
       {!mapReady && <MapSkeleton />}
       {hasActiveFilters && businesses.length === 0 && (
