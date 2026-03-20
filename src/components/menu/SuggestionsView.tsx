@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Box,
   List,
@@ -11,8 +12,11 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useSelection, useFilters } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
+import { useListFilters } from '../../hooks/useListFilters';
 import { distanceKm, formatDistance } from '../../utils/distance';
+import { OFFICE_LOCATION } from '../../constants/map';
 import { CATEGORY_LABELS } from '../../types';
+import ListFilters from './ListFilters';
 import type { Business, SuggestionReason } from '../../types';
 
 const REASON_LABELS: Record<SuggestionReason, string> = {
@@ -34,7 +38,24 @@ interface Props {
 export default function SuggestionsView({ onNavigate }: Props) {
   const { setSelectedBusiness } = useSelection();
   const { userLocation } = useFilters();
+  const sortLocation = userLocation ?? OFFICE_LOCATION;
   const { suggestions, isLoading, error } = useSuggestions();
+
+  const suggestionItems = useMemo(() =>
+    suggestions.map((s) => ({ ...s, createdAt: undefined })),
+    [suggestions],
+  );
+
+  const {
+    filtered,
+    total,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    sortBy,
+    setSortBy,
+  } = useListFilters(suggestionItems, { userLocation: sortLocation });
 
   const handleSelectBusiness = (business: Business) => {
     setSelectedBusiness(business);
@@ -76,8 +97,19 @@ export default function SuggestionsView({ onNavigate }: Props) {
 
   return (
     <Box>
+      <ListFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        categoryFilter={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        showDistanceSort
+        resultCount={filtered.length}
+        totalCount={total}
+      />
       <List disablePadding>
-        {suggestions.map((item) => (
+        {filtered.map((item) => (
           <ListItemButton
             key={item.business.id}
             onClick={() => handleSelectBusiness(item.business)}
@@ -95,12 +127,8 @@ export default function SuggestionsView({ onNavigate }: Props) {
                     {CATEGORY_LABELS[item.business.category]}
                     {' · '}
                     {item.business.address}
-                    {userLocation && (
-                      <>
-                        {' · '}
-                        {formatDistance(distanceKm(userLocation.lat, userLocation.lng, item.business.lat, item.business.lng))}
-                      </>
-                    )}
+                    {' · '}
+                    {formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, item.business.lat, item.business.lng))}
                   </Typography>
                   <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {item.reasons.map((reason) => (

@@ -15,6 +15,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection, useFilters } from '../../context/MapContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
+import { OFFICE_LOCATION } from '../../constants/map';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
@@ -38,6 +39,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
   const { userLocation } = useFilters();
+  const sortLocation = userLocation ?? OFFICE_LOCATION;
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
 
@@ -64,7 +66,7 @@ export default function FavoritesList({ onNavigate }: Props) {
     setCategoryFilter,
     sortBy,
     setSortBy,
-  } = useListFilters(favorites);
+  } = useListFilters(favorites, { userLocation: sortLocation });
 
   const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
@@ -120,6 +122,7 @@ export default function FavoritesList({ onNavigate }: Props) {
         onCategoryChange={setCategoryFilter}
         sortBy={sortBy}
         onSortChange={setSortBy}
+        showDistanceSort
         resultCount={filtered.length}
         totalCount={total}
       />
@@ -142,12 +145,8 @@ export default function FavoritesList({ onNavigate }: Props) {
                   />
                   <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                     {fav.business.address}
-                    {userLocation && (
-                      <>
-                        {' · '}
-                        {formatDistance(distanceKm(userLocation.lat, userLocation.lng, fav.business.lat, fav.business.lng))}
-                      </>
-                    )}
+                    {' · '}
+                    {formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, fav.business.lat, fav.business.lng))}
                   </Typography>
                 </>
               }

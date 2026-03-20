@@ -1,7 +1,8 @@
 import { useState, useMemo, useDeferredValue } from 'react';
 import type { Business, BusinessCategory } from '../types';
+import { distanceKm } from '../utils/distance';
 
-export type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'score-desc' | 'score-asc';
+export type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'score-desc' | 'score-asc' | 'distance-asc';
 
 interface FilterableItem {
   business: Business | null;
@@ -12,6 +13,7 @@ interface FilterableItem {
 
 interface UseListFiltersOptions {
   enableScoreFilter?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 interface UseListFiltersReturn<T> {
@@ -73,13 +75,20 @@ export function useListFilters<T extends FilterableItem>(
           return (b.score ?? 0) - (a.score ?? 0);
         case 'score-asc':
           return (a.score ?? 0) - (b.score ?? 0);
+        case 'distance-asc': {
+          if (!options.userLocation) return 0;
+          const { lat, lng } = options.userLocation;
+          const distA = distanceKm(lat, lng, a.business!.lat, a.business!.lng);
+          const distB = distanceKm(lat, lng, b.business!.lat, b.business!.lng);
+          return distA - distB;
+        }
         default:
           return 0;
       }
     });
 
     return result;
-  }, [items, deferredQuery, categoryFilter, minScore, sortBy, options.enableScoreFilter]);
+  }, [items, deferredQuery, categoryFilter, minScore, sortBy, options.enableScoreFilter, options.userLocation]);
 
   return {
     filtered,
