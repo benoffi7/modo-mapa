@@ -2,7 +2,7 @@
 
 **Feature:** trending
 **Categoria:** content
-**Fecha:** 2026-03-16
+**Fecha:** 2026-03-20
 **Issue:** #140
 **Prioridad:** Media
 
@@ -10,32 +10,34 @@
 
 ## Contexto
 
-Los rankings actuales muestran comercios ordenados por rating promedio acumulado. No hay una vista de "tendencias" que refleje actividad reciente, lo cual beneficiaría el descubrimiento de comercios que están ganando popularidad.
+Los rankings actuales muestran **usuarios** ordenados por contribuciones acumuladas. No hay una vista de "tendencias" que refleje actividad reciente sobre **comercios**, lo cual beneficiaria el descubrimiento de comercios que estan ganando popularidad.
 
 ## Problema
 
 - Los rankings favorecen comercios con historial largo, dificultando que comercios nuevos o recientemente populares destaquen.
-- No hay visibilidad de qué comercios están recibiendo más atención esta semana.
-- Los usuarios no tienen forma de ver "qué está de moda" en su zona.
+- No hay visibilidad de que comercios estan recibiendo mas atencion esta semana.
+- Los usuarios no tienen forma de ver "que esta de moda" en su zona.
 
-## Solución
+## Solucion
 
-### S1: Sección Trending
+### S1: Tab Trending en Rankings
 
-- Nueva sección accesible desde el menú lateral o como tab en Rankings.
-- Muestra comercios ordenados por actividad de los últimos 7 días.
-- Actividad = suma ponderada de ratings + comentarios + favoritos nuevos.
+- Nuevo tab "Tendencia" dentro de la seccion Rankings existente, al mismo nivel que "Esta semana", "Este mes", etc.
+- Al seleccionar el tab, se muestra una lista de **comercios** (no usuarios) ordenados por actividad recibida en los ultimos 7 dias.
+- La UI es distinta al ranking de usuarios: muestra nombre del comercio, categoria, score y desglose de actividad.
 
-### S2: Cálculo de tendencia
+### S2: Cloud Function scheduled para computo
 
-- Query a Firestore filtrando por `createdAt >= hace 7 días` en ratings, comments y favorites.
-- Agrupar por `businessId` y sumar actividad.
-- Ordenar por score descendente, mostrar top 10-20.
+- **No se hace client-side.** Una Cloud Function scheduled (`computeTrendingBusinesses`) corre diariamente a las 3 AM ART.
+- Consulta ratings, comments, favorites y menuPhotos con `createdAt >= hace 7 dias`.
+- Agrupa por `businessId`, calcula score ponderado: `ratings*2 + comments*3 + favorites*1 + photos*5`.
+- Escribe el top 20 en un unico documento Firestore: `trendingBusinesses/current`.
+- El frontend simplemente lee ese documento, sin queries complejas.
 
 ### S3: Indicador visual
 
-- Badge "Trending" en comercios que aparecen en la lista.
-- Mostrar métricas resumidas: "+12 ratings esta semana", "+5 comentarios".
+- Badge "Trending" en el header de BusinessSheet para comercios que aparecen en la lista trending.
+- Metricas resumidas en la card: "+12 ratings esta semana", "+5 comentarios".
 
 ---
 
@@ -43,11 +45,12 @@ Los rankings actuales muestran comercios ordenados por rating promedio acumulado
 
 | Item | Prioridad | Esfuerzo |
 |------|-----------|----------|
-| Query de actividad semanal | Alta | M |
-| UI sección Trending | Alta | M |
-| Ordenamiento por score de actividad | Alta | S |
+| Cloud Function computeTrendingBusinesses | Alta | M |
+| Tab Trending en Rankings | Alta | M |
+| Servicio + hook frontend | Alta | S |
+| Componente TrendingList | Alta | S |
 | Badge trending en BusinessSheet | Baja | XS |
-| Indicadores de métricas semanales | Media | S |
+| Indicadores de metricas semanales | Media | S |
 
 **Esfuerzo total estimado:** M
 
@@ -55,16 +58,26 @@ Los rankings actuales muestran comercios ordenados por rating promedio acumulado
 
 ## Out of Scope
 
-- Trending por categoría.
-- Trending por zona geográfica.
+- Trending por categoria.
+- Trending por zona geografica.
 - Notificaciones de trending ("X comercio es tendencia").
-- Algoritmo de trending decay (por ahora, ventana fija de 7 días).
+- Algoritmo de trending decay (por ahora, ventana fija de 7 dias).
+
+---
+
+## Tests
+
+- **Cloud Function**: test unitario de `computeTrendingBusinesses` con datos mock, verificando scoring correcto, ordenamiento y limite de 20. Cobertura >= 80%.
+- **Hook `useTrending`**: test con mock de servicio, verificando estados loading/data/error.
+- **Servicio `fetchTrending`**: test con mock de Firestore, verificando parsing correcto del documento.
+- **Componente `TrendingList`**: test de rendering con datos mock, verificando que muestra cards con breakdown.
 
 ---
 
 ## Success Criteria
 
-1. La sección Trending muestra los comercios con más actividad en los últimos 7 días.
-2. El cálculo considera ratings, comentarios y favoritos recientes.
-3. La lista se actualiza diariamente o en cada visita.
-4. Los comercios trending se distinguen visualmente del ranking general.
+1. El tab "Tendencia" en Rankings muestra los comercios con mas actividad en los ultimos 7 dias.
+2. El calculo se realiza server-side via Cloud Function scheduled, no client-side.
+3. El documento `trendingBusinesses/current` se actualiza diariamente.
+4. Los comercios trending se distinguen visualmente del ranking de usuarios.
+5. Tests con cobertura >= 80% en CF, hook y servicio.

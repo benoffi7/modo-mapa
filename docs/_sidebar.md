@@ -87,6 +87,8 @@
     - [Issues](/feat/content/rankings-improvements/issues.md)
   - [Trending](/feat/content/trending/)
     - [PRD](/feat/content/trending/prd.md)
+    - [Specs](/feat/content/trending/specs.md)
+    - [Plan](/feat/content/trending/plan.md)
 
 - **[Infra](/feat/infra/)**
   - [Constants Dashboard](/feat/infra/constants-dashboard/)
@@ -173,6 +175,8 @@
 - **[Social](/feat/social/)**
   - [Check-in](/feat/social/check-in/)
     - [PRD](/feat/social/check-in/prd.md)
+    - [Specs](/feat/social/check-in/specs.md)
+    - [Plan](/feat/social/check-in/plan.md)
   - [Comments 2.0](/feat/social/comments-2.0/)
     - [PRD](/feat/social/comments-2.0/prd.md)
     - [Specs](/feat/social/comments-2.0/specs.md)
@@ -221,6 +225,8 @@
     - [Changelog](/feat/social/menu-favoritos/changelog.md)
   - [Preguntas y Respuestas](/feat/social/preguntas-respuestas/)
     - [PRD](/feat/social/preguntas-respuestas/prd.md)
+    - [Specs](/feat/social/preguntas-respuestas/specs.md)
+    - [Plan](/feat/social/preguntas-respuestas/plan.md)
   - [Rate Limit Precheck](/feat/social/rate-limit-precheck/)
     - [PRD](/feat/social/rate-limit-precheck/prd.md)
     - [Specs](/feat/social/rate-limit-precheck/specs.md)
