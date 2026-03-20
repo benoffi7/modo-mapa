@@ -9,24 +9,22 @@ interface Props {
   onClear: () => void;
 }
 
-interface Prediction {
-  place_id: string;
-  main_text: string;
-  secondary_text: string;
+interface Suggestion {
+  placeId: string;
+  mainText: string;
+  secondaryText: string;
 }
 
 export default function LocalityPicker({ currentLocality, onSelect, onClear }: Props) {
   const [query, setQuery] = useState('');
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [ready, setReady] = useState(false);
-  const serviceRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
   useEffect(() => {
     const check = () => {
-      if (window.google?.maps?.places) {
-        serviceRef.current = new google.maps.places.AutocompleteService();
+      if (window.google?.maps?.places?.AutocompleteSuggestion) {
         geocoderRef.current = new google.maps.Geocoder();
         setReady(true);
       } else {
@@ -36,42 +34,52 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
     check();
   }, []);
 
-  const handleSearch = useCallback((input: string) => {
+  const handleSearch = useCallback(async (input: string) => {
     setQuery(input);
-    if (!serviceRef.current || input.length < 3) {
-      setPredictions([]);
+    if (!ready || input.length < 3) {
+      setSuggestions([]);
       return;
     }
-    serviceRef.current.getPlacePredictions(
-      { input, componentRestrictions: { country: 'ar' }, types: ['(cities)'] },
-      (results) => {
-        setPredictions(
-          (results ?? []).map((r) => ({
-            place_id: r.place_id,
-            main_text: r.structured_formatting.main_text,
-            secondary_text: r.structured_formatting.secondary_text,
+    try {
+      const request = {
+        input,
+        includedRegionCodes: ['ar'],
+        includedPrimaryTypes: ['locality', 'sublocality', 'administrative_area_level_2'],
+      };
+      const { suggestions: results } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+      setSuggestions(
+        results
+          .filter((s): s is typeof s & { placePrediction: NonNullable<typeof s.placePrediction> } => s.placePrediction != null)
+          .map((s) => ({
+            placeId: s.placePrediction.placeId,
+            mainText: s.placePrediction.mainText?.text ?? '',
+            secondaryText: s.placePrediction.secondaryText?.text ?? '',
           })),
-        );
-      },
-    );
-  }, []);
+      );
+    } catch {
+      setSuggestions([]);
+    }
+  }, [ready]);
 
-  const handleSelect = useCallback((prediction: Prediction) => {
+  const handleSelect = useCallback(async (suggestion: Suggestion) => {
     if (!geocoderRef.current) return;
-    geocoderRef.current.geocode({ placeId: prediction.place_id }, (results) => {
+    try {
+      const { results } = await geocoderRef.current.geocode({ placeId: suggestion.placeId });
       if (!results?.[0]) return;
       const loc = results[0].geometry.location;
-      onSelect(prediction.main_text, loc.lat(), loc.lng());
+      onSelect(suggestion.mainText, loc.lat(), loc.lng());
       setQuery('');
-      setPredictions([]);
+      setSuggestions([]);
       setIsEditing(false);
-    });
+    } catch {
+      // geocode failed silently
+    }
   }, [onSelect]);
 
   const handleClear = () => {
     onClear();
     setQuery('');
-    setPredictions([]);
+    setSuggestions([]);
     setIsEditing(false);
   };
 
@@ -104,7 +112,7 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
         fullWidth
         placeholder={ready ? 'Buscar ciudad o barrio...' : 'Cargando...'}
         value={query}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={(e) => { void handleSearch(e.target.value); }}
         disabled={!ready}
         autoFocus={isEditing}
         slotProps={{
@@ -117,13 +125,13 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
           },
         }}
       />
-      {predictions.length > 0 && (
+      {suggestions.length > 0 && (
         <List dense disablePadding sx={{ maxHeight: 200, overflow: 'auto', mt: 0.5 }}>
-          {predictions.map((p) => (
-            <ListItemButton key={p.place_id} onClick={() => handleSelect(p)} sx={{ py: 0.5 }}>
+          {suggestions.map((s) => (
+            <ListItemButton key={s.placeId} onClick={() => { void handleSelect(s); }} sx={{ py: 0.5 }}>
               <ListItemText
-                primary={p.main_text}
-                secondary={p.secondary_text}
+                primary={s.mainText}
+                secondary={s.secondaryText}
                 primaryTypographyProps={{ fontSize: '0.85rem' }}
                 secondaryTypographyProps={{ fontSize: '0.75rem' }}
               />
