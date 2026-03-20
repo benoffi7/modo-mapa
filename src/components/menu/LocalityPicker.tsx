@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { TextField, Box, List, ListItemButton, ListItemText, Typography, IconButton, InputAdornment } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { useMapsLibrary } from '@vis.gl/react-google-maps';
 
 interface Props {
   currentLocality?: string | undefined;
@@ -10,19 +9,32 @@ interface Props {
   onClear: () => void;
 }
 
+interface Prediction {
+  place_id: string;
+  main_text: string;
+  secondary_text: string;
+}
+
 export default function LocalityPicker({ currentLocality, onSelect, onClear }: Props) {
-  const places = useMapsLibrary('places');
   const [query, setQuery] = useState('');
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [ready, setReady] = useState(false);
   const serviceRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
   useEffect(() => {
-    if (!places) return;
-    serviceRef.current = new places.AutocompleteService();
-    geocoderRef.current = new google.maps.Geocoder();
-  }, [places]);
+    const check = () => {
+      if (window.google?.maps?.places) {
+        serviceRef.current = new google.maps.places.AutocompleteService();
+        geocoderRef.current = new google.maps.Geocoder();
+        setReady(true);
+      } else {
+        setTimeout(check, 500);
+      }
+    };
+    check();
+  }, []);
 
   const handleSearch = useCallback((input: string) => {
     setQuery(input);
@@ -32,16 +44,24 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
     }
     serviceRef.current.getPlacePredictions(
       { input, componentRestrictions: { country: 'ar' }, types: ['(cities)'] },
-      (results) => setPredictions(results ?? []),
+      (results) => {
+        setPredictions(
+          (results ?? []).map((r) => ({
+            place_id: r.place_id,
+            main_text: r.structured_formatting.main_text,
+            secondary_text: r.structured_formatting.secondary_text,
+          })),
+        );
+      },
     );
   }, []);
 
-  const handleSelect = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
+  const handleSelect = useCallback((prediction: Prediction) => {
     if (!geocoderRef.current) return;
     geocoderRef.current.geocode({ placeId: prediction.place_id }, (results) => {
       if (!results?.[0]) return;
       const loc = results[0].geometry.location;
-      onSelect(prediction.structured_formatting.main_text, loc.lat(), loc.lng());
+      onSelect(prediction.main_text, loc.lat(), loc.lng());
       setQuery('');
       setPredictions([]);
       setIsEditing(false);
@@ -82,9 +102,10 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
       <TextField
         size="small"
         fullWidth
-        placeholder="Buscar ciudad o barrio..."
+        placeholder={ready ? 'Buscar ciudad o barrio...' : 'Cargando...'}
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
+        disabled={!ready}
         autoFocus={isEditing}
         slotProps={{
           input: {
@@ -101,8 +122,8 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
           {predictions.map((p) => (
             <ListItemButton key={p.place_id} onClick={() => handleSelect(p)} sx={{ py: 0.5 }}>
               <ListItemText
-                primary={p.structured_formatting.main_text}
-                secondary={p.structured_formatting.secondary_text}
+                primary={p.main_text}
+                secondary={p.secondary_text}
                 primaryTypographyProps={{ fontSize: '0.85rem' }}
                 secondaryTypographyProps={{ fontSize: '0.75rem' }}
               />

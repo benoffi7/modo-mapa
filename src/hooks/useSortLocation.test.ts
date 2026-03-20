@@ -11,7 +11,7 @@ vi.mock('../context/MapContext', () => ({
 }));
 
 vi.mock('./useUserSettings', () => ({
-  useUserSettings: vi.fn(() => ({ settings: {} })),
+  useUserSettings: vi.fn(() => ({ settings: {} as any })),
 }));
 
 import { useFilters } from '../context/MapContext';
@@ -20,7 +20,7 @@ import { useUserSettings } from './useUserSettings';
 describe('useSortLocation', () => {
   beforeEach(() => {
     vi.mocked(useFilters).mockReturnValue({ userLocation: null } as ReturnType<typeof useFilters>);
-    vi.mocked(useUserSettings).mockReturnValue({ settings: {}, loading: false, updateSetting: vi.fn(), updateLocality: vi.fn(), clearLocality: vi.fn() });
+    vi.mocked(useUserSettings).mockReturnValue({ settings: {} as any, loading: false, updateSetting: vi.fn(), updateLocality: vi.fn(), clearLocality: vi.fn() });
   });
 
   it('returns GPS location when available', () => {
