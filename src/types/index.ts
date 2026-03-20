@@ -209,6 +209,9 @@ export interface UserSettings {
   notifyFeedback: boolean;
   notifyReplies: boolean;
   analyticsEnabled: boolean;
+  locality?: string;
+  localityLat?: number;
+  localityLng?: number;
   updatedAt: Date;
 }
 

@@ -10,11 +10,11 @@ import {
 } from '@mui/material';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useSelection, useFilters } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { useListFilters } from '../../hooks/useListFilters';
 import { distanceKm, formatDistance } from '../../utils/distance';
-import { OFFICE_LOCATION } from '../../constants/map';
+import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../types';
 import ListFilters from './ListFilters';
 import type { Business, SuggestionReason } from '../../types';
@@ -37,8 +37,7 @@ interface Props {
 
 export default function SuggestionsView({ onNavigate }: Props) {
   const { setSelectedBusiness } = useSelection();
-  const { userLocation } = useFilters();
-  const sortLocation = userLocation ?? OFFICE_LOCATION;
+  const sortLocation = useSortLocation();
   const { suggestions, isLoading, error } = useSuggestions();
 
   const suggestionItems = useMemo(() =>

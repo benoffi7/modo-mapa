@@ -12,9 +12,9 @@ import {
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { getRatingsCollection } from '../../services/ratings';
-import { useSelection, useFilters } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
-import { OFFICE_LOCATION } from '../../constants/map';
+import { useSortLocation } from '../../hooks/useSortLocation';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -30,8 +30,7 @@ interface Props {
 export default function RatingsList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
-  const { userLocation } = useFilters();
-  const sortLocation = userLocation ?? OFFICE_LOCATION;
+  const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getRatingsCollection(), []);
 
