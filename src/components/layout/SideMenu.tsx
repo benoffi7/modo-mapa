@@ -32,10 +32,11 @@ import { useNotifications } from '../../hooks/useNotifications';
 import SideMenuNav from './SideMenuNav';
 import { trackEvent } from '../../utils/analytics';
 import { useToast } from '../../context/ToastContext';
-import { useSelection, useFilters } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { distanceKm } from '../../utils/distance';
+import { useSortLocation } from '../../hooks/useSortLocation';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
@@ -104,7 +105,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
   const { notifications } = useNotifications();
   const toast = useToast();
   const { setSelectedBusiness } = useSelection();
-  const { userLocation } = useFilters();
+  const sortLocation = useSortLocation();
   const { visits } = useVisitHistory();
   const unreadReplyCount = useMemo(
     () => notifications.filter((n) => n.type === 'comment_reply' && !n.read).length,
@@ -144,10 +145,10 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
     const visitedIds = new Set(visits.map((v) => v.businessId));
     let candidates = allBusinesses.filter((b) => !visitedIds.has(b.id));
 
-    // If GPS available, prefer nearby (within 5km)
-    if (userLocation && candidates.length > 0) {
+    // Prefer nearby (within 5km) using GPS → locality → office fallback
+    if (candidates.length > 0) {
       const nearby = candidates.filter(
-        (b) => distanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng) <= 5,
+        (b) => distanceKm(sortLocation.lat, sortLocation.lng, b.lat, b.lng) <= 5,
       );
       if (nearby.length > 0) candidates = nearby;
     }
