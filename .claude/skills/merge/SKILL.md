@@ -105,9 +105,17 @@ If new data collection → warn user and update privacy policy if needed.
 git diff --name-only origin/main -- 'src/types/**' 'src/config/adminConverters.ts' 'functions/src/**'
 ```
 
-If types/converters changed → verify seed data is in sync.
+If types/converters changed → run the **seed-manager** agent to verify and update seed data automatically. Do NOT just check manually — delegate to the agent.
 
-### 3d. Commit docs updates
+### 3d. Update docs site (if docs changed)
+
+```bash
+git diff --name-only origin/main -- 'docs/**/*.md'
+```
+
+If any docs changed → run the **docs-site-maintainer** agent to regenerate README.md index files and update `_sidebar.md`. This ensures new PRDs, specs, plans, and changelogs are properly linked.
+
+### 3e. Commit docs updates
 
 If any docs were updated in this phase, commit them now before merging.
 
