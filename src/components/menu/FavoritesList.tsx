@@ -13,9 +13,9 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
-import { useSelection, useFilters } from '../../context/MapContext';
+import { useSelection } from '../../context/MapContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
-import { OFFICE_LOCATION } from '../../constants/map';
+import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../types';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
@@ -38,8 +38,7 @@ interface Props {
 export default function FavoritesList({ onNavigate }: Props) {
   const { user } = useAuth();
   const { setSelectedBusiness } = useSelection();
-  const { userLocation } = useFilters();
-  const sortLocation = userLocation ?? OFFICE_LOCATION;
+  const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
 

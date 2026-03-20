@@ -4,6 +4,7 @@ import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { useSelection, useFilters } from '../../context/MapContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
+import { useUserSettings } from '../../hooks/useUserSettings';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
 import OfficeMarker from './OfficeMarker';
@@ -15,6 +16,7 @@ export default function MapView() {
   const selectedId = selectedBusiness?.id ?? null;
   const { userLocation, searchQuery, activeFilters } = useFilters();
   const { businesses } = useBusinesses();
+  const { settings } = useUserSettings();
   const hasActiveFilters = searchQuery.trim().length > 0 || activeFilters.length > 0;
   const hasInitialLocation = useRef(false);
   const [mapReady, setMapReady] = useState(false);
@@ -38,6 +40,15 @@ export default function MapView() {
       map.panTo(userLocation);
     }
   }, [map, userLocation]);
+
+  // Pan to locality if no GPS and locality is set
+  useEffect(() => {
+    if (map && !userLocation && !hasInitialLocation.current && settings.localityLat && settings.localityLng) {
+      map.panTo({ lat: settings.localityLat, lng: settings.localityLng });
+      map.setZoom(14);
+      hasInitialLocation.current = true;
+    }
+  }, [map, userLocation, settings.localityLat, settings.localityLng]);
 
   const handleMarkerClick = useCallback(
     (businessId: string) => {

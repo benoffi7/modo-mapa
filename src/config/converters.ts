@@ -285,6 +285,9 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyFeedback: settings.notifyFeedback,
       notifyReplies: settings.notifyReplies,
       analyticsEnabled: settings.analyticsEnabled,
+      ...(settings.locality != null && { locality: settings.locality }),
+      ...(settings.localityLat != null && { localityLat: settings.localityLat }),
+      ...(settings.localityLng != null && { localityLng: settings.localityLng }),
       updatedAt: settings.updatedAt,
     };
   },
@@ -299,6 +302,9 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyFeedback: d.notifyFeedback ?? true,
       notifyReplies: d.notifyReplies ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
+      ...(d.locality != null && { locality: d.locality }),
+      ...(d.localityLat != null && { localityLat: d.localityLat }),
+      ...(d.localityLng != null && { localityLng: d.localityLng }),
       updatedAt: toDate(d.updatedAt),
     };
   },

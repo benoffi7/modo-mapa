@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useFilters } from '../context/MapContext';
+import { useSortLocation } from './useSortLocation';
 import { allBusinesses } from './useBusinesses';
 import { fetchUserSuggestionData } from '../services/suggestions';
 import {
@@ -17,7 +17,7 @@ export function useSuggestions(): {
   error: boolean;
 } {
   const { user } = useAuth();
-  const { userLocation } = useFilters();
+  const userLocation = useSortLocation();
 
   interface SuggestionState {
     favorites: Favorite[];

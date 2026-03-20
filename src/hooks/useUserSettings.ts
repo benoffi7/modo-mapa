@@ -6,11 +6,11 @@ import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
 
-type SettingKey = keyof Omit<UserSettings, 'updatedAt'>;
+type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'analyticsEnabled';
 
 export function useUserSettings() {
   const { user } = useAuth();
-  const [optimistic, setOptimistic] = useState<Partial<Record<SettingKey, boolean>>>({});
+  const [optimistic, setOptimistic] = useState<Partial<Record<BooleanSettingKey, boolean>>>({});
 
   const fetcher = useCallback(async (): Promise<UserSettings> => {
     if (!user) return { ...DEFAULT_SETTINGS };
@@ -37,7 +37,7 @@ export function useUserSettings() {
   }, [user, settings.analyticsEnabled]);
 
   const updateSetting = useCallback(
-    (key: SettingKey, value: boolean) => {
+    (key: BooleanSettingKey, value: boolean) => {
       if (!user) return;
 
       setOptimistic((prev) => ({ ...prev, [key]: value }));
@@ -54,5 +54,25 @@ export function useUserSettings() {
     [user],
   );
 
-  return { settings, loading, updateSetting };
+  const updateLocality = useCallback(
+    (locality: string, lat: number, lng: number) => {
+      if (!user) return;
+      updateUserSettings(user.uid, { locality, localityLat: lat, localityLng: lng }).catch((err) => {
+        console.error('[useUserSettings] updateLocality failed:', err);
+      });
+    },
+    [user],
+  );
+
+  const clearLocality = useCallback(
+    () => {
+      if (!user) return;
+      updateUserSettings(user.uid, { locality: '', localityLat: 0, localityLng: 0 }).catch((err) => {
+        console.error('[useUserSettings] clearLocality failed:', err);
+      });
+    },
+    [user],
+  );
+
+  return { settings, loading, updateSetting, updateLocality, clearLocality };
 }

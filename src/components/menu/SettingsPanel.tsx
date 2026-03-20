@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import LocalityPicker from './LocalityPicker';
 import { useAuth } from '../../context/AuthContext';
 
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
@@ -61,7 +62,7 @@ function SettingRow({ label, description, checked, disabled, indented, onChange 
 }
 
 export default function SettingsPanel() {
-  const { settings, loading, updateSetting } = useUserSettings();
+  const { settings, loading, updateSetting, updateLocality, clearLocality } = useUserSettings();
   const { authMethod, emailVerified, user, signOut, resendVerification, refreshEmailVerified } = useAuth();
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -201,6 +202,21 @@ export default function SettingsPanel() {
           </Box>
         </Box>
       )}
+
+      <Divider sx={{ my: 1.5 }} />
+
+      {/* Ubicación */}
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+        Ubicación
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        Tu zona por defecto cuando no tenés GPS activado
+      </Typography>
+      <LocalityPicker
+        currentLocality={settings.locality}
+        onSelect={updateLocality}
+        onClear={clearLocality}
+      />
 
       <Divider sx={{ my: 1.5 }} />
 
