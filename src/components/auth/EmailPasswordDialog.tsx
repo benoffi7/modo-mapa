@@ -14,7 +14,9 @@ import {
   Fade,
   FormControlLabel,
   Checkbox,
+  Typography,
 } from '@mui/material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX, validatePassword } from '../../constants/auth';
 import { sendResetEmail, getAuthErrorMessage } from '../../services/emailAuth';
@@ -165,26 +167,27 @@ export default function EmailPasswordDialog({
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-              <TextField
-                inputRef={emailRef}
-                label="Email"
-                type="email"
-                autoComplete="username"
-                autoFocus
-                fullWidth
-                size="small"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                error={email.length > 0 && !emailValid}
-                helperText={email.length > 0 && !emailValid ? 'Formato de email inválido' : ' '}
-                sx={{
-                  '& .MuiInputLabel-shrink': {
-                    backgroundColor: 'background.paper',
-                    px: 0.5,
-                  },
-                }}
-              />
+              <Box>
+                <TextField
+                  inputRef={emailRef}
+                  label="Email"
+                  type="email"
+                  autoComplete="username"
+                  autoFocus
+                  fullWidth
+                  size="small"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  error={email.length > 0 && !emailValid}
+                />
+                {email.length > 0 && !emailValid && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                    <ErrorOutlineIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                    <Typography variant="caption" color="error">Formato de email inválido</Typography>
+                  </Box>
+                )}
+              </Box>
               <FormControlLabel
                 control={<Checkbox size="small" checked={remember} onChange={toggleRemember} />}
                 label="Recordar mi email"
