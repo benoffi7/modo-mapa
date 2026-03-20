@@ -4,6 +4,20 @@ Guía unificada de seguridad del proyecto: políticas, Firestore rules, Cloud Fu
 
 ---
 
+## Repositorio publico
+
+El repositorio es publico desde 2026-03-15. Todo el codigo, PRs, commits e historial son visibles.
+
+### Checklist para PRs y commits
+
+- [ ] No incluir secretos, API keys, credenciales ni emails hardcodeados
+- [ ] PR descriptions profesionales, sin exponer detalles de infraestructura interna
+- [ ] Commit messages limpios e informativos
+- [ ] Revisar diffs para exposicion accidental de secretos antes de commitear
+- [ ] Valores especificos de entorno van por env vars, nunca hardcodeados
+
+---
+
 ## Checklist de seguridad por commit
 
 Antes de cada commit, verificar:

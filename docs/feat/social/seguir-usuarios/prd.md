@@ -4,7 +4,8 @@
 **Categoria:** social
 **Fecha:** 2026-03-16
 **Issue:** #129
-**Prioridad:** Baja
+**Prioridad:** Media
+**Milestone:** v2.25.0
 
 ---
 
@@ -25,6 +26,8 @@ Modo Mapa tiene funcionalidades sociales (comentarios, ratings, tags) pero no ha
 - Permitir seguir a otros usuarios por su perfil público.
 - Relación unidireccional (seguir, no "amistad").
 - Colección `follows` en Firestore con `followerId` y `followedId`.
+- Solo usuarios con `profilePublic: true` aparecen en búsqueda.
+- Si un usuario no aparece: mensaje genérico "No se encontró" con hint "Quizás el usuario no tenga el perfil público". Nunca exponer si la cuenta existe.
 
 ### S2: Feed de actividad
 
@@ -32,10 +35,11 @@ Modo Mapa tiene funcionalidades sociales (comentarios, ratings, tags) pero no ha
 - Tipos de actividad: nuevo rating, nuevo comentario, nuevo favorito.
 - Feed paginado con scroll infinito.
 
-### S3: Perfil público
+### S3: Perfil público (extensión)
 
-- Página de perfil con displayName, avatar, cantidad de ratings/comments.
-- Lista de comercios calificados visible para seguidores.
+- Ya existe perfil público con stats y badges (bottom sheet al tocar nombre).
+- Extender con botón "Seguir" / "Dejar de seguir".
+- Agregar sección de comercios calificados visible para seguidores.
 
 ---
 
@@ -69,3 +73,13 @@ Modo Mapa tiene funcionalidades sociales (comentarios, ratings, tags) pero no ha
 3. El perfil público muestra estadísticas básicas del usuario.
 4. Un usuario puede dejar de seguir en cualquier momento.
 5. La privacidad se respeta según configuración del usuario.
+
+---
+
+## Tests
+
+- Tests unitarios para hook de follows (follow, unfollow, estado).
+- Tests de servicio para CRUD de follows y feed de actividad.
+- Tests de Firestore rules para follows y búsqueda (solo perfiles públicos).
+- Tests de Cloud Function para generación de actividad en feed.
+- Cobertura mínima: 80%.

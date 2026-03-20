@@ -29,7 +29,7 @@ git merge origin/main --no-edit
 
 Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
 
-**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge.
+**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
 
 ### 1b. Lint
 
@@ -105,9 +105,17 @@ If new data collection → warn user and update privacy policy if needed.
 git diff --name-only origin/main -- 'src/types/**' 'src/config/adminConverters.ts' 'functions/src/**'
 ```
 
-If types/converters changed → verify seed data is in sync.
+If types/converters changed → run the **seed-manager** agent to verify and update seed data automatically. Do NOT just check manually — delegate to the agent.
 
-### 3d. Commit docs updates
+### 3d. Update docs site (if docs changed)
+
+```bash
+git diff --name-only origin/main -- 'docs/**/*.md'
+```
+
+If any docs changed → run the **docs-site-maintainer** agent to regenerate README.md index files and update `_sidebar.md`. This ensures new PRDs, specs, plans, and changelogs are properly linked.
+
+### 3e. Commit docs updates
 
 If any docs were updated in this phase, commit them now before merging.
 
@@ -245,7 +253,14 @@ Do NOT just report tech debt in the merge summary — create a trackable issue.
 ### 8b. Self-reflection
 
 Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
-List 2-3 concrete improvements. Save actionable ones to memory. Report summary to the user.
+
+1. List 2-3 concrete improvements observed during this merge
+2. For each: classify as "agent fix", "skill update", "doc update", or "memory"
+3. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
+4. Save only non-formalizable insights to memory (user preferences, operational learnings)
+5. Report the summary to the user
+
+**Prefer formalizing improvements in agents/skills/docs over saving to memory.** Memory is for context that can't live elsewhere.
 
 ### 8c. Ask the user
 

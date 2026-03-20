@@ -4,7 +4,9 @@
 **Categoria:** social
 **Fecha:** 2026-03-16
 **Issue:** #135
-**Prioridad:** Baja
+**Prioridad:** Media
+**Milestone:** v2.25.0
+**Depende de:** #129 (Seguir usuarios)
 
 ---
 
@@ -23,6 +25,7 @@ Actualmente no hay forma de compartir un comercio directamente con otro usuario 
 ### S1: Botón "Recomendar" en BusinessSheet
 
 - Agregar acción "Recomendar" que abre un selector de usuarios.
+- El selector reutiliza la búsqueda de usuarios de Seguir usuarios (#129): solo muestra perfiles públicos.
 - El usuario elige el destinatario y opcionalmente agrega un mensaje corto.
 - Se crea una notificación in-app: "Juan te recomienda Cafe Roma".
 
@@ -67,3 +70,13 @@ Actualmente no hay forma de compartir un comercio directamente con otro usuario 
 2. El destinatario recibe notificación in-app con la recomendación.
 3. La bandeja muestra todas las recomendaciones recibidas.
 4. Se puede abrir el comercio directamente desde la recomendación.
+
+---
+
+## Tests
+
+- Tests unitarios para hook de recomendaciones (enviar, recibir, listar).
+- Tests de servicio para CRUD de recomendaciones.
+- Tests de Firestore rules para recomendaciones.
+- Tests de componente para RecommendDialog y bandeja.
+- Cobertura mínima: 80%.

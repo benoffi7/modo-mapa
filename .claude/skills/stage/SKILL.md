@@ -1,7 +1,7 @@
 ---
 name: stage
 description: Deploy current feature branch to staging environment for testing
-user_invocable: true
+user-invocable: true
 ---
 
 # Deploy to Staging
@@ -90,9 +90,24 @@ git checkout $BRANCH
 Ready for testing.
 ```
 
+### Step 7: Deploy rules/functions if changed
+
+Check if Firestore rules or Cloud Functions changed:
+
+```bash
+git diff origin/main -- firestore.rules functions/src/
+```
+
+If rules changed → deploy to staging DB via REST API (see `docs/reference/staging.md`).
+If functions changed → CI auto-deploys, but verify with `gh run view`.
+
+For the full deploy checklist, see `docs/reference/staging.md#checklist-de-deploy-completo-a-staging`.
+
 ## Important notes
 
 - **Always run pre-staging gate first** — catches CI issues locally before the 5-minute deploy cycle
 - **Never push to staging without local validation** — saves time and avoids wasted CI runs
 - The staging branch is a throwaway merge target — it gets force-updated from the feature branch
 - After testing, use `/merge` to merge to main (not staging → main)
+- **Never tell the user to test until `conclusion` is `"success"`** — verify explicitly with `gh run view`
+- Full staging reference: `docs/reference/staging.md`
