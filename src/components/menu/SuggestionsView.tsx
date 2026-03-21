@@ -144,7 +144,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
                           color={REASON_COLORS[reason]}
                           variant="outlined"
                           component="span"
-                          sx={{ fontSize: '0.7rem', height: 20 }}
+                          sx={{ fontSize: '0.7rem', height: 24 }}
                         />
                       ))}
                     </Box>
