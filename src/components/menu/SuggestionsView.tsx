@@ -80,7 +80,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
 
     if (error) {
       return (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Box role="alert" sx={{ p: 3, textAlign: 'center' }}>
           <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
           <Typography variant="body2" color="text.secondary">
             No se pudieron cargar las sugerencias
