@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-20 (post v2.24.0)*
+*Actualizado: 2026-03-20 (post tech debt #169/#166)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -43,7 +43,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 6 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137, #154, #140 (31) |
+| Issues abiertos | 4 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137, #154, #140, #169, #166 (33) |
 | Versiones publicadas | v2.10.0 – v2.24.0 |
 | Milestones planificados | 4 (v2.24.0 – v3.0.0) |
