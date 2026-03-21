@@ -613,6 +613,64 @@ async function seed() {
     perfMetrics: 7,
   }, { merge: true });
 
+  // ── Trending Businesses (computed by Cloud Function, but seed sample for testing UI) ────
+  console.log('Seeding trending businesses sample...');
+  // Note: In production, computeTrendingBusinesses Cloud Function creates this.
+  // This seed provides sample data for testing the UI in emulators.
+  const nowTrending = new Date();
+  const sevenDaysAgo = new Date(nowTrending);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const trendingBusinesses = [
+    {
+      businessId: 'biz_001',
+      name: 'El Buen Paladár',
+      category: 'restaurant',
+      score: 47,
+      breakdown: { ratings: 8, comments: 12, userTags: 6, priceLevels: 3, listItems: 5 },
+      rank: 1,
+    },
+    {
+      businessId: 'biz_002',
+      name: 'Café Libertad',
+      category: 'cafe',
+      score: 39,
+      breakdown: { ratings: 5, comments: 10, userTags: 4, priceLevels: 2, listItems: 4 },
+      rank: 2,
+    },
+    {
+      businessId: 'biz_003',
+      name: 'Pizzería Nonna',
+      category: 'pizza',
+      score: 35,
+      breakdown: { ratings: 7, comments: 8, userTags: 3, priceLevels: 2, listItems: 3 },
+      rank: 3,
+    },
+    {
+      businessId: 'biz_004',
+      name: 'Heladería Gelato',
+      category: 'icecream',
+      score: 28,
+      breakdown: { ratings: 4, comments: 6, userTags: 3, priceLevels: 1, listItems: 3 },
+      rank: 4,
+    },
+    {
+      businessId: 'biz_005',
+      name: 'Panadería San José',
+      category: 'bakery',
+      score: 24,
+      breakdown: { ratings: 3, comments: 5, userTags: 2, priceLevels: 1, listItems: 2 },
+      rank: 5,
+    },
+  ];
+
+  await setDoc(doc(db, 'trendingBusinesses', 'current'), {
+    businesses: trendingBusinesses,
+    computedAt: Timestamp.fromDate(nowTrending),
+    periodStart: Timestamp.fromDate(sevenDaysAgo),
+    periodEnd: Timestamp.fromDate(nowTrending),
+  });
+
   // Seed config/aggregates for pre-aggregated dailyMetrics (DT-4)
   // ── Performance Metrics (7 docs, one per day) ─────────────────────────
   const perfDevices = [
@@ -757,6 +815,7 @@ async function seed() {
   console.log('- 15 notifications (incl. feedback_response)');
   console.log('- 10 user settings (all public)');
   console.log('- 7 perf metrics (1 per day, mix mobile/desktop, wifi/4g/3g)');
+  console.log('- 1 trending businesses document (5 sample trending businesses)');
   console.log('- Counters and moderation config');
   console.log('- 1 admin user with custom claim (admin: true)');
   console.log('\nOpen http://localhost:4000 to see data in Emulator UI');
