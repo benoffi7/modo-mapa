@@ -61,11 +61,11 @@ export default function RatingsList({ onNavigate }: Props) {
 
   const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
-  const handleSelectBusiness = (business: Business | null) => {
+  const handleSelectBusiness = useCallback((business: Business | null) => {
     if (!business) return;
     setSelectedBusiness(business);
     onNavigate();
-  };
+  }, [setSelectedBusiness, onNavigate]);
 
   if (isLoading) {
     return (

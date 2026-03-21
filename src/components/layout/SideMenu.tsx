@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
   SwipeableDrawer,
   Box,
@@ -116,19 +116,21 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
   }, [open]);
 
   const [activeSection, setActiveSectionRaw] = useState<Section>('nav');
+  const [listsBackHandler, setListsBackHandler] = useState<(() => boolean) | null>(null);
 
-  useEffect(() => {
-    if (initialSection && open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- set initial section from deep link
-      setActiveSectionRaw(initialSection as Section);
-    }
-  }, [initialSection, open]);
+  const [prevOpen, setPrevOpen] = useState(false);
+  if (open && !prevOpen && initialSection) {
+    setActiveSectionRaw(initialSection as Section);
+  }
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+  }
 
   const setActiveSection = (section: Section) => {
     // When navigating to lists from nav, clear any stale shared list state
     if (section === 'lists') {
       onClearSharedList?.();
-      listsBackHandler.current?.();
+      listsBackHandler?.();
     }
     setActiveSectionRaw(section);
     if (section !== 'nav') {
@@ -141,7 +143,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
     activeSection === 'feedback' && feedbackDirty ? 'x' : '',
   );
 
-  const handleSurprise = () => {
+  const handleSurprise = useCallback(() => {
     const visitedIds = new Set(visits.map((v) => v.businessId));
     let candidates = allBusinesses.filter((b) => !visitedIds.has(b.id));
 
@@ -163,7 +165,8 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
       toast.success(`¡Sorpresa! Descubrí ${pick.name}`);
     }
     trackEvent('surprise_me', { business_id: pick.id });
-  };
+   
+  }, [sortLocation, visits, onClose, toast, setSelectedBusiness]);
 
   // Edit name dialog
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
@@ -176,6 +179,11 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
       // Reset to nav after drawer closes
       setTimeout(() => setActiveSection('nav'), 300);
     });
+  };
+
+  const handleFeedback = () => {
+    setFeedbackKey((k) => k + 1);
+    setActiveSection('feedback');
   };
 
   const handleOpenNameDialog = () => {
@@ -193,11 +201,13 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
   };
 
   // Back handler for lists section: first clears shared list view, then goes to nav
-  const listsBackHandler = useRef<(() => boolean) | null>(null);
-  const registerListsBackHandler = useMemo(() => (h: (() => boolean) | null) => { listsBackHandler.current = h; }, []);
+  const registerListsBackHandler = useCallback((h: (() => boolean) | null) => {
+     
+    setListsBackHandler(() => h);
+  }, []);
 
   const handleBackToNav = () => {
-    if (activeSection === 'lists' && listsBackHandler.current?.()) {
+    if (activeSection === 'lists' && listsBackHandler?.()) {
       return; // SharedListsView handled it (cleared shared list → showing user's lists)
     }
     setActiveSection('nav');
@@ -293,7 +303,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   unreadReplyCount={unreadReplyCount}
                   onNavigate={setActiveSection}
                   onSurprise={handleSurprise}
-                  onFeedback={() => { setFeedbackKey((k) => k + 1); setActiveSection('feedback'); }}
+                  onFeedback={handleFeedback}
                 />
               </Box>
 

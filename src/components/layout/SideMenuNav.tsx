@@ -12,7 +12,7 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CasinoIcon from '@mui/icons-material/Casino';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import { ADD_BUSINESS_URL, RANKINGS_COLOR, STATS_COLOR } from '../../constants/ui';
+import { ADD_BUSINESS_URL } from '../../constants/ui';
 import type { Section } from './SideMenu';
 
 interface Props {
@@ -22,7 +22,9 @@ interface Props {
   onFeedback: () => void;
 }
 
-export default function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
+import { memo } from 'react';
+
+export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
   return (
     <>
       <List>
@@ -71,12 +73,12 @@ export default function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, 
         </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('rankings')}>
-          <ListItemIcon><LeaderboardIcon sx={{ color: RANKINGS_COLOR }} /></ListItemIcon>
+          <ListItemIcon><LeaderboardIcon sx={{ color: 'warning.dark' }} /></ListItemIcon>
           <ListItemText primary="Rankings" />
         </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('stats')}>
-          <ListItemIcon><BarChartIcon sx={{ color: STATS_COLOR }} /></ListItemIcon>
+          <ListItemIcon><BarChartIcon sx={{ color: 'secondary.dark' }} /></ListItemIcon>
           <ListItemText primary="Estadísticas" />
         </ListItemButton>
       </List>
@@ -102,4 +104,4 @@ export default function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, 
       <Box sx={{ pb: 1 }} />
     </>
   );
-}
+});

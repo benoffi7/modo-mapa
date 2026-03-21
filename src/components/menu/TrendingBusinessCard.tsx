@@ -43,9 +43,9 @@ export default memo(function TrendingBusinessCard({ business, fullBusiness, rank
   const categoryLabel = CATEGORY_LABELS[business.category as BusinessCategory] ?? business.category;
 
   return (
-    <ListItemButton onClick={handleClick} sx={{ py: 1, px: 2, alignItems: 'flex-start' }}>
+    <ListItemButton onClick={handleClick} sx={{ py: 1.5, px: 2, alignItems: 'flex-start', minHeight: 48 }}>
       <Typography
-        sx={{ minWidth: 32, fontWeight: 700, fontSize: '1.1rem', pt: 0.5 }}
+        sx={{ minWidth: 44, fontWeight: 700, fontSize: '1.1rem', pt: 0.5, textAlign: 'center' }}
       >
         {medal || `#${rank}`}
       </Typography>
@@ -67,7 +67,7 @@ export default memo(function TrendingBusinessCard({ business, fullBusiness, rank
                 label={`+${count} ${label}`}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 22 }}
+                sx={{ fontSize: '0.7rem', height: 24 }}
               />
             );
           })}

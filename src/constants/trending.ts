@@ -1,7 +1,7 @@
 export const TRENDING_WINDOW_DAYS = 7;
 export const TRENDING_MAX_BUSINESSES = 10;
 
-/** Pesos para scoring de trending */
+/** Pesos para scoring de trending. Must match functions/src/constants/trending.ts */
 export const TRENDING_SCORING = {
   ratings: 2,
   comments: 3,
