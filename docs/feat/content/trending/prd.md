@@ -10,7 +10,7 @@
 
 ## Contexto
 
-Los rankings actuales muestran **usuarios** ordenados por contribuciones acumuladas. No hay una vista de "tendencias" que refleje actividad reciente sobre **comercios**, lo cual beneficiaria el descubrimiento de comercios que estan ganando popularidad.
+Los rankings actuales muestran **usuarios** ordenados por contribuciones acumuladas. La seccion "Sugeridos" recomienda comercios basandose en preferencias del usuario, pero no refleja actividad reciente. No hay una vista de "tendencias" que muestre **comercios** ganando popularidad esta semana.
 
 ## Problema
 
@@ -20,24 +20,31 @@ Los rankings actuales muestran **usuarios** ordenados por contribuciones acumula
 
 ## Solucion
 
-### S1: Tab Trending en Rankings
+### S1: Tab Trending en Sugeridos
 
-- Nuevo tab "Tendencia" dentro de la seccion Rankings existente, al mismo nivel que "Esta semana", "Este mes", etc.
-- Al seleccionar el tab, se muestra una lista de **comercios** (no usuarios) ordenados por actividad recibida en los ultimos 7 dias.
-- La UI es distinta al ranking de usuarios: muestra nombre del comercio, categoria, score y desglose de actividad.
+- Nueva pestana "Tendencia" dentro de la seccion **Sugeridos** existente.
+- Al seleccionar el tab, se muestra una lista de **comercios** ordenados por actividad recibida en los ultimos 7 dias.
+- Top 10 comercios.
+- La UI muestra nombre del comercio, categoria, score y desglose de actividad.
 
 ### S2: Cloud Function scheduled para computo
 
 - **No se hace client-side.** Una Cloud Function scheduled (`computeTrendingBusinesses`) corre diariamente a las 3 AM ART.
-- Consulta ratings, comments, favorites y menuPhotos con `createdAt >= hace 7 dias`.
-- Agrupa por `businessId`, calcula score ponderado: `ratings*2 + comments*3 + favorites*1 + photos*5`.
-- Escribe el top 20 en un unico documento Firestore: `trendingBusinesses/current`.
+- Consulta las siguientes senales de actividad con `createdAt >= hace 7 dias`:
+  - **Ratings** (calificaciones)
+  - **Comments** (comentarios)
+  - **Tags** (etiquetas de usuario)
+  - **Prices** (aportes de precios)
+  - **Favorites/Listas** (agregados a listas)
+- Agrupa por `businessId`, calcula score ponderado:
+  - `ratings*2 + comments*3 + tags*1 + prices*2 + favorites*1`
+- Escribe el top 10 en un unico documento Firestore: `trendingBusinesses/current`.
 - El frontend simplemente lee ese documento, sin queries complejas.
 
 ### S3: Indicador visual
 
-- Badge "Trending" en el header de BusinessSheet para comercios que aparecen en la lista trending.
-- Metricas resumidas en la card: "+12 ratings esta semana", "+5 comentarios".
+- Badge "Tendencia" en el header de BusinessSheet para comercios que aparecen en la lista trending.
+- Metricas resumidas en la card: "+12 calificaciones esta semana", "+5 comentarios".
 
 ---
 
@@ -46,7 +53,7 @@ Los rankings actuales muestran **usuarios** ordenados por contribuciones acumula
 | Item | Prioridad | Esfuerzo |
 |------|-----------|----------|
 | Cloud Function computeTrendingBusinesses | Alta | M |
-| Tab Trending en Rankings | Alta | M |
+| Tab Trending en Sugeridos | Alta | M |
 | Servicio + hook frontend | Alta | S |
 | Componente TrendingList | Alta | S |
 | Badge trending en BusinessSheet | Baja | XS |
@@ -62,12 +69,13 @@ Los rankings actuales muestran **usuarios** ordenados por contribuciones acumula
 - Trending por zona geografica.
 - Notificaciones de trending ("X comercio es tendencia").
 - Algoritmo de trending decay (por ahora, ventana fija de 7 dias).
+- Fotos de menu como senal (se excluyen por ahora).
 
 ---
 
 ## Tests
 
-- **Cloud Function**: test unitario de `computeTrendingBusinesses` con datos mock, verificando scoring correcto, ordenamiento y limite de 20. Cobertura >= 80%.
+- **Cloud Function**: test unitario de `computeTrendingBusinesses` con datos mock, verificando scoring correcto, ordenamiento y limite de 10. Cobertura >= 80%.
 - **Hook `useTrending`**: test con mock de servicio, verificando estados loading/data/error.
 - **Servicio `fetchTrending`**: test con mock de Firestore, verificando parsing correcto del documento.
 - **Componente `TrendingList`**: test de rendering con datos mock, verificando que muestra cards con breakdown.
@@ -76,8 +84,8 @@ Los rankings actuales muestran **usuarios** ordenados por contribuciones acumula
 
 ## Success Criteria
 
-1. El tab "Tendencia" en Rankings muestra los comercios con mas actividad en los ultimos 7 dias.
+1. El tab "Tendencia" en Sugeridos muestra los 10 comercios con mas actividad en los ultimos 7 dias.
 2. El calculo se realiza server-side via Cloud Function scheduled, no client-side.
 3. El documento `trendingBusinesses/current` se actualiza diariamente.
-4. Los comercios trending se distinguen visualmente del ranking de usuarios.
+4. Las senales de actividad incluyen: ratings, comments, tags, prices y favorites.
 5. Tests con cobertura >= 80% en CF, hook y servicio.

@@ -222,3 +222,27 @@ export interface SuggestedBusiness {
   score: number;
   reasons: SuggestionReason[];
 }
+
+export interface TrendingBusinessBreakdown {
+  ratings: number;
+  comments: number;
+  userTags: number;
+  priceLevels: number;
+  listItems: number;
+}
+
+export interface TrendingBusiness {
+  businessId: string;
+  name: string;
+  category: string;
+  score: number;
+  breakdown: TrendingBusinessBreakdown;
+  rank: number;
+}
+
+export interface TrendingData {
+  businesses: TrendingBusiness[];
+  computedAt: Date;
+  periodStart: Date;
+  periodEnd: Date;
+}

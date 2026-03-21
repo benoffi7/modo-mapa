@@ -18,6 +18,7 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 | `business.ts` | Niveles de precio, simbolos, chips, labels de categoria |
 | `criteria.ts` | Configuracion de criterios multi-rating (`RATING_CRITERIA`: food, service, price, ambiance, speed) |
 | `suggestions.ts` | Pesos del algoritmo de sugerencias (`SUGGESTION_WEIGHTS`), `MAX_SUGGESTIONS`, `NEARBY_RADIUS_KM` |
+| `trending.ts` | `TRENDING_WINDOW_DAYS` (7), `TRENDING_MAX_BUSINESSES` (10), `TRENDING_SCORING` (pesos por tipo de actividad) |
 | `auth.ts` | PASSWORD_MIN_LENGTH, EMAIL_REGEX, AUTH_ERRORS (en espanol) |
 | `admin.ts` | Email admin, page size, status chips/labels, abuse type labels/colors |
 | `performance.ts` | `PERF_THRESHOLDS` (green/red por vital: LCP, INP, CLS, TTFB), `PERF_FLUSH_DELAY_MS` (30s) |
@@ -43,6 +44,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
 | `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
+| `trending.ts` | `trendingBusinesses` | `fetchTrending` (lee `trendingBusinesses/current`, convierte Timestamps a Dates) |
 | `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
 | `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts), `fetchPerfMetrics` (ultimos N docs de `perfMetrics`), `fetchStorageStats` (callable → `getStorageStats`) |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
@@ -88,6 +90,7 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useUndoDelete` | Hook para undo-delete con `Map` de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
 | `useSwipeActions` | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags del usuario via `services/suggestions.ts`, scoring client-side con Haversine para cercania. Retorna `{ suggestions, isLoading, error }`. Max 10 resultados. |
+| `useTrending` | Trending businesses. Wrapper sobre `useAsyncData` + `fetchTrending`. Retorna `{ data: TrendingData \| null, loading, error, refetch }`. Lee `trendingBusinesses/current` (pre-computed by Cloud Function). |
 
 ### `useBusinessData` — Race condition fix
 

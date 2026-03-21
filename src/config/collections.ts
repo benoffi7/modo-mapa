@@ -18,4 +18,5 @@ export const COLLECTIONS = {
   PERF_METRICS: 'perfMetrics',
   SHARED_LISTS: 'sharedLists',
   LIST_ITEMS: 'listItems',
+  TRENDING_BUSINESSES: 'trendingBusinesses',
 } as const;

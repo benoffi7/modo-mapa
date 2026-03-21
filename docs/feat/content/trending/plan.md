@@ -20,7 +20,6 @@ Ninguna dependencia con otros issues. Se puede implementar de forma independient
 
 - `src/types/index.ts` — agregar `TrendingBusiness`, `TrendingBusinessBreakdown`, `TrendingData`
 - `src/constants/trending.ts` — crear con `TRENDING_WINDOW_DAYS`, `TRENDING_MAX_BUSINESSES`, `TRENDING_SCORING`
-- `src/constants/rankings.ts` — agregar `{ value: 'trending', label: 'Tendencia' }` a `PERIOD_OPTIONS`
 - `src/config/collections.ts` — agregar `TRENDING_BUSINESSES: 'trendingBusinesses'`
 
 **Verificacion:** tipos compilan sin errores.
@@ -54,16 +53,16 @@ Ninguna dependencia con otros issues. Se puede implementar de forma independient
 
 **Verificacion:** `npm test` pasa con >= 80% cobertura en archivos nuevos.
 
-### Paso 5: UI — Tab en Rankings + TrendingList
+### Paso 5: UI — Tab en Sugeridos + TrendingList
 
 **Archivos:**
 
 - `src/components/menu/TrendingList.tsx` — crear componente
 - `src/components/menu/TrendingBusinessCard.tsx` — crear componente
-- `src/components/menu/RankingsView.tsx` — condicional para renderizar TrendingList cuando `periodType === 'trending'`
+- `src/components/menu/SuggestionsView.tsx` — agregar tabs para alternar entre "Para vos" y "Tendencia"
 - `src/__tests__/components/TrendingList.test.ts` — test del componente
 
-**Verificacion:** la app renderiza el tab "Tendencia" y muestra la lista al seleccionarlo.
+**Verificacion:** la app renderiza el tab "Tendencia" en Sugeridos y muestra la lista al seleccionarlo.
 
 ### Paso 6: Badge en BusinessSheet (opcional, baja prioridad)
 
@@ -92,7 +91,7 @@ Ninguna dependencia con otros issues. Se puede implementar de forma independient
 - [ ] `cd functions && npm run build` compila exitosamente
 - [ ] `npm test` pasa con cobertura >= 80% en archivos nuevos
 - [ ] `cd functions && npm test` pasa con cobertura >= 80% en trending.ts
-- [ ] Tab "Tendencia" aparece en Rankings y funciona
+- [ ] Tab "Tendencia" aparece en Sugeridos y funciona
 - [ ] Cloud Function deployable (build exitoso)
 - [ ] Firestore rules actualizadas
 - [ ] Privacy policy: no aplica (no se recopilan datos nuevos del usuario)
