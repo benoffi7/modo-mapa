@@ -4,6 +4,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_VIEWED } from '../../constants/analyticsEvents';
+import { allBusinesses } from '../../hooks/useBusinesses';
 import TrendingBusinessCard from './TrendingBusinessCard';
 
 interface Props {
@@ -40,10 +41,12 @@ export default function TrendingList({ onNavigate }: Props) {
     </Box>
   );
 
+  const businessMap = new Map(allBusinesses.map((b) => [b.id, b]));
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', pb: 1.5 }}>
       {data.businesses.map((biz, i) => (
-        <TrendingBusinessCard key={biz.businessId} business={biz} rank={i + 1} onNavigate={onNavigate} />
+        <TrendingBusinessCard key={biz.businessId} business={biz} fullBusiness={businessMap.get(biz.businessId)} rank={i + 1} onNavigate={onNavigate} />
       ))}
       <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', pt: 1 }}>
         Actualizado: {data.computedAt.toLocaleDateString('es-AR')}

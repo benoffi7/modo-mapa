@@ -5,7 +5,6 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import type { Business } from '../../types';
 import { CATEGORY_LABELS } from '../../types';
-import { useTrending } from '../../hooks/useTrending';
 import DirectionsButton from './DirectionsButton';
 
 interface Props {
@@ -13,11 +12,10 @@ interface Props {
   favoriteButton: ReactNode;
   shareButton?: ReactNode;
   addToListButton?: ReactNode;
+  isTrending?: boolean;
 }
 
-export default function BusinessHeader({ business, favoriteButton, shareButton, addToListButton }: Props) {
-  const { data: trending } = useTrending();
-  const isTrending = trending?.businesses.some((b) => b.businessId === business.id) ?? false;
+export default function BusinessHeader({ business, favoriteButton, shareButton, addToListButton, isTrending }: Props) {
 
   return (
     <Box>
