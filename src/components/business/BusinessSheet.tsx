@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
+import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import BusinessHeader from './BusinessHeader';
 import BusinessRating from './BusinessRating';
@@ -27,6 +28,8 @@ export default function BusinessSheet() {
   const businessId = selectedBusiness?.id ?? null;
   const data = useBusinessData(businessId);
   const { recordVisit } = useVisitHistory();
+  const { data: trendingData } = useTrending();
+  const isTrending = trendingData?.businesses.some((b) => b.businessId === businessId) ?? false;
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [commentsDirty, setCommentsDirty] = useState(false);
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
@@ -142,6 +145,7 @@ export default function BusinessSheet() {
           }}>
             <BusinessHeader
               business={selectedBusiness}
+              isTrending={isTrending}
               favoriteButton={
                 <FavoriteButton
                   businessId={selectedBusiness.id}

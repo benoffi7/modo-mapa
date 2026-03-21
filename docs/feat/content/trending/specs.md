@@ -6,20 +6,35 @@
 
 ---
 
-## S1: Tab Trending en Rankings
+## S1: Tab Trending en Sugeridos
 
-### Constante PERIOD_OPTIONS
+### Implementacion en SuggestionsView
 
-En `src/constants/rankings.ts`, agregar el tab trending al array existente:
+`SuggestionsView` actualmente muestra solo la lista de sugerencias personalizadas. Se agrega un tab switcher para alternar entre "Para vos" y "Tendencia".
+
+En `src/components/menu/SuggestionsView.tsx`, agregar tabs en la parte superior:
 
 ```typescript
-export const PERIOD_OPTIONS = [
-  { value: 'weekly', label: 'Esta semana' },
-  { value: 'monthly', label: 'Este mes' },
-  { value: 'yearly', label: 'Este ano' },
-  { value: 'alltime', label: 'Historico' },
-  { value: 'trending', label: 'Tendencia' },
-] as const;
+import { useState } from 'react';
+import { Tabs, Tab } from '@mui/material';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
+import TrendingList from './TrendingList';
+
+// Dentro del componente, antes del return:
+const [tab, setTab] = useState<'suggestions' | 'trending'>('suggestions');
+
+// En el return, antes del contenido actual:
+<Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 1 }}>
+  <Tab value="suggestions" label="Para vos" icon={<LightbulbOutlinedIcon />} iconPosition="start" />
+  <Tab value="trending" label="Tendencia" icon={<TrendingUpIcon />} iconPosition="start" />
+</Tabs>
+
+{tab === 'trending' ? (
+  <TrendingList onNavigate={onNavigate} />
+) : (
+  // ... contenido actual de sugerencias
+)}
 ```
 
 ### Constantes trending
@@ -28,35 +43,16 @@ Nuevo archivo `src/constants/trending.ts`:
 
 ```typescript
 export const TRENDING_WINDOW_DAYS = 7;
-export const TRENDING_MAX_BUSINESSES = 20;
+export const TRENDING_MAX_BUSINESSES = 10;
 
-/** Pesos para scoring de trending (subconjunto del SCORING de rankings) */
+/** Pesos para scoring de trending */
 export const TRENDING_SCORING = {
   ratings: 2,
   comments: 3,
-  favorites: 1,
-  photos: 5,
+  userTags: 1,
+  priceLevels: 2,
+  listItems: 1,
 } as const;
-```
-
-### Cambios en RankingsView.tsx
-
-Cuando `periodType === 'trending'`, el componente:
-
-- No renderiza `RankingItem` ni `UserScoreCard` (esos son para ranking de usuarios).
-- Renderiza `TrendingList` en su lugar.
-- No muestra el boton de filtro por zona (no aplica a trending).
-
-```typescript
-// En RankingsView.tsx
-import TrendingList from './TrendingList';
-
-// Dentro del render, reemplazar la seccion de contenido:
-{periodType === 'trending' ? (
-  <TrendingList />
-) : (
-  // ... contenido actual de rankings de usuarios
-)}
 ```
 
 ### Componente TrendingList
@@ -69,11 +65,14 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTrending } from '../../hooks/useTrending';
 import TrendingBusinessCard from './TrendingBusinessCard';
-import RankingsEmptyState from './RankingsEmptyState';
 import { logAnalyticsEvent } from '../../services/analytics';
 import { useEffect } from 'react';
 
-export default function TrendingList() {
+interface Props {
+  onNavigate: () => void;
+}
+
+export default function TrendingList({ onNavigate }: Props) {
   const { data, loading, error } = useTrending();
 
   useEffect(() => {
@@ -95,13 +94,17 @@ export default function TrendingList() {
   );
 
   if (!data || data.businesses.length === 0) return (
-    <RankingsEmptyState noRankingData />
+    <Box sx={{ p: 3, textAlign: 'center' }}>
+      <Typography variant="body2" color="text.secondary">
+        No hay comercios en tendencia esta semana.
+      </Typography>
+    </Box>
   );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pb: 1.5 }}>
       {data.businesses.map((biz, i) => (
-        <TrendingBusinessCard key={biz.businessId} business={biz} rank={i + 1} />
+        <TrendingBusinessCard key={biz.businessId} business={biz} rank={i + 1} onNavigate={onNavigate} />
       ))}
       <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', pt: 1 }}>
         Actualizado: {data.computedAt.toLocaleDateString('es-AR')}
@@ -118,7 +121,7 @@ Nuevo archivo `src/components/menu/TrendingBusinessCard.tsx`. Muestra:
 - Posicion (rank) con medalla para top 3.
 - Nombre del comercio y categoria.
 - Score total.
-- Breakdown: iconos con "+N ratings", "+N comentarios", "+N favoritos", "+N fotos".
+- Breakdown: iconos con "+N calificaciones", "+N comentarios", "+N tags", "+N precios", "+N listas".
 - Click navega al comercio (`trending_business_clicked` event).
 
 ---
@@ -127,14 +130,15 @@ Nuevo archivo `src/components/menu/TrendingBusinessCard.tsx`. Muestra:
 
 ### Data model
 
-Nuevo tipo en `src/types/index.ts` (o archivo dedicado):
+Nuevo tipo en `src/types/index.ts`:
 
 ```typescript
 export interface TrendingBusinessBreakdown {
   ratings: number;
   comments: number;
-  favorites: number;
-  photos: number;
+  userTags: number;
+  priceLevels: number;
+  listItems: number;
 }
 
 export interface TrendingBusiness {
@@ -168,7 +172,7 @@ Estructura en Firestore:
       "name": "Cafe del Sur",
       "category": "cafe",
       "score": 47,
-      "breakdown": { "ratings": 8, "comments": 5, "favorites": 3, "photos": 2 },
+      "breakdown": { "ratings": 8, "comments": 5, "userTags": 3, "priceLevels": 2, "listItems": 4 },
       "rank": 1
     }
   ],
@@ -198,15 +202,16 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 
-const TRENDING_SCORING = { ratings: 2, comments: 3, favorites: 1, photos: 5 } as const;
-const MAX_BUSINESSES = 20;
+const TRENDING_SCORING = { ratings: 2, comments: 3, userTags: 1, priceLevels: 2, listItems: 1 } as const;
+const MAX_BUSINESSES = 10;
 const WINDOW_DAYS = 7;
 
 interface BusinessAccumulator {
   ratings: number;
   comments: number;
-  favorites: number;
-  photos: number;
+  userTags: number;
+  priceLevels: number;
+  listItems: number;
 }
 
 async function countByBusiness(
@@ -228,31 +233,11 @@ async function countByBusiness(
   return counts;
 }
 
-async function countApprovedPhotosByBusiness(
-  db: FirebaseFirestore.Firestore,
-  since: Date,
-): Promise<Map<string, number>> {
-  const snap = await db
-    .collection('menuPhotos')
-    .where('status', '==', 'approved')
-    .where('createdAt', '>=', Timestamp.fromDate(since))
-    .select('businessId')
-    .get();
-
-  const counts = new Map<string, number>();
-  for (const doc of snap.docs) {
-    const bid = doc.data().businessId as string;
-    if (bid) counts.set(bid, (counts.get(bid) ?? 0) + 1);
-  }
-  return counts;
-}
-
 async function getBusinessNames(
   db: FirebaseFirestore.Firestore,
   businessIds: string[],
 ): Promise<Map<string, { name: string; category: string }>> {
   const result = new Map<string, { name: string; category: string }>();
-  // Batch reads in chunks of 30 (Firestore in-array limit)
   for (let i = 0; i < businessIds.length; i += 30) {
     const chunk = businessIds.slice(i, i + 30);
     const snap = await db
@@ -282,33 +267,34 @@ export const computeTrendingBusinesses = onSchedule(
     const since = new Date(now);
     since.setDate(since.getDate() - WINDOW_DAYS);
 
-    const [ratings, comments, favorites, photos] = await Promise.all([
+    const [ratings, comments, userTags, priceLevels, listItems] = await Promise.all([
       countByBusiness(db, 'ratings', since),
       countByBusiness(db, 'comments', since),
-      countByBusiness(db, 'favorites', since),
-      countApprovedPhotosByBusiness(db, since),
+      countByBusiness(db, 'userTags', since),
+      countByBusiness(db, 'priceLevels', since),
+      countByBusiness(db, 'listItems', since),
     ]);
 
-    // Merge all business IDs
     const allBusinessIds = new Set<string>();
-    [ratings, comments, favorites, photos].forEach((m) => {
+    [ratings, comments, userTags, priceLevels, listItems].forEach((m) => {
       for (const bid of m.keys()) allBusinessIds.add(bid);
     });
 
-    // Calculate scores
     const scored: Array<{ businessId: string; score: number; breakdown: BusinessAccumulator }> = [];
     for (const businessId of allBusinessIds) {
       const breakdown: BusinessAccumulator = {
         ratings: ratings.get(businessId) ?? 0,
         comments: comments.get(businessId) ?? 0,
-        favorites: favorites.get(businessId) ?? 0,
-        photos: photos.get(businessId) ?? 0,
+        userTags: userTags.get(businessId) ?? 0,
+        priceLevels: priceLevels.get(businessId) ?? 0,
+        listItems: listItems.get(businessId) ?? 0,
       };
       const score =
         breakdown.ratings * TRENDING_SCORING.ratings +
         breakdown.comments * TRENDING_SCORING.comments +
-        breakdown.favorites * TRENDING_SCORING.favorites +
-        breakdown.photos * TRENDING_SCORING.photos;
+        breakdown.userTags * TRENDING_SCORING.userTags +
+        breakdown.priceLevels * TRENDING_SCORING.priceLevels +
+        breakdown.listItems * TRENDING_SCORING.listItems;
 
       if (score > 0) scored.push({ businessId, score, breakdown });
     }
@@ -316,7 +302,6 @@ export const computeTrendingBusinesses = onSchedule(
     scored.sort((a, b) => b.score - a.score);
     const top = scored.slice(0, MAX_BUSINESSES);
 
-    // Fetch business names
     const nameMap = await getBusinessNames(
       db,
       top.map((s) => s.businessId),
@@ -410,14 +395,7 @@ TRENDING_BUSINESSES: 'trendingBusinesses',
 
 ### Logica
 
-El componente `BusinessSheet` (o su header) recibe como prop o via contexto si el `businessId` actual esta en la lista trending.
-
-Opciones de implementacion:
-
-1. **Context/store**: Al cargar trending, guardar los IDs en un set accesible globalmente.
-2. **Prop drilling**: Pasar `isTrending` desde el padre si ya tiene la data.
-
-Implementacion recomendada: crear un pequeno contexto `TrendingContext` que expone `isTrending(businessId): boolean` y se alimenta del mismo `useTrending`.
+Crear un contexto `TrendingContext` que expone `isTrending(businessId): boolean` y se alimenta del mismo `useTrending`.
 
 ### Chip visual
 
@@ -452,10 +430,10 @@ Eventos a registrar:
 
 Archivo: `functions/src/__tests__/trending.test.ts`
 
-- Mock de Firestore con datos de ratings, comments, favorites, menuPhotos.
-- Verificar que el scoring es correcto (ratings*2 + comments*3 + favorites*1 + photos*5).
+- Mock de Firestore con datos de ratings, comments, userTags, priceLevels, listItems.
+- Verificar que el scoring es correcto (ratings*2 + comments*3 + userTags*1 + priceLevels*2 + listItems*1).
 - Verificar ordenamiento descendente por score.
-- Verificar limite de 20 businesses.
+- Verificar limite de 10 businesses.
 - Verificar que escribe a `trendingBusinesses/current` con estructura correcta.
 - Verificar que solo considera documentos con `createdAt >= 7 dias atras`.
 

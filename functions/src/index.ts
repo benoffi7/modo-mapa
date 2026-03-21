@@ -21,6 +21,7 @@ export { cleanupRejectedPhotos } from './scheduled/cleanupPhotos';
 export { computeWeeklyRanking, computeMonthlyRanking, computeAlltimeRanking } from './scheduled/rankings';
 export { cleanupExpiredNotifications } from './scheduled/cleanupNotifications';
 export { generateFeaturedLists } from './scheduled/featuredLists';
+export { computeTrendingBusinesses } from './scheduled/trending';
 
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';

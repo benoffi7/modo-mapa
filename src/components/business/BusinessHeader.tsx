@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import type { Business } from '../../types';
 import { CATEGORY_LABELS } from '../../types';
 import DirectionsButton from './DirectionsButton';
@@ -11,9 +12,11 @@ interface Props {
   favoriteButton: ReactNode;
   shareButton?: ReactNode;
   addToListButton?: ReactNode;
+  isTrending?: boolean;
 }
 
-export default function BusinessHeader({ business, favoriteButton, shareButton, addToListButton }: Props) {
+export default function BusinessHeader({ business, favoriteButton, shareButton, addToListButton, isTrending }: Props) {
+
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -21,11 +24,22 @@ export default function BusinessHeader({ business, favoriteButton, shareButton, 
           <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
             {business.name}
           </Typography>
-          <Chip
-            label={CATEGORY_LABELS[business.category]}
-            size="small"
-            sx={{ mt: 0.5, fontSize: '0.75rem', height: 24 }}
-          />
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+            <Chip
+              label={CATEGORY_LABELS[business.category]}
+              size="small"
+              sx={{ fontSize: '0.75rem', height: 24 }}
+            />
+            {isTrending && (
+              <Chip
+                label="Tendencia"
+                size="small"
+                color="secondary"
+                icon={<TrendingUpIcon />}
+                sx={{ fontSize: '0.75rem', height: 24 }}
+              />
+            )}
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {addToListButton}
