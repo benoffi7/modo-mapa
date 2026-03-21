@@ -21,13 +21,16 @@ export default function TrendingList({ onNavigate }: Props) {
   }, []);
 
   if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-      <CircularProgress size={32} />
+    <Box sx={{ p: 3, textAlign: 'center' }}>
+      <CircularProgress size={24} sx={{ mb: 1 }} />
+      <Typography variant="body2" color="text.secondary">
+        Cargando...
+      </Typography>
     </Box>
   );
 
   if (error) return (
-    <Box sx={{ p: 3, textAlign: 'center' }}>
+    <Box role="alert" sx={{ p: 3, textAlign: 'center' }}>
       <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
       <Typography variant="body2" color="text.secondary">
         Error cargando tendencias.
