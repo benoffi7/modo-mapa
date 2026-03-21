@@ -1,18 +1,11 @@
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
-import type { TrendingData, TrendingBusiness } from '../types';
+import { trendingDataConverter } from '../config/converters';
+import type { TrendingData } from '../types';
 
 export async function fetchTrending(): Promise<TrendingData | null> {
-  const snap = await getDoc(doc(db, COLLECTIONS.TRENDING_BUSINESSES, 'current'));
+  const snap = await getDoc(doc(db, COLLECTIONS.TRENDING_BUSINESSES, 'current').withConverter(trendingDataConverter));
   if (!snap.exists()) return null;
-
-  const raw = snap.data();
-  if (!raw.computedAt || !raw.periodStart || !raw.periodEnd) return null;
-  return {
-    businesses: (raw.businesses ?? []) as TrendingBusiness[],
-    computedAt: (raw.computedAt as Timestamp).toDate(),
-    periodStart: (raw.periodStart as Timestamp).toDate(),
-    periodEnd: (raw.periodEnd as Timestamp).toDate(),
-  };
+  return snap.data();
 }

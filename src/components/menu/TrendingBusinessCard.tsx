@@ -43,7 +43,7 @@ export default memo(function TrendingBusinessCard({ business, fullBusiness, rank
   const categoryLabel = CATEGORY_LABELS[business.category as BusinessCategory] ?? business.category;
 
   return (
-    <ListItemButton onClick={handleClick} sx={{ py: 1.5, px: 2, alignItems: 'flex-start', minHeight: 48 }}>
+    <ListItemButton onClick={handleClick} disabled={!fullBusiness} sx={{ py: 1.5, px: 2, alignItems: 'flex-start', minHeight: 48 }}>
       <Typography
         sx={{ minWidth: 44, fontWeight: 700, fontSize: '1.1rem', pt: 0.5, textAlign: 'center' }}
       >
