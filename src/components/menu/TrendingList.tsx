@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useTrending } from '../../hooks/useTrending';
@@ -13,6 +13,7 @@ interface Props {
 
 export default function TrendingList({ onNavigate }: Props) {
   const { data, loading, error } = useTrending();
+  const businessMap = useMemo(() => new Map(allBusinesses.map((b) => [b.id, b])), []);
 
   useEffect(() => {
     trackEvent(EVT_TRENDING_VIEWED);
@@ -41,12 +42,10 @@ export default function TrendingList({ onNavigate }: Props) {
     </Box>
   );
 
-  const businessMap = new Map(allBusinesses.map((b) => [b.id, b]));
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', pb: 1.5 }}>
-      {data.businesses.map((biz, i) => (
-        <TrendingBusinessCard key={biz.businessId} business={biz} fullBusiness={businessMap.get(biz.businessId)} rank={i + 1} onNavigate={onNavigate} />
+      {data.businesses.map((biz) => (
+        <TrendingBusinessCard key={biz.businessId} business={biz} fullBusiness={businessMap.get(biz.businessId)} rank={biz.rank} onNavigate={onNavigate} />
       ))}
       <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', pt: 1 }}>
         Actualizado: {data.computedAt.toLocaleDateString('es-AR')}

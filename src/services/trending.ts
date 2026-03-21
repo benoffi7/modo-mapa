@@ -8,6 +8,7 @@ export async function fetchTrending(): Promise<TrendingData | null> {
   if (!snap.exists()) return null;
 
   const raw = snap.data();
+  if (!raw.computedAt || !raw.periodStart || !raw.periodEnd) return null;
   return {
     businesses: (raw.businesses ?? []) as TrendingBusiness[],
     computedAt: (raw.computedAt as Timestamp).toDate(),
