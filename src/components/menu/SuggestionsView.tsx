@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   List,
@@ -61,10 +61,10 @@ export default function SuggestionsView({ onNavigate }: Props) {
     setSortBy,
   } = useListFilters(suggestionItems, { userLocation: sortLocation });
 
-  const handleSelectBusiness = useCallback((business: Business) => {
+  const handleSelectBusiness = (business: Business) => {
     setSelectedBusiness(business);
     onNavigate();
-  }, [setSelectedBusiness, onNavigate]);
+  };
 
   const renderSuggestions = () => {
     if (isLoading) {
