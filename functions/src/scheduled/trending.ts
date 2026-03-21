@@ -1,10 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
-
-const TRENDING_SCORING = { ratings: 2, comments: 3, userTags: 1, priceLevels: 2, listItems: 1 } as const;
-const MAX_BUSINESSES = 10;
-const WINDOW_DAYS = 7;
+import { TRENDING_SCORING, TRENDING_MAX_BUSINESSES, TRENDING_WINDOW_DAYS } from '../constants/trending';
 
 export interface BusinessAccumulator {
   ratings: number;
@@ -88,7 +85,7 @@ export function computeScores(
   }
 
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, MAX_BUSINESSES);
+  return scored.slice(0, TRENDING_MAX_BUSINESSES);
 }
 
 export const computeTrendingBusinesses = onSchedule(
@@ -100,7 +97,7 @@ export const computeTrendingBusinesses = onSchedule(
     const db = getDb();
     const now = new Date();
     const since = new Date(now);
-    since.setDate(since.getDate() - WINDOW_DAYS);
+    since.setDate(since.getDate() - TRENDING_WINDOW_DAYS);
 
     const [ratings, comments, userTags, priceLevels, listItems] = await Promise.all([
       countByBusiness(db, 'ratings', since),
