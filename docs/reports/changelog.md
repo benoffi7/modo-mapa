@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| — | — | Config: vitest excluye .claude/worktrees (fix false failures), loading states unificados entre tabs, role="alert" en error states para accesibilidad |
 | — | [#170](https://github.com/benoffi7/modo-mapa/issues/170) | Tech debt: trendingDataConverter tipado con Number() defensivo, fetchTrending con withConverter, error states unificados (ErrorOutlineIcon), aria-label en Tabs, disabled en TrendingBusinessCard sin fullBusiness, eliminado src/constants/trending.ts (constantes solo server-side) |
 | — | [#169](https://github.com/benoffi7/modo-mapa/issues/169), [#166](https://github.com/benoffi7/modo-mapa/issues/166) | Tech debt: TRENDING_SCORING single source of truth (eliminado del cliente), useTrending cache (10min TTL), chip heights normalizados 24px, touch target fixes, SideMenuNav memo(), memoización handlers SideMenu/RatingsList, businessMap useMemo en TrendingList, theme tokens reemplazando hex hardcodeados, guard timestamps en fetchTrending, rank desde documento, lint fixes (react-hooks/immutability, set-state-in-effect) |
 | v2.24.0 | [#140](https://github.com/benoffi7/modo-mapa/issues/140) | Trending: tab "Tendencia" en Sugeridos con top 10 comercios populares de la semana. Cloud Function diaria `computeTrendingBusinesses` (scoring: ratings*2 + comments*3 + tags*1 + prices*2 + listas*1). Badge "Tendencia" en BusinessSheet. Analytics: trending_viewed, trending_business_clicked. Colección `trendingBusinesses/current` |
