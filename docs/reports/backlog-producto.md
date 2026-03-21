@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-20*
+*Actualizado: 2026-03-20 (post v2.24.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -11,20 +11,19 @@
 
 ## Roadmap por Milestone
 
-### v2.23.0 — 28 abr – 4 may
+### v2.24.0 — 28 abr – 4 may
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
-| [#140](https://github.com/benoffi7/modo-mapa/issues/140) | Trending: comercios populares esta semana | discovery |
 | [#127](https://github.com/benoffi7/modo-mapa/issues/127) | Preguntas y respuestas en comercios | social |
 
-### v2.24.0 — 5 may – 11 may
+### v2.25.0 — 5 may – 11 may
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
 | [#131](https://github.com/benoffi7/modo-mapa/issues/131) | Check-in: Fui acá | social |
 
-### v2.25.0 — 12 may – 18 may
+### v2.26.0 — 12 may – 18 may
 
 | Issue | Título | Etiqueta |
 |-------|--------|----------|
@@ -44,7 +43,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Issues abiertos | 7 |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137, #154 (30) |
-| Versiones publicadas | v2.10.0 – v2.23.0 |
-| Milestones planificados | 4 (v2.23.0 – v3.0.0) |
+| Issues abiertos | 6 |
+| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137, #154, #140 (31) |
+| Versiones publicadas | v2.10.0 – v2.24.0 |
+| Milestones planificados | 4 (v2.24.0 – v3.0.0) |
