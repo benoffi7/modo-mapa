@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_VIEWED } from '../../constants/analyticsEvents';
@@ -27,7 +28,8 @@ export default function TrendingList({ onNavigate }: Props) {
 
   if (error) return (
     <Box sx={{ p: 3, textAlign: 'center' }}>
-      <Typography variant="body2" color="error">
+      <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+      <Typography variant="body2" color="text.secondary">
         Error cargando tendencias.
       </Typography>
     </Box>

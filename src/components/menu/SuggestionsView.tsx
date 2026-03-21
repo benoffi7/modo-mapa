@@ -165,6 +165,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
         value={tab}
         onChange={(_, v) => setTab(v)}
         variant="fullWidth"
+        aria-label="Sugerencias y tendencias"
         sx={{ mb: 1, minHeight: 40 }}
       >
         <Tab

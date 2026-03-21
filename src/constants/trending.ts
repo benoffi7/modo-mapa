@@ -1,2 +1,0 @@
-export const TRENDING_WINDOW_DAYS = 7;
-export const TRENDING_MAX_BUSINESSES = 10;
