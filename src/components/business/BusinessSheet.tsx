@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { SwipeableDrawer, Box, Divider, IconButton, Tooltip } from '@mui/material';
+import { useState, useEffect, useMemo } from 'react';
+import { SwipeableDrawer, Box, Divider, IconButton, Tooltip, Tabs, Tab } from '@mui/material';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ import BusinessPriceLevel from './BusinessPriceLevel';
 import BusinessTags from './BusinessTags';
 import MenuPhotoSection from './MenuPhotoSection';
 import BusinessComments from './BusinessComments';
+import BusinessQuestions from './BusinessQuestions';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
@@ -32,8 +33,10 @@ export default function BusinessSheet() {
   const isTrending = trendingData?.businesses.some((b) => b.businessId === businessId) ?? false;
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [commentsDirty, setCommentsDirty] = useState(false);
+  const [activeTab, setActiveTab] = useState<'comments' | 'questions'>('comments');
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
+  const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
 
   useEffect(() => {
@@ -195,14 +198,33 @@ export default function BusinessSheet() {
               onPhotoChange={() => data.refetch('menuPhotos')}
             />
             <Divider sx={{ my: 1.5 }} />
-            <BusinessComments
-              businessId={selectedBusiness.id}
-              comments={data.comments}
-              userCommentLikes={data.userCommentLikes}
-              isLoading={data.isLoading}
-              onCommentsChange={() => data.refetch('comments')}
-              onDirtyChange={setCommentsDirty}
-            />
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              variant="fullWidth"
+              sx={{ minHeight: 36, mb: 1, '& .MuiTab-root': { minHeight: 36, textTransform: 'none', fontSize: '0.85rem' } }}
+            >
+              <Tab label="Comentarios" value="comments" />
+              <Tab label="Preguntas" value="questions" />
+            </Tabs>
+            {activeTab === 'comments' ? (
+              <BusinessComments
+                businessId={selectedBusiness.id}
+                comments={regularComments}
+                userCommentLikes={data.userCommentLikes}
+                isLoading={data.isLoading}
+                onCommentsChange={() => data.refetch('comments')}
+                onDirtyChange={setCommentsDirty}
+              />
+            ) : (
+              <BusinessQuestions
+                businessId={selectedBusiness.id}
+                comments={data.comments}
+                userCommentLikes={data.userCommentLikes}
+                isLoading={data.isLoading}
+                onCommentsChange={() => data.refetch('comments')}
+              />
+            )}
           </Box>
           )}
         </Box>

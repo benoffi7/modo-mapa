@@ -258,6 +258,17 @@ describe('onCommentCreated', () => {
 
     expect(mockCreateNotification).not.toHaveBeenCalled();
   });
+
+  it('handles question type without errors', async () => {
+    createMockDb();
+    const snapRef = { delete: vi.fn() };
+    await handlers['created:comments/{commentId}']({
+      data: { data: () => ({ userId: 'u1', text: 'Do you have vegan?', businessId: 'b1', type: 'question' }), ref: snapRef },
+    });
+
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'comments', 1);
+    expect(snapRef.delete).not.toHaveBeenCalled();
+  });
 });
 
 describe('onCommentDeleted', () => {

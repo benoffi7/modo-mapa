@@ -54,6 +54,7 @@ export interface Comment {
   flagged?: boolean;
   parentId?: string;
   replyCount?: number;
+  type?: 'comment' | 'question';
 }
 
 export interface CommentLike {

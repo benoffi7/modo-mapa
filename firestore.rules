@@ -99,7 +99,7 @@ service cloud.firestore {
     match /comments/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId'])
+        && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId', 'type'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.userName.size() > 0
@@ -107,7 +107,8 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.createdAt == request.time
-        && (!('parentId' in request.resource.data) || (request.resource.data.parentId is string && request.resource.data.parentId.size() > 0 && request.resource.data.parentId.size() <= 40));
+        && (!('parentId' in request.resource.data) || (request.resource.data.parentId is string && request.resource.data.parentId.size() > 0 && request.resource.data.parentId.size() <= 40))
+        && (!('type' in request.resource.data) || request.resource.data.type in ['comment', 'question']);
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt'])
