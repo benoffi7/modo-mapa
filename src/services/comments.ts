@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -9,6 +9,7 @@ import { commentConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import { MAX_COMMENT_LENGTH, MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
+import { MAX_QUESTION_LENGTH } from '../constants/questions';
 import type { Comment } from '../types';
 
 export function getCommentsCollection(): CollectionReference<Comment> {
@@ -80,4 +81,44 @@ export async function likeComment(userId: string, commentId: string): Promise<vo
 export async function unlikeComment(userId: string, commentId: string): Promise<void> {
   const docId = `${userId}__${commentId}`;
   await deleteDoc(doc(db, COLLECTIONS.COMMENT_LIKES, docId));
+}
+
+export async function fetchQuestions(businessId: string): Promise<Comment[]> {
+  const q = query(
+    getCommentsCollection(),
+    where('businessId', '==', businessId),
+    where('type', '==', 'question'),
+    orderBy('createdAt', 'desc'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data());
+}
+
+export async function createQuestion(
+  userId: string,
+  userName: string,
+  businessId: string,
+  text: string,
+): Promise<string> {
+  const trimmedText = text.trim();
+  const trimmedName = userName.trim();
+  if (!trimmedText || trimmedText.length > MAX_QUESTION_LENGTH) {
+    throw new Error('Question text must be 1-500 characters');
+  }
+  if (!trimmedName || trimmedName.length > MAX_DISPLAY_NAME_LENGTH) {
+    throw new Error('User name must be 1-30 characters');
+  }
+
+  const ref = await addDoc(collection(db, COLLECTIONS.COMMENTS), {
+    userId,
+    userName: trimmedName,
+    businessId,
+    text: trimmedText,
+    type: 'question',
+    createdAt: serverTimestamp(),
+  });
+
+  invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+  trackEvent('question_created', { business_id: businessId });
+  return ref.id;
 }

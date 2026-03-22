@@ -48,6 +48,7 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       businessId: comment.businessId,
       text: comment.text,
       createdAt: comment.createdAt,
+      ...(comment.type && { type: comment.type }),
     };
   },
   fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): Comment {
@@ -64,6 +65,7 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       ...(d.flagged === true ? { flagged: true } : {}),
       ...(d.parentId != null && { parentId: d.parentId as string }),
       ...(d.replyCount != null && { replyCount: d.replyCount as number }),
+      ...(d.type != null && { type: d.type as 'comment' | 'question' }),
     };
   },
 };

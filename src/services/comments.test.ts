@@ -12,6 +12,8 @@ const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
 const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 
+const mockGetDocs = vi.fn().mockResolvedValue({ docs: [] });
+
 vi.mock('firebase/firestore', () => {
   const withConverterFn = vi.fn(function (this: unknown) { return this; });
   return {
@@ -20,12 +22,16 @@ vi.mock('firebase/firestore', () => {
     deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
     updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
     setDoc: (...args: unknown[]) => mockSetDoc(...args),
+    getDocs: (...args: unknown[]) => mockGetDocs(...args),
     doc: vi.fn().mockReturnValue({}),
     serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
+    query: vi.fn().mockReturnValue({}),
+    where: vi.fn().mockReturnValue({}),
+    orderBy: vi.fn().mockReturnValue({}),
   };
 });
 
-import { addComment, editComment, deleteComment, getCommentsCollection, likeComment, unlikeComment } from './comments';
+import { addComment, editComment, deleteComment, getCommentsCollection, likeComment, unlikeComment, createQuestion, fetchQuestions } from './comments';
 
 describe('addComment — input validation', () => {
   it('throws on empty text', async () => {
@@ -129,5 +135,47 @@ describe('unlikeComment', () => {
     mockDeleteDoc.mockClear();
     await unlikeComment('u1', 'c1');
     expect(mockDeleteDoc).toHaveBeenCalled();
+  });
+});
+
+describe('createQuestion', () => {
+  it('creates a comment with type question', async () => {
+    mockAddDoc.mockClear();
+    mockAddDoc.mockResolvedValue({ id: 'q1' });
+    const id = await createQuestion('u1', 'User', 'b1', 'Do you have vegan options?');
+    expect(id).toBe('q1');
+    const data = mockAddDoc.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.type).toBe('question');
+    expect(data.text).toBe('Do you have vegan options?');
+    expect(data.userId).toBe('u1');
+    expect(data.businessId).toBe('b1');
+  });
+
+  it('throws on empty text', async () => {
+    await expect(createQuestion('u1', 'User', 'b1', '')).rejects.toThrow('Question text must be 1-500 characters');
+  });
+
+  it('throws on text exceeding 500 characters', async () => {
+    await expect(createQuestion('u1', 'User', 'b1', 'a'.repeat(501))).rejects.toThrow('Question text must be 1-500 characters');
+  });
+
+  it('throws on empty userName', async () => {
+    await expect(createQuestion('u1', '', 'b1', 'hello')).rejects.toThrow('User name must be 1-30 characters');
+  });
+
+  it('trims text before saving', async () => {
+    mockAddDoc.mockClear();
+    mockAddDoc.mockResolvedValue({ id: 'q2' });
+    await createQuestion('u1', 'User', 'b1', '  question?  ');
+    const data = mockAddDoc.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.text).toBe('question?');
+  });
+});
+
+describe('fetchQuestions', () => {
+  it('returns an array from getDocs', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    const result = await fetchQuestions('b1');
+    expect(result).toEqual([]);
   });
 });

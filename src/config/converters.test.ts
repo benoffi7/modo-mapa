@@ -129,6 +129,28 @@ describe('commentConverter', () => {
     const snap = mockSnapshot({ ...baseData, likeCount: 42 });
     expect(commentConverter.fromFirestore(snap).likeCount).toBe(42);
   });
+
+  it('toFirestore includes type when present', () => {
+    const comment = { id: 'c1', ...baseData, likeCount: 0, type: 'question' as const };
+    const result = commentConverter.toFirestore(comment);
+    expect(result.type).toBe('question');
+  });
+
+  it('toFirestore omits type when not present', () => {
+    const comment = { id: 'c1', ...baseData, likeCount: 0 };
+    const result = commentConverter.toFirestore(comment);
+    expect(result).not.toHaveProperty('type');
+  });
+
+  it('fromFirestore includes type when present', () => {
+    const snap = mockSnapshot({ ...baseData, type: 'question' });
+    expect(commentConverter.fromFirestore(snap).type).toBe('question');
+  });
+
+  it('fromFirestore omits type when not present', () => {
+    const snap = mockSnapshot(baseData);
+    expect(commentConverter.fromFirestore(snap)).not.toHaveProperty('type');
+  });
 });
 
 // ---------------------------------------------------------------------------

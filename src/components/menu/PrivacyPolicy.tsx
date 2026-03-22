@@ -65,6 +65,7 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Contenido generado:</strong> listas de comercios (nombre, descripción, contenido),
+            preguntas sobre comercios, respuestas a preguntas,
             comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
@@ -103,7 +104,8 @@ export default function PrivacyPolicy() {
             en Configuración, Firebase Analytics (GA4) recopila eventos anónimos de
             navegación y uso (ej: vistas de comercios, búsquedas). También se registran
             eventos relacionados con la autenticación (account_created, email_sign_in,
-            sign_out, password_changed) y la propiedad de usuario auth_type. Estos eventos
+            sign_out, password_changed), eventos de preguntas y respuestas (question_created,
+            question_answered, question_viewed) y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
           <Li>
