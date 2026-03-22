@@ -1,9 +1,17 @@
 # Social
 
-
+- [Check-in](check-in/)
 - [Comments 2.0](comments-2.0/)
 - [Comments Improvements](comments-improvements/)
 - [Comments Next](comments-next/)
 - [Custom User Tags](custom-user-tags/)
+- [Listas Colaborativas](listas-colaborativas/)
+- [Listas Compartidas](listas-compartidas/)
+- [Listas Sugeridas](listas-sugeridas/)
+- [Mejoras Lista Compartida](mejoras-lista-compartida/)
 - [Menu Comentarios](menu-comentarios/)
 - [Menu Favoritos](menu-favoritos/)
+- [Preguntas y Respuestas](preguntas-respuestas/)
+- [Rate Limit Precheck](rate-limit-precheck/)
+- [Recomendaciones entre Usuarios](recomendaciones-usuarios/)
+- [Seguir Usuarios](seguir-usuarios/)
