@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| v2.26.0 | [#131](https://github.com/benoffi7/modo-mapa/issues/131) | Check-in: botón "Hacer check-in" en BusinessSheet, historial "Mis visitas" en SideMenu, cooldown 4h por comercio, rate limit 10/día (Cloud Function), validación soft de proximidad (500m), desmarcar visita, Firestore indexes compuestos, privacy policy actualizada |
 | v2.25.0 | [#127](https://github.com/benoffi7/modo-mapa/issues/127) | Preguntas y respuestas en comercios: tabs Comentarios/Preguntas en BusinessSheet, crear preguntas, responder, mejor respuesta destacada por likes, badge "Pregunta" en menú lateral, analytics (question_created/answered/viewed), privacy policy actualizada |
 | — | — | Config: vitest excluye .claude/worktrees (fix false failures), loading states unificados entre tabs, role="alert" en error states para accesibilidad |
 | — | [#170](https://github.com/benoffi7/modo-mapa/issues/170) | Tech debt: trendingDataConverter tipado con Number() defensivo, fetchTrending con withConverter, error states unificados (ErrorOutlineIcon), aria-label en Tabs, disabled en TrendingBusinessCard sin fullBusiness, eliminado src/constants/trending.ts (constantes solo server-side) |
