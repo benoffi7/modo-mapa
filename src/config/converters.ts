@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -339,6 +339,35 @@ export const sharedListConverter: FirestoreDataConverter<SharedList> = {
       itemCount: Number(d.itemCount ?? 0),
       createdAt: toDate(d.createdAt),
       updatedAt: toDate(d.updatedAt),
+    };
+  },
+};
+
+export const trendingDataConverter: FirestoreDataConverter<TrendingData> = {
+  toFirestore(data: TrendingData) {
+    return { businesses: data.businesses, computedAt: data.computedAt, periodStart: data.periodStart, periodEnd: data.periodEnd };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): TrendingData {
+    const d = snapshot.data(options);
+    const businesses: TrendingBusiness[] = ((d.businesses ?? []) as Array<Record<string, unknown>>).map((b) => ({
+      businessId: String(b.businessId ?? ''),
+      name: String(b.name ?? ''),
+      category: String(b.category ?? ''),
+      score: Number(b.score ?? 0),
+      rank: Number(b.rank ?? 0),
+      breakdown: {
+        ratings: Number((b.breakdown as Record<string, unknown>)?.ratings ?? 0),
+        comments: Number((b.breakdown as Record<string, unknown>)?.comments ?? 0),
+        userTags: Number((b.breakdown as Record<string, unknown>)?.userTags ?? 0),
+        priceLevels: Number((b.breakdown as Record<string, unknown>)?.priceLevels ?? 0),
+        listItems: Number((b.breakdown as Record<string, unknown>)?.listItems ?? 0),
+      },
+    }));
+    return {
+      businesses,
+      computedAt: toDate(d.computedAt),
+      periodStart: toDate(d.periodStart),
+      periodEnd: toDate(d.periodEnd),
     };
   },
 };

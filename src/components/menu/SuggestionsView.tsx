@@ -80,7 +80,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
 
     if (error) {
       return (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Box role="alert" sx={{ p: 3, textAlign: 'center' }}>
           <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
           <Typography variant="body2" color="text.secondary">
             No se pudieron cargar las sugerencias
@@ -144,7 +144,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
                           color={REASON_COLORS[reason]}
                           variant="outlined"
                           component="span"
-                          sx={{ fontSize: '0.7rem', height: 20 }}
+                          sx={{ fontSize: '0.7rem', height: 24 }}
                         />
                       ))}
                     </Box>
@@ -165,6 +165,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
         value={tab}
         onChange={(_, v) => setTab(v)}
         variant="fullWidth"
+        aria-label="Sugerencias y tendencias"
         sx={{ mb: 1, minHeight: 40 }}
       >
         <Tab
