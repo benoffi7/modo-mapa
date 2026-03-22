@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
           Modo Mapa es una aplicación web interna para empleados que permite encontrar
           comercios gastronómicos cercanos en un mapa interactivo. Los usuarios pueden
           buscar, filtrar, calificar, comentar, marcar favoritos, etiquetar comercios,
-          subir fotos de menú y votar niveles de gasto.
+          subir fotos de menú, votar niveles de gasto y registrar visitas (check-ins) a comercios.
         </P>
       </Section>
 
@@ -70,6 +70,13 @@ export default function PrivacyPolicy() {
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
             imágenes adjuntas opcionales) y votos de nivel de gasto.
+          </Li>
+          <Li>
+            <strong>Registro de visitas (check-ins) (opcional):</strong> cuando registrás una
+            visita a un comercio, se guardan el nombre del comercio y la fecha del check-in.
+            Si tenés GPS activado, se registra tu ubicación (latitud y longitud) en el momento
+            del check-in. Podés eliminar cada check-in individualmente. El historial de visitas
+            es privado y solo vos podés verlo.
           </Li>
           <Li>
             <strong>Listas colaborativas:</strong> si invitás editores a tus listas, se
@@ -105,7 +112,8 @@ export default function PrivacyPolicy() {
             navegación y uso (ej: vistas de comercios, búsquedas). También se registran
             eventos relacionados con la autenticación (account_created, email_sign_in,
             sign_out, password_changed), eventos de preguntas y respuestas (question_created,
-            question_answered, question_viewed) y la propiedad de usuario auth_type. Estos eventos
+            question_answered, question_viewed), eventos de check-ins (checkin_created,
+            checkin_deleted) y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
           <Li>
@@ -160,7 +168,7 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Límites de uso:</strong> se aplican límites para prevenir abuso
-            (ej: máximo de comentarios por día).
+            (ej: máximo de comentarios por día, máximo de 10 check-ins por día).
           </Li>
           <Li>
             <strong>Moderación automática:</strong> el contenido se revisa automáticamente
@@ -201,7 +209,7 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Eliminar tu contenido:</strong> podés borrar tus comentarios,
-            calificaciones, favoritos, likes, etiquetas y listas de comercios desde la app.
+            calificaciones, favoritos, likes, etiquetas, check-ins y listas de comercios desde la app.
             Los datos de ranking son generados automáticamente a partir de tu actividad y se
             actualizan periódicamente.
           </Li>

@@ -216,6 +216,18 @@ export interface UserSettings {
   updatedAt: Date;
 }
 
+export interface CheckIn {
+  id: string;
+  userId: string;
+  businessId: string;
+  businessName: string;
+  createdAt: Date;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
+
 export type SuggestionReason = 'category' | 'tags' | 'nearby';
 
 export interface SuggestedBusiness {

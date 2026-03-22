@@ -382,6 +382,30 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Check-ins — registro de visitas a comercios.
+    // Solo lectura de docs propios. No updates ni deletes (registro permanente).
+    match /checkins/{docId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'businessId', 'businessName', 'createdAt', 'location'])
+        && request.resource.data.userId == request.auth.uid
+        && isValidBusinessId(request.resource.data.businessId)
+        && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() > 0
+        && request.resource.data.businessName.size() <= 100
+        && request.resource.data.createdAt == request.time
+        && (!('location' in request.resource.data) || (
+          request.resource.data.location is map
+          && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
+          && request.resource.data.location.lat is number
+          && request.resource.data.location.lng is number
+        ));
+      allow update: if false;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_rateLimits/{docId} {
       allow read, write: if false;

@@ -19,4 +19,5 @@ export const COLLECTIONS = {
   SHARED_LISTS: 'sharedLists',
   LIST_ITEMS: 'listItems',
   TRENDING_BUSINESSES: 'trendingBusinesses',
+  CHECKINS: 'checkins',
 } as const;

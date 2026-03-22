@@ -19,6 +19,7 @@ import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
+import CheckInButton from './CheckInButton';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 
@@ -166,6 +167,13 @@ export default function BusinessSheet() {
                 ) : undefined
               }
             />
+            <Box sx={{ my: 1, display: 'flex', justifyContent: 'center' }}>
+              <CheckInButton
+                businessId={selectedBusiness.id}
+                businessName={selectedBusiness.name}
+                businessLocation={{ lat: selectedBusiness.lat, lng: selectedBusiness.lng }}
+              />
+            </Box>
             <Divider sx={{ my: 1.5 }} />
             <BusinessRating
               businessId={selectedBusiness.id}
