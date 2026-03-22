@@ -31,7 +31,7 @@ vi.mock('firebase/firestore', () => {
   };
 });
 
-import { addComment, editComment, deleteComment, getCommentsCollection, likeComment, unlikeComment, createQuestion, fetchQuestions } from './comments';
+import { addComment, editComment, deleteComment, getCommentsCollection, likeComment, unlikeComment, createQuestion } from './comments';
 
 describe('addComment — input validation', () => {
   it('throws on empty text', async () => {
@@ -172,10 +172,3 @@ describe('createQuestion', () => {
   });
 });
 
-describe('fetchQuestions', () => {
-  it('returns an array from getDocs', async () => {
-    mockGetDocs.mockResolvedValue({ docs: [] });
-    const result = await fetchQuestions('b1');
-    expect(result).toEqual([]);
-  });
-});

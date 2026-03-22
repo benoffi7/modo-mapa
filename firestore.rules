@@ -399,7 +399,11 @@ service cloud.firestore {
           request.resource.data.location is map
           && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
           && request.resource.data.location.lat is number
+          && request.resource.data.location.lat >= -90
+          && request.resource.data.location.lat <= 90
           && request.resource.data.location.lng is number
+          && request.resource.data.location.lng >= -180
+          && request.resource.data.location.lng <= 180
         ));
       allow update: if false;
       allow delete: if request.auth != null

@@ -66,9 +66,8 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
     message: 'Pregunta eliminada',
   });
 
-  // Optimistic likes
-  const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
-  const [optimisticLikeDelta, setOptimisticLikeDelta] = useState<Map<string, number>>(new Map());
+  // Optimistic likes — single Map storing both toggle state and delta
+  const [optimisticLikes, setOptimisticLikes] = useState<Map<string, { toggled: boolean; delta: number }>>(new Map());
 
   // Separate questions and answers from all comments
   const { questions, answersByQuestion } = useMemo(() => {
@@ -109,23 +108,22 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
     return filtered;
   }, [answersByQuestion, questionIds]);
 
-  const userCommentsToday = comments.filter((c) => {
-    if (c.userId !== user?.uid) return false;
-    const today = new Date();
-    return c.createdAt.toDateString() === today.toDateString();
-  }).length;
+  const userCommentsToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return comments.filter((c) => c.userId === user?.uid && c.createdAt.toDateString() === today).length;
+  }, [comments, user?.uid]);
 
   // Like helpers
   const isLiked = useCallback((commentId: string) => {
-    const toggled = optimisticLikeToggle.get(commentId);
-    if (toggled !== undefined) return toggled;
+    const entry = optimisticLikes.get(commentId);
+    if (entry) return entry.toggled;
     return userCommentLikes.has(commentId);
-  }, [userCommentLikes, optimisticLikeToggle]);
+  }, [userCommentLikes, optimisticLikes]);
 
   const getLikeCount = useCallback((comment: Comment) => {
-    const delta = optimisticLikeDelta.get(comment.id) ?? 0;
+    const delta = optimisticLikes.get(comment.id)?.delta ?? 0;
     return Math.max(0, comment.likeCount + delta);
-  }, [optimisticLikeDelta]);
+  }, [optimisticLikes]);
 
   // Handlers
   const handleSubmitQuestion = async () => {
@@ -148,10 +146,12 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
     if (!user) return;
     const currentlyLiked = isLiked(commentId);
 
-    setOptimisticLikeToggle((prev) => new Map(prev).set(commentId, !currentlyLiked));
-    setOptimisticLikeDelta((prev) => {
-      const current = prev.get(commentId) ?? 0;
-      return new Map(prev).set(commentId, currentlyLiked ? current - 1 : current + 1);
+    setOptimisticLikes((prev) => {
+      const current = prev.get(commentId)?.delta ?? 0;
+      return new Map(prev).set(commentId, {
+        toggled: !currentlyLiked,
+        delta: currentlyLiked ? current - 1 : current + 1,
+      });
     });
 
     try {
@@ -161,8 +161,7 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
         await likeComment(user.uid, commentId);
       }
     } catch (error) {
-      setOptimisticLikeToggle((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      setOptimisticLikeDelta((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
+      setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
       if (import.meta.env.DEV) console.error('Error toggling like:', error);
       toast.error('No se pudo actualizar el like');
     }
@@ -316,7 +315,7 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
 
               {/* Answers */}
               {answerCount > 0 && (
-                <Box sx={{ pl: 5.5, mt: 0.5 }}>
+                <Box sx={{ pl: { xs: 3, sm: 5.5 }, mt: 0.5 }}>
                   <Button
                     size="small"
                     onClick={() => toggleQuestion(question.id)}
@@ -390,14 +389,14 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
 
               {/* Inline reply form */}
               {replyingTo?.id === question.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
                   <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
                     Alcanzaste el límite diario de publicaciones.
                   </Alert>
                 </Box>
               )}
               {replyingTo?.id === question.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                     Respondiendo a {replyingTo.userName}...
                   </Typography>

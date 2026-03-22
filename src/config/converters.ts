@@ -65,7 +65,7 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
       ...(d.flagged === true ? { flagged: true } : {}),
       ...(d.parentId != null && { parentId: d.parentId as string }),
       ...(d.replyCount != null && { replyCount: d.replyCount as number }),
-      ...(d.type != null && { type: d.type as 'comment' | 'question' }),
+      ...(d.type === 'comment' || d.type === 'question' ? { type: d.type } : {}),
     };
   },
 };

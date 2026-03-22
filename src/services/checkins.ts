@@ -23,6 +23,9 @@ export async function createCheckIn(
   if (!userId || !businessId || !businessName) {
     throw new Error('userId, businessId, and businessName are required');
   }
+  if (!/^biz_\d{3}$/.test(businessId)) {
+    throw new Error('Invalid businessId format');
+  }
 
   const ref = await addDoc(collection(db, COLLECTIONS.CHECKINS), {
     userId,

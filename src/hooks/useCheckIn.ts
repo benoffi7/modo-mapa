@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFilters } from '../context/MapContext';
 import { createCheckIn, deleteCheckIn, fetchCheckInsForBusiness } from '../services/checkins';
@@ -31,14 +31,14 @@ export function useCheckIn(
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  const isNearby = (() => {
+  const isNearby = useMemo(() => {
     if (!userLocation || !businessLocation) return true;
     const km = distanceKm(
       userLocation.lat, userLocation.lng,
       businessLocation.lat, businessLocation.lng,
     );
     return km * 1000 <= CHECKIN_PROXIMITY_RADIUS_M;
-  })();
+  }, [userLocation, businessLocation]);
 
   useEffect(() => {
     if (!user || !businessId) return;

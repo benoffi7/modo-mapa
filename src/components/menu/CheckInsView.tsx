@@ -12,21 +12,8 @@ import { useSelection } from '../../context/MapContext';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { trackEvent } from '../../utils/analytics';
+import { formatRelativeTime } from '../../utils/formatDate';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
-
-function formatRelativeDate(date: Date): string {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Ahora';
-  if (minutes < 60) return `Hace ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Hace ${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'Ayer';
-  if (days < 7) return `Hace ${days} días`;
-  return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-}
 
 interface Props {
   onNavigate: () => void;
@@ -79,7 +66,7 @@ export default function CheckInsView({ onNavigate }: Props) {
             <ListItemButton key={ci.id} onClick={() => handleClick(ci.businessId)}>
               <ListItemText
                 primary={ci.businessName}
-                secondary={formatRelativeDate(ci.createdAt)}
+                secondary={formatRelativeTime(ci.createdAt)}
               />
             </ListItemButton>
           ))}
