@@ -61,7 +61,7 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
       color={isSuccess ? 'success' : 'primary'}
       sx={{ textTransform: 'none', borderRadius: 2 }}
     >
-      {isSuccess ? 'Fui acá ✓' : 'Fui acá'}
+      {isSuccess ? 'Check-in ✓' : 'Hacer check-in'}
     </Button>
   );
 });

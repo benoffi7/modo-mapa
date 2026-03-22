@@ -70,7 +70,7 @@ export default function CheckInsView({ onNavigate }: Props) {
             Todavía no registraste visitas
           </Typography>
           <Typography variant="body2" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
-            Usá el botón "Fui acá" en un comercio para empezar
+            Usá el botón "Hacer check-in" en un comercio para empezar
           </Typography>
         </Box>
       ) : (
