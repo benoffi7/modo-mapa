@@ -390,8 +390,10 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['userId', 'businessId', 'businessName', 'createdAt', 'location'])
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.businessId is string
+        && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() > 0
+        && request.resource.data.businessName.size() <= 100
         && request.resource.data.createdAt == request.time
         && (!('location' in request.resource.data) || (
           request.resource.data.location is map
