@@ -12,6 +12,7 @@ import {
   TextField,
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CheckIcon from '@mui/icons-material/Check';
@@ -165,6 +166,14 @@ const CommentItem = memo(function CommentItem({
                 </Box>
               ) : (
                 <>
+                  {comment.type === 'question' && (
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, mb: 0.25 }}>
+                      <HelpOutlineIcon sx={{ fontSize: 13, color: 'info.main' }} />
+                      <Typography component="span" variant="caption" color="info.main" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                        Pregunta
+                      </Typography>
+                    </Box>
+                  )}
                   <Typography component="span" variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', display: 'block' }}>
                     {truncate(comment.text, 80)}
                   </Typography>
