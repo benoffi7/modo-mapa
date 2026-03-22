@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| — | [#172](https://github.com/benoffi7/modo-mapa/issues/172), [#171](https://github.com/benoffi7/modo-mapa/issues/171) | Tech debt: location range validation en rules, businessId format validation, formatRelativeDate → shared util, useMemo en isNearby/stats, error state en useMyCheckIns, memoize userCommentsToday, consolidar Maps optimistic likes, runtime type validation en converter, eliminar fetchQuestions, reply indent responsive |
 | v2.26.0 | [#131](https://github.com/benoffi7/modo-mapa/issues/131) | Check-in: botón "Hacer check-in" en BusinessSheet, historial "Mis visitas" en SideMenu, cooldown 4h por comercio, rate limit 10/día (Cloud Function), validación soft de proximidad (500m), desmarcar visita, Firestore indexes compuestos, privacy policy actualizada |
 | v2.25.0 | [#127](https://github.com/benoffi7/modo-mapa/issues/127) | Preguntas y respuestas en comercios: tabs Comentarios/Preguntas en BusinessSheet, crear preguntas, responder, mejor respuesta destacada por likes, badge "Pregunta" en menú lateral, analytics (question_created/answered/viewed), privacy policy actualizada |
 | — | — | Config: vitest excluye .claude/worktrees (fix false failures), loading states unificados entre tabs, role="alert" en error states para accesibilidad |
