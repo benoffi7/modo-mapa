@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness, CheckIn } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -389,6 +389,29 @@ export const listItemConverter: FirestoreDataConverter<ListItem> = {
       businessId: String(d.businessId ?? ''),
       addedBy: String(d.addedBy ?? ''),
       createdAt: toDate(d.createdAt),
+    };
+  },
+};
+
+export const checkinConverter: FirestoreDataConverter<CheckIn> = {
+  toFirestore(checkin: CheckIn) {
+    return {
+      userId: checkin.userId,
+      businessId: checkin.businessId,
+      businessName: checkin.businessName,
+      createdAt: checkin.createdAt,
+      ...(checkin.location && { location: checkin.location }),
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): CheckIn {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      userId: d.userId,
+      businessId: d.businessId,
+      businessName: d.businessName,
+      createdAt: toDate(d.createdAt),
+      ...(d.location != null && { location: d.location as { lat: number; lng: number } }),
     };
   },
 };

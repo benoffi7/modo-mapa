@@ -7,6 +7,7 @@ import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import HistoryIcon from '@mui/icons-material/History';
+import PlaceIcon from '@mui/icons-material/Place';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -41,6 +42,11 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
         <ListItemButton onClick={() => onNavigate('recent')}>
           <ListItemIcon><HistoryIcon sx={{ color: 'warning.main' }} /></ListItemIcon>
           <ListItemText primary="Recientes" />
+        </ListItemButton>
+
+        <ListItemButton onClick={() => onNavigate('checkins')}>
+          <ListItemIcon><PlaceIcon sx={{ color: 'success.main' }} /></ListItemIcon>
+          <ListItemText primary="Mis visitas" />
         </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('suggestions')}>

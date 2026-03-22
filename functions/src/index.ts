@@ -14,6 +14,7 @@ export { onFavoriteCreated, onFavoriteDeleted } from './triggers/favorites';
 export { onUserCreated } from './triggers/users';
 export { onMenuPhotoCreated } from './triggers/menuPhotos';
 export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels';
+export { onCheckInCreated } from './triggers/checkins';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';

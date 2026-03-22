@@ -54,6 +54,7 @@ const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
 const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
 const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
+const CheckInsView = lazy(() => import('../menu/CheckInsView'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 import VerificationNudge from '../onboarding/VerificationNudge';
@@ -82,12 +83,13 @@ interface Props {
   onEmailDialogClose: () => void;
 }
 
-export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
   lists: 'Mis Listas',
   recent: 'Recientes',
+  checkins: 'Mis visitas',
   suggestions: 'Sugeridos para vos',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
@@ -379,6 +381,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
                   {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
+                  {activeSection === 'checkins' && <CheckInsView onNavigate={handleClose} />}
                   {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
                   {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
                   {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
