@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `comments` collection.
  */
-import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -81,17 +81,6 @@ export async function likeComment(userId: string, commentId: string): Promise<vo
 export async function unlikeComment(userId: string, commentId: string): Promise<void> {
   const docId = `${userId}__${commentId}`;
   await deleteDoc(doc(db, COLLECTIONS.COMMENT_LIKES, docId));
-}
-
-export async function fetchQuestions(businessId: string): Promise<Comment[]> {
-  const q = query(
-    getCommentsCollection(),
-    where('businessId', '==', businessId),
-    where('type', '==', 'question'),
-    orderBy('createdAt', 'desc'),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data());
 }
 
 export async function createQuestion(
