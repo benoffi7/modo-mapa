@@ -122,8 +122,12 @@ If any docs were updated in this phase, commit them now before merging.
 ## Phase 4: Merge
 
 ```bash
+# If merging from a worktree, switch to the main repo directory first.
+# Stash any uncommitted WIP on main before merging to avoid conflicts:
+git stash --include-untracked 2>/dev/null
 git checkout main
 git merge <branch-name> --no-ff -m "merge message summarizing the feature/fix"
+git stash pop 2>/dev/null
 ```
 
 ### 4a. Reinstall dependencies if changed
@@ -153,10 +157,17 @@ git tag vX.Y.Z
 
 ### 5b. Push
 
+**IMPORTANT:** If there are uncommitted WIP files on main (from another in-progress feature), the pre-push hook (`tsc`) will fail because those files may reference types/modules that don't exist yet. Always stash before pushing:
+
 ```bash
+# Stash any uncommitted/untracked WIP to avoid pre-push hook failures
+git stash --include-untracked 2>/dev/null
 git push origin main
 git push origin --tags
+git stash pop 2>/dev/null
 ```
+
+If the push still fails due to pre-push hooks, check `git stash list` — the WIP may need to be in a worktree instead of loose on main.
 
 ### 5c. Verify CI
 
