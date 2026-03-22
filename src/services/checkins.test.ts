@@ -7,11 +7,14 @@ vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
 const mockAddDoc = vi.fn().mockResolvedValue({ id: 'ci_001' });
+const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
 const mockGetDocs = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
+  doc: vi.fn().mockReturnValue({}),
   addDoc: (...args: unknown[]) => mockAddDoc(...args),
+  deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
   getDocs: (...args: unknown[]) => mockGetDocs(...args),
   query: vi.fn(),
   where: vi.fn(),
@@ -20,7 +23,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
-import { createCheckIn, fetchMyCheckIns, fetchCheckInsForBusiness } from './checkins';
+import { createCheckIn, fetchMyCheckIns, fetchCheckInsForBusiness, deleteCheckIn } from './checkins';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 
@@ -93,5 +96,14 @@ describe('fetchCheckInsForBusiness', () => {
     });
     const result = await fetchCheckInsForBusiness('b1', 'u1');
     expect(result).toHaveLength(1);
+  });
+});
+
+describe('deleteCheckIn', () => {
+  it('deletes doc and invalidates cache', async () => {
+    await deleteCheckIn('u1', 'ci_001');
+    expect(mockDeleteDoc).toHaveBeenCalled();
+    expect(invalidateQueryCache).toHaveBeenCalledWith('checkins', 'u1');
+    expect(trackEvent).toHaveBeenCalledWith('checkin_deleted', { checkin_id: 'ci_001' });
   });
 });

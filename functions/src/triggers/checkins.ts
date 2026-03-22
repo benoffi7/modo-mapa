@@ -1,7 +1,7 @@
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
-import { incrementCounter, trackWrite } from '../utils/counters';
+import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { logAbuse } from '../utils/abuseLogger';
 
 export const onCheckInCreated = onDocumentCreated(
@@ -34,5 +34,14 @@ export const onCheckInCreated = onDocumentCreated(
 
     await incrementCounter(db, 'checkins', 1);
     await trackWrite(db, 'checkins');
+  },
+);
+
+export const onCheckInDeleted = onDocumentDeleted(
+  'checkins/{checkinId}',
+  async () => {
+    const db = getDb();
+    await incrementCounter(db, 'checkins', -1);
+    await trackDelete(db, 'checkins');
   },
 );

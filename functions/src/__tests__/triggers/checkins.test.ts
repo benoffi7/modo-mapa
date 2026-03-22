@@ -11,9 +11,12 @@ vi.mock('firebase-admin/firestore', () => ({
   getFirestore: () => mockGetFirestore(),
 }));
 
+const mockTrackDelete = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('../../utils/counters', () => ({
   incrementCounter: (...args: unknown[]) => mockIncrementCounter(...args),
   trackWrite: (...args: unknown[]) => mockTrackWrite(...args),
+  trackDelete: (...args: unknown[]) => mockTrackDelete(...args),
 }));
 
 vi.mock('../../utils/rateLimiter', () => ({
@@ -26,11 +29,13 @@ vi.mock('../../utils/abuseLogger', () => ({
 
 vi.mock('firebase-functions/v2/firestore', () => ({
   onDocumentCreated: (_path: string, handler: (...args: unknown[]) => unknown) => handler,
+  onDocumentDeleted: (_path: string, handler: (...args: unknown[]) => unknown) => handler,
 }));
 
-import { onCheckInCreated } from '../../triggers/checkins';
+import { onCheckInCreated, onCheckInDeleted } from '../../triggers/checkins';
 
 const handler = onCheckInCreated as unknown as (event: unknown) => Promise<void>;
+const deleteHandler = onCheckInDeleted as unknown as (event: unknown) => Promise<void>;
 
 function makeEvent(data: Record<string, unknown>) {
   return {
@@ -83,5 +88,13 @@ describe('onCheckInCreated', () => {
       { collection: 'checkins', limit: 10, windowType: 'daily' },
       'u1',
     );
+  });
+});
+
+describe('onCheckInDeleted', () => {
+  it('decrements counter', async () => {
+    await deleteHandler({});
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'checkins', -1);
+    expect(mockTrackDelete).toHaveBeenCalledWith(expect.anything(), 'checkins');
   });
 });

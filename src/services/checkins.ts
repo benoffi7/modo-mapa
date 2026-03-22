@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `checkins` collection.
  */
-import { collection, addDoc, getDocs, query, where, orderBy, limit as firestoreLimit, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, deleteDoc, getDocs, query, where, orderBy, limit as firestoreLimit, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -66,4 +66,10 @@ export async function fetchCheckInsForBusiness(
     ),
   );
   return snap.docs.map((d) => d.data());
+}
+
+export async function deleteCheckIn(userId: string, checkInId: string): Promise<void> {
+  await deleteDoc(doc(db, COLLECTIONS.CHECKINS, checkInId));
+  invalidateQueryCache(COLLECTIONS.CHECKINS, userId);
+  trackEvent('checkin_deleted', { checkin_id: checkInId });
 }

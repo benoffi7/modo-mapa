@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFilters } from '../context/MapContext';
-import { createCheckIn, fetchCheckInsForBusiness } from '../services/checkins';
+import { createCheckIn, deleteCheckIn, fetchCheckInsForBusiness } from '../services/checkins';
 import { CHECKIN_COOLDOWN_HOURS, CHECKIN_PROXIMITY_RADIUS_M } from '../constants/checkin';
 import { distanceKm } from '../utils/distance';
 import { trackEvent } from '../utils/analytics';
@@ -12,7 +12,10 @@ export interface UseCheckInReturn {
   canCheckIn: boolean;
   status: 'idle' | 'loading' | 'success' | 'error';
   error: string | null;
+  /** ID del check-in reciente (para poder eliminarlo) */
+  recentCheckInId: string | null;
   performCheckIn: () => Promise<void>;
+  undoCheckIn: () => Promise<void>;
 }
 
 export function useCheckIn(
@@ -24,6 +27,7 @@ export function useCheckIn(
   const { userLocation } = useFilters();
 
   const [hasCheckedInRecently, setHasCheckedInRecently] = useState(false);
+  const [recentCheckInId, setRecentCheckInId] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -45,8 +49,9 @@ export function useCheckIn(
       if (checkIns.length > 0) {
         const latest = checkIns[0];
         const hoursSince = (Date.now() - latest.createdAt.getTime()) / (1000 * 60 * 60);
-        setHasCheckedInRecently(hoursSince < CHECKIN_COOLDOWN_HOURS);
         if (hoursSince < CHECKIN_COOLDOWN_HOURS) {
+          setHasCheckedInRecently(true);
+          setRecentCheckInId(latest.id);
           setStatus('success');
         }
       }
@@ -77,7 +82,7 @@ export function useCheckIn(
     setError(null);
 
     try {
-      await createCheckIn(
+      const id = await createCheckIn(
         user.uid,
         businessId,
         businessName,
@@ -85,11 +90,29 @@ export function useCheckIn(
       );
       setStatus('success');
       setHasCheckedInRecently(true);
+      setRecentCheckInId(id);
     } catch (e) {
       setStatus('error');
       setError(e instanceof Error ? e.message : 'Error al registrar visita');
     }
   }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby]);
 
-  return { hasCheckedInRecently, isNearby, canCheckIn, status, error, performCheckIn };
+  const undoCheckIn = useCallback(async () => {
+    if (!user || !recentCheckInId) return;
+
+    setStatus('loading');
+    setError(null);
+
+    try {
+      await deleteCheckIn(user.uid, recentCheckInId);
+      setStatus('idle');
+      setHasCheckedInRecently(false);
+      setRecentCheckInId(null);
+    } catch (e) {
+      setStatus('error');
+      setError(e instanceof Error ? e.message : 'Error al desmarcar visita');
+    }
+  }, [user, recentCheckInId]);
+
+  return { hasCheckedInRecently, isNearby, canCheckIn, status, error, recentCheckInId, performCheckIn, undoCheckIn };
 }

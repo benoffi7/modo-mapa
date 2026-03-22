@@ -15,15 +15,24 @@ interface Props {
 export default memo(function CheckInButton({ businessId, businessName, businessLocation }: Props) {
   const { user } = useAuth();
   const toast = useToast();
-  const { hasCheckedInRecently, isNearby, canCheckIn, status, performCheckIn } = useCheckIn(
+  const { hasCheckedInRecently, isNearby, status, recentCheckInId, performCheckIn, undoCheckIn } = useCheckIn(
     businessId,
     businessName,
     businessLocation,
   );
 
+  const isLoading = status === 'loading';
+  const isSuccess = status === 'success' || hasCheckedInRecently;
+
   const handleClick = useCallback(async () => {
     if (!user || user.isAnonymous) {
       toast.info('Iniciá sesión para registrar visitas');
+      return;
+    }
+
+    if (isSuccess && recentCheckInId) {
+      await undoCheckIn();
+      toast.info('Visita desmarcada');
       return;
     }
 
@@ -36,10 +45,7 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
     if (status !== 'error') {
       toast.success('Visita registrada');
     }
-  }, [user, isNearby, performCheckIn, status, toast]);
-
-  const isLoading = status === 'loading';
-  const isSuccess = status === 'success' || hasCheckedInRecently;
+  }, [user, isNearby, isSuccess, recentCheckInId, performCheckIn, undoCheckIn, status, toast]);
 
   return (
     <Button
@@ -51,11 +57,11 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
         <PlaceIcon />
       }
       onClick={handleClick}
-      disabled={isLoading || !canCheckIn}
+      disabled={isLoading}
       color={isSuccess ? 'success' : 'primary'}
       sx={{ textTransform: 'none', borderRadius: 2 }}
     >
-      {isSuccess ? 'Ya registraste visita' : 'Fui acá'}
+      {isSuccess ? 'Fui acá ✓' : 'Fui acá'}
     </Button>
   );
 });
