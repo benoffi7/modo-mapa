@@ -8,6 +8,7 @@
 - [Listas Colaborativas](listas-colaborativas/)
 - [Listas Compartidas](listas-compartidas/)
 - [Listas Sugeridas](listas-sugeridas/)
+- [Listas v2.18 Gaps](listas-v2.18-gaps/)
 - [Mejoras Lista Compartida](mejoras-lista-compartida/)
 - [Menu Comentarios](menu-comentarios/)
 - [Menu Favoritos](menu-favoritos/)
