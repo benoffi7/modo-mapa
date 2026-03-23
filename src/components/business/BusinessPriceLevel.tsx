@@ -1,20 +1,26 @@
 import { useMemo, useState, memo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { upsertPriceLevel, deletePriceLevel } from '../../services/priceLevels';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PRICE_LEVEL_LABELS } from '../../types';
 import { LEVELS, LEVEL_SYMBOLS } from '../../constants/business';
 import type { PriceLevel } from '../../types';
 
 interface Props {
   businessId: string;
+  businessName?: string;
   priceLevels: PriceLevel[];
   isLoading: boolean;
   onPriceLevelChange: () => void;
 }
 
-export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoading, onPriceLevelChange }: Props) {
+export default memo(function BusinessPriceLevel({ businessId, businessName, priceLevels, isLoading, onPriceLevelChange }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
+  const { isOffline } = useConnectivity();
 
   const { averageLevel, totalVotes, serverMyLevel } = useMemo(() => {
     let sum = 0;
@@ -42,7 +48,14 @@ export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoa
     if (myLevel === level) {
       setPendingLevel(0);
       try {
-        await deletePriceLevel(user.uid, businessId);
+        await withOfflineSupport(
+          isOffline,
+          'price_level_delete',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId },
+          () => deletePriceLevel(user.uid, businessId),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
         onPriceLevelChange();
       } catch {
         setPendingLevel(null);
@@ -50,7 +63,14 @@ export default memo(function BusinessPriceLevel({ businessId, priceLevels, isLoa
     } else {
       setPendingLevel(level);
       try {
-        await upsertPriceLevel(user.uid, businessId, level);
+        await withOfflineSupport(
+          isOffline,
+          'price_level_upsert',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId, level },
+          () => upsertPriceLevel(user.uid, businessId, level),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
         onPriceLevelChange();
       } catch {
         setPendingLevel(null);

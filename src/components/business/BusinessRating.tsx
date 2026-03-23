@@ -10,7 +10,9 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { upsertRating, deleteRating, upsertCriteriaRating } from '../../services/ratings';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { RATING_CRITERIA } from '../../constants/criteria';
 import { STORAGE_KEY_HINT_POST_FIRST_RATING, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
 import { incrementAnonRatingCount } from '../../hooks/useActivityReminder';
@@ -27,6 +29,7 @@ const CRITERION_ICONS: Record<RatingCriterionId, SvgIconComponent> = {
 
 interface Props {
   businessId: string;
+  businessName?: string;
   ratings: RatingType[];
   isLoading: boolean;
   onRatingChange: () => void;
@@ -36,9 +39,10 @@ interface CriteriaAverages {
   [key: string]: { sum: number; count: number; avg: number };
 }
 
-export default memo(function BusinessRating({ businessId, ratings, isLoading, onRatingChange }: Props) {
+export default memo(function BusinessRating({ businessId, businessName, ratings, isLoading, onRatingChange }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [criteriaOpen, setCriteriaOpen] = useState(false);
 
   const { averageRating, totalRatings, serverMyRating, serverMyCriteria, criteriaAverages } = useMemo(() => {
@@ -95,7 +99,14 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     if (!user || !value) return;
     setPendingRating(value);
     try {
-      await upsertRating(user.uid, businessId, value);
+      await withOfflineSupport(
+        isOffline,
+        'rating_upsert',
+        { userId: user.uid, businessId, businessName },
+        { userId: user.uid, businessId, score: value },
+        () => upsertRating(user.uid, businessId, value),
+        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+      );
       onRatingChange();
       localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
       if (user.isAnonymous) incrementAnonRatingCount();
@@ -114,7 +125,14 @@ export default memo(function BusinessRating({ businessId, ratings, isLoading, on
     setPendingRating(0);
     setPendingCriteria(null);
     try {
-      await deleteRating(user.uid, businessId);
+      await withOfflineSupport(
+        isOffline,
+        'rating_delete',
+        { userId: user.uid, businessId, businessName },
+        { userId: user.uid, businessId },
+        () => deleteRating(user.uid, businessId),
+        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+      );
       onRatingChange();
     } catch {
       setPendingRating(null);

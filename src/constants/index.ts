@@ -13,6 +13,7 @@ export * from './timing';
 export * from './criteria';
 export * from './suggestions';
 export * from './auth';
+export * from './offline';
 
 // Re-export from existing location (already centralized)
 export { COLLECTIONS } from '../config/collections';

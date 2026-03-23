@@ -56,6 +56,7 @@ const SuggestionsView = lazy(() => import('../menu/SuggestionsView'));
 const HelpSection = lazy(() => import('../menu/HelpSection'));
 const CheckInsView = lazy(() => import('../menu/CheckInsView'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
+const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 import VerificationNudge from '../onboarding/VerificationNudge';
 
@@ -83,7 +84,7 @@ interface Props {
   onEmailDialogClose: () => void;
 }
 
-export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy';
+export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -99,6 +100,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   settings: 'Configuración',
   help: 'Ayuda',
   privacy: 'Política de privacidad',
+  pendientes: 'Acciones pendientes',
 };
 
 export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, onLogin, emailDialogOpen, emailDialogTab, onEmailDialogClose }: Props) {
@@ -391,6 +393,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   {activeSection === 'settings' && <SettingsPanel />}
                   {activeSection === 'help' && <HelpSection />}
                   {activeSection === 'privacy' && <PrivacyPolicy />}
+                  {activeSection === 'pendientes' && <PendingActionsSection />}
                 </Suspense>
               </Box>
             </>

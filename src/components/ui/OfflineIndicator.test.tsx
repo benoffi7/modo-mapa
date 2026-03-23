@@ -1,64 +1,50 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
+import * as useConnectivityModule from '../../hooks/useConnectivity';
+import { vi } from 'vitest';
+
+function mockConnectivity(overrides: Partial<ReturnType<typeof useConnectivityModule.useConnectivity>> = {}) {
+  vi.spyOn(useConnectivityModule, 'useConnectivity').mockReturnValue({
+    isOffline: false,
+    isSyncing: false,
+    pendingActionsCount: 0,
+    pendingActions: [],
+    discardAction: vi.fn(),
+    retryFailed: vi.fn(),
+    ...overrides,
+  });
+}
 
 describe('OfflineIndicator', () => {
-  const originalOnLine = navigator.onLine;
+  afterEach(() => vi.restoreAllMocks());
 
-  afterEach(() => {
-    Object.defineProperty(navigator, 'onLine', {
-      value: originalOnLine,
-      writable: true,
-      configurable: true,
-    });
+  it('shows nothing when online and not syncing', () => {
+    mockConnectivity();
+    const { container } = render(<OfflineIndicator />);
+    expect(container.firstChild).toBeNull();
   });
 
-  it('shows chip when offline', () => {
-    Object.defineProperty(navigator, 'onLine', {
-      value: false,
-      writable: true,
-      configurable: true,
-    });
+  it('shows "Sin conexion" when offline with no pending', () => {
+    mockConnectivity({ isOffline: true });
     render(<OfflineIndicator />);
-    expect(screen.getByText('Sin conexión')).toBeInTheDocument();
+    expect(screen.getByText('Sin conexion')).toBeInTheDocument();
   });
 
-  it('hides chip when online', () => {
-    Object.defineProperty(navigator, 'onLine', {
-      value: true,
-      writable: true,
-      configurable: true,
-    });
+  it('shows pending count when offline with actions', () => {
+    mockConnectivity({ isOffline: true, pendingActionsCount: 3 });
     render(<OfflineIndicator />);
-    expect(screen.queryByText('Sin conexión')).not.toBeInTheDocument();
+    expect(screen.getByText('Sin conexion - 3 pendientes')).toBeInTheDocument();
   });
 
-  it('reacts to offline event', () => {
-    Object.defineProperty(navigator, 'onLine', {
-      value: true,
-      writable: true,
-      configurable: true,
-    });
+  it('shows singular form for 1 pending', () => {
+    mockConnectivity({ isOffline: true, pendingActionsCount: 1 });
     render(<OfflineIndicator />);
-    expect(screen.queryByText('Sin conexión')).not.toBeInTheDocument();
-
-    act(() => {
-      window.dispatchEvent(new Event('offline'));
-    });
-    expect(screen.getByText('Sin conexión')).toBeInTheDocument();
+    expect(screen.getByText('Sin conexion - 1 pendiente')).toBeInTheDocument();
   });
 
-  it('reacts to online event', () => {
-    Object.defineProperty(navigator, 'onLine', {
-      value: false,
-      writable: true,
-      configurable: true,
-    });
+  it('shows "Sincronizando..." when syncing', () => {
+    mockConnectivity({ isSyncing: true });
     render(<OfflineIndicator />);
-    expect(screen.getByText('Sin conexión')).toBeInTheDocument();
-
-    act(() => {
-      window.dispatchEvent(new Event('online'));
-    });
-    expect(screen.queryByText('Sin conexión')).not.toBeInTheDocument();
+    expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });
 });

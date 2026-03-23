@@ -1,30 +1,24 @@
-import { useState, useEffect } from 'react';
 import { Chip } from '@mui/material';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
+import SyncIcon from '@mui/icons-material/Sync';
+import { useConnectivity } from '../../hooks/useConnectivity';
 
 export function OfflineIndicator() {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const { isOffline, isSyncing, pendingActionsCount } = useConnectivity();
 
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+  if (!isOffline && !isSyncing) return null;
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  if (!isOffline) return null;
+  const label = isSyncing
+    ? 'Sincronizando...'
+    : pendingActionsCount > 0
+      ? `Sin conexion - ${pendingActionsCount} pendiente${pendingActionsCount > 1 ? 's' : ''}`
+      : 'Sin conexion';
 
   return (
     <Chip
-      icon={<CloudOffIcon />}
-      label="Sin conexión"
-      color="warning"
+      icon={isSyncing ? <SyncIcon sx={{ animation: 'spin 1s linear infinite', '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } } }} /> : <CloudOffIcon />}
+      label={label}
+      color={isSyncing ? 'info' : 'warning'}
       size="small"
       sx={{
         position: 'fixed',

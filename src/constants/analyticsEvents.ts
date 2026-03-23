@@ -13,3 +13,9 @@ export const EVT_VERIFICATION_NUDGE_DISMISSED = 'verification_nudge_dismissed';
 // Trending events (#140)
 export const EVT_TRENDING_VIEWED = 'trending_viewed';
 export const EVT_TRENDING_BUSINESS_CLICKED = 'trending_business_clicked';
+
+// Offline queue events (#136)
+export const EVT_OFFLINE_ACTION_QUEUED = 'offline_action_queued';
+export const EVT_OFFLINE_SYNC_COMPLETED = 'offline_sync_completed';
+export const EVT_OFFLINE_SYNC_FAILED = 'offline_sync_failed';
+export const EVT_OFFLINE_ACTION_DISCARDED = 'offline_action_discarded';
