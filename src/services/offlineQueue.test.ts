@@ -136,6 +136,19 @@ describe('offlineQueue', () => {
     expect(await count()).toBe(2);
   });
 
+  it('updateStatus on non-existent action resolves silently', async () => {
+    await updateStatus('non-existent-id', 'failed');
+    // Should not throw
+    expect(await count()).toBe(0);
+  });
+
+  it('cleanup returns 0 when nothing to clean', async () => {
+    await enqueue(makeAction()); // fresh action, not stale
+    const removed = await cleanup();
+    expect(removed).toBe(0);
+    expect(await count()).toBe(1);
+  });
+
   it('subscribe notifies on mutations', async () => {
     const cb = vi.fn();
     const unsub = subscribe(cb);
