@@ -17,7 +17,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { createQuestion, addComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import CommentRow from './CommentRow';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
@@ -29,15 +31,17 @@ import type { Comment } from '../../types';
 
 interface Props {
   businessId: string;
+  businessName?: string;
   comments: Comment[];
   userCommentLikes: Set<string>;
   isLoading: boolean;
   onCommentsChange: () => void;
 }
 
-export default memo(function BusinessQuestions({ businessId, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
+export default memo(function BusinessQuestions({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const { user, displayName } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [questionText, setQuestionText] = useState('');
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
@@ -131,10 +135,16 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     try {
-      await createQuestion(user.uid, displayName || 'Anónimo', businessId, questionText.trim());
+      await withOfflineSupport(
+        isOffline, 'comment_create',
+        { userId: user.uid, businessId, businessName },
+        { userName: displayName || 'Anónimo', text: questionText.trim(), questionType: true },
+        () => createQuestion(user.uid, displayName || 'Anónimo', businessId, questionText.trim()),
+        toast,
+      );
       setQuestionText('');
       onCommentsChange();
-      toast.success('Pregunta publicada');
+      if (!isOffline) toast.success('Pregunta publicada');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error creating question:', error);
       toast.error('No se pudo publicar la pregunta');
@@ -156,9 +166,21 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
 
     try {
       if (currentlyLiked) {
-        await unlikeComment(user.uid, commentId);
+        await withOfflineSupport(
+          isOffline, 'comment_unlike',
+          { userId: user.uid, businessId, businessName },
+          { commentId },
+          () => unlikeComment(user.uid, commentId),
+          toast,
+        );
       } else {
-        await likeComment(user.uid, commentId);
+        await withOfflineSupport(
+          isOffline, 'comment_like',
+          { userId: user.uid, businessId, businessName },
+          { commentId },
+          () => likeComment(user.uid, commentId),
+          toast,
+        );
       }
     } catch (error) {
       setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
@@ -188,11 +210,17 @@ export default memo(function BusinessQuestions({ businessId, comments, userComme
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     try {
-      await addComment(user.uid, displayName || 'Anónimo', businessId, replyText.trim(), replyingTo.id);
+      await withOfflineSupport(
+        isOffline, 'comment_create',
+        { userId: user.uid, businessId, businessName },
+        { userName: displayName || 'Anónimo', text: replyText.trim(), parentId: replyingTo.id },
+        () => addComment(user.uid, displayName || 'Anónimo', businessId, replyText.trim(), replyingTo.id),
+        toast,
+      );
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
-      toast.success('Respuesta publicada');
+      if (!isOffline) toast.success('Respuesta publicada');
       trackEvent('question_answered', { business_id: businessId, question_id: replyingTo.id });
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding answer:', error);

@@ -44,7 +44,8 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingActions, setPendingActions] = useState<OfflineAction[]>([]);
   const toast = useToast();
-  const syncingRef = useRef(false);
+  const isOfflineRef = useRef(isOffline);
+  useEffect(() => { isOfflineRef.current = isOffline; }, [isOffline]);
 
   const refreshActions = useCallback(() => {
     offlineQueue.getAll().then(
@@ -60,17 +61,15 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   }, [refreshActions]);
 
   const doSync = useCallback(async () => {
-    if (syncingRef.current) return;
-    syncingRef.current = true;
     setIsSyncing(true);
 
-    const count = await offlineQueue.count();
-    if (count > 0) {
-      toast.info(`Sincronizando ${count} ${count === 1 ? 'accion' : 'acciones'}...`);
+    const queueCount = await offlineQueue.count();
+    if (queueCount > 0) {
+      toast.info(`Sincronizando ${queueCount} ${queueCount === 1 ? 'accion' : 'acciones'}...`);
     }
 
     await processQueue(
-      () => {}, // onActionSynced — individual tracking not needed
+      () => {},
       (action, error) => {
         trackEvent(EVT_OFFLINE_SYNC_FAILED, {
           action_type: action.type,
@@ -94,7 +93,6 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    syncingRef.current = false;
     setIsSyncing(false);
   }, [toast]);
 
@@ -119,8 +117,12 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
     };
   }, [doSync]);
 
+  // Use ref-based lookup to avoid re-render cascade from pendingActions dependency
+  const pendingActionsRef = useRef(pendingActions);
+  useEffect(() => { pendingActionsRef.current = pendingActions; }, [pendingActions]);
+
   const discardAction = useCallback(async (actionId: string) => {
-    const action = pendingActions.find((a) => a.id === actionId);
+    const action = pendingActionsRef.current.find((a) => a.id === actionId);
     await offlineQueue.remove(actionId);
     if (action) {
       trackEvent(EVT_OFFLINE_ACTION_DISCARDED, {
@@ -128,19 +130,16 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
         business_id: action.businessId,
       });
     }
-  }, [pendingActions]);
+  }, []);
 
   const retryFailed = useCallback(async () => {
     const all = await offlineQueue.getAll();
-    for (const action of all) {
-      if (action.status === 'failed') {
-        await offlineQueue.updateStatus(action.id, 'pending', 0);
-      }
-    }
-    if (!isOffline) {
+    const failedIds = all.filter((a) => a.status === 'failed').map((a) => a.id);
+    await offlineQueue.bulkUpdateStatus(failedIds, 'pending', 0);
+    if (!isOfflineRef.current) {
       doSync();
     }
-  }, [isOffline, doSync]);
+  }, [doSync]);
 
   const value = useMemo<ConnectivityContextValue>(() => ({
     isOffline,

@@ -3,13 +3,15 @@ import { enqueue } from './offlineQueue';
 import { trackEvent } from '../utils/analytics';
 import { EVT_OFFLINE_ACTION_QUEUED } from '../constants/analyticsEvents';
 
+export const OFFLINE_ENQUEUED_MSG = 'Guardado offline — se sincronizará al reconectar';
+
 export async function withOfflineSupport<T>(
   isOffline: boolean,
   actionType: OfflineActionType,
   actionMeta: { userId: string; businessId: string; businessName?: string | undefined },
   payload: OfflineActionPayload,
   onlineAction: () => Promise<T>,
-  onEnqueued: () => void,
+  toast: { info: (msg: string) => void },
 ): Promise<T | void> {
   if (!isOffline) {
     return onlineAction();
@@ -31,5 +33,5 @@ export async function withOfflineSupport<T>(
     business_id: actionMeta.businessId,
   });
 
-  onEnqueued();
+  toast.info(OFFLINE_ENQUEUED_MSG);
 }

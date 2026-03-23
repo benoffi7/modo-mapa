@@ -1,76 +1,85 @@
 import type { OfflineAction } from '../types/offline';
 import * as offlineQueue from './offlineQueue';
-import { OFFLINE_MAX_RETRIES, OFFLINE_BACKOFF_BASE_MS } from '../constants/offline';
+import { OFFLINE_MAX_RETRIES } from '../constants/offline';
 import type {
   RatingUpsertPayload,
-  RatingDeletePayload,
   CommentCreatePayload,
-  FavoriteTogglePayload,
   PriceLevelUpsertPayload,
-  PriceLevelDeletePayload,
-  TagAddPayload,
-  TagRemovePayload,
+  TagTogglePayload,
+  CommentLikePayload,
 } from '../types/offline';
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+let syncing = false;
 
 export async function executeAction(action: OfflineAction): Promise<void> {
+  const { userId, businessId } = action;
   const p = action.payload;
   switch (action.type) {
     case 'rating_upsert': {
-      const rp = p as RatingUpsertPayload;
+      const { score, criteria } = p as RatingUpsertPayload;
       const { upsertRating } = await import('./ratings');
-      await upsertRating(rp.userId, rp.businessId, rp.score, rp.criteria);
+      await upsertRating(userId, businessId, score, criteria);
       break;
     }
     case 'rating_delete': {
-      const rp = p as RatingDeletePayload;
       const { deleteRating } = await import('./ratings');
-      await deleteRating(rp.userId, rp.businessId);
+      await deleteRating(userId, businessId);
       break;
     }
     case 'comment_create': {
-      const cp = p as CommentCreatePayload;
-      const { addComment } = await import('./comments');
-      await addComment(cp.userId, cp.userName, cp.businessId, cp.text, cp.parentId);
+      const { userName, text, parentId, questionType } = p as CommentCreatePayload;
+      if (questionType) {
+        const { createQuestion } = await import('./comments');
+        await createQuestion(userId, userName, businessId, text);
+      } else {
+        const { addComment } = await import('./comments');
+        await addComment(userId, userName, businessId, text, parentId);
+      }
       break;
     }
     case 'favorite_add': {
-      const fp = p as FavoriteTogglePayload;
       const { addFavorite } = await import('./favorites');
-      await addFavorite(fp.userId, fp.businessId);
+      await addFavorite(userId, businessId);
       break;
     }
     case 'favorite_remove': {
-      const fp = p as FavoriteTogglePayload;
       const { removeFavorite } = await import('./favorites');
-      await removeFavorite(fp.userId, fp.businessId);
+      await removeFavorite(userId, businessId);
       break;
     }
     case 'price_level_upsert': {
-      const pp = p as PriceLevelUpsertPayload;
+      const { level } = p as PriceLevelUpsertPayload;
       const { upsertPriceLevel } = await import('./priceLevels');
-      await upsertPriceLevel(pp.userId, pp.businessId, pp.level);
+      await upsertPriceLevel(userId, businessId, level);
       break;
     }
     case 'price_level_delete': {
-      const pp = p as PriceLevelDeletePayload;
       const { deletePriceLevel } = await import('./priceLevels');
-      await deletePriceLevel(pp.userId, pp.businessId);
+      await deletePriceLevel(userId, businessId);
       break;
     }
     case 'tag_add': {
-      const tp = p as TagAddPayload;
+      const { tagId } = p as TagTogglePayload;
       const { addUserTag } = await import('./tags');
-      await addUserTag(tp.userId, tp.businessId, tp.tagId);
+      await addUserTag(userId, businessId, tagId);
       break;
     }
     case 'tag_remove': {
-      const tp = p as TagRemovePayload;
+      const { tagId } = p as TagTogglePayload;
       const { removeUserTag } = await import('./tags');
-      await removeUserTag(tp.userId, tp.businessId, tp.tagId);
+      await removeUserTag(userId, businessId, tagId);
+      break;
+    }
+    case 'comment_like': {
+      const { commentId } = p as CommentLikePayload;
+      const { likeComment } = await import('./comments');
+      await likeComment(userId, commentId);
+      break;
+    }
+    case 'comment_unlike': {
+      const { commentId } = p as CommentLikePayload;
+      const { unlikeComment } = await import('./comments');
+      await unlikeComment(userId, commentId);
       break;
     }
   }
@@ -81,33 +90,45 @@ export async function processQueue(
   onActionFailed: (action: OfflineAction, error: Error) => void,
   onComplete: (syncedCount: number, failedCount: number) => void,
 ): Promise<void> {
-  await offlineQueue.cleanup();
-  const pending = await offlineQueue.getPending();
+  if (syncing) return;
+  syncing = true;
 
-  let syncedCount = 0;
-  let failedCount = 0;
+  try {
+    await offlineQueue.cleanup();
+    const pending = await offlineQueue.getPending();
 
-  for (const action of pending) {
-    await offlineQueue.updateStatus(action.id, 'syncing');
+    let syncedCount = 0;
+    let failedCount = 0;
+    const deferred: OfflineAction[] = [];
 
-    try {
-      await executeAction(action);
-      await offlineQueue.remove(action.id);
-      syncedCount++;
-      onActionSynced(action);
-    } catch (err) {
-      const newRetry = action.retryCount + 1;
-      if (newRetry >= OFFLINE_MAX_RETRIES) {
-        await offlineQueue.updateStatus(action.id, 'failed', newRetry);
-        failedCount++;
-        onActionFailed(action, err instanceof Error ? err : new Error(String(err)));
-      } else {
-        await offlineQueue.updateStatus(action.id, 'pending', newRetry);
-        const backoff = OFFLINE_BACKOFF_BASE_MS * Math.pow(2, newRetry);
-        await delay(backoff);
+    for (const action of pending) {
+      await offlineQueue.updateStatus(action.id, 'syncing');
+
+      try {
+        await executeAction(action);
+        await offlineQueue.remove(action.id);
+        syncedCount++;
+        onActionSynced(action);
+      } catch (err) {
+        const newRetry = action.retryCount + 1;
+        if (newRetry >= OFFLINE_MAX_RETRIES) {
+          await offlineQueue.updateStatus(action.id, 'failed', newRetry);
+          failedCount++;
+          onActionFailed(action, err instanceof Error ? err : new Error(String(err)));
+        } else {
+          await offlineQueue.updateStatus(action.id, 'pending', newRetry);
+          deferred.push(action);
+        }
       }
     }
-  }
 
-  onComplete(syncedCount, failedCount);
+    onComplete(syncedCount, failedCount);
+  } finally {
+    syncing = false;
+  }
+}
+
+/** Reset for testing */
+export function _resetSyncingForTest(): void {
+  syncing = false;
 }

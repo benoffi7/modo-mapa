@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
-import { processQueue, executeAction } from './syncEngine';
+import { processQueue, executeAction, _resetSyncingForTest } from './syncEngine';
 import * as offlineQueue from './offlineQueue';
 import type { OfflineAction } from '../types/offline';
 
@@ -11,6 +11,9 @@ vi.mock('./ratings', () => ({
 }));
 vi.mock('./comments', () => ({
   addComment: vi.fn().mockResolvedValue(undefined),
+  createQuestion: vi.fn().mockResolvedValue('q1'),
+  likeComment: vi.fn().mockResolvedValue(undefined),
+  unlikeComment: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./favorites', () => ({
   addFavorite: vi.fn().mockResolvedValue(undefined),
@@ -26,7 +29,7 @@ vi.mock('./tags', () => ({
 }));
 
 import { upsertRating, deleteRating } from './ratings';
-import { addComment } from './comments';
+import { addComment, createQuestion, likeComment, unlikeComment } from './comments';
 import { addFavorite, removeFavorite } from './favorites';
 import { upsertPriceLevel, deletePriceLevel } from './priceLevels';
 import { addUserTag, removeUserTag } from './tags';
@@ -35,7 +38,7 @@ function makeFullAction(overrides: Partial<OfflineAction> = {}): OfflineAction {
   return {
     id: crypto.randomUUID(),
     type: 'rating_upsert',
-    payload: { userId: 'u1', businessId: 'b1', score: 4 },
+    payload: { score: 4 },
     userId: 'u1',
     businessId: 'b1',
     createdAt: Date.now(),
@@ -48,7 +51,7 @@ function makeFullAction(overrides: Partial<OfflineAction> = {}): OfflineAction {
 describe('syncEngine', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Use fake timers only for delay but don't break indexeddb
+    _resetSyncingForTest();
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
@@ -57,85 +60,70 @@ describe('syncEngine', () => {
   });
 
   describe('executeAction', () => {
-    it('maps rating_upsert correctly', async () => {
-      const action = makeFullAction({
-        type: 'rating_upsert',
-        payload: { userId: 'u1', businessId: 'b1', score: 5 },
-      });
-      await executeAction(action);
+    it('maps rating_upsert', async () => {
+      await executeAction(makeFullAction({ type: 'rating_upsert', payload: { score: 5 } }));
       expect(upsertRating).toHaveBeenCalledWith('u1', 'b1', 5, undefined);
     });
 
-    it('maps rating_delete correctly', async () => {
-      const action = makeFullAction({
-        type: 'rating_delete',
-        payload: { userId: 'u1', businessId: 'b1' },
-      });
-      await executeAction(action);
+    it('maps rating_delete', async () => {
+      await executeAction(makeFullAction({ type: 'rating_delete', payload: { _type: 'rating_delete' } }));
       expect(deleteRating).toHaveBeenCalledWith('u1', 'b1');
     });
 
-    it('maps comment_create correctly', async () => {
-      const action = makeFullAction({
+    it('maps comment_create', async () => {
+      await executeAction(makeFullAction({
         type: 'comment_create',
-        payload: { userId: 'u1', userName: 'Test', businessId: 'b1', text: 'Hello', parentId: 'p1' },
-      });
-      await executeAction(action);
+        payload: { userName: 'Test', text: 'Hello', parentId: 'p1' },
+      }));
       expect(addComment).toHaveBeenCalledWith('u1', 'Test', 'b1', 'Hello', 'p1');
     });
 
-    it('maps favorite_add correctly', async () => {
-      const action = makeFullAction({
-        type: 'favorite_add',
-        payload: { userId: 'u1', businessId: 'b1', action: 'add' },
-      });
-      await executeAction(action);
+    it('maps comment_create with questionType', async () => {
+      await executeAction(makeFullAction({
+        type: 'comment_create',
+        payload: { userName: 'Test', text: 'Question?', questionType: true },
+      }));
+      expect(createQuestion).toHaveBeenCalledWith('u1', 'Test', 'b1', 'Question?');
+    });
+
+    it('maps favorite_add', async () => {
+      await executeAction(makeFullAction({ type: 'favorite_add', payload: { action: 'add' } }));
       expect(addFavorite).toHaveBeenCalledWith('u1', 'b1');
     });
 
-    it('maps favorite_remove correctly', async () => {
-      const action = makeFullAction({
-        type: 'favorite_remove',
-        payload: { userId: 'u1', businessId: 'b1', action: 'remove' },
-      });
-      await executeAction(action);
+    it('maps favorite_remove', async () => {
+      await executeAction(makeFullAction({ type: 'favorite_remove', payload: { action: 'remove' } }));
       expect(removeFavorite).toHaveBeenCalledWith('u1', 'b1');
     });
 
-    it('maps price_level_upsert correctly', async () => {
-      const action = makeFullAction({
-        type: 'price_level_upsert',
-        payload: { userId: 'u1', businessId: 'b1', level: 2 },
-      });
-      await executeAction(action);
+    it('maps price_level_upsert', async () => {
+      await executeAction(makeFullAction({ type: 'price_level_upsert', payload: { level: 2 } }));
       expect(upsertPriceLevel).toHaveBeenCalledWith('u1', 'b1', 2);
     });
 
-    it('maps price_level_delete correctly', async () => {
-      const action = makeFullAction({
-        type: 'price_level_delete',
-        payload: { userId: 'u1', businessId: 'b1' },
-      });
-      await executeAction(action);
+    it('maps price_level_delete', async () => {
+      await executeAction(makeFullAction({ type: 'price_level_delete', payload: { _type: 'price_level_delete' } }));
       expect(deletePriceLevel).toHaveBeenCalledWith('u1', 'b1');
     });
 
-    it('maps tag_add correctly', async () => {
-      const action = makeFullAction({
-        type: 'tag_add',
-        payload: { userId: 'u1', businessId: 'b1', tagId: 't1' },
-      });
-      await executeAction(action);
+    it('maps tag_add', async () => {
+      await executeAction(makeFullAction({ type: 'tag_add', payload: { tagId: 't1' } }));
       expect(addUserTag).toHaveBeenCalledWith('u1', 'b1', 't1');
     });
 
-    it('maps tag_remove correctly', async () => {
-      const action = makeFullAction({
-        type: 'tag_remove',
-        payload: { userId: 'u1', businessId: 'b1', tagId: 't1' },
-      });
-      await executeAction(action);
+    it('maps tag_remove', async () => {
+      await executeAction(makeFullAction({ type: 'tag_remove', payload: { tagId: 't1' } }));
       expect(removeUserTag).toHaveBeenCalledWith('u1', 'b1', 't1');
+    });
+
+    it('maps comment_like', async () => {
+      await executeAction(makeFullAction({ type: 'comment_like', payload: { commentId: 'c1' } }));
+      expect(likeComment).toHaveBeenCalledWith('u1', 'c1');
+    });
+
+    it('maps comment_unlike', async () => {
+      await executeAction(makeFullAction({ type: 'comment_unlike', payload: { commentId: 'c1' } }));
+      expect(unlikeComment).toHaveBeenCalledWith('u1', 'c1');
     });
   });
 
@@ -161,7 +149,7 @@ describe('syncEngine', () => {
     });
 
     it('marks action failed after max retries', async () => {
-      const action = makeFullAction({ retryCount: 2 }); // will be 3 after increment = max
+      const action = makeFullAction({ retryCount: 2 });
       vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
       vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([action]);
       vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
@@ -178,23 +166,37 @@ describe('syncEngine', () => {
       expect(onComplete).toHaveBeenCalledWith(0, 1);
     });
 
-    it('retries with backoff on non-max failure', async () => {
+    it('defers failed actions instead of blocking with backoff', async () => {
       const action = makeFullAction({ retryCount: 0 });
       vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
       vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([action]);
       vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
       vi.mocked(upsertRating).mockRejectedValueOnce(new Error('Temporary'));
 
-      const onSynced = vi.fn();
-      const onFailed = vi.fn();
       const onComplete = vi.fn();
 
-      await processQueue(onSynced, onFailed, onComplete);
+      await processQueue(vi.fn(), vi.fn(), onComplete);
 
-      // Should set back to pending with retryCount 1
       expect(offlineQueue.updateStatus).toHaveBeenCalledWith(action.id, 'pending', 1);
-      expect(onFailed).not.toHaveBeenCalled();
       expect(onComplete).toHaveBeenCalledWith(0, 0);
+    });
+
+    it('prevents concurrent processing via syncing lock', async () => {
+      vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+      vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([]);
+
+      const onComplete1 = vi.fn();
+      const onComplete2 = vi.fn();
+
+      // Start two concurrent processQueue calls
+      const p1 = processQueue(vi.fn(), vi.fn(), onComplete1);
+      const p2 = processQueue(vi.fn(), vi.fn(), onComplete2);
+
+      await Promise.all([p1, p2]);
+
+      // Only one should have actually run (the other returns early)
+      expect(onComplete1).toHaveBeenCalledTimes(1);
+      expect(onComplete2).not.toHaveBeenCalled();
     });
   });
 });

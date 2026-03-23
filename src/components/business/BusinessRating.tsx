@@ -103,9 +103,9 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
         isOffline,
         'rating_upsert',
         { userId: user.uid, businessId, businessName },
-        { userId: user.uid, businessId, score: value },
+        { score: value },
         () => upsertRating(user.uid, businessId, value),
-        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        toast,
       );
       onRatingChange();
       localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
@@ -129,9 +129,9 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
         isOffline,
         'rating_delete',
         { userId: user.uid, businessId, businessName },
-        { userId: user.uid, businessId },
+        { _type: 'rating_delete' },
         () => deleteRating(user.uid, businessId),
-        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        toast,
       );
       onRatingChange();
     } catch {

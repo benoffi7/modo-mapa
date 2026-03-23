@@ -49,12 +49,11 @@ export default memo(function BusinessPriceLevel({ businessId, businessName, pric
       setPendingLevel(0);
       try {
         await withOfflineSupport(
-          isOffline,
-          'price_level_delete',
+          isOffline, 'price_level_delete',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId },
+          { _type: 'price_level_delete' },
           () => deletePriceLevel(user.uid, businessId),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
         onPriceLevelChange();
       } catch {
@@ -64,12 +63,11 @@ export default memo(function BusinessPriceLevel({ businessId, businessName, pric
       setPendingLevel(level);
       try {
         await withOfflineSupport(
-          isOffline,
-          'price_level_upsert',
+          isOffline, 'price_level_upsert',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId, level },
+          { level },
           () => upsertPriceLevel(user.uid, businessId, level),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
         onPriceLevelChange();
       } catch {

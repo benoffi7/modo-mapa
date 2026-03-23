@@ -30,6 +30,8 @@ const ACTION_LABELS: Record<OfflineActionType, string> = {
   price_level_delete: 'Borrar nivel de gasto',
   tag_add: 'Agregar etiqueta',
   tag_remove: 'Quitar etiqueta',
+  comment_like: 'Like',
+  comment_unlike: 'Unlike',
 };
 
 const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
@@ -42,6 +44,8 @@ const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
   price_level_delete: AttachMoneyIcon,
   tag_add: LabelOutlinedIcon,
   tag_remove: LabelOutlinedIcon,
+  comment_like: ChatBubbleOutlineIcon,
+  comment_unlike: ChatBubbleOutlineIcon,
 };
 
 function timeAgo(timestamp: number): string {

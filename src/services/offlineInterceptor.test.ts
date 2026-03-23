@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import 'fake-indexeddb/auto';
-import { withOfflineSupport } from './offlineInterceptor';
+import { withOfflineSupport, OFFLINE_ENQUEUED_MSG } from './offlineInterceptor';
 import * as offlineQueue from './offlineQueue';
 
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
+
+const mockToast = { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() };
 
 describe('offlineInterceptor', () => {
   beforeEach(() => {
@@ -12,27 +14,25 @@ describe('offlineInterceptor', () => {
 
   it('online: calls onlineAction and returns result', async () => {
     const onlineAction = vi.fn().mockResolvedValue('result');
-    const onEnqueued = vi.fn();
 
     const result = await withOfflineSupport(
-      false,
-      'rating_upsert',
+      false, 'rating_upsert',
       { userId: 'u1', businessId: 'b1' },
-      { userId: 'u1', businessId: 'b1', score: 4 },
+      { score: 4 },
       onlineAction,
-      onEnqueued,
+      mockToast,
     );
 
     expect(result).toBe('result');
     expect(onlineAction).toHaveBeenCalled();
-    expect(onEnqueued).not.toHaveBeenCalled();
+    expect(mockToast.info).not.toHaveBeenCalled();
   });
 
-  it('offline: enqueues action and calls onEnqueued', async () => {
+  it('offline: enqueues action and shows toast', async () => {
     const enqueueSpy = vi.spyOn(offlineQueue, 'enqueue').mockResolvedValue({
       id: 'test',
       type: 'rating_upsert',
-      payload: { userId: 'u1', businessId: 'b1', score: 4 },
+      payload: { score: 4 },
       userId: 'u1',
       businessId: 'b1',
       createdAt: Date.now(),
@@ -40,43 +40,39 @@ describe('offlineInterceptor', () => {
       status: 'pending',
     });
     const onlineAction = vi.fn();
-    const onEnqueued = vi.fn();
 
     await withOfflineSupport(
-      true,
-      'rating_upsert',
+      true, 'rating_upsert',
       { userId: 'u1', businessId: 'b1', businessName: 'Test' },
-      { userId: 'u1', businessId: 'b1', score: 4 },
+      { score: 4 },
       onlineAction,
-      onEnqueued,
+      mockToast,
     );
 
     expect(onlineAction).not.toHaveBeenCalled();
     expect(enqueueSpy).toHaveBeenCalledWith({
       type: 'rating_upsert',
-      payload: { userId: 'u1', businessId: 'b1', score: 4 },
+      payload: { score: 4 },
       userId: 'u1',
       businessId: 'b1',
       businessName: 'Test',
     });
-    expect(onEnqueued).toHaveBeenCalled();
+    expect(mockToast.info).toHaveBeenCalledWith(OFFLINE_ENQUEUED_MSG);
   });
 
   it('offline: propagates enqueue errors', async () => {
     vi.spyOn(offlineQueue, 'enqueue').mockRejectedValue(new Error('Queue full'));
-    const onEnqueued = vi.fn();
 
     await expect(
       withOfflineSupport(
-        true,
-        'rating_upsert',
+        true, 'rating_upsert',
         { userId: 'u1', businessId: 'b1' },
-        { userId: 'u1', businessId: 'b1', score: 4 },
+        { score: 4 },
         vi.fn(),
-        onEnqueued,
+        mockToast,
       ),
     ).rejects.toThrow('Queue full');
 
-    expect(onEnqueued).not.toHaveBeenCalled();
+    expect(mockToast.info).not.toHaveBeenCalled();
   });
 });

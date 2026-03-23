@@ -271,6 +271,7 @@ export type {
   FavoriteTogglePayload,
   PriceLevelUpsertPayload,
   PriceLevelDeletePayload,
-  TagAddPayload,
-  TagRemovePayload,
+  TagTogglePayload,
+  CommentLikePayload,
+  EmptyPayload,
 } from './offline';

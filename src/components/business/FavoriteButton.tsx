@@ -40,22 +40,20 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
     try {
       if (wasFavorite) {
         await withOfflineSupport(
-          isOffline,
-          'favorite_remove',
+          isOffline, 'favorite_remove',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId, action: 'remove' },
+          { action: 'remove' },
           () => removeFavorite(user.uid, businessId),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
         if (!isOffline) toast.info('Removido de favoritos');
       } else {
         await withOfflineSupport(
-          isOffline,
-          'favorite_add',
+          isOffline, 'favorite_add',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId, action: 'add' },
+          { action: 'add' },
           () => addFavorite(user.uid, businessId),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
         if (!isOffline) toast.success('Agregado a favoritos');
       }
