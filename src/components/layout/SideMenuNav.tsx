@@ -13,7 +13,9 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CasinoIcon from '@mui/icons-material/Casino';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import type { Section } from './SideMenu';
 
 interface Props {
@@ -26,9 +28,21 @@ interface Props {
 import { memo } from 'react';
 
 export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
+  const { pendingActionsCount } = useConnectivity();
+
   return (
     <>
       <List>
+        {pendingActionsCount > 0 && (
+          <ListItemButton onClick={() => onNavigate('pendientes')}>
+            <ListItemIcon>
+              <Badge badgeContent={pendingActionsCount} color="warning" max={99}>
+                <SyncProblemIcon sx={{ color: 'warning.main' }} />
+              </Badge>
+            </ListItemIcon>
+            <ListItemText primary="Pendientes" />
+          </ListItemButton>
+        )}
         <ListItemButton onClick={() => onNavigate('favorites')}>
           <ListItemIcon><FavoriteIcon sx={{ color: 'error.main' }} /></ListItemIcon>
           <ListItemText primary="Favoritos" />

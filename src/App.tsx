@@ -7,6 +7,7 @@ import { ColorModeProvider } from './context/ColorModeContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { ToastProvider } from './context/ToastContext';
+import { ConnectivityProvider } from './context/ConnectivityContext';
 import { MapProvider } from './context/MapContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import AppShell from './components/layout/AppShell';
@@ -34,6 +35,7 @@ function App() {
       <ErrorBoundary>
         <AuthProvider>
         <ToastProvider>
+        <ConnectivityProvider>
         <NotificationsProvider>
           <Routes>
             {import.meta.env.DEV && (
@@ -76,6 +78,7 @@ function App() {
             />
           </Routes>
         </NotificationsProvider>
+        </ConnectivityProvider>
         </ToastProvider>
         </AuthProvider>
       </ErrorBoundary>

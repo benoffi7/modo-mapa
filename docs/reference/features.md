@@ -244,6 +244,20 @@ Todas las callable admin:
 
 ---
 
+## Modo offline mejorado (#136)
+
+- **Cola offline en IndexedDB**: cuando no hay conexion, las acciones del usuario (ratings, comments, favorites, price levels, tags) se encolan en IndexedDB (`modo-mapa-offline`) en vez de fallar. Max 50 acciones, TTL 7 dias
+- **Sync automatico**: al reconectar, `ConnectivityContext` verifica conectividad real (HEAD a favicon.ico) y dispara `syncEngine.processQueue()`. Procesamiento FIFO secuencial con backoff exponencial (1s/2s/4s) y max 3 retries. Toasts de progreso: "Sincronizando N acciones...", "N acciones sincronizadas", "M acciones fallaron"
+- **Wrapper pattern**: `withOfflineSupport()` envuelve las llamadas a servicios en los componentes. Los servicios (`ratings.ts`, `comments.ts`, etc.) no se modifican. UI optimista existente sigue funcionando
+- **OfflineIndicator**: chip fijo en top center. Muestra "Sin conexion", "Sin conexion - N pendientes", o "Sincronizando..." con icono animado. `aria-live="polite"` para accesibilidad. zIndex 1100 (debajo de modals)
+- **Seccion Pendientes en SideMenu**: visible solo si hay acciones pendientes. Lista con icono por tipo, nombre del comercio, fecha relativa. Boton descartar individual. Boton "Reintentar fallidas" si hay acciones `failed`
+- **ConnectivityProvider**: debajo de ToastProvider en el arbol. Expone `isOffline`, `isSyncing`, `pendingActionsCount`, `pendingActions`, `discardAction`, `retryFailed` via `useConnectivity()` hook
+- **Analytics**: 4 eventos (`offline_action_queued`, `offline_sync_completed`, `offline_sync_failed`, `offline_action_discarded`)
+- **PWA**: `navigateFallback: 'index.html'` agregado a Workbox config. Service worker precachea 45 assets
+- **Privacidad**: IndexedDB storage y eventos offline documentados en PrivacyPolicy
+
+---
+
 ## Distancia al usuario
 
 - Funcion Haversine extraida a `src/utils/distance.ts` (compartida por `useSuggestions` y componentes de lista)

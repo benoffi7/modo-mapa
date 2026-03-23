@@ -1,11 +1,19 @@
 # Infraestructura
 
-
+- [Chatbot Multiplataforma](chatbot-multiplatforma/)
 - [Constants Dashboard](constants-dashboard/)
 - [Firebase Analytics](firebase-analytics/)
 - [Firebase Quota & Offline](firebase-quota-offline/)
+- [GA4 API](ga4-api/)
+- [Métricas + Panel](metricas-panel/)
+- [Modo Offline](modo-offline/)
+- [Modo Offline Mejorado](modo-offline-mejorado/)
 - [Modularizar Stats](modularizar-stats/)
 - [Preview Environments](preview-environments/)
+- [Pull-to-Refresh](pull-to-refresh/)
 - [React Router](react-router/)
 - [Sentry](sentry/)
+- [Skeleton Loaders](skeleton-loaders/)
 - [Telegram Notifications](telegram-notifications/)
+- [Test Coverage 80%](test-coverage-80/)
+- [Toast Global](toast-global/)

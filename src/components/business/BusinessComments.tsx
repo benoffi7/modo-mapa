@@ -16,7 +16,9 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
 import UserProfileSheet from '../user/UserProfileSheet';
@@ -30,6 +32,7 @@ type SortMode = 'recent' | 'oldest' | 'useful';
 
 interface Props {
   businessId: string;
+  businessName?: string;
   comments: Comment[];
   userCommentLikes: Set<string>;
   isLoading: boolean;
@@ -37,9 +40,10 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default memo(function BusinessComments({ businessId, comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
+export default memo(function BusinessComments({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
   const { user, displayName } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -151,9 +155,16 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     try {
-      await addComment(user.uid, displayName || 'Anónimo', businessId, text);
+      await withOfflineSupport(
+        isOffline,
+        'comment_create',
+        { userId: user.uid, businessId, businessName },
+        { userId: user.uid, userName: displayName || 'Anónimo', businessId, text },
+        () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
+        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+      );
       onCommentsChange();
-      toast.success('Comentario publicado');
+      if (!isOffline) toast.success('Comentario publicado');
       if (localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT) !== 'true') {
         localStorage.setItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT, 'true');
         toast.info('Guarda tus favoritos tocando el corazon.');
@@ -248,11 +259,19 @@ export default memo(function BusinessComments({ businessId, comments, userCommen
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
     try {
-      await addComment(user.uid, displayName || 'Anónimo', businessId, replyText.trim(), replyingTo.id);
+      const trimmedReply = replyText.trim();
+      await withOfflineSupport(
+        isOffline,
+        'comment_create',
+        { userId: user.uid, businessId, businessName },
+        { userId: user.uid, userName: displayName || 'Anónimo', businessId, text: trimmedReply, parentId: replyingTo.id },
+        () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
+        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+      );
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
-      toast.success('Respuesta publicada');
+      if (!isOffline) toast.success('Respuesta publicada');
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error adding reply:', error);
       toast.error('No se pudo publicar la respuesta');

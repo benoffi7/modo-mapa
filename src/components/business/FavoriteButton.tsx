@@ -4,18 +4,22 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { addFavorite, removeFavorite } from '../../services/favorites';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 
 interface Props {
   businessId: string;
+  businessName?: string;
   isFavorite: boolean;
   isLoading: boolean;
   onToggle: () => void;
 }
 
-export default memo(function FavoriteButton({ businessId, isFavorite, isLoading, onToggle }: Props) {
+export default memo(function FavoriteButton({ businessId, businessName, isFavorite, isLoading, onToggle }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [isToggling, setIsToggling] = useState(false);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
   const [prevIsFavorite, setPrevIsFavorite] = useState(isFavorite);
@@ -35,11 +39,25 @@ export default memo(function FavoriteButton({ businessId, isFavorite, isLoading,
     setIsToggling(true);
     try {
       if (wasFavorite) {
-        await removeFavorite(user.uid, businessId);
-        toast.info('Removido de favoritos');
+        await withOfflineSupport(
+          isOffline,
+          'favorite_remove',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId, action: 'remove' },
+          () => removeFavorite(user.uid, businessId),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
+        if (!isOffline) toast.info('Removido de favoritos');
       } else {
-        await addFavorite(user.uid, businessId);
-        toast.success('Agregado a favoritos');
+        await withOfflineSupport(
+          isOffline,
+          'favorite_add',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId, action: 'add' },
+          () => addFavorite(user.uid, businessId),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
+        if (!isOffline) toast.success('Agregado a favoritos');
       }
       onToggle();
     } catch (error) {
@@ -48,7 +66,7 @@ export default memo(function FavoriteButton({ businessId, isFavorite, isLoading,
       toast.error('No se pudo actualizar favoritos');
     }
     setIsToggling(false);
-  }, [user, businessId, isFavorite, onToggle, toast]);
+  }, [user, businessId, businessName, isFavorite, isOffline, onToggle, toast]);
 
   return (
     <IconButton

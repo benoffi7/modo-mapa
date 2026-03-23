@@ -153,6 +153,7 @@ export default function BusinessSheet() {
               favoriteButton={
                 <FavoriteButton
                   businessId={selectedBusiness.id}
+                  businessName={selectedBusiness.name}
                   isFavorite={data.isFavorite}
                   isLoading={data.isLoading}
                   onToggle={() => data.refetch('favorites')}
@@ -177,6 +178,7 @@ export default function BusinessSheet() {
             <Divider sx={{ my: 1.5 }} />
             <BusinessRating
               businessId={selectedBusiness.id}
+              businessName={selectedBusiness.name}
               ratings={data.ratings}
               isLoading={data.isLoading}
               onRatingChange={() => data.refetch('ratings')}
@@ -185,6 +187,7 @@ export default function BusinessSheet() {
             <BusinessPriceLevel
               key={selectedBusiness.id}
               businessId={selectedBusiness.id}
+              businessName={selectedBusiness.name}
               priceLevels={data.priceLevels}
               isLoading={data.isLoading}
               onPriceLevelChange={() => data.refetch('priceLevels')}
@@ -192,6 +195,7 @@ export default function BusinessSheet() {
             <Divider sx={{ my: 1.5 }} />
             <BusinessTags
               businessId={selectedBusiness.id}
+              businessName={selectedBusiness.name}
               seedTags={selectedBusiness.tags}
               userTags={data.userTags}
               customTags={data.customTags}
@@ -218,6 +222,7 @@ export default function BusinessSheet() {
             {activeTab === 'comments' ? (
               <BusinessComments
                 businessId={selectedBusiness.id}
+                businessName={selectedBusiness.name}
                 comments={regularComments}
                 userCommentLikes={data.userCommentLikes}
                 isLoading={data.isLoading}

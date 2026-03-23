@@ -1,0 +1,35 @@
+import type { OfflineActionType, OfflineActionPayload } from '../types/offline';
+import { enqueue } from './offlineQueue';
+import { trackEvent } from '../utils/analytics';
+import { EVT_OFFLINE_ACTION_QUEUED } from '../constants/analyticsEvents';
+
+export async function withOfflineSupport<T>(
+  isOffline: boolean,
+  actionType: OfflineActionType,
+  actionMeta: { userId: string; businessId: string; businessName?: string | undefined },
+  payload: OfflineActionPayload,
+  onlineAction: () => Promise<T>,
+  onEnqueued: () => void,
+): Promise<T | void> {
+  if (!isOffline) {
+    return onlineAction();
+  }
+
+  const actionData: Parameters<typeof enqueue>[0] = {
+    type: actionType,
+    payload,
+    userId: actionMeta.userId,
+    businessId: actionMeta.businessId,
+  };
+  if (actionMeta.businessName) {
+    actionData.businessName = actionMeta.businessName;
+  }
+  await enqueue(actionData);
+
+  trackEvent(EVT_OFFLINE_ACTION_QUEUED, {
+    action_type: actionType,
+    business_id: actionMeta.businessId,
+  });
+
+  onEnqueued();
+}

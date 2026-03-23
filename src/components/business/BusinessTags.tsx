@@ -10,7 +10,10 @@ import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PREDEFINED_TAGS } from '../../types';
 import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
 import type { CustomTag, UserTag } from '../../types';
@@ -19,6 +22,7 @@ import DeleteTagDialog from './DeleteTagDialog';
 
 interface Props {
   businessId: string;
+  businessName?: string;
   seedTags: string[];
   userTags: UserTag[];
   customTags: CustomTag[];
@@ -32,8 +36,10 @@ interface TagCount {
   userAdded: boolean;
 }
 
-export default memo(function BusinessTags({ businessId, seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
+export default memo(function BusinessTags({ businessId, businessName, seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
+  const { isOffline } = useConnectivity();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
@@ -70,9 +76,23 @@ export default memo(function BusinessTags({ businessId, seedTags, userTags, cust
     const existing = tagCounts.find((t) => t.tagId === tagId);
     try {
       if (existing?.userAdded) {
-        await removeUserTag(user.uid, businessId, tagId);
+        await withOfflineSupport(
+          isOffline,
+          'tag_remove',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId, tagId },
+          () => removeUserTag(user.uid, businessId, tagId),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
       } else {
-        await addUserTag(user.uid, businessId, tagId);
+        await withOfflineSupport(
+          isOffline,
+          'tag_add',
+          { userId: user.uid, businessId, businessName },
+          { userId: user.uid, businessId, tagId },
+          () => addUserTag(user.uid, businessId, tagId),
+          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        );
       }
       onTagsChange();
     } catch (err) {

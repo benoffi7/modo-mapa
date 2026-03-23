@@ -132,6 +132,18 @@
 | **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SideMenu footer. |
 | **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
 
+## Offline queue
+
+| Patron | Descripcion |
+|--------|-------------|
+| **withOfflineSupport wrapper** | Componentes wrappean llamadas a servicios con `withOfflineSupport(isOffline, type, meta, payload, onlineAction, onEnqueued)`. Si offline, encola en IndexedDB. Si online, ejecuta la accion. Servicios no se modifican. |
+| **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook. |
+| **IndexedDB nativa** | `offlineQueue.ts` usa IndexedDB API directamente (sin idb/Dexie). Singleton DB, subscribe/notify pattern, indexes por status y createdAt. |
+| **SyncEngine dynamic imports** | `syncEngine.ts` usa `await import()` para cargar servicios bajo demanda, evitando que el import chain tire de firebase.ts en tests. |
+| **Offline action types** | Union discriminada `OfflineActionType` con 9 tipos. Payloads tipados por tipo de accion en `types/offline.ts`. |
+
+---
+
 ## Utilidades compartidas
 
 | Patron | Descripcion |
