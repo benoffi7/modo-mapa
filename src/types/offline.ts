@@ -8,7 +8,9 @@ export type OfflineActionType =
   | 'price_level_upsert'
   | 'price_level_delete'
   | 'tag_add'
-  | 'tag_remove';
+  | 'tag_remove'
+  | 'comment_like'
+  | 'comment_unlike';
 
 /** Status de una accion en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -26,7 +28,7 @@ export interface OfflineAction {
   status: OfflineActionStatus;
 }
 
-/** Union de payloads por tipo de accion */
+/** Union de payloads por tipo de accion. userId/businessId are on OfflineAction, not here. */
 export type OfflineActionPayload =
   | RatingUpsertPayload
   | RatingDeletePayload
@@ -34,54 +36,47 @@ export type OfflineActionPayload =
   | FavoriteTogglePayload
   | PriceLevelUpsertPayload
   | PriceLevelDeletePayload
-  | TagAddPayload
-  | TagRemovePayload;
+  | TagTogglePayload
+  | CommentLikePayload
+  | EmptyPayload;
 
 export interface RatingUpsertPayload {
-  userId: string;
-  businessId: string;
   score: number;
   criteria?: import('./index').RatingCriteria;
 }
 
 export interface RatingDeletePayload {
-  userId: string;
-  businessId: string;
+  _type: 'rating_delete';
 }
 
 export interface CommentCreatePayload {
-  userId: string;
   userName: string;
-  businessId: string;
   text: string;
   parentId?: string;
+  questionType?: boolean;
 }
 
 export interface FavoriteTogglePayload {
-  userId: string;
-  businessId: string;
   action: 'add' | 'remove';
 }
 
 export interface PriceLevelUpsertPayload {
-  userId: string;
-  businessId: string;
   level: number;
 }
 
 export interface PriceLevelDeletePayload {
-  userId: string;
-  businessId: string;
+  _type: 'price_level_delete';
 }
 
-export interface TagAddPayload {
-  userId: string;
-  businessId: string;
+export interface TagTogglePayload {
   tagId: string;
 }
 
-export interface TagRemovePayload {
-  userId: string;
-  businessId: string;
-  tagId: string;
+export interface CommentLikePayload {
+  commentId: string;
+}
+
+/** For action types that need no extra data beyond userId/businessId on the action */
+export interface EmptyPayload {
+  _type?: string;
 }

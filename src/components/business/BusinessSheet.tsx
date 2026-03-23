@@ -232,6 +232,7 @@ export default function BusinessSheet() {
             ) : (
               <BusinessQuestions
                 businessId={selectedBusiness.id}
+                businessName={selectedBusiness.name}
                 comments={data.comments}
                 userCommentLikes={data.userCommentLikes}
                 isLoading={data.isLoading}

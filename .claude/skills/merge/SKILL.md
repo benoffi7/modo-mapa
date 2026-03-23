@@ -133,13 +133,14 @@ git stash pop 2>/dev/null
 
 ### 4a. Reinstall dependencies if changed
 
-After merging, check if `functions/package.json` changed and reinstall:
+After merging, check if `package.json` or `functions/package.json` changed and reinstall:
 
 ```bash
+git diff HEAD~1 --name-only | grep -q '^package.json$' && npm ci
 git diff HEAD~1 --name-only | grep -q 'functions/package.json' && (cd functions && npm ci)
 ```
 
-This is critical when cherry-picking from worktrees — `node_modules` don't transfer.
+This is critical when merging from worktrees — `node_modules` don't transfer. New devDependencies (e.g. `fake-indexeddb`) installed in the worktree won't be available in the main repo until `npm ci` runs.
 
 ## Phase 5: Post-merge
 

@@ -41,15 +41,11 @@ export function openDb(): Promise<IDBDatabase> {
   });
 }
 
+/** Enqueue with atomic count+put in a single readwrite transaction */
 export async function enqueue(
   action: Omit<OfflineAction, 'id' | 'createdAt' | 'retryCount' | 'status'>,
 ): Promise<OfflineAction> {
   const db = await openDb();
-  const currentCount = await count();
-
-  if (currentCount >= OFFLINE_QUEUE_MAX_ITEMS) {
-    throw new Error('Cola de acciones offline llena');
-  }
 
   const fullAction: OfflineAction = {
     ...action,
@@ -61,9 +57,20 @@ export async function enqueue(
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
-    tx.objectStore(OFFLINE_STORE_NAME).put(fullAction);
+    const store = tx.objectStore(OFFLINE_STORE_NAME);
+    const countReq = store.count();
+    countReq.onsuccess = () => {
+      if (countReq.result >= OFFLINE_QUEUE_MAX_ITEMS) {
+        tx.abort();
+        reject(new Error('Cola de acciones offline llena'));
+        return;
+      }
+      store.put(fullAction);
+    };
     tx.oncomplete = () => { notify(); resolve(fullAction); };
-    tx.onerror = () => reject(tx.error);
+    tx.onerror = () => {
+      if (tx.error?.name !== 'AbortError') reject(tx.error);
+    };
   });
 }
 
@@ -115,6 +122,32 @@ export async function updateStatus(
   });
 }
 
+/** Bulk update status for multiple actions in a single transaction */
+export async function bulkUpdateStatus(
+  ids: string[],
+  status: OfflineActionStatus,
+  retryCount?: number,
+): Promise<void> {
+  if (ids.length === 0) return;
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(OFFLINE_STORE_NAME);
+    for (const id of ids) {
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const action = getReq.result as OfflineAction | undefined;
+        if (!action) return;
+        action.status = status;
+        if (retryCount !== undefined) action.retryCount = retryCount;
+        store.put(action);
+      };
+    }
+    tx.oncomplete = () => { notify(); resolve(); };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 export async function remove(id: string): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -160,10 +193,12 @@ export function subscribe(callback: Listener): () => void {
 }
 
 /** Reset for testing — clears singleton db instance */
-export function _resetForTest(): void {
-  if (dbInstance) {
-    dbInstance.close();
-    dbInstance = null;
-  }
-  listeners.clear();
-}
+export const _resetForTest: (() => void) | undefined = import.meta.env.DEV
+  ? () => {
+      if (dbInstance) {
+        dbInstance.close();
+        dbInstance = null;
+      }
+      listeners.clear();
+    }
+  : undefined;

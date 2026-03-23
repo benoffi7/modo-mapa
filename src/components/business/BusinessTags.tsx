@@ -77,21 +77,19 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
     try {
       if (existing?.userAdded) {
         await withOfflineSupport(
-          isOffline,
-          'tag_remove',
+          isOffline, 'tag_remove',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId, tagId },
+          { tagId },
           () => removeUserTag(user.uid, businessId, tagId),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
       } else {
         await withOfflineSupport(
-          isOffline,
-          'tag_add',
+          isOffline, 'tag_add',
           { userId: user.uid, businessId, businessName },
-          { userId: user.uid, businessId, tagId },
+          { tagId },
           () => addUserTag(user.uid, businessId, tagId),
-          () => toast.info('Guardado offline — se sincronizará al reconectar'),
+          toast,
         );
       }
       onTagsChange();

@@ -156,12 +156,11 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     setIsSubmitting(true);
     try {
       await withOfflineSupport(
-        isOffline,
-        'comment_create',
+        isOffline, 'comment_create',
         { userId: user.uid, businessId, businessName },
-        { userId: user.uid, userName: displayName || 'Anónimo', businessId, text },
+        { userName: displayName || 'Anónimo', text },
         () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
-        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        toast,
       );
       onCommentsChange();
       if (!isOffline) toast.success('Comentario publicado');
@@ -219,9 +218,21 @@ export default memo(function BusinessComments({ businessId, businessName, commen
 
     try {
       if (currentlyLiked) {
-        await unlikeComment(user.uid, commentId);
+        await withOfflineSupport(
+          isOffline, 'comment_unlike',
+          { userId: user.uid, businessId, businessName },
+          { commentId },
+          () => unlikeComment(user.uid, commentId),
+          toast,
+        );
       } else {
-        await likeComment(user.uid, commentId);
+        await withOfflineSupport(
+          isOffline, 'comment_like',
+          { userId: user.uid, businessId, businessName },
+          { commentId },
+          () => likeComment(user.uid, commentId),
+          toast,
+        );
       }
     } catch (error) {
       // Revert optimistic update
@@ -261,12 +272,11 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     try {
       const trimmedReply = replyText.trim();
       await withOfflineSupport(
-        isOffline,
-        'comment_create',
+        isOffline, 'comment_create',
         { userId: user.uid, businessId, businessName },
-        { userId: user.uid, userName: displayName || 'Anónimo', businessId, text: trimmedReply, parentId: replyingTo.id },
+        { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
         () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
-        () => toast.info('Guardado offline — se sincronizará al reconectar'),
+        toast,
       );
       setReplyingTo(null);
       setReplyText('');
