@@ -71,6 +71,7 @@ Launch ALL these agents in parallel using their specialized `subagent_type`. The
 4. **ui-reviewer** — 360px layout, accessibility, dark mode, empty states in changed files
 5. **performance** — bundle impact, re-render efficiency, memoization in changed files
 6. **privacy-policy** — check for new logEvent/addDoc/setDoc/collection/localStorage in diff
+7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
 
 Get changed files with: `git diff --name-only origin/main -- 'src/**/*.tsx' 'src/**/*.ts'`
 
@@ -211,6 +212,7 @@ Output a final summary:
 | ui-reviewer | ... |
 | performance | ... |
 | privacy-policy | ... |
+| offline-auditor | ... |
 
 ### Docs updated
 - features.md, patterns.md, project-reference.md, HelpSection.tsx

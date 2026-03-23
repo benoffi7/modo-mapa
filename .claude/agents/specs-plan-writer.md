@@ -84,6 +84,26 @@ Mock strategy.}
 
 ---
 
+## Offline
+
+{Offline strategy for this feature, based on the PRD's Offline section.}
+
+### Cache strategy
+
+| Dato | Estrategia | TTL | Storage |
+|------|-----------|-----|---------|
+
+### Writes offline
+
+| Operacion | Mecanismo | Conflict resolution |
+|-----------|-----------|-------------------|
+
+### Fallback UI
+
+{Components/states needed for offline mode.}
+
+---
+
 ## Decisiones tecnicas
 
 {Key technical decisions and their rationale.
@@ -149,6 +169,7 @@ Before finishing, verify:
 - [ ] Plan steps are concrete — specific file paths, not vague descriptions
 - [ ] Test section predicts actual test file names matching src/__tests__/ convention
 - [ ] No orphan specs — every component/hook/service in specs appears in the plan
+- [ ] Offline section specifies concrete cache strategies and conflict resolution per data flow
 
 ## After creating
 

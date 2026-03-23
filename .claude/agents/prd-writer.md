@@ -117,6 +117,27 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 
 ---
 
+## Offline
+
+{Evaluate this feature's offline behavior. For each data flow (reads and writes), specify:}
+
+### Data flows
+
+| Operacion | Tipo (read/write) | Estrategia offline | Fallback UI |
+|-----------|-------------------|-------------------|-------------|
+
+### Checklist offline
+
+- [ ] Reads de Firestore: usan persistencia offline?
+- [ ] Writes: tienen queue offline o optimistic UI?
+- [ ] APIs externas: hay manejo de error de red?
+- [ ] UI: hay indicador de estado offline en contextos relevantes?
+- [ ] Datos criticos: disponibles en cache para primera carga?
+
+### Esfuerzo offline adicional: {S/M/L}
+
+---
+
 ## Success Criteria
 
 {4-5 numbered criteria}
@@ -132,6 +153,7 @@ Before finishing, verify:
 - [ ] Seguridad section is tailored, not copy-pasted boilerplate
 - [ ] Out of Scope is clear and prevents scope creep
 - [ ] Scope table has realistic effort estimates
+- [ ] Offline section has specific data flows, not just generic checklist
 
 ## After creating
 
