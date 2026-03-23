@@ -1,11 +1,6 @@
 import type { OfflineAction } from '../types/offline';
 import * as offlineQueue from './offlineQueue';
 import { OFFLINE_MAX_RETRIES, OFFLINE_BACKOFF_BASE_MS } from '../constants/offline';
-import { upsertRating, deleteRating } from './ratings';
-import { addComment } from './comments';
-import { addFavorite, removeFavorite } from './favorites';
-import { upsertPriceLevel, deletePriceLevel } from './priceLevels';
-import { addUserTag, removeUserTag } from './tags';
 import type {
   RatingUpsertPayload,
   RatingDeletePayload,
@@ -26,46 +21,55 @@ export async function executeAction(action: OfflineAction): Promise<void> {
   switch (action.type) {
     case 'rating_upsert': {
       const rp = p as RatingUpsertPayload;
+      const { upsertRating } = await import('./ratings');
       await upsertRating(rp.userId, rp.businessId, rp.score, rp.criteria);
       break;
     }
     case 'rating_delete': {
       const rp = p as RatingDeletePayload;
+      const { deleteRating } = await import('./ratings');
       await deleteRating(rp.userId, rp.businessId);
       break;
     }
     case 'comment_create': {
       const cp = p as CommentCreatePayload;
+      const { addComment } = await import('./comments');
       await addComment(cp.userId, cp.userName, cp.businessId, cp.text, cp.parentId);
       break;
     }
     case 'favorite_add': {
       const fp = p as FavoriteTogglePayload;
+      const { addFavorite } = await import('./favorites');
       await addFavorite(fp.userId, fp.businessId);
       break;
     }
     case 'favorite_remove': {
       const fp = p as FavoriteTogglePayload;
+      const { removeFavorite } = await import('./favorites');
       await removeFavorite(fp.userId, fp.businessId);
       break;
     }
     case 'price_level_upsert': {
       const pp = p as PriceLevelUpsertPayload;
+      const { upsertPriceLevel } = await import('./priceLevels');
       await upsertPriceLevel(pp.userId, pp.businessId, pp.level);
       break;
     }
     case 'price_level_delete': {
       const pp = p as PriceLevelDeletePayload;
+      const { deletePriceLevel } = await import('./priceLevels');
       await deletePriceLevel(pp.userId, pp.businessId);
       break;
     }
     case 'tag_add': {
       const tp = p as TagAddPayload;
+      const { addUserTag } = await import('./tags');
       await addUserTag(tp.userId, tp.businessId, tp.tagId);
       break;
     }
     case 'tag_remove': {
       const tp = p as TagRemovePayload;
+      const { removeUserTag } = await import('./tags');
       await removeUserTag(tp.userId, tp.businessId, tp.tagId);
       break;
     }
