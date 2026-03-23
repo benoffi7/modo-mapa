@@ -20,12 +20,15 @@ export function OfflineIndicator() {
       label={label}
       color={isSyncing ? 'info' : 'warning'}
       size="small"
+      role="status"
+      aria-live="polite"
       sx={{
         position: 'fixed',
         top: 8,
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 1400,
+        zIndex: 1100,
+        maxWidth: 'calc(100vw - 32px)',
       }}
     />
   );

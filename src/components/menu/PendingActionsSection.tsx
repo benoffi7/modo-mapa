@@ -72,8 +72,11 @@ export default memo(function PendingActionsSection() {
 
   const handleDiscard = async (id: string) => {
     setDiscarding(id);
-    await discardAction(id);
-    setDiscarding(null);
+    try {
+      await discardAction(id);
+    } finally {
+      setDiscarding(null);
+    }
   };
 
   return (

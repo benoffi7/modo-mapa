@@ -113,7 +113,9 @@ export default function PrivacyPolicy() {
             eventos relacionados con la autenticación (account_created, email_sign_in,
             sign_out, password_changed), eventos de preguntas y respuestas (question_created,
             question_answered, question_viewed), eventos de check-ins (checkin_created,
-            checkin_deleted) y la propiedad de usuario auth_type. Estos eventos
+            checkin_deleted), eventos de sincronizacion offline (offline_action_queued,
+            offline_sync_completed, offline_sync_failed, offline_action_discarded)
+            y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
           <Li>
@@ -148,6 +150,15 @@ export default function PrivacyPolicy() {
             tu email si activás &quot;Recordar mi email&quot;). Estos datos no se envían a
             ningún servidor y podés borrarlos en cualquier momento desde la configuración
             del navegador o desactivando la opción.
+          </Li>
+          <Li>
+            <strong>IndexedDB (local):</strong> cuando no tenés conexión a internet,
+            la app almacena temporalmente tus acciones pendientes (calificaciones,
+            comentarios, favoritos, votos de precio y etiquetas) en una base de datos
+            local del navegador (IndexedDB). Estos datos incluyen tu UID, el
+            identificador del comercio y el contenido de la acción. Se sincronizan
+            automáticamente cuando volvés a estar online y se eliminan después de
+            7 días. Podés borrarlos desde la configuración del navegador.
           </Li>
         </Box>
       </Section>
