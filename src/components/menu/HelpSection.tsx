@@ -37,7 +37,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <StorefrontOutlinedIcon color="primary" />,
     title: 'Comercio',
     description:
-      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar o hacer preguntas (con respuestas, likes y mejor respuesta destacada, máximo 20 por día), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Las acciones muestran confirmación o error automáticamente.',
+      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar o hacer preguntas (con respuestas, likes y mejor respuesta destacada, máximo 20 por día), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Las acciones muestran confirmación o error automáticamente. Si no tenés conexión, tus acciones se guardan y se sincronizan automáticamente al reconectar. Podés ver las acciones pendientes en el menú lateral.',
   },
   {
     id: 'menu',
