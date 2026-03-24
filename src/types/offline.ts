@@ -82,7 +82,7 @@ export interface CommentLikePayload {
 
 export interface CheckinCreatePayload {
   businessName: string;
-  location?: { lat: number; lng: number };
+  location?: { lat: number; lng: number } | undefined;
 }
 
 export interface CheckinDeletePayload {
