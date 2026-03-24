@@ -1,6 +1,6 @@
 # Deuda Técnica — Backlog
 
-**Última actualización:** 2026-03-16
+**Última actualización:** 2026-03-24
 **Consolidado de:** audit-phase4-v1, pre-launch-audit, security-audit-v1.4
 
 ---
@@ -23,9 +23,9 @@
 
 ## Pendientes
 
-Sin items pendientes. Se creó una [directiva de tamaño de archivos](../reference/file-size-directive.md) para prevenir la acumulación futura de componentes grandes (límite: 400 líneas).
-
-Próximos items de mejora están en el [Backlog de Producto](backlog-producto.md).
+| ID | Descripción | Issue | Severidad |
+|----|-------------|-------|-----------|
+| DT-11 | `SharedListsView.tsx` 703 líneas (límite 400) + Firestore inline queries bypaseando service layer | [#175](https://github.com/benoffi7/modo-mapa/issues/175) | Media |
 
 ---
 
