@@ -70,3 +70,8 @@ export async function addFavoritesBatch(
   }
   return toAdd.length;
 }
+
+export async function fetchUserFavoriteIds(userId: string): Promise<string[]> {
+  const snap = await getDocs(query(getFavoritesCollection(), where('userId', '==', userId)));
+  return snap.docs.map((d) => d.data().businessId);
+}
