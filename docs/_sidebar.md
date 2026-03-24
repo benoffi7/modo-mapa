@@ -135,6 +135,8 @@
     - [PRD](/feat/infra/modularizar-layout/prd.md)
     - [Specs](/feat/infra/modularizar-layout/specs.md)
     - [Plan](/feat/infra/modularizar-layout/plan.md)
+  - [SharedLists Tech Debt](/feat/infra/sharedlists-tech-debt/)
+    - [PRD](/feat/infra/sharedlists-tech-debt/prd.md)
   - [Modularizar Stats](/feat/infra/modularizar-stats/)
     - [PRD](/feat/infra/modularizar-stats/prd.md)
     - [Specs](/feat/infra/modularizar-stats/specs.md)
