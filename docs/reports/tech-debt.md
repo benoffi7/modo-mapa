@@ -23,9 +23,13 @@
 
 ## Pendientes
 
-| ID | Descripción | Issue | Severidad |
-|----|-------------|-------|-----------|
-| DT-11 | `SharedListsView.tsx` 703 líneas (límite 400) + Firestore inline queries bypaseando service layer | [#175](https://github.com/benoffi7/modo-mapa/issues/175) | Media |
+Sin items pendientes.
+
+### Recientemente resueltos
+
+| ID | Descripción | Resolución |
+|----|-------------|------------|
+| DT-11 | `SharedListsView.tsx` 703 líneas + Firestore inline queries | v2.27.1 — Extraído SharedListDetailView, CreateListDialog, InviteEditorDialog. Queries movidas a services. 703→398 líneas, 0 firebase imports en componentes |
 
 ---
 

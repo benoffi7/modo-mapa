@@ -166,6 +166,10 @@ src/
 │   └── menu/
 │       ├── EditDisplayNameDialog.tsx # Dialog para editar nombre de usuario (extraido de SideMenu)
 │       ├── FavoritesList.tsx
+│       ├── SharedListsView.tsx       # Orquestador de listas compartidas (398 lineas, 0 imports firebase directos en componente)
+│       ├── SharedListDetailView.tsx  # Vista detalle de una lista compartida (items, share, edit, invite editors)
+│       ├── CreateListDialog.tsx      # Dialog para crear nueva lista compartida
+│       ├── InviteEditorDialog.tsx    # Dialog para invitar editores por nombre de usuario
 │       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe, virtualizacion condicional (@tanstack/react-virtual >= 20 items)
 │       ├── CommentItem.tsx           # Item individual de comentario (React.memo), extraido de CommentsList. Blue dot para unread replies
 │       ├── PaginatedListShell.tsx   # Shell reutilizable: skeleton/error/empty/no-results/pagination

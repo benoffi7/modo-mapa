@@ -1,23 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Box,
-  List,
-  ListItemButton,
-  ListItemText,
-  IconButton,
-  Typography,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  CircularProgress,
-  Collapse,
-  Card,
-  CardActionArea,
-  CardContent,
+  Box, List, ListItemButton, ListItemText, IconButton, Typography, Button,
+  Chip, CircularProgress, Collapse, Card, CardActionArea, CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -27,32 +11,27 @@ import PublicIcon from '@mui/icons-material/Public';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EditorsDialog from './EditorsDialog';
+import SharedListDetailView from './SharedListDetailView';
+import CreateListDialog from './CreateListDialog';
+import InviteEditorDialog from './InviteEditorDialog';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useToast } from '../../context/ToastContext';
 import {
-  getSharedListsCollection,
-  createList,
   deleteList,
   fetchListItems,
   removeBusinessFromList,
   toggleListPublic,
-  copyList,
   fetchFeaturedLists,
   fetchSharedWithMe,
+  fetchSharedList,
+  fetchUserLists,
+  fetchEditorName,
 } from '../../services/sharedLists';
-import { addFavoritesBatch, addFavorite, removeFavorite } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { getDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-import { sharedListConverter } from '../../config/converters';
 import { CATEGORY_LABELS } from '../../types';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MAX_LISTS } from '../../constants/lists';
@@ -61,7 +40,6 @@ import type { SharedList, ListItem, Business } from '../../types';
 interface Props {
   onSelectBusiness: (business: Business) => void;
   sharedListId?: string | undefined;
-  /** Called by parent to check if we're showing a shared list and should clear it instead of navigating back */
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
@@ -79,82 +57,59 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
   // Shared list from deep link or featured list click
   const [sharedList, setSharedList] = useState<SharedList | null>(null);
   const [sharedItems, setSharedItems] = useState<ListItem[]>([]);
-  const [loadingShared, setLoadingShared] = useState(false);
+  const [loadingShared, setLoadingShared] = useState(!!sharedListId);
 
+  // Featured lists & shared with me
+  const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
+  const [sharedWithMe, setSharedWithMe] = useState<SharedList[]>([]);
+
+  // Dialogs
+  const [createOpen, setCreateOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState<string | null>(null);
+  const [editorsDialogList, setEditorsDialogList] = useState<SharedList | null>(null);
+
+  // Editor names for addedBy display
+  const [editorNames, setEditorNames] = useState<Map<string, string>>(new Map());
+
+  // Load a shared list by ID (deep link or featured click)
+  const openSharedList = useCallback(async (listId: string) => {
+    setLoadingShared(true);
+    try {
+      const list = await fetchSharedList(listId);
+      if (!list) { setLoadingShared(false); return; }
+      setSharedList(list);
+      const items = await fetchListItems(listId);
+      setSharedItems(items);
+    } catch { /* ignore */ }
+    setLoadingShared(false);
+  }, []);
 
   useEffect(() => {
     if (!sharedListId) return;
     let ignore = false;
-     
-    setLoadingShared(true);
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, COLLECTIONS.SHARED_LISTS, sharedListId).withConverter(sharedListConverter));
-        if (ignore || !snap.exists()) { setLoadingShared(false); return; }
-        const list = snap.data();
-        setSharedList(list);
-        const items = await fetchListItems(list.id);
-        if (!ignore) setSharedItems(items);
-      } catch { /* ignore */ }
-      if (!ignore) setLoadingShared(false);
-    })();
+    fetchSharedList(sharedListId).then(async (list) => {
+      if (ignore || !list) { if (!ignore) setLoadingShared(false); return; }
+      if (!ignore) setSharedList(list);
+      const items = await fetchListItems(list.id);
+      if (!ignore) { setSharedItems(items); setLoadingShared(false); }
+    }).catch(() => { if (!ignore) setLoadingShared(false); });
     return () => { ignore = true; };
   }, [sharedListId]);
-
-  // Create dialog
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-
-  // Invite editor dialog
-  const [inviteOpen, setInviteOpen] = useState<string | null>(null);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [isInviting, setIsInviting] = useState(false);
-
-  // Editors dialog
-  const [editorsDialogList, setEditorsDialogList] = useState<SharedList | null>(null);
-
-  // Featured lists
-  const [featuredLists, setFeaturedLists] = useState<SharedList[]>([]);
-  // Shared with me (collaborative)
-  const [sharedWithMe, setSharedWithMe] = useState<SharedList[]>([]);
 
   useEffect(() => {
     fetchFeaturedLists().then(setFeaturedLists).catch((err) => console.error('[SharedListsView] fetchFeaturedLists failed:', err));
     if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch((err) => console.error('[SharedListsView] fetchSharedWithMe failed:', err));
   }, [user]);
 
-  const handleOpenFeatured = (listId: string) => {
-    // Reuse the shared list deep-link mechanism by loading the list inline
-    setLoadingShared(true);
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId).withConverter(sharedListConverter));
-        if (!snap.exists()) { setLoadingShared(false); return; }
-        setSharedList(snap.data());
-        const items = await fetchListItems(listId);
-        setSharedItems(items);
-      } catch { /* ignore */ }
-      setLoadingShared(false);
-    })();
-  };
-
   const loadLists = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const snap = await getDocs(
-        query(getSharedListsCollection(), where('ownerId', '==', user.uid), orderBy('updatedAt', 'desc')),
-      );
-      setLists(snap.docs.map((d) => d.data()));
-    } catch {
-      /* ignore */
-    }
+      setLists(await fetchUserLists(user.uid));
+    } catch { /* ignore */ }
     setIsLoading(false);
   }, [user]);
 
-  // Register back handler: if showing a shared list, clear it and show user's lists
   useEffect(() => {
     onRegisterBackHandler?.(() => {
       if (sharedList || loadingShared) {
@@ -162,36 +117,23 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
         setSharedItems([]);
         setLoadingShared(false);
         loadLists();
-        return true; // handled
+        return true;
       }
-      return false; // not handled, parent should go to nav
+      return false;
     });
     return () => onRegisterBackHandler?.(null);
-  }); // runs every render to keep closure fresh
+  });
 
   useEffect(() => {
-     
-    loadLists();
-  }, [loadLists]);
+    if (!user) return;
+    let ignore = false;
+    fetchUserLists(user.uid).then((result) => {
+      if (!ignore) { setLists(result); setIsLoading(false); }
+    }).catch(() => { if (!ignore) setIsLoading(false); });
+    return () => { ignore = true; };
+  }, [user]);
 
   const handleRefresh = useCallback(async () => { await loadLists(); }, [loadLists]);
-
-  const handleCreate = async () => {
-    if (!user || !newName.trim()) return;
-    setIsCreating(true);
-    try {
-      await createList(user.uid, newName, newDesc);
-      setCreateOpen(false);
-      setNewName('');
-      setNewDesc('');
-      toast.success('Lista creada');
-      await loadLists();
-    } catch (err) {
-      console.error('Create list error:', err);
-      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    setIsCreating(false);
-  };
 
   const handleDelete = async (list: SharedList) => {
     if (!user) return;
@@ -224,52 +166,21 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
     }
   };
 
-  const handleInvite = async () => {
-    if (!inviteOpen || !inviteEmail.trim()) return;
-    setIsInviting(true);
-    try {
-      const { httpsCallable } = await import('firebase/functions');
-      const { functions } = await import('../../config/firebase');
-      const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
-      const fn = httpsCallable<{ listId: string; targetEmail: string; databaseId?: string }, { success: boolean }>(functions, 'inviteListEditor');
-      await fn({ listId: inviteOpen, targetEmail: inviteEmail.trim(), databaseId });
-      toast.success(`Editor invitado: ${inviteEmail.trim()}`);
-      setInviteOpen(null);
-      setInviteEmail('');
-      await loadLists();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo invitar');
-    }
-    setIsInviting(false);
-  };
-
   const handleToggleExpand = async (listId: string) => {
-    if (expandedId === listId) {
-      setExpandedId(null);
-      return;
-    }
+    if (expandedId === listId) { setExpandedId(null); return; }
     setExpandedId(listId);
     if (!expandedItems.has(listId)) {
       setLoadingItems(listId);
       try {
         const items = await fetchListItems(listId);
         setExpandedItems((prev) => new Map(prev).set(listId, items));
-
-        // Fetch editor display names if collaborative
         const list = lists.find((l) => l.id === listId);
         if (list && list.editorIds.length > 0) {
           const uidsToFetch = [...new Set(items.map((i) => i.addedBy).filter(Boolean))].filter((uid) => !editorNames.has(uid));
-          for (const uid of uidsToFetch) {
-            try {
-              const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
-              const data = snap.data() as { displayName?: string } | undefined;
-              setEditorNames((prev) => new Map(prev).set(uid, data?.displayName ?? 'Usuario'));
-            } catch { /* ignore */ }
-          }
+          const names = await Promise.all(uidsToFetch.map((uid) => fetchEditorName(uid).then((name) => [uid, name] as const)));
+          if (names.length > 0) setEditorNames((prev) => { const next = new Map(prev); for (const [uid, name] of names) next.set(uid, name); return next; });
         }
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
       setLoadingItems(null);
     }
   };
@@ -279,13 +190,10 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
       await removeBusinessFromList(listId, businessId);
       setExpandedItems((prev) => {
         const next = new Map(prev);
-        const items = next.get(listId)?.filter((i) => i.businessId !== businessId) ?? [];
-        next.set(listId, items);
+        next.set(listId, next.get(listId)?.filter((i) => i.businessId !== businessId) ?? []);
         return next;
       });
-      setLists((prev) =>
-        prev.map((l) => (l.id === listId ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l)),
-      );
+      setLists((prev) => prev.map((l) => (l.id === listId ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l)));
     } catch {
       toast.error('No se pudo quitar el comercio');
     }
@@ -294,78 +202,6 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
   const handleSelectBusiness = (business: Business, fromListId?: string) => {
     if (fromListId) setActiveSharedListId(fromListId);
     onSelectBusiness(business);
-  };
-
-  // Copy & favorites state for shared list view
-  const [isCopying, setIsCopying] = useState(false);
-  const [isAddingFavs, setIsAddingFavs] = useState(false);
-
-  // Individual favorites for shared list items
-  const [userFavIds, setUserFavIds] = useState<Set<string>>(new Set());
-
-  // Editor names for addedBy display
-  const [editorNames, setEditorNames] = useState<Map<string, string>>(new Map());
-
-  useEffect(() => {
-    if (!user || !sharedList) return;
-    let ignore = false;
-    (async () => {
-      try {
-        const { getFavoritesCollection } = await import('../../services/favorites');
-        const snap = await getDocs(query(getFavoritesCollection(), where('userId', '==', user.uid)));
-        if (!ignore) setUserFavIds(new Set(snap.docs.map((d) => d.data().businessId)));
-      } catch (err) {
-        console.error('[SharedListsView] load favorites failed:', err);
-      }
-    })();
-    return () => { ignore = true; };
-  }, [user, sharedList]);
-
-  const handleToggleFavorite = async (businessId: string) => {
-    if (!user) return;
-    const isFav = userFavIds.has(businessId);
-    try {
-      if (isFav) {
-        await removeFavorite(user.uid, businessId);
-        setUserFavIds((prev) => { const next = new Set(prev); next.delete(businessId); return next; });
-      } else {
-        await addFavorite(user.uid, businessId);
-        setUserFavIds((prev) => new Set(prev).add(businessId));
-      }
-    } catch {
-      toast.error('Error al actualizar favorito');
-    }
-  };
-
-  const handleCopyList = async () => {
-    if (!user || !sharedList) return;
-    setIsCopying(true);
-    try {
-      await copyList(sharedList.id, user.uid);
-      // Exit shared list view so user sees their lists with the new copy
-      setSharedList(null);
-      setSharedItems([]);
-      await loadLists();
-      toast.success('Lista copiada a Mis Listas');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo copiar');
-    }
-    setIsCopying(false);
-  };
-
-  const handleAddAllFavorites = async () => {
-    if (!user) return;
-    setIsAddingFavs(true);
-    try {
-      const bizIds = sharedItems.map((i) => i.businessId);
-      const added = await addFavoritesBatch(user.uid, bizIds);
-      toast.success(added > 0
-        ? `${added} favorito${added !== 1 ? 's' : ''} agregado${added !== 1 ? 's' : ''}`
-        : 'Ya tenés todos como favoritos');
-    } catch {
-      toast.error('Error al agregar favoritos');
-    }
-    setIsAddingFavs(false);
   };
 
   if (isLoading) {
@@ -379,76 +215,19 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
 
   // Show shared list from deep link or featured list click
   if ((sharedListId || sharedList) && (loadingShared || sharedList)) {
-    return (
+    return sharedList ? (
+      <SharedListDetailView
+        list={sharedList}
+        items={sharedItems}
+        loading={loadingShared}
+        sharedListId={sharedListId}
+        onSelectBusiness={handleSelectBusiness}
+        onCopyComplete={() => { setSharedList(null); setSharedItems([]); loadLists(); }}
+      />
+    ) : (
       <Box sx={{ px: 2, py: 1 }}>
         {loadingShared ? (
-          <Box sx={{ py: 3, textAlign: 'center' }}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : sharedList ? (
-          <>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {sharedList.name}
-            </Typography>
-            {sharedList.description && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {sharedList.description}
-              </Typography>
-            )}
-            <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Chip label={`${sharedItems.length} comercio${sharedItems.length !== 1 ? 's' : ''}`} size="small" />
-              {user && sharedList.ownerId !== user.uid && (
-                <Button
-                  size="small"
-                  startIcon={isCopying ? <CircularProgress size={14} /> : <ContentCopyIcon />}
-                  onClick={handleCopyList}
-                  disabled={isCopying}
-                >
-                  Copiar lista
-                </Button>
-              )}
-              {sharedItems.length > 0 && (
-                <Button
-                  size="small"
-                  startIcon={isAddingFavs ? <CircularProgress size={14} /> : <FavoriteIcon />}
-                  onClick={handleAddAllFavorites}
-                  disabled={isAddingFavs}
-                >
-                  Marcar todos como favoritos
-                </Button>
-              )}
-            </Box>
-            {sharedItems.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">Lista vacía.</Typography>
-            ) : (
-              <List disablePadding dense>
-                {sharedItems.map((item) => {
-                  const business = allBusinesses.find((b) => b.id === item.businessId);
-                  if (!business) return null;
-                  return (
-                    <ListItemButton key={item.id} onClick={() => handleSelectBusiness(business, sharedListId)} sx={{ borderRadius: 1 }}>
-                      <ListItemText
-                        primary={business.name}
-                        secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
-                        primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}
-                        secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                      />
-                      {user && (
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); handleToggleFavorite(item.businessId); }}
-                          sx={{ color: userFavIds.has(item.businessId) ? 'error.main' : 'action.disabled' }}
-                          aria-label={userFavIds.has(item.businessId) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                        >
-                          {userFavIds.has(item.businessId) ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
-                        </IconButton>
-                      )}
-                    </ListItemButton>
-                  );
-                })}
-              </List>
-            )}
-          </>
+          <Box sx={{ py: 3, textAlign: 'center' }}><CircularProgress size={24} /></Box>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
             Lista no encontrada o es privada.
@@ -467,7 +246,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
           <Box sx={{ display: 'flex', gap: 1.5, px: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
             {featuredLists.map((fl) => (
               <Card key={fl.id} variant="outlined" sx={{ minWidth: 170, flexShrink: 0 }}>
-                <CardActionArea onClick={() => handleOpenFeatured(fl.id)}>
+                <CardActionArea onClick={() => openSharedList(fl.id)}>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                     <Chip label="Destacada" size="small" color="primary" sx={{ mb: 0.5, height: 20, fontSize: '0.65rem' }} />
                     <Typography variant="subtitle2" noWrap>{fl.name}</Typography>
@@ -484,15 +263,8 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
 
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {lists.length}/{MAX_LISTS} listas
-        </Typography>
-        <Button
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateOpen(true)}
-          disabled={lists.length >= MAX_LISTS}
-        >
+        <Typography variant="body2" color="text.secondary">{lists.length}/{MAX_LISTS} listas</Typography>
+        <Button size="small" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} disabled={lists.length >= MAX_LISTS}>
           Nueva lista
         </Button>
       </Box>
@@ -500,12 +272,8 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
       {lists.length === 0 ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <BookmarkBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
-          <Typography variant="body2" color="text.secondary">
-            No tenés listas todavía
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Creá una para organizar tus comercios favoritos
-          </Typography>
+          <Typography variant="body2" color="text.secondary">No tenés listas todavía</Typography>
+          <Typography variant="caption" color="text.secondary">Creá una para organizar tus comercios favoritos</Typography>
         </Box>
       ) : (
         <List disablePadding>
@@ -524,12 +292,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
                             {list.description}
                           </Typography>
                         )}
-                        <Chip
-                          label={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
-                          size="small"
-                          component="span"
-                          sx={{ fontSize: '0.7rem', height: 20, mt: 0.5, display: 'inline-flex' }}
-                        />
+                        <Chip label={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`} size="small" component="span" sx={{ fontSize: '0.7rem', height: 20, mt: 0.5, display: 'inline-flex' }} />
                       </>
                     }
                     primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
@@ -555,13 +318,10 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
                     {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                   </Box>
                 </ListItemButton>
-
                 <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                   <Box sx={{ pl: 3, pr: 1, pb: 1 }}>
                     {loadingItems === list.id ? (
-                      <Box sx={{ py: 1, textAlign: 'center' }}>
-                        <CircularProgress size={20} />
-                      </Box>
+                      <Box sx={{ py: 1, textAlign: 'center' }}><CircularProgress size={20} /></Box>
                     ) : items.length === 0 ? (
                       <Typography variant="caption" color="text.secondary" sx={{ py: 1, display: 'block' }}>
                         Lista vacía. Agregá comercios desde el mapa.
@@ -588,11 +348,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
                                 primaryTypographyProps={{ fontSize: '0.85rem' }}
                                 secondaryTypographyProps={{ fontSize: '0.7rem' }}
                               />
-                              <IconButton
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); handleRemoveItem(list.id, item.businessId); }}
-                                aria-label="Quitar de lista"
-                              >
+                              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleRemoveItem(list.id, item.businessId); }} aria-label="Quitar de lista">
                                 <DeleteOutlineIcon fontSize="small" />
                               </IconButton>
                             </ListItemButton>
@@ -611,19 +367,12 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
       {/* Shared with me */}
       {sharedWithMe.length > 0 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>
-            Compartidas conmigo
-          </Typography>
+          <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>Compartidas conmigo</Typography>
           <List disablePadding>
             {sharedWithMe.map((list) => (
-              <ListItemButton key={list.id} onClick={() => handleOpenFeatured(list.id)} sx={{ pr: 1 }}>
+              <ListItemButton key={list.id} onClick={() => openSharedList(list.id)} sx={{ pr: 1 }}>
                 <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <GroupIcon fontSize="small" color="action" />
-                      <span>{list.name}</span>
-                    </Box>
-                  }
+                  primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><GroupIcon fontSize="small" color="action" /><span>{list.name}</span></Box>}
                   secondary={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
                   primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
@@ -635,62 +384,8 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
         </Box>
       )}
 
-      {/* Create dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Nueva lista</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Nombre"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            slotProps={{ htmlInput: { maxLength: 50 } }}
-            sx={{ mt: 1, mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Descripción (opcional)"
-            value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            slotProps={{ htmlInput: { maxLength: 200 } }}
-            multiline
-            rows={2}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
-          <Button onClick={handleCreate} variant="contained" disabled={isCreating || !newName.trim()}>
-            {isCreating ? <CircularProgress size={20} /> : 'Crear'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Invite editor dialog */}
-      <Dialog open={!!inviteOpen} onClose={() => { setInviteOpen(null); setInviteEmail(''); }} maxWidth="xs" fullWidth>
-        <DialogTitle>Invitar editor</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            El editor podrá agregar y quitar comercios de tu lista.
-          </Typography>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Email del usuario"
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setInviteOpen(null); setInviteEmail(''); }}>Cancelar</Button>
-          <Button onClick={handleInvite} variant="contained" disabled={isInviting || !inviteEmail.trim()}>
-            {isInviting ? <CircularProgress size={20} /> : 'Invitar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
+      <CreateListDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={loadLists} />
+      <InviteEditorDialog listId={inviteOpen} onClose={() => setInviteOpen(null)} onInvited={loadLists} />
       <EditorsDialog
         open={!!editorsDialogList}
         onClose={() => setEditorsDialogList(null)}
