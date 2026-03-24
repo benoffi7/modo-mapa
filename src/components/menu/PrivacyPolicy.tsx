@@ -109,7 +109,9 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Datos de uso (opcional):</strong> si activás &quot;Enviar datos de uso&quot;
             en Configuración, Firebase Analytics (GA4) recopila eventos anónimos de
-            navegación y uso (ej: vistas de comercios, búsquedas). También se registran
+            navegación y uso (ej: vistas de comercios, búsquedas, interacciones con
+            favoritos, calificaciones, comentarios, etiquetas, listas, fotos de menú y
+            filtros). También se registran
             eventos relacionados con la autenticación (account_created, email_sign_in,
             sign_out, password_changed), eventos de preguntas y respuestas (question_created,
             question_answered, question_viewed), eventos de check-ins (checkin_created,
@@ -146,8 +148,9 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu navegador
-            (tema claro/oscuro, visitas recientes, preferencia de analytics, y opcionalmente
-            tu email si activás &quot;Recordar mi email&quot;). Estos datos no se envían a
+            (tema claro/oscuro, visitas recientes, preferencia de analytics, estado del
+            tutorial de bienvenida, y opcionalmente tu email si activás &quot;Recordar mi
+            email&quot;). Estos datos no se envían a
             ningún servidor y podés borrarlos en cualquier momento desde la configuración
             del navegador o desactivando la opción.
           </Li>
