@@ -7,8 +7,8 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../context/AuthContext';
 
-const ADMIN_EMAIL = 'benoffi11@gmail.com';
-const DEV_PASSWORD = 'dev123456';
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? '';
+const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD ?? 'dev123456';
 
 interface AdminGuardProps {
   children: ReactNode;
