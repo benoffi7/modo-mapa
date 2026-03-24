@@ -7,12 +7,13 @@ import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_VIEWED } from '../../constants/analyticsEvents';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import TrendingBusinessCard from './TrendingBusinessCard';
+import type { Business } from '../../types';
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
-export default function TrendingList({ onNavigate }: Props) {
+export default function TrendingList({ onSelectBusiness }: Props) {
   const { data, loading, error } = useTrending();
   const businessMap = useMemo(() => new Map(allBusinesses.map((b) => [b.id, b])), []);
 
@@ -50,7 +51,7 @@ export default function TrendingList({ onNavigate }: Props) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', pb: 1.5 }}>
       {data.businesses.map((biz) => (
-        <TrendingBusinessCard key={biz.businessId} business={biz} fullBusiness={businessMap.get(biz.businessId)} rank={biz.rank} onNavigate={onNavigate} />
+        <TrendingBusinessCard key={biz.businessId} business={biz} fullBusiness={businessMap.get(biz.businessId)} rank={biz.rank} onSelectBusiness={onSelectBusiness} />
       ))}
       <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', pt: 1 }}>
         Actualizado: {data.computedAt.toLocaleDateString('es-AR')}

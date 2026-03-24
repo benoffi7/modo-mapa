@@ -13,7 +13,6 @@ import {
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useSelection } from '../../context/MapContext';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { useListFilters } from '../../hooks/useListFilters';
 import { distanceKm, formatDistance } from '../../utils/distance';
@@ -36,12 +35,11 @@ const REASON_COLORS: Record<SuggestionReason, 'primary' | 'secondary' | 'success
 };
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
-export default function SuggestionsView({ onNavigate }: Props) {
+export default function SuggestionsView({ onSelectBusiness }: Props) {
   const [tab, setTab] = useState<'suggestions' | 'trending'>('suggestions');
-  const { setSelectedBusiness } = useSelection();
   const sortLocation = useSortLocation();
   const { suggestions, isLoading, error } = useSuggestions();
 
@@ -62,8 +60,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
   } = useListFilters(suggestionItems, { userLocation: sortLocation });
 
   const handleSelectBusiness = (business: Business) => {
-    setSelectedBusiness(business);
-    onNavigate();
+    onSelectBusiness(business);
   };
 
   const renderSuggestions = () => {
@@ -184,7 +181,7 @@ export default function SuggestionsView({ onNavigate }: Props) {
         />
       </Tabs>
       {tab === 'trending' ? (
-        <TrendingList onNavigate={onNavigate} />
+        <TrendingList onSelectBusiness={onSelectBusiness} />
       ) : (
         renderSuggestions()
       )}

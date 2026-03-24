@@ -13,7 +13,6 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
-import { useSelection } from '../../context/MapContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../types';
@@ -32,12 +31,11 @@ interface FavoriteItem {
 }
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
-export default function FavoritesList({ onNavigate }: Props) {
+export default function FavoritesList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useSelection();
   const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
@@ -76,8 +74,7 @@ export default function FavoritesList({ onNavigate }: Props) {
   };
 
   const handleSelectBusiness = (business: Business) => {
-    setSelectedBusiness(business);
-    onNavigate();
+    onSelectBusiness(business);
   };
 
   if (isLoading) {

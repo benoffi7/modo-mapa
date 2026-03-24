@@ -10,14 +10,13 @@ import { MEDALS } from '../../constants/rankings';
 import { CATEGORY_LABELS } from '../../types';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_BUSINESS_CLICKED } from '../../constants/analyticsEvents';
-import { useSelection } from '../../context/MapContext';
 import type { TrendingBusiness, Business, BusinessCategory } from '../../types';
 
 interface Props {
   business: TrendingBusiness;
   fullBusiness?: Business | undefined;
   rank: number;
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
 const BREAKDOWN_ITEMS = [
@@ -28,14 +27,12 @@ const BREAKDOWN_ITEMS = [
   { key: 'listItems' as const, icon: BookmarkBorderIcon, label: 'en listas' },
 ] as const;
 
-export default memo(function TrendingBusinessCard({ business, fullBusiness, rank, onNavigate }: Props) {
-  const { setSelectedBusiness } = useSelection();
+export default memo(function TrendingBusinessCard({ business, fullBusiness, rank, onSelectBusiness }: Props) {
   const medal = MEDALS[rank] ?? '';
 
   const handleClick = () => {
     if (fullBusiness) {
-      setSelectedBusiness(fullBusiness);
-      onNavigate();
+      onSelectBusiness(fullBusiness);
     }
     trackEvent(EVT_TRENDING_BUSINESS_CLICKED, { businessId: business.businessId, rank });
   };

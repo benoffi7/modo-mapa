@@ -26,7 +26,7 @@ main.tsx
        │         ├─ FeaturesPanel (métricas por funcionalidad, adopción, gráficos 30 días)
        │         └─ PhotoReviewPanel (revisar, aprobar, rechazar fotos de menu)
        └─ [/*] MapProvider + APIProvider
-            └─ AppShell.tsx
+            └─ AppShell.tsx  [useOnboardingHint, useOnboardingFlow]
                  ├─ OfflineIndicator (chip offline, PWA)
                  ├─ SearchBar (busqueda + menu hamburguesa)
                  ├─ FilterChips (tags predefinidos + nivel de gasto $/$$/$$)
@@ -46,8 +46,9 @@ main.tsx
                  ├─ NameDialog (nombre de usuario, primera visita)
                  ├─ EmailPasswordDialog (registro/login con tabs, forgot password)
                  ├─ ChangePasswordDialog (cambio de contrasena con re-auth)
-                 └─ SideMenu (drawer lateral)
+                 └─ SideMenu (drawer lateral)  [useSurpriseMe, prop: onSelectBusiness]
                       ├─ Header (avatar + nombre + editar + badge tipo cuenta + botones auth)
+                      ├─ EditDisplayNameDialog (dialog editar nombre, extraido de SideMenu)
                       ├─ Nav (Favoritos, Recientes, Comentarios, Calificaciones, Feedback, Agregar comercio)
                       ├─ FavoritesList + ListFilters
                       ├─ RecentVisits (historial localStorage)

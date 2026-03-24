@@ -91,6 +91,9 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 | `useSwipeActions` | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags del usuario via `services/suggestions.ts`, scoring client-side con Haversine para cercania. Retorna `{ suggestions, isLoading, error }`. Max 10 resultados. |
 | `useTrending` | Trending businesses. Wrapper sobre `useAsyncData` + `fetchTrending`. Retorna `{ data: TrendingData \| null, loading, error, refetch }`. Lee `trendingBusinesses/current` (pre-computed by Cloud Function). |
+| `useOnboardingHint` | Encapsula logica de cuándo mostrar el hint de onboarding al usuario. Extraido de AppShell para reducir estado local en el componente raiz. |
+| `useOnboardingFlow` | Maneja los pasos y transiciones del flujo de onboarding. Extraido de AppShell. |
+| `useSurpriseMe` | Encapsula la logica de seleccion aleatoria de comercio ("sorprendeme"). Extraido de SideMenu. |
 
 ### `useBusinessData` — Race condition fix
 

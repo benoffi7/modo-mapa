@@ -12,7 +12,6 @@ import {
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { getRatingsCollection } from '../../services/ratings';
-import { useSelection } from '../../context/MapContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { useListFilters } from '../../hooks/useListFilters';
@@ -24,12 +23,11 @@ import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Rating as RatingType } from '../../types';
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
-export default function RatingsList({ onNavigate }: Props) {
+export default function RatingsList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useSelection();
   const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getRatingsCollection(), []);
@@ -63,9 +61,8 @@ export default function RatingsList({ onNavigate }: Props) {
 
   const handleSelectBusiness = useCallback((business: Business | null) => {
     if (!business) return;
-    setSelectedBusiness(business);
-    onNavigate();
-  }, [setSelectedBusiness, onNavigate]);
+    onSelectBusiness(business);
+  }, [onSelectBusiness]);
 
   if (isLoading) {
     return (

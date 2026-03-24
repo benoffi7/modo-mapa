@@ -19,7 +19,6 @@ import CheckIcon from '@mui/icons-material/Check';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
-import { useSelection } from '../../context/MapContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
@@ -40,7 +39,7 @@ const VIRTUALIZE_THRESHOLD = 20;
 type SortMode = 'recent' | 'oldest' | 'useful';
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
 interface CommentItemProps {
@@ -246,9 +245,8 @@ const CommentItem = memo(function CommentItem({
   );
 });
 
-export default function CommentsList({ onNavigate }: Props) {
+export default function CommentsList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness } = useSelection();
   const { notifications, markRead } = useNotifications();
 
   // Data loading
@@ -420,9 +418,8 @@ export default function CommentsList({ onNavigate }: Props) {
         }
       }
     }
-    setSelectedBusiness(business);
-    onNavigate();
-  }, [notifications, markRead, setSelectedBusiness, onNavigate]);
+    onSelectBusiness(business);
+  }, [notifications, markRead, onSelectBusiness]);
 
   const isFiltered = !!deferredSearch || !!filterBusiness;
 

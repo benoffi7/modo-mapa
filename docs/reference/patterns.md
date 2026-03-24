@@ -65,8 +65,9 @@
 | **`usePaginatedQuery` constraints genericos** | El hook acepta `QueryConstraint[]` o `string` (backward compat con userId). `cacheKey` obligatorio para cache compat. Incluye `loadAll(maxItems)` con `hasMoreRef` para loops async seguros. |
 | **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
 | **Stable event listeners via refs** | Cuando un event listener necesita acceder a state reactivo, usar `useRef` para mantener valores actualizados sin recrear el callback. El listener se registra una sola vez (`useEffect(fn, [])`). Usado en `AccountBanner` y `useActivityReminder` para el evento `anon-interaction`. |
-| **Unified account creation flow** | AppShell es el single source of truth para el flujo register/login. SideMenu no tiene estado local de email dialog — todo se controla via props (`onCreateAccount`, `onLogin`, `emailDialogOpen`, `emailDialogTab`). El flujo es: CTA → BenefitsDialog (primera vez) → EmailPasswordDialog. |
+| **Unified account creation flow** | AppShell coordina el flujo register/login via props a SideMenu (`onCreateAccount`, `onLogin`, `emailDialogOpen`, `emailDialogTab`). El estado de onboarding (hint display, flow steps) vive en hooks extraidos: `useOnboardingHint` y `useOnboardingFlow`. El flujo es: CTA → BenefitsDialog (primera vez) → EmailPasswordDialog. |
 | **Auth dialog hooks** | `usePasswordConfirmation(password, confirm)` para validación de confirmación compartida entre EmailPasswordDialog y ChangePasswordDialog. `useRememberedEmail()` aísla lógica de localStorage para "recordar email". `clearAuthError()` en AuthContext limpia errores stale al cerrar/cambiar tab. Timeout cleanup con `useRef` + `useEffect` en ChangePasswordDialog. Focus con `useLayoutEffect` + `requestAnimationFrame`. |
+| **Onboarding hooks** | `useOnboardingHint` encapsula lógica de cuándo/cómo mostrar el hint de onboarding (extraido de AppShell). `useOnboardingFlow` maneja los pasos del flujo de onboarding. `useSurpriseMe` encapsula la lógica de "sorpréndeme" (selección aleatoria de comercio), extraida de SideMenu. |
 
 ## Uploads y media
 
@@ -148,5 +149,5 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatDateFull`. Reemplaza duplicados en paneles admin y converters. |
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes de menu (ej: `RecentVisits` usaba una copia local de `formatRelativeTime`). |
 | **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `SuggestionsView`, `FavoritesList`. |

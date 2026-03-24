@@ -74,7 +74,10 @@ src/
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
 │   ├── usePublicMetrics.ts          # Hook para metricas publicas de dailyMetrics
 │   ├── useUserProfile.ts           # Hook para perfil publico de usuario (stats + ranking)
-│   └── useSuggestions.ts           # Hook para sugerencias personalizadas (scoring client-side)
+│   ├── useSuggestions.ts           # Hook para sugerencias personalizadas (scoring client-side)
+│   ├── useOnboardingHint.ts        # Logica de display del hint de onboarding (extraida de AppShell)
+│   ├── useOnboardingFlow.ts        # Manejo de pasos del flujo de onboarding (extraida de AppShell)
+│   └── useSurpriseMe.ts            # Logica de seleccion aleatoria de comercio "sorprendeme" (extraida de SideMenu)
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   ├── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatRelativeTime, formatDateFull (compartidos)
@@ -161,6 +164,7 @@ src/
 │   │   ├── OfflineIndicator.tsx     # Chip MUI offline (PWA)
 │   │   └── OfflineIndicator.test.tsx
 │   └── menu/
+│       ├── EditDisplayNameDialog.tsx # Dialog para editar nombre de usuario (extraido de SideMenu)
 │       ├── FavoritesList.tsx
 │       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe, virtualizacion condicional (@tanstack/react-virtual >= 20 items)
 │       ├── CommentItem.tsx           # Item individual de comentario (React.memo), extraido de CommentsList. Blue dot para unread replies

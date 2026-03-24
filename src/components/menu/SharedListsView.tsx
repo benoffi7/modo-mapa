@@ -59,15 +59,15 @@ import { MAX_LISTS } from '../../constants/lists';
 import type { SharedList, ListItem, Business } from '../../types';
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
   sharedListId?: string | undefined;
   /** Called by parent to check if we're showing a shared list and should clear it instead of navigating back */
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
-export default function SharedListsView({ onNavigate, sharedListId, onRegisterBackHandler }: Props) {
+export default function SharedListsView({ onSelectBusiness, sharedListId, onRegisterBackHandler }: Props) {
   const { user } = useAuth();
-  const { setSelectedBusiness, setActiveSharedListId } = useSelection();
+  const { setActiveSharedListId } = useSelection();
   const toast = useToast();
 
   const [lists, setLists] = useState<SharedList[]>([]);
@@ -293,8 +293,7 @@ export default function SharedListsView({ onNavigate, sharedListId, onRegisterBa
 
   const handleSelectBusiness = (business: Business, fromListId?: string) => {
     if (fromListId) setActiveSharedListId(fromListId);
-    setSelectedBusiness(business);
-    onNavigate();
+    onSelectBusiness(business);
   };
 
   // Copy & favorites state for shared list view

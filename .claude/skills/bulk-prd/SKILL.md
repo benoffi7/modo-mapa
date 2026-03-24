@@ -137,6 +137,23 @@ Note any security considerations from security.md.}
 
 ---
 
+## Modularizacion
+
+{Evaluar como la solucion mantiene la separacion UI/logica. Es un requisito que:}
+
+- La logica de negocio viva en hooks/services, no en componentes de layout
+- Los componentes nuevos reciban datos via props o hooks propios, no acoplandose a contextos de layout
+- Si se agrega UI al SideMenu/AppShell, la logica se extraiga a un hook dedicado
+
+### Checklist modularizacion
+
+- [ ] Logica de negocio en hooks/services (no inline en componentes de layout)
+- [ ] Componentes nuevos son reutilizables fuera del contexto actual de layout
+- [ ] No se agregan useState de logica de negocio a AppShell o SideMenu
+- [ ] Props explicitas en vez de dependencias implicitas a contextos de layout
+
+---
+
 ## Success Criteria
 
 {4-5 numbered criteria}

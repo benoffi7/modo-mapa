@@ -8,29 +8,27 @@ import {
   CircularProgress,
 } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
-import { useSelection } from '../../context/MapContext';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { trackEvent } from '../../utils/analytics';
 import { formatRelativeTime } from '../../utils/formatDate';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import type { Business } from '../../types';
 
 interface Props {
-  onNavigate: () => void;
+  onSelectBusiness: (business: Business) => void;
 }
 
-export default function CheckInsView({ onNavigate }: Props) {
+export default function CheckInsView({ onSelectBusiness }: Props) {
   const { checkIns, stats, isLoading, refresh } = useMyCheckIns();
-  const { setSelectedBusiness } = useSelection();
 
   const handleClick = useCallback((businessId: string) => {
     const business = allBusinesses.find((b) => b.id === businessId);
     if (business) {
-      setSelectedBusiness(business);
-      onNavigate();
+      onSelectBusiness(business);
       trackEvent('checkin_navigate', { business_id: businessId });
     }
-  }, [setSelectedBusiness, onNavigate]);
+  }, [onSelectBusiness]);
 
   if (isLoading) {
     return (

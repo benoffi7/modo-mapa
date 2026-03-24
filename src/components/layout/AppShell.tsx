@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Snackbar, Alert, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -13,49 +13,14 @@ import SideMenu from './SideMenu';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { AUTO_DISMISS_MS, ONBOARDING_HINT_DELAY_MS } from '../../constants/timing';
-import { STORAGE_KEY_ONBOARDING_CREATED_AT, STORAGE_KEY_ONBOARDING_COMPLETED, STORAGE_KEY_BENEFITS_SHOWN } from '../../constants/storage';
+import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useActivityReminder } from '../../hooks/useActivityReminder';
+import { useOnboardingHint } from '../../hooks/useOnboardingHint';
+import { useOnboardingFlow } from '../../hooks/useOnboardingFlow';
 
 const AccountBanner = lazy(() => import('../onboarding/AccountBanner'));
 const ActivityReminder = lazy(() => import('../onboarding/ActivityReminder'));
 const BenefitsDialog = lazy(() => import('../onboarding/BenefitsDialog'));
-
-function useOnboardingHint() {
-  const [show, setShow] = useState(() => {
-    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return false;
-    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
-    if (!createdAt) return false;
-    return Date.now() - new Date(createdAt).getTime() >= ONBOARDING_HINT_DELAY_MS;
-  });
-
-  useEffect(() => {
-    if (show) {
-      localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
-      return;
-    }
-    if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) === 'true') return;
-    const createdAt = localStorage.getItem(STORAGE_KEY_ONBOARDING_CREATED_AT);
-    if (!createdAt) return;
-
-    const remaining = ONBOARDING_HINT_DELAY_MS - (Date.now() - new Date(createdAt).getTime());
-    if (remaining <= 0) return;
-
-    const timer = setTimeout(() => {
-      if (localStorage.getItem(STORAGE_KEY_ONBOARDING_COMPLETED) !== 'true') {
-        setShow(true);
-      }
-    }, remaining);
-    return () => clearTimeout(timer);
-  }, [show]);
-
-  const dismiss = useCallback(() => {
-    setShow(false);
-    localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
-  }, []);
-
-  return { show, dismiss };
-}
 
 function MapHint() {
   const { show, dismiss } = useOnboardingHint();
@@ -100,31 +65,12 @@ export default function AppShell() {
   const { selectedBusiness: currentBusiness, setSelectedBusiness, activeSharedListId, setActiveSharedListId } = useSelection();
 
   // Onboarding: benefits dialog + account creation flow (single source of truth)
-  const [benefitsOpen, setBenefitsOpen] = useState(false);
-  const [benefitsSource, setBenefitsSource] = useState<'banner' | 'menu' | 'settings'>('banner');
-  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
+  const {
+    benefitsOpen, benefitsSource, emailDialogOpen, emailDialogTab,
+    handleCreateAccount, handleLogin, handleBenefitsContinue,
+    closeBenefits, closeEmailDialog,
+  } = useOnboardingFlow();
   const { showReminder, dismissReminder } = useActivityReminder();
-
-  const handleCreateAccount = useCallback((source: 'banner' | 'menu' | 'settings' = 'banner') => {
-    setEmailDialogTab('register');
-    if (localStorage.getItem(STORAGE_KEY_BENEFITS_SHOWN) === 'true') {
-      setEmailDialogOpen(true);
-    } else {
-      setBenefitsSource(source);
-      setBenefitsOpen(true);
-    }
-  }, []);
-
-  const handleLogin = useCallback(() => {
-    setEmailDialogTab('login');
-    setEmailDialogOpen(true);
-  }, []);
-
-  const handleBenefitsContinue = useCallback(() => {
-    setBenefitsOpen(false);
-    setEmailDialogOpen(true);
-  }, []);
 
   // Reopen shared list when BusinessSheet closes.
   // A ref stores the list ID to return to — immune to React batching/closure issues.
@@ -210,7 +156,7 @@ export default function AppShell() {
           <BenefitsDialog
             open={benefitsOpen}
             onContinue={handleBenefitsContinue}
-            onClose={() => setBenefitsOpen(false)}
+            onClose={closeBenefits}
             source={benefitsSource}
           />
         )}
@@ -232,7 +178,7 @@ export default function AppShell() {
         onLogin={handleLogin}
         emailDialogOpen={emailDialogOpen}
         emailDialogTab={emailDialogTab}
-        onEmailDialogClose={() => setEmailDialogOpen(false)}
+        onEmailDialogClose={closeEmailDialog}
       />
     </Box>
   );

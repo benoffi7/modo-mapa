@@ -11,11 +11,6 @@ import {
   Divider,
   Switch,
   Toolbar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Button,
   CircularProgress,
 } from '@mui/material';
@@ -31,15 +26,11 @@ import { useColorMode } from '../../hooks/useColorMode';
 import { useNotifications } from '../../hooks/useNotifications';
 import SideMenuNav from './SideMenuNav';
 import { trackEvent } from '../../utils/analytics';
-import { useToast } from '../../context/ToastContext';
 import { useSelection } from '../../context/MapContext';
-import { useVisitHistory } from '../../hooks/useVisitHistory';
-import { allBusinesses } from '../../hooks/useBusinesses';
-import { distanceKm } from '../../utils/distance';
-import { useSortLocation } from '../../hooks/useSortLocation';
-import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
+import { useSurpriseMe } from '../../hooks/useSurpriseMe';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
+import type { Business } from '../../types';
 
 // Lazy-loaded section components (P1.3 — keeps them out of the main chunk)
 const FavoritesList = lazy(() => import('../menu/FavoritesList'));
@@ -58,6 +49,7 @@ const CheckInsView = lazy(() => import('../menu/CheckInsView'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection'));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
+const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
 import VerificationNudge from '../onboarding/VerificationNudge';
 
 function SectionLoader() {
@@ -104,13 +96,10 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
 };
 
 export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, onLogin, emailDialogOpen, emailDialogTab, onEmailDialogClose }: Props) {
-  const { displayName, setDisplayName, authMethod, emailVerified, user } = useAuth();
+  const { displayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
-  const toast = useToast();
   const { setSelectedBusiness } = useSelection();
-  const sortLocation = useSortLocation();
-  const { visits } = useVisitHistory();
   const unreadReplyCount = useMemo(
     () => notifications.filter((n) => n.type === 'comment_reply' && !n.read).length,
     [notifications],
@@ -147,35 +136,9 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
     activeSection === 'feedback' && feedbackDirty ? 'x' : '',
   );
 
-  const handleSurprise = useCallback(() => {
-    const visitedIds = new Set(visits.map((v) => v.businessId));
-    let candidates = allBusinesses.filter((b) => !visitedIds.has(b.id));
+  const { handleSurprise } = useSurpriseMe({ onSelect: setSelectedBusiness, onClose });
 
-    // Prefer nearby (within 5km) using GPS → locality → office fallback
-    if (candidates.length > 0) {
-      const nearby = candidates.filter(
-        (b) => distanceKm(sortLocation.lat, sortLocation.lng, b.lat, b.lng) <= 5,
-      );
-      if (nearby.length > 0) candidates = nearby;
-    }
-
-    const pool = candidates.length > 0 ? candidates : allBusinesses;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    setSelectedBusiness(pick);
-    onClose();
-    if (candidates.length === 0) {
-      toast.info('¡Ya visitaste todos! Te sorprendemos con uno al azar.');
-    } else {
-      toast.success(`¡Sorpresa! Descubrí ${pick.name}`);
-    }
-    trackEvent('surprise_me', { business_id: pick.id });
-   
-  }, [sortLocation, visits, onClose, toast, setSelectedBusiness]);
-
-  // Edit name dialog
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
-  const [nameValue, setNameValue] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleClose = () => {
     confirmClose(() => {
@@ -185,23 +148,14 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
     });
   };
 
+  const handleSelectBusiness = useCallback((business: Business) => {
+    setSelectedBusiness(business);
+    handleClose();
+  }, [setSelectedBusiness, handleClose]);
+
   const handleFeedback = () => {
     setFeedbackKey((k) => k + 1);
     setActiveSection('feedback');
-  };
-
-  const handleOpenNameDialog = () => {
-    setNameValue(displayName || '');
-    setNameDialogOpen(true);
-  };
-
-  const handleSaveName = async () => {
-    const trimmed = nameValue.trim();
-    if (!trimmed) return;
-    setIsSaving(true);
-    await setDisplayName(trimmed);
-    setIsSaving(false);
-    setNameDialogOpen(false);
   };
 
   // Back handler for lists section: first clears shared list view, then goes to nav
@@ -266,7 +220,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                       )}
                     </Typography>
                   </Box>
-                  <IconButton size="small" onClick={handleOpenNameDialog}>
+                  <IconButton size="small" onClick={() => setNameDialogOpen(true)}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Box>
@@ -380,13 +334,13 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
               {/* Section content — lazy-loaded */}
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <Suspense fallback={<SectionLoader />}>
-                  {activeSection === 'favorites' && <FavoritesList onNavigate={handleClose} />}
-                  {activeSection === 'lists' && <SharedListsView onNavigate={handleClose} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
-                  {activeSection === 'recent' && <RecentVisits onNavigate={handleClose} />}
-                  {activeSection === 'checkins' && <CheckInsView onNavigate={handleClose} />}
-                  {activeSection === 'suggestions' && <SuggestionsView onNavigate={handleClose} />}
-                  {activeSection === 'comments' && <CommentsList onNavigate={handleClose} />}
-                  {activeSection === 'ratings' && <RatingsList onNavigate={handleClose} />}
+                  {activeSection === 'favorites' && <FavoritesList onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'lists' && <SharedListsView onSelectBusiness={handleSelectBusiness} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
+                  {activeSection === 'recent' && <RecentVisits onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'checkins' && <CheckInsView onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'suggestions' && <SuggestionsView onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'comments' && <CommentsList onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'ratings' && <RatingsList onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'feedback' && <FeedbackForm key={feedbackKey} onDirtyChange={setFeedbackDirty} />}
                   {activeSection === 'rankings' && <RankingsView />}
                   {activeSection === 'stats' && <StatsView />}
@@ -413,36 +367,11 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
       </Suspense>
 
       {/* Edit name dialog */}
-      <Dialog open={nameDialogOpen} onClose={() => setNameDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Editar nombre</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            size="small"
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSaveName();
-              }
-            }}
-            inputProps={{ maxLength: MAX_DISPLAY_NAME_LENGTH }}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setNameDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={handleSaveName}
-            variant="contained"
-            disabled={isSaving || !nameValue.trim()}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Suspense fallback={null}>
+        {nameDialogOpen && (
+          <EditDisplayNameDialog open onClose={() => setNameDialogOpen(false)} />
+        )}
+      </Suspense>
 
       <DiscardDialog {...dialogProps} />
     </>
