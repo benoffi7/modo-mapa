@@ -192,6 +192,8 @@
     - [Specs](/feat/security/security-hardening/specs.md)
     - [Plan](/feat/security/security-hardening/plan.md)
     - [Changelog](/feat/security/security-hardening/changelog.md)
+  - [Storage Rules Hardening](/feat/security/storage-rules-hardening/)
+    - [PRD](/feat/security/storage-rules-hardening/prd.md)
   - [User Settings](/feat/security/user-settings/)
     - [PRD](/feat/security/user-settings/prd.md)
     - [Specs](/feat/security/user-settings/specs.md)
