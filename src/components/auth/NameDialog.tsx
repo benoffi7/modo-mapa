@@ -38,7 +38,7 @@ export default function NameDialog() {
   };
 
   return (
-    <Dialog open={isOpen} maxWidth="xs" fullWidth>
+    <Dialog open={isOpen} onClose={handleSkip} maxWidth="xs" fullWidth>
       <DialogTitle>Bienvenido</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -54,7 +54,7 @@ export default function NameDialog() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSubmit();
           }}
-          inputProps={{ maxLength: 30 }}
+          slotProps={{ htmlInput: { maxLength: 30 } }}
         />
       </DialogContent>
       <DialogActions>
