@@ -63,7 +63,15 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
       {menuPhoto && photoUrl ? (
         <Box>
           <Box
+            role="button"
+            tabIndex={0}
             onClick={() => setViewerOpen(true)}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setViewerOpen(true);
+              }
+            }}
             sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden', mb: 0.5, position: 'relative' }}
           >
             <img

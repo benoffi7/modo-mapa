@@ -17,6 +17,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloseIcon from '@mui/icons-material/Close';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { sendFeedback } from '../../services/feedback';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
@@ -28,6 +29,7 @@ const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
 
 function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
   const { user } = useAuth();
+  const toast = useToast();
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<FeedbackCategory>('sugerencia');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +57,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
     if (!file) return;
 
     if (file.size > MAX_FEEDBACK_MEDIA_SIZE) {
+      toast.error('La imagen es muy grande. Máximo 10 MB.');
       return;
     }
 
