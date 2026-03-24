@@ -166,15 +166,16 @@ export const reportMenuPhoto = onCall(
       throw new HttpsError('failed-precondition', 'Only approved photos can be reported');
     }
 
-    // Prevent duplicate reports using a subcollection
+    // Prevent duplicate reports using a subcollection (transaction for atomicity)
     const reportRef = photoRef.collection('reports').doc(auth.uid);
-    const reportSnap = await reportRef.get();
-    if (reportSnap.exists) {
-      throw new HttpsError('already-exists', 'Ya reportaste esta foto');
-    }
-
-    await reportRef.set({ createdAt: FieldValue.serverTimestamp() });
-    await photoRef.update({ reportCount: FieldValue.increment(1) });
+    await db.runTransaction(async (tx) => {
+      const reportSnap = await tx.get(reportRef);
+      if (reportSnap.exists) {
+        throw new HttpsError('already-exists', 'Ya reportaste esta foto');
+      }
+      tx.set(reportRef, { createdAt: FieldValue.serverTimestamp() });
+      tx.update(photoRef, { reportCount: FieldValue.increment(1) });
+    });
 
     return { success: true };
   },
