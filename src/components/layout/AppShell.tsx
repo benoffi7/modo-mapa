@@ -9,7 +9,7 @@ import SearchBar from '../search/SearchBar';
 import FilterChips from '../search/FilterChips';
 import BusinessSheet from '../business/BusinessSheet';
 import NameDialog from '../auth/NameDialog';
-import SideMenu from './SideMenu';
+const SideMenu = lazy(() => import('./SideMenu'));
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useSelection } from '../../context/MapContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -161,6 +161,7 @@ export default function AppShell() {
           />
         )}
       </Suspense>
+      <Suspense fallback={null}>
       <SideMenu
         open={menuOpen}
         onClose={() => {
@@ -180,6 +181,7 @@ export default function AppShell() {
         emailDialogTab={emailDialogTab}
         onEmailDialogClose={closeEmailDialog}
       />
+      </Suspense>
     </Box>
   );
 }

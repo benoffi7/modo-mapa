@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { allBusinesses } from './useBusinesses';
 import { STORAGE_KEY_VISITS, MAX_VISIT_HISTORY } from '../constants';
 import type { Business } from '../types';
@@ -57,10 +57,13 @@ export function useVisitHistory() {
     setVisits([]);
   }, []);
 
-  const visitsWithBusiness: VisitWithBusiness[] = visits.map((v) => ({
-    ...v,
-    business: allBusinesses.find((b) => b.id === v.businessId) || null,
-  }));
+  const visitsWithBusiness: VisitWithBusiness[] = useMemo(
+    () => visits.map((v) => ({
+      ...v,
+      business: allBusinesses.find((b) => b.id === v.businessId) || null,
+    })),
+    [visits],
+  );
 
   return { visits: visitsWithBusiness, recordVisit, clearHistory };
 }
