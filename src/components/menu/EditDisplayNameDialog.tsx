@@ -45,7 +45,7 @@ export default function EditDisplayNameDialog({ open, onClose }: EditDisplayName
               handleSave();
             }
           }}
-          inputProps={{ maxLength: MAX_DISPLAY_NAME_LENGTH }}
+          slotProps={{ htmlInput: { maxLength: MAX_DISPLAY_NAME_LENGTH } }}
           sx={{ mt: 1 }}
         />
       </DialogContent>

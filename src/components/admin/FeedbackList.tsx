@@ -202,7 +202,7 @@ export default function FeedbackList() {
                         placeholder="Escribir respuesta..."
                         value={responseText}
                         onChange={(e) => setResponseText(e.target.value)}
-                        inputProps={{ maxLength: MAX_ADMIN_RESPONSE_LENGTH }}
+                        slotProps={{ htmlInput: { maxLength: MAX_ADMIN_RESPONSE_LENGTH } }}
                       />
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
                         <Button
