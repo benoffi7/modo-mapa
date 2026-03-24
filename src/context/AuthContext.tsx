@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -77,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authMethod, setAuthMethod] = useState<AuthMethod>('anonymous');
   const [emailVerified, setEmailVerified] = useState(false);
   const location = useLocation();
+  const pathnameRef = useRef(location.pathname);
+  useEffect(() => { pathnameRef.current = location.pathname; }, [location.pathname]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -91,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setDisplayNameState(userDoc.data().displayName || null);
         }
       } else {
-        const isAdminRoute = location.pathname.startsWith('/admin');
+        const isAdminRoute = pathnameRef.current.startsWith('/admin');
         if (isAdminRoute) {
           setUser(null);
         } else {
@@ -105,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     });
     return unsubscribe;
-  }, [location.pathname]);
+  }, []);
 
   const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
