@@ -34,7 +34,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 
 | Modulo | Coleccion | Operaciones |
 |--------|-----------|-------------|
-| `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection` |
+| `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection`, `fetchUserFavoriteIds` |
 | `ratings.ts` | `ratings` | `upsertRating`, `deleteRating`, `getRatingsCollection` |
 | `comments.ts` | `comments`, `commentLikes` | `addComment`, `editComment`, `deleteComment`, `likeComment`, `unlikeComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
@@ -47,6 +47,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `trending.ts` | `trendingBusinesses` | `fetchTrending` (lee `trendingBusinesses/current`, convierte Timestamps a Dates) |
 | `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
 | `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts), `fetchPerfMetrics` (ultimos N docs de `perfMetrics`), `fetchStorageStats` (callable → `getStorageStats`) |
+| `sharedLists.ts` | `sharedLists`, `listItems` | `fetchSharedList`, `fetchUserLists`, `fetchEditorName`, `inviteEditor` + operaciones CRUD de listas y items |
 | `index.ts` | — | Barrel export de todas las operaciones CRUD |
 
 ### Reglas del service layer

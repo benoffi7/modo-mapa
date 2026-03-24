@@ -157,12 +157,44 @@ export async function fetchFeaturedLists(): Promise<SharedList[]> {
   }));
 }
 
+export async function inviteEditor(listId: string, targetEmail: string): Promise<void> {
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ listId: string; targetEmail: string; databaseId?: string }, { success: boolean }>(functions, 'inviteListEditor');
+  await fn({ listId, targetEmail, databaseId });
+}
+
 export async function removeEditor(listId: string, targetUid: string): Promise<void> {
   const { httpsCallable } = await import('firebase/functions');
   const { functions } = await import('../config/firebase');
   const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
   const fn = httpsCallable<{ listId: string; targetUid: string; databaseId?: string }, { success: boolean }>(functions, 'removeListEditor');
   await fn({ listId, targetUid, databaseId });
+}
+
+export async function fetchSharedList(listId: string): Promise<SharedList | null> {
+  const snap = await getDoc(
+    doc(db, COLLECTIONS.SHARED_LISTS, listId).withConverter(sharedListConverter),
+  );
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function fetchUserLists(userId: string): Promise<SharedList[]> {
+  const snap = await getDocs(
+    query(getSharedListsCollection(), where('ownerId', '==', userId), orderBy('updatedAt', 'desc')),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+export async function fetchEditorName(uid: string): Promise<string> {
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+    const data = snap.data() as { displayName?: string } | undefined;
+    return data?.displayName ?? 'Usuario';
+  } catch {
+    return 'Usuario';
+  }
 }
 
 export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
