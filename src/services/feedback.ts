@@ -50,7 +50,7 @@ export async function sendFeedback(
   const docRef = await addDoc(collection(db, COLLECTIONS.FEEDBACK), docData);
 
   if (mediaFile) {
-    const storagePath = `feedback-media/${docRef.id}/${mediaFile.name}`;
+    const storagePath = `feedback-media/${userId}/${docRef.id}/${mediaFile.name}`;
     const storageRef = ref(storage, storagePath);
     await uploadBytes(storageRef, mediaFile, { contentType: mediaFile.type });
     const mediaUrl = await getDownloadURL(storageRef);
