@@ -133,6 +133,8 @@
     - [Plan](/feat/infra/modo-offline-mejorado/plan.md)
   - [Modularizar Layout](/feat/infra/modularizar-layout/)
     - [PRD](/feat/infra/modularizar-layout/prd.md)
+    - [Specs](/feat/infra/modularizar-layout/specs.md)
+    - [Plan](/feat/infra/modularizar-layout/plan.md)
   - [Modularizar Stats](/feat/infra/modularizar-stats/)
     - [PRD](/feat/infra/modularizar-stats/prd.md)
     - [Specs](/feat/infra/modularizar-stats/specs.md)
