@@ -63,7 +63,17 @@ If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 **IMPORTANT: Run audits in FOREGROUND (not background).** Wait for all results before proceeding. This ensures findings can influence the merge decision. ~60s total running in parallel is acceptable.
 
-Launch ALL these agents in parallel using their specialized `subagent_type`. These produce warnings but don't block unless critical issues found:
+### Audit scope by branch type
+
+Determine branch type from the branch name prefix:
+
+- **`feat/`** — Full audit (all 7 agents below)
+- **`fix/`** — Reduced audit: security + architecture + performance only (3 agents)
+- **`chore/` or `docs/`** — Minimal audit: security + architecture only (2 agents). These branches refactor existing code or update docs — UI, dark mode, offline, and privacy audits add no value since user-visible behavior doesn't change
+
+### Full audit agents
+
+Launch these agents in parallel using their specialized `subagent_type`. These produce warnings but don't block unless critical issues found:
 
 1. **dark-mode-auditor** — scan changed `.tsx`/`.ts` files for hardcoded colors in NEW code
 2. **security** — XSS, query injection, race conditions, input validation in changed files

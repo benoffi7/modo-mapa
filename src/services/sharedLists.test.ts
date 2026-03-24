@@ -30,17 +30,122 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
   query: vi.fn(),
   where: vi.fn(),
+  orderBy: vi.fn(),
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
   increment: vi.fn((n: number) => ({ __increment: n })),
 }));
 
-import { copyList } from './sharedLists';
+import {
+  createList,
+  toggleListPublic,
+  updateList,
+  deleteList,
+  addBusinessToList,
+  removeBusinessFromList,
+  fetchListItems,
+  fetchSharedWithMe,
+  copyList,
+} from './sharedLists';
+import { invalidateQueryCache } from './queryCache';
+import { trackEvent } from '../utils/analytics';
 
-describe('copyList', () => {
+describe('sharedLists', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
+  describe('createList', () => {
+    it('creates a list and returns id', async () => {
+      mockAddDoc.mockResolvedValueOnce({ id: 'list1' });
+      const id = await createList('u1', ' My List ', 'desc');
+      expect(mockAddDoc).toHaveBeenCalled();
+      expect(id).toBe('list1');
+      expect(invalidateQueryCache).toHaveBeenCalled();
+      expect(trackEvent).toHaveBeenCalledWith('list_created', { list_id: 'list1' });
+    });
+  });
+
+  describe('toggleListPublic', () => {
+    it('updates isPublic field', async () => {
+      await toggleListPublic('list1', true);
+      expect(mockUpdateDoc).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateList', () => {
+    it('updates name and description', async () => {
+      await updateList('list1', 'New Name', 'New Desc');
+      expect(mockUpdateDoc).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteList', () => {
+    it('deletes items then list', async () => {
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [
+          { ref: { id: 'item1' } },
+          { ref: { id: 'item2' } },
+        ],
+      });
+      await deleteList('list1', 'u1');
+      expect(mockDeleteDoc).toHaveBeenCalledTimes(3); // 2 items + 1 list
+      expect(invalidateQueryCache).toHaveBeenCalled();
+      expect(trackEvent).toHaveBeenCalledWith('list_deleted', { list_id: 'list1' });
+    });
+
+    it('deletes empty list', async () => {
+      mockGetDocs.mockResolvedValueOnce({ docs: [] });
+      await deleteList('list1', 'u1');
+      expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('addBusinessToList', () => {
+    it('adds item and increments count', async () => {
+      await addBusinessToList('list1', 'biz1', 'u1');
+      expect(mockSetDoc).toHaveBeenCalledTimes(1);
+      expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+      expect(trackEvent).toHaveBeenCalledWith('list_item_added', { list_id: 'list1', business_id: 'biz1' });
+    });
+  });
+
+  describe('removeBusinessFromList', () => {
+    it('removes item and decrements count', async () => {
+      await removeBusinessFromList('list1', 'biz1');
+      expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
+      expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+      expect(trackEvent).toHaveBeenCalledWith('list_item_removed', { list_id: 'list1', business_id: 'biz1' });
+    });
+  });
+
+  describe('fetchListItems', () => {
+    it('returns mapped items', async () => {
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [
+          { data: () => ({ businessId: 'b1', listId: 'l1' }) },
+          { data: () => ({ businessId: 'b2', listId: 'l1' }) },
+        ],
+      });
+      const items = await fetchListItems('l1');
+      expect(items).toHaveLength(2);
+      expect(items[0].businessId).toBe('b1');
+    });
+  });
+
+  describe('fetchSharedWithMe', () => {
+    it('returns lists where user is editor', async () => {
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [
+          { data: () => ({ id: 'l1', ownerId: 'other', name: 'Shared' }) },
+        ],
+      });
+      const result = await fetchSharedWithMe('u1');
+      expect(result).toHaveLength(1);
+      expect(mockGetDocs).toHaveBeenCalled();
+    });
+  });
+
+  describe('copyList', () => {
   it('throws when user has 10 lists already', async () => {
     mockGetDocs.mockResolvedValueOnce({ size: 10 });
     await expect(copyList('source1', 'user1')).rejects.toThrow('Límite de 10 listas alcanzado');
@@ -110,5 +215,6 @@ describe('copyList', () => {
     await copyList('source1', 'user1');
     // Only the addDoc for createList, no setDoc for items
     expect(mockSetDoc).not.toHaveBeenCalled();
+  });
   });
 });
