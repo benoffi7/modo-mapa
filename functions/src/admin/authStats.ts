@@ -5,7 +5,7 @@ import { getAuth } from 'firebase-admin/auth';
 import type { UserRecord } from 'firebase-admin/auth';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK } from '../helpers/env';
+import { ENFORCE_APP_CHECK_ADMIN } from '../helpers/env';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ function classifyUser(user: UserRecord): 'anonymous' | 'email' {
 // ── Cloud Function ────────────────────────────────────────────────────
 
 export const getAuthStats = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
   async (request: CallableRequest): Promise<AuthStatsResponse> => {
     assertAdmin(request.auth);
 

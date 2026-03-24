@@ -3,10 +3,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { createNotification } from '../utils/notifications';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { ENFORCE_APP_CHECK, ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 
 export const approveMenuPhoto = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, timeoutSeconds: 60 },
   async (request) => {
     const admin = assertAdmin(request.auth);
 
@@ -64,7 +64,7 @@ export const approveMenuPhoto = onCall(
 );
 
 export const rejectMenuPhoto = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, timeoutSeconds: 60 },
   async (request) => {
     const admin = assertAdmin(request.auth);
 
@@ -106,7 +106,7 @@ export const rejectMenuPhoto = onCall(
 );
 
 export const deleteMenuPhoto = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60 },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, timeoutSeconds: 60 },
   async (request) => {
     assertAdmin(request.auth);
 

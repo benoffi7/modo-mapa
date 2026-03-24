@@ -4,7 +4,7 @@ import { v1 } from '@google-cloud/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -141,7 +141,7 @@ function clampPageSize(requested: unknown): number {
 export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
   timeoutSeconds: 300,
   memory: '256MiB',
-  enforceAppCheck: ENFORCE_APP_CHECK,
+  enforceAppCheck: ENFORCE_APP_CHECK_ADMIN,
 }, async (request) => {
   const admin = assertAdmin(request.auth);
   await checkRateLimit(admin.uid);
@@ -174,7 +174,7 @@ export const createBackup = onCall<unknown, Promise<CreateBackupResponse>>({
 export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsResponse>>({
   timeoutSeconds: 60,
   memory: '256MiB',
-  enforceAppCheck: ENFORCE_APP_CHECK,
+  enforceAppCheck: ENFORCE_APP_CHECK_ADMIN,
 }, async (request) => {
   const admin = assertAdmin(request.auth);
   await checkRateLimit(admin.uid);
@@ -228,7 +228,7 @@ export const listBackups = onCall<ListBackupsRequest, Promise<ListBackupsRespons
 export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: true; safetyBackupId: string }>>({
   timeoutSeconds: 300,
   memory: '256MiB',
-  enforceAppCheck: ENFORCE_APP_CHECK,
+  enforceAppCheck: ENFORCE_APP_CHECK_ADMIN,
 }, async (request) => {
   const admin = assertAdmin(request.auth);
   await checkRateLimit(admin.uid);
@@ -273,7 +273,7 @@ export const restoreBackup = onCall<RestoreBackupRequest, Promise<{ success: tru
 export const deleteBackup = onCall<DeleteBackupRequest, Promise<{ success: true }>>({
   timeoutSeconds: 120,
   memory: '256MiB',
-  enforceAppCheck: ENFORCE_APP_CHECK,
+  enforceAppCheck: ENFORCE_APP_CHECK_ADMIN,
 }, async (request) => {
   const admin = assertAdmin(request.auth);
   await checkRateLimit(admin.uid);

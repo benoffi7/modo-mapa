@@ -7,6 +7,7 @@ const mockGet = vi.hoisted(() => vi.fn());
 vi.mock('../../helpers/env', () => ({
   get IS_EMULATOR() { return mockIsEmulator.value; },
   ENFORCE_APP_CHECK: false,
+  ENFORCE_APP_CHECK_ADMIN: false,
   getDb: () => ({ doc: () => ({ get: mockGet, update: mockUpdate }) }),
 }));
 

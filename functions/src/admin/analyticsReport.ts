@@ -4,7 +4,7 @@ import { logger } from 'firebase-functions/v2';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ const CACHE_DOC_PATH = 'config/analyticsCache';
 // ── Cloud Function ────────────────────────────────────────────────────
 
 export const getAnalyticsReport = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK, secrets: ['GA4_PROPERTY_ID'] },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, secrets: ['GA4_PROPERTY_ID'] },
   async (request: CallableRequest): Promise<AnalyticsReportResponse> => {
     assertAdmin(request.auth);
 
