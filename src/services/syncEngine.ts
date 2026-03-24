@@ -7,6 +7,8 @@ import type {
   PriceLevelUpsertPayload,
   TagTogglePayload,
   CommentLikePayload,
+  CheckinCreatePayload,
+  CheckinDeletePayload,
 } from '../types/offline';
 
 let syncing = false;
@@ -80,6 +82,18 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       const { commentId } = p as CommentLikePayload;
       const { unlikeComment } = await import('./comments');
       await unlikeComment(userId, commentId);
+      break;
+    }
+    case 'checkin_create': {
+      const { businessName, location } = p as CheckinCreatePayload;
+      const { createCheckIn } = await import('./checkins');
+      await createCheckIn(userId, businessId, businessName, location);
+      break;
+    }
+    case 'checkin_delete': {
+      const { checkInId } = p as CheckinDeletePayload;
+      const { deleteCheckIn } = await import('./checkins');
+      await deleteCheckIn(userId, checkInId);
       break;
     }
   }

@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFilters } from '../context/MapContext';
+import { useConnectivity } from '../context/ConnectivityContext';
+import { useToast } from '../context/ToastContext';
 import { createCheckIn, deleteCheckIn, fetchCheckInsForBusiness } from '../services/checkins';
+import { withOfflineSupport } from '../services/offlineInterceptor';
 import { CHECKIN_COOLDOWN_HOURS, CHECKIN_PROXIMITY_RADIUS_M } from '../constants/checkin';
 import { distanceKm } from '../utils/distance';
 import { trackEvent } from '../utils/analytics';
@@ -25,6 +28,8 @@ export function useCheckIn(
 ): UseCheckInReturn {
   const { user } = useAuth();
   const { userLocation } = useFilters();
+  const { isOffline } = useConnectivity();
+  const toast = useToast();
 
   const [hasCheckedInRecently, setHasCheckedInRecently] = useState(false);
   const [recentCheckInId, setRecentCheckInId] = useState<string | null>(null);
@@ -82,20 +87,22 @@ export function useCheckIn(
     setError(null);
 
     try {
-      const id = await createCheckIn(
-        user.uid,
-        businessId,
-        businessName,
-        userLocation ?? undefined,
+      const id = await withOfflineSupport(
+        isOffline,
+        'checkin_create',
+        { userId: user.uid, businessId, businessName },
+        { businessName, location: userLocation ?? undefined },
+        () => createCheckIn(user.uid, businessId, businessName, userLocation ?? undefined),
+        toast,
       );
       setStatus('success');
       setHasCheckedInRecently(true);
-      setRecentCheckInId(id);
+      if (id) setRecentCheckInId(id);
     } catch (e) {
       setStatus('error');
       setError(e instanceof Error ? e.message : 'Error al registrar visita');
     }
-  }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby]);
+  }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby, isOffline, toast]);
 
   const undoCheckIn = useCallback(async () => {
     if (!user || !recentCheckInId) return;
@@ -104,7 +111,14 @@ export function useCheckIn(
     setError(null);
 
     try {
-      await deleteCheckIn(user.uid, recentCheckInId);
+      await withOfflineSupport(
+        isOffline,
+        'checkin_delete',
+        { userId: user.uid, businessId },
+        { checkInId: recentCheckInId },
+        () => deleteCheckIn(user.uid, recentCheckInId),
+        toast,
+      );
       setStatus('idle');
       setHasCheckedInRecently(false);
       setRecentCheckInId(null);
@@ -112,7 +126,7 @@ export function useCheckIn(
       setStatus('error');
       setError(e instanceof Error ? e.message : 'Error al desmarcar visita');
     }
-  }, [user, recentCheckInId]);
+  }, [user, recentCheckInId, businessId, isOffline, toast]);
 
   return { hasCheckedInRecently, isNearby, canCheckIn, status, error, recentCheckInId, performCheckIn, undoCheckIn };
 }

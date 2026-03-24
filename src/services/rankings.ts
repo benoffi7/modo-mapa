@@ -1,4 +1,5 @@
-import { collection, doc, getDoc, getDocs, getCountFromServer, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userRankingConverter } from '../config/converters';
@@ -109,7 +110,7 @@ async function countUserDocs(
   start: Date,
   end: Date,
 ): Promise<number> {
-  const snap = await getCountFromServer(
+  return getCountOfflineSafe(
     query(
       collection(db, collectionName),
       where('userId', '==', userId),
@@ -117,7 +118,6 @@ async function countUserDocs(
       where('createdAt', '<', Timestamp.fromDate(end)),
     ),
   );
-  return snap.data().count;
 }
 
 /**
@@ -174,13 +174,13 @@ export async function fetchUserLiveScore(
 ): Promise<UserRankingEntry> {
   const { start, end } = getPeriodRange(periodType);
 
-  const [comments, ratings, likes, tags, favorites, photosSnap] = await Promise.all([
+  const [comments, ratings, likes, tags, favorites, photos] = await Promise.all([
     countUserDocs(COLLECTIONS.COMMENTS, userId, start, end),
     countUserDocs(COLLECTIONS.RATINGS, userId, start, end),
     countUserDocs(COLLECTIONS.COMMENT_LIKES, userId, start, end),
     countUserDocs(COLLECTIONS.CUSTOM_TAGS, userId, start, end),
     countUserDocs(COLLECTIONS.FAVORITES, userId, start, end),
-    getCountFromServer(
+    getCountOfflineSafe(
       query(
         collection(db, COLLECTIONS.MENU_PHOTOS),
         where('userId', '==', userId),
@@ -191,7 +191,6 @@ export async function fetchUserLiveScore(
     ),
   ]);
 
-  const photos = photosSnap.data().count;
   const breakdown = { comments, ratings, likes, tags, favorites, photos };
   const score =
     comments * SCORING.comments +

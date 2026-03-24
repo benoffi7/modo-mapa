@@ -5,7 +5,6 @@ import {
   orderBy,
   limit as firestoreLimit,
   getDocs,
-  getCountFromServer,
   doc,
   updateDoc,
   writeBatch,
@@ -14,6 +13,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { notificationConverter } from '../config/converters';
 import { measureAsync } from '../utils/perfMetrics';
+import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
 import type { AppNotification } from '../types';
 
 export async function fetchUserNotifications(
@@ -55,14 +55,10 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 }
 
 export async function getUnreadCount(userId: string): Promise<number> {
-  const snap = await measureAsync('unreadCount', () =>
-    getCountFromServer(
-      query(
-        collection(db, COLLECTIONS.NOTIFICATIONS),
-        where('userId', '==', userId),
-        where('read', '==', false),
-      ),
-    ),
+  const q = query(
+    collection(db, COLLECTIONS.NOTIFICATIONS),
+    where('userId', '==', userId),
+    where('read', '==', false),
   );
-  return snap.data().count;
+  return measureAsync('unreadCount', () => getCountOfflineSafe(q));
 }

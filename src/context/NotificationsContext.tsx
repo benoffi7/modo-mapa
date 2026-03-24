@@ -66,7 +66,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
     const currentUid = uid;
     intervalRef.current = setInterval(() => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
         loadCountOnly(currentUid);
       }
     }, POLL_INTERVAL_MS);
