@@ -4,7 +4,7 @@ import { logger } from 'firebase-functions/v2';
 import { getStorage } from 'firebase-admin/storage';
 import { captureException } from '../utils/sentry';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK } from '../helpers/env';
+import { ENFORCE_APP_CHECK_ADMIN } from '../helpers/env';
 
 interface StorageStatsResponse {
   totalBytes: number;
@@ -13,7 +13,7 @@ interface StorageStatsResponse {
 }
 
 export const getStorageStats = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MiB' },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, timeoutSeconds: 60, memory: '256MiB' },
   async (request: CallableRequest): Promise<StorageStatsResponse> => {
     assertAdmin(request.auth);
 

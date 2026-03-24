@@ -64,7 +64,7 @@ describe('inviteListEditor', () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
     mockGetUserByEmail.mockRejectedValueOnce(new Error('not found'));
     await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'notfound@b.com' } }))
-      .rejects.toThrow('Usuario no encontrado con ese email');
+      .rejects.toThrow('No se pudo enviar la invitacion');
   });
 
   it('throws when inviting self', async () => {

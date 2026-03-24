@@ -10,7 +10,7 @@ service cloud.firestore {
 
     // Helper: valida que businessId tenga el formato esperado (biz_NNN)
     function isValidBusinessId(bizId) {
-      return bizId is string && bizId.matches('^biz_[0-9]{3}$');
+      return bizId is string && bizId.matches('^biz_[0-9]{1,6}$');
     }
 
     // Perfiles de usuario — owner puede leer/escribir su propio documento.
@@ -159,7 +159,7 @@ service cloud.firestore {
         && request.resource.data.message.size() <= 1000
         && request.resource.data.category in ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro']
         && request.resource.data.createdAt == request.time
-        && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{3}$')))
+        && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{1,6}$')))
         && (!('businessName' in request.resource.data) || (request.resource.data.businessName is string && request.resource.data.businessName.size() > 0 && request.resource.data.businessName.size() <= 100));
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
@@ -362,7 +362,16 @@ service cloud.firestore {
               || request.auth.uid in list.data.get('editorIds', []));
       }
 
-      allow read: if request.auth != null;
+      function canReadListItem() {
+        let list = get(/databases/$(database)/documents/sharedLists/$(resource.data.listId));
+        return list != null
+          && (list.data.ownerId == request.auth.uid
+              || request.auth.uid in list.data.get('editorIds', [])
+              || list.data.isPublic == true
+              || list.data.get('featured', false) == true);
+      }
+
+      allow read: if request.auth != null && canReadListItem();
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['listId', 'businessId', 'addedBy', 'createdAt'])
         && request.resource.data.listId is string

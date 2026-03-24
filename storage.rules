@@ -10,13 +10,15 @@ service firebase.storage {
       allow delete: if false; // Only Cloud Functions (admin SDK) can delete
     }
 
-    // Feedback media: owner can upload (max 10MB), owner + admin can read/delete
-    match /feedback-media/{feedbackId}/{fileName} {
+    // Feedback media: owner can upload/delete (max 10MB). Path includes userId for ownership.
+    match /feedback-media/{userId}/{feedbackId}/{fileName} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.auth.uid == userId
         && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/(jpeg|png|webp)');
-      allow delete: if request.auth != null;
+        && request.resource.contentType.matches('(image/(jpeg|png|webp)|application/pdf)');
+      allow delete: if request.auth != null
+        && request.auth.uid == userId;
     }
   }
 }

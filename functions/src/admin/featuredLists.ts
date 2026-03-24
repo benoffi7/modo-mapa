@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 
 /** Extract optional databaseId from callable request data. */
 function extractDbId(data: unknown): string | undefined {
@@ -12,7 +12,7 @@ function extractDbId(data: unknown): string | undefined {
 }
 
 export const toggleFeaturedList = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -53,7 +53,7 @@ interface ListData {
 }
 
 export const getPublicLists = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
   async (request) => {
     assertAdmin(request.auth);
 
@@ -83,7 +83,7 @@ export const getPublicLists = onCall(
 
 /** Public callable — returns featured lists for any authenticated user. */
 export const getFeaturedLists = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');

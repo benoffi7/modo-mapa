@@ -18,6 +18,14 @@ export const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
  */
 export const ENFORCE_APP_CHECK = false;
 
+/**
+ * App Check enforcement for admin-only callables.
+ * Admin always uses the production client (has reCAPTCHA key),
+ * so we can safely enforce App Check on admin functions.
+ * Disabled in emulators for local development.
+ */
+export const ENFORCE_APP_CHECK_ADMIN = !IS_EMULATOR;
+
 /** Allowed Firestore database IDs. Only these can be passed from the client. */
 const ALLOWED_DATABASE_IDS = new Set(['staging']);
 

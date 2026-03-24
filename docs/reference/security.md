@@ -40,7 +40,8 @@ Antes de cada commit, verificar:
 
 ## App Check
 
-- **Obligatorio en Cloud Functions (prod)**: todas las funciones callable usan `enforceAppCheck: !IS_EMULATOR` — habilitado en prod, deshabilitado en emuladores.
+- **Admin callables**: usan `ENFORCE_APP_CHECK_ADMIN = !IS_EMULATOR` — habilitado en prod, deshabilitado en emuladores. Incluye: backups, claims, feedback admin, menuPhotos admin, authStats, featuredLists, storageStats, analyticsReport.
+- **User-facing callables**: usan `ENFORCE_APP_CHECK = false` — deshabilitado porque staging y produccion comparten el mismo deployment y staging no tiene reCAPTCHA key. Incluye: inviteListEditor, removeListEditor, reportMenuPhoto, writePerfMetrics.
 - **Frontend**: se inicializa con `ReCaptchaEnterpriseProvider` solo en producción (`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`).
 - **Emuladores**: no requieren App Check (`IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true'`).
 
@@ -96,7 +97,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
 | `abuseLogs` | admin | Functions | — | — |
-| `userSettings` | auth | owner, `keys().hasOnly()` | owner, `keys().hasOnly()` | — |
+| `userSettings` | auth (expone locality a otros; necesario para profilePublic check) | owner, `keys().hasOnly()` | owner, `keys().hasOnly()` | — |
 | `userRankings` | auth | Functions | Functions | — |
 | `notifications` | owner | — | owner (`affectedKeys().hasOnly(['read'])`) | — |
 | `_rateLimits` | — | Functions | Functions | — |
@@ -228,10 +229,10 @@ menus/{businessId}/{fileName}:
   create: auth != null && size < 5MB && contentType.matches('image/(jpeg|png|webp)')
   delete: false (solo admin SDK desde Cloud Functions)
 
-feedback-media/{feedbackId}/{fileName}:
+feedback-media/{userId}/{feedbackId}/{fileName}:
   read:   auth != null
-  create: auth != null && size < 10MB && contentType.matches('image/(jpeg|png|webp)')
-  delete: auth != null
+  create: auth != null && auth.uid == userId && size < 10MB && contentType.matches('image/(jpeg|png|webp)')
+  delete: auth != null && auth.uid == userId
 ```
 
 ---

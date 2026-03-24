@@ -33,7 +33,7 @@ export const inviteListEditor = onCall(
       const userRecord = await getAuth().getUserByEmail(targetEmail.toLowerCase().trim());
       targetUid = userRecord.uid;
     } catch {
-      throw new HttpsError('not-found', 'Usuario no encontrado con ese email');
+      throw new HttpsError('not-found', 'No se pudo enviar la invitacion. Verifica el email e intenta de nuevo.');
     }
     if (targetUid === request.auth.uid) {
       throw new HttpsError('invalid-argument', 'No podés invitarte a vos mismo');
