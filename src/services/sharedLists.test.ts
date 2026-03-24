@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../config/firebase', () => ({ db: {} }));
+vi.mock('../config/firebase', () => ({ db: {}, functions: {} }));
 vi.mock('../config/collections', () => ({
-  COLLECTIONS: { SHARED_LISTS: 'sharedLists', LIST_ITEMS: 'listItems' },
+  COLLECTIONS: { SHARED_LISTS: 'sharedLists', LIST_ITEMS: 'listItems', USERS: 'users' },
 }));
 vi.mock('../config/converters', () => ({
   sharedListConverter: {},
@@ -11,6 +11,11 @@ vi.mock('../config/converters', () => ({
 vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 vi.mock('../constants/lists', () => ({ MAX_LISTS: 10 }));
+
+const mockHttpsCallable = vi.fn();
+vi.mock('firebase/functions', () => ({
+  httpsCallable: (...args: unknown[]) => mockHttpsCallable(...args),
+}));
 
 const {
   mockGetDoc, mockGetDocs, mockSetDoc, mockAddDoc, mockUpdateDoc, mockDeleteDoc,
@@ -57,6 +62,12 @@ import {
   fetchListItems,
   fetchSharedWithMe,
   copyList,
+  fetchSharedList,
+  fetchUserLists,
+  fetchEditorName,
+  fetchFeaturedLists,
+  inviteEditor,
+  removeEditor,
 } from './sharedLists';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
@@ -228,6 +239,80 @@ describe('sharedLists', () => {
 
       await copyList('source1', 'user1');
       expect(mockTransactionSet).toHaveBeenCalledTimes(1); // only list doc
+    });
+  });
+
+  describe('fetchSharedList', () => {
+    it('returns data when list exists', async () => {
+      const listData = { id: 'l1', ownerId: 'u1', name: 'Test' };
+      mockGetDoc.mockResolvedValueOnce({ exists: () => true, data: () => listData });
+      const result = await fetchSharedList('l1');
+      expect(result).toEqual(listData);
+    });
+
+    it('returns null when list does not exist', async () => {
+      mockGetDoc.mockResolvedValueOnce({ exists: () => false });
+      const result = await fetchSharedList('nonexistent');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('fetchUserLists', () => {
+    it('returns user lists', async () => {
+      const lists = [{ id: 'l1', name: 'A' }, { id: 'l2', name: 'B' }];
+      mockGetDocs.mockResolvedValueOnce({ docs: lists.map((l) => ({ data: () => l })) });
+      const result = await fetchUserLists('u1');
+      expect(result).toEqual(lists);
+    });
+  });
+
+  describe('fetchEditorName', () => {
+    it('returns displayName when user exists', async () => {
+      mockGetDoc.mockResolvedValueOnce({ data: () => ({ displayName: 'Alice' }) });
+      const result = await fetchEditorName('u1');
+      expect(result).toBe('Alice');
+    });
+
+    it('returns "Usuario" when displayName is missing', async () => {
+      mockGetDoc.mockResolvedValueOnce({ data: () => ({}) });
+      const result = await fetchEditorName('u1');
+      expect(result).toBe('Usuario');
+    });
+
+    it('returns "Usuario" on error', async () => {
+      mockGetDoc.mockRejectedValueOnce(new Error('fail'));
+      const result = await fetchEditorName('u1');
+      expect(result).toBe('Usuario');
+    });
+  });
+
+  describe('fetchFeaturedLists', () => {
+    it('returns featured lists with defaults', async () => {
+      const callFn = vi.fn().mockResolvedValueOnce({
+        data: { lists: [{ id: 'f1', name: 'Featured', ownerId: 'admin' }] },
+      });
+      mockHttpsCallable.mockReturnValueOnce(callFn);
+      const result = await fetchFeaturedLists();
+      expect(result[0].editorIds).toEqual([]);
+      expect(result[0].name).toBe('Featured');
+    });
+  });
+
+  describe('inviteEditor', () => {
+    it('calls httpsCallable with correct params', async () => {
+      const callFn = vi.fn().mockResolvedValueOnce({ data: { success: true } });
+      mockHttpsCallable.mockReturnValueOnce(callFn);
+      await inviteEditor('l1', 'test@test.com');
+      expect(callFn).toHaveBeenCalledWith(expect.objectContaining({ listId: 'l1', targetEmail: 'test@test.com' }));
+    });
+  });
+
+  describe('removeEditor', () => {
+    it('calls httpsCallable with correct params', async () => {
+      const callFn = vi.fn().mockResolvedValueOnce({ data: { success: true } });
+      mockHttpsCallable.mockReturnValueOnce(callFn);
+      await removeEditor('l1', 'uid1');
+      expect(callFn).toHaveBeenCalledWith(expect.objectContaining({ listId: 'l1', targetUid: 'uid1' }));
     });
   });
 });
