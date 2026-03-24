@@ -10,7 +10,9 @@ export type OfflineActionType =
   | 'tag_add'
   | 'tag_remove'
   | 'comment_like'
-  | 'comment_unlike';
+  | 'comment_unlike'
+  | 'checkin_create'
+  | 'checkin_delete';
 
 /** Status de una accion en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -38,6 +40,8 @@ export type OfflineActionPayload =
   | PriceLevelDeletePayload
   | TagTogglePayload
   | CommentLikePayload
+  | CheckinCreatePayload
+  | CheckinDeletePayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -74,6 +78,15 @@ export interface TagTogglePayload {
 
 export interface CommentLikePayload {
   commentId: string;
+}
+
+export interface CheckinCreatePayload {
+  businessName: string;
+  location?: { lat: number; lng: number };
+}
+
+export interface CheckinDeletePayload {
+  checkInId: string;
 }
 
 /** For action types that need no extra data beyond userId/businessId on the action */
