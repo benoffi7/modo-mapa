@@ -43,7 +43,7 @@ export default function SearchBar({ onMenuClick }: Props) {
       </IconButton>
       <InputBase
         placeholder="Buscar comercios..."
-        slotProps={{ htmlInput: { 'aria-label': 'Buscar comercios' } }}
+        slotProps={{ input: { 'aria-label': 'Buscar comercios' } }}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setFocused(true)}
