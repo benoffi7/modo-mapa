@@ -12,12 +12,20 @@ vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 vi.mock('../constants/lists', () => ({ MAX_LISTS: 10 }));
 
-const mockGetDoc = vi.fn();
-const mockGetDocs = vi.fn();
-const mockSetDoc = vi.fn().mockResolvedValue(undefined);
-const mockAddDoc = vi.fn().mockResolvedValue({ id: 'new-list-id' });
-const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
-const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
+const {
+  mockGetDoc, mockGetDocs, mockSetDoc, mockAddDoc, mockUpdateDoc, mockDeleteDoc,
+  mockBatchDelete, mockBatchCommit, mockTransactionSet,
+} = vi.hoisted(() => ({
+  mockGetDoc: vi.fn(),
+  mockGetDocs: vi.fn(),
+  mockSetDoc: vi.fn().mockResolvedValue(undefined),
+  mockAddDoc: vi.fn().mockResolvedValue({ id: 'new-list-id' }),
+  mockUpdateDoc: vi.fn().mockResolvedValue(undefined),
+  mockDeleteDoc: vi.fn().mockResolvedValue(undefined),
+  mockBatchDelete: vi.fn(),
+  mockBatchCommit: vi.fn().mockResolvedValue(undefined),
+  mockTransactionSet: vi.fn(),
+}));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnThis() }),
@@ -33,6 +41,10 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
   increment: vi.fn((n: number) => ({ __increment: n })),
+  writeBatch: vi.fn().mockReturnValue({ delete: mockBatchDelete, commit: mockBatchCommit }),
+  runTransaction: vi.fn((_db: unknown, fn: (t: unknown) => Promise<unknown>) =>
+    fn({ set: mockTransactionSet }),
+  ),
 }));
 
 import {
@@ -80,7 +92,7 @@ describe('sharedLists', () => {
   });
 
   describe('deleteList', () => {
-    it('deletes items then list', async () => {
+    it('deletes items then list in a batch', async () => {
       mockGetDocs.mockResolvedValueOnce({
         docs: [
           { ref: { id: 'item1' } },
@@ -88,15 +100,17 @@ describe('sharedLists', () => {
         ],
       });
       await deleteList('list1', 'u1');
-      expect(mockDeleteDoc).toHaveBeenCalledTimes(3); // 2 items + 1 list
+      expect(mockBatchDelete).toHaveBeenCalledTimes(3); // 2 items + 1 list doc
+      expect(mockBatchCommit).toHaveBeenCalledTimes(1);
       expect(invalidateQueryCache).toHaveBeenCalled();
       expect(trackEvent).toHaveBeenCalledWith('list_deleted', { list_id: 'list1' });
     });
 
-    it('deletes empty list', async () => {
+    it('deletes empty list in a batch', async () => {
       mockGetDocs.mockResolvedValueOnce({ docs: [] });
       await deleteList('list1', 'u1');
-      expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
+      expect(mockBatchDelete).toHaveBeenCalledTimes(1); // just the list doc
+      expect(mockBatchCommit).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -146,75 +160,74 @@ describe('sharedLists', () => {
   });
 
   describe('copyList', () => {
-  it('throws when user has 10 lists already', async () => {
-    mockGetDocs.mockResolvedValueOnce({ size: 10 });
-    await expect(copyList('source1', 'user1')).rejects.toThrow('Límite de 10 listas alcanzado');
-  });
-
-  it('throws when source list does not exist', async () => {
-    mockGetDocs.mockResolvedValueOnce({ size: 0 });
-    mockGetDoc.mockResolvedValueOnce({ exists: () => false });
-    await expect(copyList('source1', 'user1')).rejects.toThrow('Lista no encontrada');
-  });
-
-  it('throws when source list is private and caller is not owner', async () => {
-    mockGetDocs.mockResolvedValueOnce({ size: 0 });
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ ownerId: 'other-user', isPublic: false, name: 'Test', description: '' }),
+    it('throws when source list does not exist', async () => {
+      mockGetDoc.mockResolvedValueOnce({ exists: () => false });
+      await expect(copyList('source1', 'user1')).rejects.toThrow('Lista no encontrada');
     });
-    await expect(copyList('source1', 'user1')).rejects.toThrow('No se puede copiar una lista privada');
-  });
 
-  it('allows owner to copy their own private list', async () => {
-    mockGetDocs
-      .mockResolvedValueOnce({ size: 0 }) // user list count
-      .mockResolvedValueOnce({ docs: [] }); // fetchListItems
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ ownerId: 'user1', isPublic: false, name: 'My List', description: 'desc' }),
+    it('throws when source list is private and caller is not owner', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ownerId: 'other-user', isPublic: false, name: 'Test', description: '' }),
+      });
+      await expect(copyList('source1', 'user1')).rejects.toThrow('No se puede copiar una lista privada');
     });
-    mockAddDoc.mockResolvedValueOnce({ id: 'new-list' });
 
-    await copyList('source1', 'user1');
-    expect(mockAddDoc).toHaveBeenCalled();
-  });
+    it('throws when user has 10 lists already (inside transaction)', async () => {
+      // Source list fetch (outside transaction)
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ownerId: 'other', isPublic: true, name: 'Test', description: '' }),
+      });
+      // fetchListItems (outside transaction)
+      mockGetDocs
+        .mockResolvedValueOnce({ docs: [] })
+        // user list count (inside transaction)
+        .mockResolvedValueOnce({ size: 10 });
+      await expect(copyList('source1', 'user1')).rejects.toThrow('Límite de 10 listas alcanzado');
+    });
 
-  it('copies public list with items', async () => {
-    mockGetDocs
-      .mockResolvedValueOnce({ size: 2 }) // user list count
-      .mockResolvedValueOnce({ // fetchListItems
-        docs: [
+    it('allows owner to copy their own private list', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ownerId: 'user1', isPublic: false, name: 'My List', description: 'desc' }),
+      });
+      mockGetDocs
+        .mockResolvedValueOnce({ docs: [] }) // fetchListItems
+        .mockResolvedValueOnce({ size: 0 }); // user list count in transaction
+
+      await copyList('source1', 'user1');
+      expect(mockTransactionSet).toHaveBeenCalledTimes(1); // list doc only, no items
+    });
+
+    it('copies public list with items via transaction', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ownerId: 'other', isPublic: true, name: 'Public List', description: 'hi' }),
+      });
+      mockGetDocs
+        .mockResolvedValueOnce({ docs: [
           { data: () => ({ businessId: 'biz1' }) },
           { data: () => ({ businessId: 'biz2' }) },
-        ],
+        ]}) // fetchListItems
+        .mockResolvedValueOnce({ size: 2 }); // user list count in transaction
+
+      await copyList('source1', 'user1');
+      // 1 list doc + 2 item docs = 3 transaction.set calls
+      expect(mockTransactionSet).toHaveBeenCalledTimes(3);
+    });
+
+    it('copies empty list without adding items', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ownerId: 'other', isPublic: true, name: 'Empty', description: '' }),
       });
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ ownerId: 'other', isPublic: true, name: 'Public List', description: 'hi' }),
+      mockGetDocs
+        .mockResolvedValueOnce({ docs: [] }) // fetchListItems
+        .mockResolvedValueOnce({ size: 0 }); // user list count in transaction
+
+      await copyList('source1', 'user1');
+      expect(mockTransactionSet).toHaveBeenCalledTimes(1); // only list doc
     });
-    mockAddDoc.mockResolvedValueOnce({ id: 'copied-list' });
-
-    const newId = await copyList('source1', 'user1');
-    expect(newId).toBe('copied-list');
-    // 2 items should be added (setDoc for each item + updateDoc for itemCount)
-    expect(mockSetDoc).toHaveBeenCalledTimes(2);
-    expect(mockUpdateDoc).toHaveBeenCalledTimes(2);
-  });
-
-  it('copies empty list without adding items', async () => {
-    mockGetDocs
-      .mockResolvedValueOnce({ size: 0 })
-      .mockResolvedValueOnce({ docs: [] }); // no items
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ ownerId: 'other', isPublic: true, name: 'Empty', description: '' }),
-    });
-    mockAddDoc.mockResolvedValueOnce({ id: 'new-empty' });
-
-    await copyList('source1', 'user1');
-    // Only the addDoc for createList, no setDoc for items
-    expect(mockSetDoc).not.toHaveBeenCalled();
-  });
   });
 });

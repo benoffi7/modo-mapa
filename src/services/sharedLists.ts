@@ -12,6 +12,8 @@ import {
   orderBy,
   serverTimestamp,
   increment,
+  writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -61,15 +63,20 @@ export async function updateList(listId: string, name: string, description: stri
 }
 
 export async function deleteList(listId: string, ownerId: string): Promise<void> {
-  // Delete all items in the list first
   const itemsSnap = await getDocs(
     query(collection(db, COLLECTIONS.LIST_ITEMS), where('listId', '==', listId)),
   );
-  const deletes = itemsSnap.docs.map((d) => deleteDoc(d.ref));
-  await Promise.all(deletes);
 
-  // Delete the list itself
-  await deleteDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId));
+  // Firestore batches support max 500 operations
+  const allDocs = [...itemsSnap.docs.map((d) => d.ref), doc(db, COLLECTIONS.SHARED_LISTS, listId)];
+  for (let i = 0; i < allDocs.length; i += 500) {
+    const batch = writeBatch(db);
+    for (const ref of allDocs.slice(i, i + 500)) {
+      batch.delete(ref);
+    }
+    await batch.commit();
+  }
+
   invalidateQueryCache(COLLECTIONS.SHARED_LISTS, ownerId);
   trackEvent('list_deleted', { list_id: listId });
 }
@@ -110,35 +117,55 @@ export async function fetchListItems(listId: string): Promise<ListItem[]> {
 }
 
 export async function copyList(sourceListId: string, targetUserId: string): Promise<string> {
-  // Check user list count
-  const userLists = await getDocs(
-    query(collection(db, COLLECTIONS.SHARED_LISTS), where('ownerId', '==', targetUserId)),
-  );
-  if (userLists.size >= MAX_LISTS) {
-    throw new Error('Límite de 10 listas alcanzado');
-  }
-
-  // Fetch source list
+  // Fetch source list and items outside transaction (read-only, no race risk)
   const sourceSnap = await getDoc(
     doc(db, COLLECTIONS.SHARED_LISTS, sourceListId).withConverter(sharedListConverter),
   );
   if (!sourceSnap.exists()) throw new Error('Lista no encontrada');
   const source = sourceSnap.data();
 
-  // Verify source is public or caller is owner
   if (!source.isPublic && source.ownerId !== targetUserId) {
     throw new Error('No se puede copiar una lista privada');
   }
 
-  // Create new list
-  const newListId = await createList(targetUserId, source.name, source.description);
-
-  // Copy items
   const items = await fetchListItems(sourceListId);
-  for (const item of items) {
-    await addBusinessToList(newListId, item.businessId);
-  }
 
+  // Transaction: check limit + create list + copy items atomically
+  const newListId = await runTransaction(db, async (transaction) => {
+    // Check user list count inside transaction to prevent race
+    const userListsSnap = await getDocs(
+      query(collection(db, COLLECTIONS.SHARED_LISTS), where('ownerId', '==', targetUserId)),
+    );
+    if (userListsSnap.size >= MAX_LISTS) {
+      throw new Error('Límite de 10 listas alcanzado');
+    }
+
+    // Create new list doc
+    const newRef = doc(collection(db, COLLECTIONS.SHARED_LISTS));
+    transaction.set(newRef, {
+      ownerId: targetUserId,
+      name: source.name.trim(),
+      description: source.description.trim(),
+      isPublic: false,
+      itemCount: items.length,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Copy items
+    for (const item of items) {
+      const itemRef = doc(db, COLLECTIONS.LIST_ITEMS, `${newRef.id}__${item.businessId}`);
+      transaction.set(itemRef, {
+        listId: newRef.id,
+        businessId: item.businessId,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    return newRef.id;
+  });
+
+  invalidateQueryCache(COLLECTIONS.SHARED_LISTS, targetUserId);
   trackEvent('list_copied', { source_list_id: sourceListId, item_count: items.length });
   return newListId;
 }
