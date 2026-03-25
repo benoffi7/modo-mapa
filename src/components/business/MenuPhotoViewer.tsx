@@ -5,7 +5,9 @@ import ReportIcon from '@mui/icons-material/Report';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { formatDateMedium } from '../../utils/formatDate';
+import { logger } from '../../utils/logger';
 
 interface Props {
   open: boolean;
@@ -17,6 +19,7 @@ interface Props {
 
 export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, onClose }: Props) {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
 
@@ -27,7 +30,7 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
       await report({ photoId });
       setReported(true);
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error reporting photo:', err);
+      if (import.meta.env.DEV) logger.error('Error reporting photo:', err);
     } finally {
       setReporting(false);
     }
@@ -48,7 +51,8 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
                 size="small"
                 startIcon={<ReportIcon />}
                 onClick={handleReport}
-                disabled={reported || reporting}
+                disabled={reported || reporting || isOffline}
+                title={isOffline ? 'Requiere conexión' : undefined}
                 sx={{ color: reported ? 'grey.500' : 'warning.main' }}
               >
                 {reported ? 'Reportada' : 'Reportar'}

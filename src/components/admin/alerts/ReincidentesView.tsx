@@ -19,6 +19,7 @@ import { formatDateShort } from '../../../utils/formatDate';
 import { ABUSE_TYPE_COLORS, ABUSE_TYPE_LABELS } from '../../../constants';
 import { getSeverity, SEVERITY_CONFIG } from './alertsHelpers';
 import type { AbuseLog } from '../../../types/admin';
+import { logger } from '../../../utils/logger';
 
 interface ReincidenteRow {
   userId: string;
@@ -77,14 +78,14 @@ export default function ReincidentesView({ logs }: Props) {
   const handleReview = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await reviewAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) console.error('Error reviewing:', err); }
+    catch (err) { if (import.meta.env.DEV) logger.error('Error reviewing:', err); }
     setActionInProgress(null);
   };
 
   const handleDismiss = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await dismissAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) console.error('Error dismissing:', err); }
+    catch (err) { if (import.meta.env.DEV) logger.error('Error dismissing:', err); }
     setActionInProgress(null);
   };
 

@@ -20,6 +20,7 @@ import { addFavoritesBatch, addFavorite, removeFavorite, fetchUserFavoriteIds } 
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../types';
 import type { SharedList, ListItem, Business } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   list: SharedList;
@@ -42,7 +43,7 @@ export default function SharedListDetailView({ list, items, loading, sharedListI
     let ignore = false;
     fetchUserFavoriteIds(user.uid).then((ids) => {
       if (!ignore) setUserFavIds(new Set(ids));
-    }).catch((err) => console.error('[SharedListDetailView] load favorites failed:', err));
+    }).catch((err) => logger.error('[SharedListDetailView] load favorites failed:', err));
     return () => { ignore = true; };
   }, [user]);
 

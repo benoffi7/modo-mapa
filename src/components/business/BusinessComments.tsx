@@ -27,6 +27,7 @@ import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import type { Comment } from '../../types';
+import { logger } from '../../utils/logger';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
 
@@ -169,7 +170,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         toast.info('Guarda tus favoritos tocando el corazon.');
       }
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error adding comment:', error);
+      if (import.meta.env.DEV) logger.error('Error adding comment:', error);
       toast.error('No se pudo publicar el comentario');
     }
     setIsSubmitting(false);
@@ -195,7 +196,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       onCommentsChange();
       toast.success('Comentario editado');
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error editing comment:', error);
+      if (import.meta.env.DEV) logger.error('Error editing comment:', error);
       toast.error('No se pudo editar el comentario');
     }
     setIsSavingEdit(false);
@@ -246,7 +247,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         next.delete(commentId);
         return next;
       });
-      if (import.meta.env.DEV) console.error('Error toggling like:', error);
+      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
       toast.error('No se pudo actualizar el like');
     }
   };
@@ -283,7 +284,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       onCommentsChange();
       if (!isOffline) toast.success('Respuesta publicada');
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error adding reply:', error);
+      if (import.meta.env.DEV) logger.error('Error adding reply:', error);
       toast.error('No se pudo publicar la respuesta');
     }
     setIsSubmitting(false);

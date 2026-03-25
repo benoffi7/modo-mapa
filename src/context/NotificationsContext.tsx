@@ -8,6 +8,7 @@ import {
 } from '../services/notifications';
 import { POLL_INTERVAL_MS } from '../constants/timing';
 import type { AppNotification } from '../types';
+import { logger } from '../utils/logger';
 
 const EMPTY_NOTIFICATIONS: AppNotification[] = [];
 
@@ -39,7 +40,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setNotifications(notifs);
       setUnreadCount(count);
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error loading notifications:', err);
+      if (import.meta.env.DEV) logger.error('Error loading notifications:', err);
     }
   }, []);
 

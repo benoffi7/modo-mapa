@@ -4,6 +4,7 @@ import { db } from '../config/firebase';
 import { publicMetricsConverter } from '../config/metricsConverter';
 import { COLLECTIONS } from '../config/collections';
 import type { PublicMetrics } from '../types/metrics';
+import { logger } from '../utils/logger';
 
 interface UsePublicMetricsReturn {
   metrics: PublicMetrics | null;
@@ -29,7 +30,7 @@ export function usePublicMetrics(): UsePublicMetricsReturn {
         setLoading(false);
       })
       .catch((err) => {
-        console.error('[usePublicMetrics] fetch failed:', err);
+        logger.error('[usePublicMetrics] fetch failed:', err);
         if (ignore) return;
         setError(true);
         setLoading(false);

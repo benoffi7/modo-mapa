@@ -1,3 +1,5 @@
+import { logger } from '../../utils/logger';
+
 export function formatBackupDate(createdAt: string): string {
   try {
     const date = new Date(createdAt);
@@ -37,6 +39,6 @@ export function mapErrorToUserMessage(message: string, context: string): string 
 
 export function logError(context: string, err: unknown): void {
   if (import.meta.env.DEV) {
-    console.error(`BackupsPanel: ${context}`, err);
+    logger.error(`BackupsPanel: ${context}`, err);
   }
 }

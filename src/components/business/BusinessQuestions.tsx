@@ -28,6 +28,7 @@ import { MAX_QUESTION_LENGTH, BEST_ANSWER_MIN_LIKES } from '../../constants/ques
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { trackEvent } from '../../utils/analytics';
 import type { Comment } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   businessId: string;
@@ -146,7 +147,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       onCommentsChange();
       if (!isOffline) toast.success('Pregunta publicada');
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error creating question:', error);
+      if (import.meta.env.DEV) logger.error('Error creating question:', error);
       toast.error('No se pudo publicar la pregunta');
     }
     setIsSubmitting(false);
@@ -184,7 +185,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       }
     } catch (error) {
       setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      if (import.meta.env.DEV) console.error('Error toggling like:', error);
+      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
       toast.error('No se pudo actualizar el like');
     }
   };
@@ -223,7 +224,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       if (!isOffline) toast.success('Respuesta publicada');
       trackEvent('question_answered', { business_id: businessId, question_id: replyingTo.id });
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error adding answer:', error);
+      if (import.meta.env.DEV) logger.error('Error adding answer:', error);
       toast.error('No se pudo publicar la respuesta');
     }
     setIsSubmitting(false);

@@ -19,6 +19,7 @@ import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
 import type { CustomTag, UserTag } from '../../types';
 import CustomTagDialog from './CustomTagDialog';
 import DeleteTagDialog from './DeleteTagDialog';
+import { logger } from '../../utils/logger';
 
 interface Props {
   businessId: string;
@@ -94,7 +95,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
       }
       onTagsChange();
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error toggling tag:', err);
+      if (import.meta.env.DEV) logger.error('Error toggling tag:', err);
     }
     setPendingTagId(null);
   };

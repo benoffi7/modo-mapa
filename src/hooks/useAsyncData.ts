@@ -5,6 +5,7 @@
  * all admin panel components.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../utils/logger';
 
 interface UseAsyncDataReturn<T> {
   data: T | null;
@@ -36,7 +37,7 @@ export function useAsyncData<T>(fetcher: () => Promise<T>): UseAsyncDataReturn<T
       })
       .catch((err) => {
         if (ignore) return;
-        if (import.meta.env.DEV) console.error('useAsyncData error:', err);
+        if (import.meta.env.DEV) logger.error('useAsyncData error:', err);
         setError(true);
         setLoading(false);
       });

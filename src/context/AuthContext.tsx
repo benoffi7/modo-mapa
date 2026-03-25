@@ -14,6 +14,7 @@ import { COLLECTIONS } from '../config/collections';
 import { userProfileConverter } from '../config/converters';
 import { setUserProperty, trackEvent } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
+import { logger } from '../utils/logger';
 import {
   linkAnonymousWithEmail,
   signInWithEmail as signInWithEmailService,
@@ -100,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await signInAnonymously(auth);
           } catch (error) {
-            if (import.meta.env.DEV) console.error('Error signing in anonymously:', error);
+            if (import.meta.env.DEV) logger.error('Error signing in anonymously:', error);
           }
         }
       }
@@ -137,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
       setAuthError(message);
-      if (import.meta.env.DEV) console.error('Error signing in with Google:', error);
+      if (import.meta.env.DEV) logger.error('Error signing in with Google:', error);
       return null;
     }
   }, []);
@@ -213,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOutAndReset();
       trackEvent('sign_out', { method: previousMethod });
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error signing out:', error);
+      if (import.meta.env.DEV) logger.error('Error signing out:', error);
     }
   }, [authMethod]);
 

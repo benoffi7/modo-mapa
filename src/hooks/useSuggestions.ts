@@ -10,6 +10,7 @@ import {
 } from '../constants/suggestions';
 import { distanceKm } from '../utils/distance';
 import type { Business, Favorite, Rating, UserTag, BusinessCategory, SuggestedBusiness, SuggestionReason } from '../types';
+import { logger } from '../utils/logger';
 
 export function useSuggestions(): {
   suggestions: SuggestedBusiness[];
@@ -44,7 +45,7 @@ export function useSuggestions(): {
         if (!cancelled) setState({ favorites: data.favorites, ratings: data.ratings, userTags: data.userTags, isLoading: false, error: false });
       })
       .catch((err) => {
-        console.error('[useSuggestions] fetchUserSuggestionData failed:', err);
+        logger.error('[useSuggestions] fetchUserSuggestionData failed:', err);
         if (!cancelled) setState((prev) => ({ ...prev, isLoading: false, error: true }));
       });
 

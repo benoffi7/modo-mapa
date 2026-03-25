@@ -6,6 +6,7 @@ import { ratingConverter, commentConverter, userTagConverter, customTagConverter
 import { useAuth } from '../context/AuthContext';
 import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
 import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
+import { logger } from '../utils/logger';
 
 interface UseBusinessDataReturn {
   isFavorite: boolean;
@@ -233,7 +234,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       setBusinessCache(bId, result);
     } catch (err) {
       if (fetchIdRef.current !== id) return;
-      if (import.meta.env.DEV) console.error('Error loading business data:', err);
+      if (import.meta.env.DEV) logger.error('Error loading business data:', err);
       setError(true);
     }
 
@@ -268,7 +269,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
         patchBusinessCache(businessId, patch);
       })
       .catch((err) => {
-        if (import.meta.env.DEV) console.error(`Error refetching ${collectionName}:`, err);
+        if (import.meta.env.DEV) logger.error(`Error refetching ${collectionName}:`, err);
       });
   }, [businessId, user, load]);
 

@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import { addFavorite, removeFavorite } from '../../services/favorites';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { logger } from '../../utils/logger';
 
 interface Props {
   businessId: string;
@@ -60,7 +61,7 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
       onToggle();
     } catch (error) {
       setOptimistic(null);
-      if (import.meta.env.DEV) console.error('Error toggling favorite:', error);
+      if (import.meta.env.DEV) logger.error('Error toggling favorite:', error);
       toast.error('No se pudo actualizar favoritos');
     }
     setIsToggling(false);

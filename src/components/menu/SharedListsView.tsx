@@ -36,6 +36,7 @@ import { CATEGORY_LABELS } from '../../types';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MAX_LISTS } from '../../constants/lists';
 import type { SharedList, ListItem, Business } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   onSelectBusiness: (business: Business) => void;
@@ -97,8 +98,8 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
   }, [sharedListId]);
 
   useEffect(() => {
-    fetchFeaturedLists().then(setFeaturedLists).catch((err) => console.error('[SharedListsView] fetchFeaturedLists failed:', err));
-    if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch((err) => console.error('[SharedListsView] fetchSharedWithMe failed:', err));
+    fetchFeaturedLists().then(setFeaturedLists).catch((err) => logger.error('[SharedListsView] fetchFeaturedLists failed:', err));
+    if (user) fetchSharedWithMe(user.uid).then(setSharedWithMe).catch((err) => logger.error('[SharedListsView] fetchSharedWithMe failed:', err));
   }, [user]);
 
   const loadLists = useCallback(async () => {
@@ -160,7 +161,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
   const handleShare = (list: SharedList) => {
     const url = `${window.location.origin}/?list=${list.id}`;
     if (navigator.share) {
-      navigator.share({ title: list.name, url }).catch((err) => console.error('[SharedListsView] share failed:', err));
+      navigator.share({ title: list.name, url }).catch((err) => logger.error('[SharedListsView] share failed:', err));
     } else {
       navigator.clipboard.writeText(url).then(() => toast.success('Link copiado'));
     }

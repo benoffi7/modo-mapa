@@ -25,8 +25,10 @@ export default function SearchBar({ onMenuClick }: Props) {
     <Paper
       elevation={focused ? 4 : 2}
       sx={{
+        '--search-bar-top': '16px',
+        '--search-bar-height': '56px',
         position: 'absolute',
-        top: 16,
+        top: 'var(--search-bar-top)',
         left: 16,
         right: 16,
         zIndex: 1100,

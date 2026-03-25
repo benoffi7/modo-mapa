@@ -11,6 +11,7 @@ import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
+import { logger } from '../../utils/logger';
 
 const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   like: 'Like',
@@ -39,9 +40,9 @@ export default function DashboardOverview() {
     const [counters, customTags, authStats, notificationStats, commentStats] = await Promise.all([
       fetchCounters(),
       fetchAllCustomTags(),
-      fetchAuthStats().catch((err) => { console.error('[DashboardOverview] fetchAuthStats failed:', err); return null; }),
-      fetchNotificationStats().catch((err) => { console.error('[DashboardOverview] fetchNotificationStats failed:', err); return null; }),
-      fetchCommentStats().catch((err) => { console.error('[DashboardOverview] fetchCommentStats failed:', err); return null; }),
+      fetchAuthStats().catch((err) => { logger.error('[DashboardOverview] fetchAuthStats failed:', err); return null; }),
+      fetchNotificationStats().catch((err) => { logger.error('[DashboardOverview] fetchNotificationStats failed:', err); return null; }),
+      fetchCommentStats().catch((err) => { logger.error('[DashboardOverview] fetchCommentStats failed:', err); return null; }),
     ]);
 
     const labelMap = new Map<string, number>();

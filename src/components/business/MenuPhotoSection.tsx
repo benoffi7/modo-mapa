@@ -10,6 +10,7 @@ import MenuPhotoUpload from './MenuPhotoUpload';
 import MenuPhotoViewer from './MenuPhotoViewer';
 import { SIX_MONTHS_MS } from '../../constants/timing';
 import type { MenuPhoto } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   menuPhoto: MenuPhoto | null;
@@ -35,7 +36,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     if (!path) return;
     getDownloadURL(ref(storage, path))
       .then(setPhotoUrl)
-      .catch((err) => { console.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
+      .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
   }, [menuPhoto]);
 
   // Check if user has pending photos
@@ -46,7 +47,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     }
     getUserPendingPhotos(user.uid, businessId)
       .then((photos) => setHasPending(photos.length > 0))
-      .catch((err) => { console.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); setHasPending(false); });
+      .catch((err) => { logger.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); setHasPending(false); });
   }, [user, businessId]);
 
   // Staleness is based on reviewedAt which is stable per photo — safe to derive

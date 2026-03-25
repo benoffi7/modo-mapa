@@ -23,7 +23,7 @@ export default function FilterChips() {
       aria-label="Filtros de etiquetas"
       sx={{
         position: 'absolute',
-        top: 72,
+        top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px))',
         left: 0,
         right: 0,
         zIndex: 1100,

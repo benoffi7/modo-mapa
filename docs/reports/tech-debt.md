@@ -23,7 +23,20 @@
 
 ## Pendientes
 
-Sin items pendientes.
+### Bundle size (análisis 2026-03-25)
+
+| Chunk | Raw | Gzipped | Contenido |
+|-------|-----|---------|-----------|
+| `index-*.js` (1) | 448 KB | 148 KB | react, react-dom, react-router-dom, app code |
+| `index-*.js` (2) | 448 KB | 147 KB | @vis.gl/react-google-maps, @sentry/react, app hooks/services |
+| `mui-*.js` | 468 KB | 142 KB | @mui/material (tree-shaken) |
+| `firebase-*.js` | 465 KB | 142 KB | firebase/firestore, firebase/auth, firebase/storage |
+| `recharts-*.js` | 375 KB | 110 KB | recharts (admin + stats only) |
+
+**Candidatos a code-split futuro:**
+- `@vis.gl/react-google-maps` (~100KB) — podría lazy-loadarse con el mapa
+- `@sentry/react` (~30KB) — podría cargarse después del initial render
+- recharts ya está excluido del precache (v2.27.4)
 
 ### Recientemente resueltos
 

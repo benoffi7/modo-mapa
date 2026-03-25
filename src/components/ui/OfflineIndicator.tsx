@@ -27,7 +27,7 @@ export function OfflineIndicator() {
         top: 8,
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 1100,
+        zIndex: 1200,
         maxWidth: 'calc(100vw - 32px)',
       }}
     />

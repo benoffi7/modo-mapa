@@ -20,14 +20,15 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { MAX_LISTS } from '../../constants/lists';
 import {
-  getSharedListsCollection,
   createList,
   addBusinessToList,
   removeBusinessFromList,
   fetchListItems,
+  fetchAllAccessibleLists,
+  fetchUserLists,
 } from '../../services/sharedLists';
-import { getDocs, query, where, orderBy } from 'firebase/firestore';
 import type { SharedList } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   open: boolean;
@@ -59,27 +60,8 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
 
     (async () => {
       try {
-        // Owned lists
-        const ownedSnap = await getDocs(
-          query(getSharedListsCollection(), where('ownerId', '==', user.uid), orderBy('updatedAt', 'desc')),
-        );
+        const allLists = await fetchAllAccessibleLists(user.uid);
         if (ignore) return;
-        const ownedLists = ownedSnap.docs.map((d) => d.data());
-
-        // Lists where I'm editor
-        let editorLists: SharedList[] = [];
-        try {
-          const editorSnap = await getDocs(
-            query(getSharedListsCollection(), where('editorIds', 'array-contains', user.uid)),
-          );
-          editorLists = editorSnap.docs.map((d) => d.data());
-        } catch (err) {
-          console.error('[AddToListDialog] editor lists query failed:', err);
-        }
-
-        // Merge without duplicates
-        const ownedIds = new Set(ownedLists.map((l) => l.id));
-        const allLists = [...ownedLists, ...editorLists.filter((l) => !ownedIds.has(l.id))];
         setLists(allLists);
 
         const checked = new Set<string>();
@@ -91,7 +73,7 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
         }
         if (!ignore) setCheckedIds(checked);
       } catch (err) {
-        console.error('[AddToListDialog] load failed:', err);
+        logger.error('[AddToListDialog] load failed:', err);
       }
       if (!ignore) setIsLoading(false);
     })();
@@ -114,7 +96,7 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: l.itemCount + 1 } : l));
       }
     } catch (err) {
-      console.error('[AddToListDialog] toggle failed:', err);
+      logger.error('[AddToListDialog] toggle failed:', err);
       toast.error('No se pudo actualizar la lista');
     }
     setActionInProgress(null);
@@ -131,13 +113,11 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
       setShowCreate(false);
       toast.success('Lista creada y comercio agregado');
       // Reload lists
-      const snap = await getDocs(
-        query(getSharedListsCollection(), where('ownerId', '==', user.uid), orderBy('updatedAt', 'desc')),
-      );
-      setLists(snap.docs.map((d) => d.data()));
+      const refreshed = await fetchUserLists(user.uid);
+      setLists(refreshed);
       setCheckedIds((prev) => new Set(prev).add(listId));
     } catch (err) {
-      console.error('[AddToListDialog] create failed:', err);
+      logger.error('[AddToListDialog] create failed:', err);
       toast.error('No se pudo crear la lista');
     }
     setIsCreating(false);

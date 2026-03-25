@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { inviteEditor } from '../../services/sharedLists';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 export default function InviteEditorDialog({ listId, onClose, onInvited }: Props) {
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [email, setEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
 
@@ -49,7 +51,7 @@ export default function InviteEditorDialog({ listId, onClose, onInvited }: Props
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancelar</Button>
-        <Button onClick={handleInvite} variant="contained" disabled={isInviting || !email.trim()}>
+        <Button onClick={handleInvite} variant="contained" disabled={isInviting || !email.trim() || isOffline} title={isOffline ? 'Requiere conexión' : undefined}>
           {isInviting ? <CircularProgress size={20} /> : 'Invitar'}
         </Button>
       </DialogActions>

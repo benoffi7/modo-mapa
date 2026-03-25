@@ -26,6 +26,7 @@ interface UsePaginatedQueryReturn<T> {
 
 import { measureAsync } from '../utils/perfMetrics';
 import { invalidateQueryCache, getQueryCache, setQueryCache } from '../services/queryCache';
+import { logger } from '../utils/logger';
 
 export { invalidateQueryCache } from '../services/queryCache';
 
@@ -123,7 +124,7 @@ export function usePaginatedQuery<T>(
         setItems((prev) => [...prev, ...pageItems]);
       }
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error loading data:', err);
+      if (import.meta.env.DEV) logger.error('Error loading data:', err);
       setError('Error al cargar datos');
     }
 
