@@ -17,8 +17,7 @@ service cloud.firestore {
     // Admin puede leer todos los perfiles (para el dashboard).
     // displayName: string, 1-30 chars. createdAt solo en create.
     match /users/{userId} {
-      allow read: if (request.auth != null && request.auth.uid == userId)
-                  || isAdmin();
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0

@@ -130,18 +130,5 @@ export async function searchUsers(
     })
     .filter((u) => u.displayName.toLowerCase().includes(lower));
 
-  // Filter by profilePublic (check userSettings)
-  const results: Array<{ userId: string; displayName: string }> = [];
-  for (const candidate of candidates.slice(0, maxResults * 2)) {
-    const settingsSnap = await getDoc(doc(db, COLLECTIONS.USER_SETTINGS, candidate.userId));
-    const isPublic = settingsSnap.exists()
-      ? (settingsSnap.data() as { profilePublic?: boolean }).profilePublic === true
-      : false;
-    if (isPublic) {
-      results.push(candidate);
-      if (results.length >= maxResults) break;
-    }
-  }
-
-  return results;
+  return candidates.slice(0, maxResults);
 }
