@@ -36,6 +36,35 @@ Launch ALL 7 audit agents against the entire `src/` directory (not a diff — fu
 
 Wait for all results before proceeding.
 
+### Step 2b: Fallback — manual grep-based audit
+
+If agents fail (quota exhausted, timeouts, empty results), run these grep-based checks directly instead:
+
+```bash
+# Dark mode: hardcoded colors in components (exclude admin/, test, ThemePlayground, constants)
+grep -rn "#[0-9a-fA-F]\{3,8\}" src/components/ --include="*.tsx" | grep -v admin/ | grep -v test | grep -v ThemePlayground
+
+# Security: dangerous patterns
+grep -rn "dangerouslySetInnerHTML\|eval(\|innerHTML" src/ --include="*.ts" --include="*.tsx"
+
+# Architecture: firebase/firestore imports in components (should be 0)
+grep -rn "from 'firebase/firestore'" src/components/ --include="*.tsx"
+
+# Architecture: console.* usage (should use logger)
+grep -rn "console\.\(error\|log\|warn\)(" src/ --include="*.ts" --include="*.tsx" | grep -v test | grep -v logger.ts | grep -v sentry.ts | wc -l
+
+# Performance: getCountFromServer without offline guard
+grep -rn "getCountFromServer" src/ --include="*.ts" | grep -v test | grep -v getCountOfflineSafe
+
+# Offline: httpsCallable in user-facing components without offline guard
+grep -rn "httpsCallable" src/components/ src/services/ --include="*.ts" --include="*.tsx" | grep -v admin | grep -v test
+
+# Privacy: new data collection patterns
+grep -rn "logEvent\|addDoc\|setDoc\|collection(" src/services/ --include="*.ts" | grep -v test
+```
+
+Report each grep result as a finding with severity. This is less thorough than agents but catches the most common issues.
+
 ### Step 3: Consolidate findings
 
 Report all results as a summary table with severity counts per agent.
