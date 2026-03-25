@@ -85,3 +85,5 @@ export interface AnalyticsReportResponse {
   cachedAt: string;
   fromCache: boolean;
 }
+
+export type HealthStatus = 'ok' | 'warning' | 'error';

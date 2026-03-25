@@ -28,11 +28,13 @@ import {
   feedbackConverter,
   userProfileConverter,
   menuPhotoConverter,
+  trendingDataConverter,
+  userRankingConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
 import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
-import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel } from '../types';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel, TrendingData, UserRanking } from '../types';
 
 // ── Counters ───────────────────────────────────────────────────────────
 
@@ -361,4 +363,23 @@ export async function fetchRecentCommentLikes(count: number): Promise<CommentLik
       createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
     };
   });
+}
+
+// ── Rankings & Trending ──────────────────────────────────────────────
+
+export async function fetchLatestRanking(): Promise<UserRanking | null> {
+  const q = query(
+    collection(db, COLLECTIONS.USER_RANKINGS).withConverter(userRankingConverter),
+    orderBy('endDate', 'desc'),
+    limit(1),
+  );
+  const snap = await getDocs(q);
+  return snap.empty ? null : snap.docs[0].data();
+}
+
+export async function fetchTrendingCurrent(): Promise<TrendingData | null> {
+  const snap = await getDoc(
+    doc(db, COLLECTIONS.TRENDING_BUSINESSES, 'current').withConverter(trendingDataConverter),
+  );
+  return snap.exists() ? snap.data() : null;
 }
