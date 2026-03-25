@@ -31,11 +31,12 @@ import {
   trendingDataConverter,
   userRankingConverter,
   sharedListConverter,
+  checkinConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
 import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
-import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel, TrendingData, UserRanking } from '../types';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel, TrendingData, UserRanking, CheckIn } from '../types';
 
 // ── Counters ───────────────────────────────────────────────────────────
 
@@ -467,4 +468,16 @@ export async function fetchTopLists(topN = 10): Promise<Array<{ name: string; ow
     const list = d.data();
     return { name: list.name, ownerId: list.ownerId, itemCount: list.itemCount, isPublic: list.isPublic };
   });
+}
+
+// ── Check-ins ──────────────────────────────────────────────────────────
+
+export async function fetchRecentCheckins(count: number): Promise<CheckIn[]> {
+  const q = query(
+    collection(db, COLLECTIONS.CHECKINS).withConverter(checkinConverter),
+    orderBy('createdAt', 'desc'),
+    limit(count),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data());
 }
