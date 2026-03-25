@@ -69,7 +69,8 @@ export default function PrivacyPolicy() {
             comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
-            imágenes adjuntas opcionales) y votos de nivel de gasto.
+            imágenes adjuntas opcionales), votos de nivel de gasto y recomendaciones de comercios
+            a otros usuarios (nombre del comercio, mensaje opcional, estado de lectura).
           </Li>
           <Li>
             <strong>Registro de visitas (check-ins) (opcional):</strong> cuando registrás una
@@ -115,7 +116,9 @@ export default function PrivacyPolicy() {
             eventos relacionados con la autenticación (account_created, email_sign_in,
             sign_out, password_changed), eventos de preguntas y respuestas (question_created,
             question_answered, question_viewed), eventos de check-ins (checkin_created,
-            checkin_deleted), eventos de sincronizacion offline (offline_action_queued,
+            checkin_deleted), eventos de recomendaciones (recommendation_sent,
+            recommendation_opened, recommendation_list_viewed),
+            eventos de sincronizacion offline (offline_action_queued,
             offline_sync_completed, offline_sync_failed, offline_action_discarded)
             y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
@@ -182,7 +185,8 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Límites de uso:</strong> se aplican límites para prevenir abuso
-            (ej: máximo de comentarios por día, máximo de 10 check-ins por día).
+            (ej: máximo de comentarios por día, máximo de 10 check-ins por día,
+            máximo de 20 recomendaciones por día).
           </Li>
           <Li>
             <strong>Moderación automática:</strong> el contenido se revisa automáticamente
@@ -238,7 +242,8 @@ export default function PrivacyPolicy() {
           </Li>
           <Li>
             <strong>Controlar notificaciones:</strong> podés activar o desactivar las
-            notificaciones (likes, fotos, rankings, feedback, respuestas a comentarios) desde Configuración.
+            notificaciones (likes, fotos, rankings, feedback, respuestas a comentarios,
+            recomendaciones) desde Configuración.
           </Li>
           <Li>
             <strong>Cerrar sesión:</strong> podés cerrar tu sesión en cualquier momento.

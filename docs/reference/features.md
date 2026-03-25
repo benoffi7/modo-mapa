@@ -21,6 +21,7 @@
 - Nombre, categoria, direccion, telefono (link `tel:`)
 - Boton favorito (toggle corazon). Optimistic UI con derived state pattern. Toast de exito/error via `useToast()`. Color theme-aware (`error.main`)
 - Boton direcciones (abre Google Maps)
+- Boton recomendar (abre `RecommendDialog` para enviar recomendacion a otro usuario). Solo visible para usuarios autenticados no anonimos. Lazy-loaded con Suspense
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
 - **Rating**: promedio + estrellas del usuario (1-5). Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`. Toast de error via `useToast()` si falla la operacion
 - **Tags predefinidos**: vote count + toggle del usuario
@@ -47,6 +48,7 @@
   - **Mis visitas (Check-in)**: historial de check-ins explicitos del usuario. Boton "Hacer check-in" en BusinessSheet registra visita con timestamp y ubicacion opcional. Cooldown de 4h por comercio. Limite diario de 10 check-ins (Cloud Function rate limit). Validacion soft de proximidad (500m, advierte pero no bloquea). Desmarcar check-in tocando el boton de nuevo. Lista cronologica con fecha relativa, click navega al comercio. Stats: total visitas y comercios unicos. Pull-to-refresh. Lazy-loaded en SideMenu
   - **Seguidos** (#129): lista de usuarios seguidos con busqueda de usuarios (debounce 300ms, prefijo `displayNameLower`). Click abre perfil publico. Pull-to-refresh. Lazy-loaded. Ver seccion "Seguir usuarios"
   - **Actividad** (#129): feed de actividad de usuarios seguidos (ratings, comentarios, favoritos). Paginado, pull-to-refresh. Items expiran a 30 dias. Ver seccion "Seguir usuarios"
+  - **Recomendaciones** (#135): lista de recomendaciones recibidas de otros usuarios. Items muestran avatar, nombre del remitente, comercio recomendado, mensaje y fecha relativa. Indicador visual de no leido (`action.hover`). Click navega al comercio y marca como leida. "Marcar todas como leidas" al abrir. Badge en SideMenuNav con conteo de no leidas. Empty state con icono y mensaje. Lazy-loaded. Ver seccion "Recomendaciones entre usuarios"
   - **Recientes**: ultimos 20 comercios visitados (localStorage). Click navega al comercio en el mapa
   - **Sugeridos para vos**: 2 tabs — "Para vos" (sugerencias personalizadas) y "Tendencia" (trending). Tab "Para vos": sugerencias via `useSuggestions` hook + `services/suggestions.ts`. Fetch de favoritos, ratings y tags del usuario → scoring client-side (Haversine para cercania). Pesos en `constants/suggestions.ts` (`SUGGESTION_WEIGHTS`): categoria=3, tags=2, cercania=1, penalizacion por ya favorito=-5 o ya calificado=-3. Chips de razon (categoria, tags, cercania). Max 10 sugerencias. Distancia al usuario mostrada junto a la direccion ("a 300m", "a 1.2km") si la ubicacion esta disponible. Tab "Tendencia" (#140): top 10 comercios con mas actividad en ultimos 7 dias. Scoring ponderado: ratings*2 + comments*3 + userTags*1 + priceLevels*2 + listItems*1. Calculado diariamente por Cloud Function `computeTrendingBusinesses` (3 AM ART), escrito en `trendingBusinesses/current`. Cards con rank, nombre, categoria, score y breakdown de actividad. Badge "Tendencia" en BusinessHeader para comercios en la lista. Analytics: `trending_viewed`, `trending_business_clicked`. Componentes: `SuggestionsView.tsx`, `TrendingList.tsx`, `TrendingBusinessCard.tsx`
   - **Sorpréndeme**: boton que selecciona un comercio al azar no visitado. Prefiere cercanos (radio 5km) si GPS activo. Toast con nombre del comercio. Fallback a random si todos visitados
@@ -57,8 +59,8 @@
   - **Rankings**: ranking semanal/mensual/anual/historico (all-time) con scoring por actividad. Cards con medallas, barra de progreso y animaciones fade-in escalonadas. Indicador de tendencia (▲▼) vs periodo anterior. Sistema de tiers (Bronce/Plata/Oro/Diamante) con barra de progreso al siguiente nivel. Sistema de badges/logros (11 badges: primera reseña, comentarista, influencer, fotografo, critico, popular, todoterreno, podio, racha 7d, etc). Racha (streak) de dias consecutivos con actividad. Grafico sparkline de evolucion del score. Boton compartir (Web Share API / clipboard). Pull-to-refresh. Perfil publico al tocar un usuario (modal con desglose, badges y score). Filtro por zona (UI placeholder, proximamente). Card "Tu actividad" colapsable (2 lineas por defecto, expandible para desglose completo). Desglose con barras horizontales de colores por categoria. Live score fallback si no estas en ranking pre-computado
   - **Feedback**: formulario con 2 tabs (Enviar / Mis envios). Enviar: categoria (bug/sugerencia/datos_usuario/datos_comercio/otro) + mensaje (max 1000) + archivo adjunto opcional (max 10MB, JPG/PNG/WebP/PDF). Cuando categoria es `datos_comercio`, search bar opcional para vincular un comercio (Autocomplete con `allBusinesses`). PDF se muestra como icono + nombre (no preview embebido). Mis envios: `MyFeedbackList` muestra feedback del usuario con chips de status (pending/viewed/responded/resolved), respuestas del admin colapsables, indicador de nueva respuesta (dot verde), adjunto inline (imagen o link PDF). Al expandir un feedback respondido se marca como visto (`markFeedbackViewed`)
   - **Estadisticas**: distribucion de ratings (pie), tags mas usados (pie), top 10 favoriteados/comentados/calificados. Usa `usePublicMetrics` + componentes de `stats/`
-  - **Configuracion**: seccion Cuenta (primera): anonimos ven crear cuenta/login, usuarios email ven email + badge verificacion + re-enviar verificacion (con cooldown 60s) + cambiar contrasena + cerrar sesion con confirmacion. **Ubicacion** (#154): campo opcional de localidad (ciudad/barrio) con Google Places Autocomplete, usado como ubicacion por defecto sin GPS. Fallback chain: GPS → localidad → oficina (via `useSortLocation` hook). Afecta mapa, sort por cercania, Sorprendeme y sugerencias. Toggles de privacidad (perfil publico/privado), notificaciones (master + likes/fotos/rankings/feedback/replies/nuevos seguidores), y datos de uso (analytics). Defaults todos en false excepto `notifyFollowers: true`. Optimistic UI con revert on error
-  - **Ayuda**: seccion colapsable con 8 topics en formato Accordion (mapa, comercio, menu lateral, notificaciones, perfil, configuracion, seguir usuarios, feedback). Lazy-loaded via `React.lazy()`. Componente: `HelpSection.tsx`
+  - **Configuracion**: seccion Cuenta (primera): anonimos ven crear cuenta/login, usuarios email ven email + badge verificacion + re-enviar verificacion (con cooldown 60s) + cambiar contrasena + cerrar sesion con confirmacion. **Ubicacion** (#154): campo opcional de localidad (ciudad/barrio) con Google Places Autocomplete, usado como ubicacion por defecto sin GPS. Fallback chain: GPS → localidad → oficina (via `useSortLocation` hook). Afecta mapa, sort por cercania, Sorprendeme y sugerencias. Toggles de privacidad (perfil publico/privado), notificaciones (master + likes/fotos/rankings/feedback/replies/nuevos seguidores/recomendaciones), y datos de uso (analytics). Defaults todos en false excepto `notifyFollowers: true` y `notifyRecommendations: true`. Optimistic UI con revert on error
+  - **Ayuda**: seccion colapsable con 9 topics en formato Accordion (mapa, comercio, menu lateral, notificaciones, perfil, configuracion, seguir usuarios, recomendaciones, feedback). Lazy-loaded via `React.lazy()`. Componente: `HelpSection.tsx`
   - **Agregar comercio**: link externo a Google Forms
 - Dark mode toggle con switch (persiste en localStorage, respeta `prefers-color-scheme`)
 - Footer con version de la app (+ links a Theme Playground y Constants Dashboard en DEV)
@@ -72,10 +74,11 @@
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
 - Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
-- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`, `new_follower`
+- Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`, `new_follower`, `recommendation`
 - Generadas automaticamente por Cloud Functions triggers
 - `comment_reply`: notifica al autor del comentario padre cuando alguien responde. Generada por `onCommentCreated` cuando el comentario tiene `parentId`. Respeta setting `notifyReplies` del usuario destinatario. NotificationItem muestra `ReplyIcon` para este tipo
 - `new_follower`: notifica cuando alguien empieza a seguirte. Generada por `onFollowCreated`. Respeta setting `notifyFollowers` del usuario destinatario. Incluye `actorId` y `actorName` del seguidor
+- `recommendation`: notifica cuando alguien te recomienda un comercio. Generada por `onRecommendationCreated`. Respeta setting `notifyRecommendations` del usuario destinatario. Incluye `actorId`, `actorName` y `businessName`
 - Expiran a los 30 dias (cleanup diario)
 - `NotificationsContext` centralizado: instancia unica compartida por todos los consumidores (campana, badge SideMenu, etc.)
 
@@ -125,6 +128,21 @@
 - **Componentes**: `FollowButton.tsx`, `FollowedList.tsx`, `ActivityFeedView.tsx`, `ActivityFeedItem.tsx`, `UserSearchField.tsx`
 - **Hooks**: `useFollow` (optimistic toggle + offline), `useUserSearch` (debounced prefix search), `useActivityFeed` (wrapper sobre `usePaginatedQuery`)
 - **Services**: `services/follows.ts` (followUser, unfollowUser, isFollowing, fetchFollowing, fetchFollowers), `services/activityFeed.ts` (getActivityFeedCollection), `services/users.ts` (searchUsers, fetchUserDisplayNames)
+
+---
+
+## Recomendaciones entre usuarios (#135)
+
+- **Recomendaciones**: un usuario puede recomendar un comercio a otro usuario. Doc en coleccion `recommendations` con campos: `senderId`, `senderName`, `recipientId`, `businessId`, `businessName`, `message` (opcional, max 200 chars), `read`, `createdAt`
+- **Enviar recomendacion**: boton en `BusinessHeader` abre `RecommendDialog`. Busqueda de usuario destinatario via `UserSearchField` (reutilizado de follows). Campo de mensaje opcional (max 200 chars). Rate limit client-side: max 20/dia (`MAX_RECOMMENDATIONS_PER_DAY`). Warning visual cuando quedan ≤3. No se puede recomendar a uno mismo (validado client + server). Offline support via `withOfflineSupport`
+- **Recibir recomendaciones**: seccion "Recomendaciones" en SideMenu (`ReceivedRecommendations`). Lista paginada (20 por pagina) via `PaginatedListShell`. Items muestran avatar con inicial, nombre del remitente, nombre del comercio, mensaje entre comillas, fecha relativa. Indicador visual de no leido (`action.hover` background). Click navega al comercio y marca como leida. "Marcar todas como leidas" al abrir la seccion
+- **Badge**: `SideMenuNav` muestra badge `color="error"` con conteo de recomendaciones no leidas via `useUnreadRecommendations` hook (`getCountFromServer`)
+- **Notificacion `recommendation`**: Cloud Function `onRecommendationCreated` crea notificacion al destinatario con nombre del remitente y comercio. Respeta setting `notifyRecommendations`. Rate limit server-side via `checkRateLimit` (20/dia). Validacion: no self-recommend, campos requeridos, moderacion de mensaje
+- **Configuracion**: toggle "Recomendaciones" en SettingsPanel bajo notificaciones. Default: habilitado (`notifyRecommendations: true`)
+- **Analytics**: eventos `recommendation_sent`, `recommendation_opened`, `recommendation_list_viewed`
+- **Componentes**: `RecommendDialog.tsx` (lazy-loaded en BusinessSheet), `ReceivedRecommendations.tsx` (lazy-loaded en SideMenu)
+- **Hooks**: `useUnreadRecommendations` (conteo no leidas con polling)
+- **Services**: `services/recommendations.ts` (createRecommendation, getReceivedRecommendations, markRecommendationAsRead, markAllRecommendationsAsRead, countRecommendationsSentToday, countUnreadRecommendations)
 
 ---
 
@@ -230,6 +248,7 @@ Todas las callable admin:
 | `onPriceLevelCreated/Updated` | `priceLevels` | Counters |
 | `onFollowCreated` | `follows` | Rate limit (50/dia) + max 200 follows check + profile public check + increment followingCount/followersCount en users + notificacion `new_follower` + counters |
 | `onFollowDeleted` | `follows` | Decrement followingCount/followersCount (floor 0) + counters |
+| `onRecommendationCreated` | `recommendations` | Rate limit (20/dia) + no self-recommend + moderacion mensaje + notificacion `recommendation` + counters |
 
 ### Scheduled
 
