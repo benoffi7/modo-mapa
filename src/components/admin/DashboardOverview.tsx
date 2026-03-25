@@ -9,6 +9,7 @@ import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
 import type { AdminCounters, AuthStats, NotificationStats } from '../../types/admin';
 import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
+import CronHealthSection from './CronHealthSection';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
 import { logger } from '../../utils/logger';
@@ -254,6 +255,9 @@ export default function DashboardOverview() {
             title="Custom Tags — Candidatas a promover"
             items={customTagCounts}
           />
+        </Grid>
+        <Grid size={12}>
+          <CronHealthSection />
         </Grid>
       </Grid>
     </AdminPanelWrapper>
