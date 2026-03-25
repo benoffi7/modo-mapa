@@ -21,6 +21,7 @@ import PerformancePanel from './PerformancePanel';
 import FeaturesPanel from './FeaturesPanel';
 import FeaturedListsPanel from './FeaturedListsPanel';
 import NotificationsPanel from './NotificationsPanel';
+import SocialPanel from './SocialPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -45,6 +46,7 @@ export default function AdminLayout() {
         <Tab label="Feedback" />
         <Tab label="Tendencias" />
         <Tab label="Usuarios" />
+        <Tab label="Social" />
         <Tab label="Uso Firebase" />
         <Tab label={
           <Badge badgeContent={alertsPendingCount} color="error" max={99}>
@@ -64,14 +66,15 @@ export default function AdminLayout() {
         {tab === 2 && <FeedbackList />}
         {tab === 3 && <TrendsPanel />}
         {tab === 4 && <UsersPanel />}
-        {tab === 5 && <FirebaseUsage />}
-        {tab === 6 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
-        {tab === 7 && <BackupsPanel />}
-        {tab === 8 && <PhotoReviewPanel />}
-        {tab === 9 && <FeaturedListsPanel />}
-        {tab === 10 && <PerformancePanel />}
-        {tab === 11 && <FeaturesPanel />}
-        {tab === 12 && <NotificationsPanel />}
+        {tab === 5 && <SocialPanel />}
+        {tab === 6 && <FirebaseUsage />}
+        {tab === 7 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
+        {tab === 8 && <BackupsPanel />}
+        {tab === 9 && <PhotoReviewPanel />}
+        {tab === 10 && <FeaturedListsPanel />}
+        {tab === 11 && <PerformancePanel />}
+        {tab === 12 && <FeaturesPanel />}
+        {tab === 13 && <NotificationsPanel />}
       </Box>
     </Box>
   );
