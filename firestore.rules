@@ -278,9 +278,11 @@ service cloud.firestore {
     }
 
     // Configuración de usuario — cualquier usuario autenticado puede leer (para profilePublic).
-    // Solo el owner puede escribir. Validación de tipos booleanos y timestamp.
+    // Solo el owner puede leer/escribir. Admin puede leer (dashboard).
+    // profilePublic is denormalized onto users doc for cross-user access.
     match /userSettings/{userId} {
-      allow read: if request.auth != null;
+      allow read: if (request.auth != null && request.auth.uid == userId)
+                  || isAdmin();
       allow write: if request.auth != null && request.auth.uid == userId
         && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
         && request.resource.data.profilePublic is bool
@@ -419,17 +421,22 @@ service cloud.firestore {
     }
 
     // Follows — relacion unidireccional entre usuarios.
-    // Cualquier autenticado puede leer. Owner (followerId) puede crear/eliminar.
+    // Read: solo el follower o el followed pueden ver la relacion.
+    // Create: owner + target no es privado (previene TOCTOU race).
     // No updates.
     match /follows/{docId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null
+        && (resource.data.followerId == request.auth.uid
+            || resource.data.followedId == request.auth.uid);
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt'])
         && request.resource.data.followerId == request.auth.uid
         && request.resource.data.followedId is string
         && request.resource.data.followedId.size() > 0
         && request.resource.data.followerId != request.resource.data.followedId
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (!exists(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId))
+            || get(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId)).data.profilePublic != false);
       allow update: if false;
       allow delete: if request.auth != null
         && resource.data.followerId == request.auth.uid;

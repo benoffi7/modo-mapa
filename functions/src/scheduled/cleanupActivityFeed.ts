@@ -19,8 +19,17 @@ export const cleanupActivityFeed = onSchedule(
     }
 
     const batch = db.batch();
+    let count = 0;
     for (const doc of expired.docs) {
-      batch.delete(doc.ref);
+      // Only delete docs under activityFeed/*/items (not other 'items' subcollections)
+      if (doc.ref.parent.parent?.parent?.id === 'activityFeed') {
+        batch.delete(doc.ref);
+        count++;
+      }
+    }
+    if (count === 0) {
+      console.log('No expired activity feed items to clean up');
+      return;
     }
     await batch.commit();
 

@@ -16,6 +16,7 @@ export { onMenuPhotoCreated } from './triggers/menuPhotos';
 export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels';
 export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
 export { onFollowCreated, onFollowDeleted } from './triggers/follows';
+export { onUserSettingsWritten } from './triggers/userSettings';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';

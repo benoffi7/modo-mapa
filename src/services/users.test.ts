@@ -43,31 +43,20 @@ describe('searchUsers', () => {
     mockGetDocs.mockResolvedValueOnce({
       empty: false,
       docs: [
-        { id: 'u1', data: () => ({ displayName: 'Alice' }) },
-        { id: 'u2', data: () => ({ displayName: 'Albert' }) },
+        { id: 'u1', data: () => ({ displayName: 'Alice', profilePublic: false }) },
+        { id: 'u2', data: () => ({ displayName: 'Albert', profilePublic: true }) },
       ],
-    });
-    // u1 settings: profilePublic false (private)
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ profilePublic: false }),
-    });
-    // u2 settings: profilePublic true (public)
-    mockGetDoc.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ profilePublic: true }),
     });
 
     const results = await searchUsers('al');
     expect(results).toEqual([{ userId: 'u2', displayName: 'Albert' }]);
   });
 
-  it('includes users with no settings document (default public)', async () => {
+  it('includes users with no profilePublic field (default not private)', async () => {
     mockGetDocs.mockResolvedValueOnce({
       empty: false,
       docs: [{ id: 'u1', data: () => ({ displayName: 'Bob' }) }],
     });
-    mockGetDoc.mockResolvedValueOnce({ exists: () => false });
 
     const results = await searchUsers('bo');
     expect(results).toEqual([{ userId: 'u1', displayName: 'Bob' }]);

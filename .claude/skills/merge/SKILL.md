@@ -71,6 +71,22 @@ cd functions && npm run test:run
 npx vite build
 ```
 
+### 1f. Test coverage for new files
+
+**BLOCKER:** Verify every new `.ts`/`.tsx` file in `src/services/` and `src/hooks/` has a corresponding `.test.ts` file. This catches the "forgot to write tests" gap that CI's 80% threshold may not catch until deploy.
+
+```bash
+# List new service/hook files without tests
+for f in $(git diff --name-only --diff-filter=A origin/main -- 'src/services/*.ts' 'src/hooks/*.ts' | grep -v '.test.'); do
+  test_file="${f%.ts}.test.ts"
+  if [ ! -f "$test_file" ]; then
+    echo "MISSING TEST: $f → $test_file"
+  fi
+done
+```
+
+If any test files are missing, write them before proceeding. The PRD specifies which files need tests — cross-reference with the plan's test section.
+
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 ## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)
