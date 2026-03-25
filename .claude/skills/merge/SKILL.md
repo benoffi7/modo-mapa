@@ -89,13 +89,13 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 
 ### 1g. Coverage threshold (local)
 
-Run coverage locally to catch threshold failures before CI:
+**BLOCKER:** Run full coverage locally. Do NOT rely on `vitest run` alone — it doesn't check thresholds. CI enforces 80% branches and will fail even at 79.97%.
 
 ```bash
 npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
 ```
 
-If `does not meet` appears, the 80% branches threshold will fail in CI. Write more tests before proceeding.
+If `does not meet` appears, write more tests before proceeding. Common gap: `syncEngine.ts` — new action types need corresponding test cases in `syncEngine.test.ts`.
 
 ### 1h. Firestore index validation
 
@@ -146,6 +146,8 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
 
 Get changed files with: `git diff --name-only origin/main -- 'src/**/*.tsx' 'src/**/*.ts'`
+
+**IMPORTANT:** When running from a worktree, pass the full worktree path (`$WORKDIR`) as "Working directory" in every agent prompt. Agents that receive only a relative path or no path will default to the main repo and read stale files.
 
 Fix critical issues. Report all results as summary table before proceeding.
 
