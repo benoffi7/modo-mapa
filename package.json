@@ -1,7 +1,7 @@
 {
   "name": "modo-mapa",
   "private": true,
-  "version": "2.27.5",
+  "version": "2.28.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
