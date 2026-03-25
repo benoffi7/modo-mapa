@@ -16,6 +16,7 @@ import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 
 interface HelpItem {
   id: string;
@@ -73,6 +74,13 @@ const HELP_ITEMS: HelpItem[] = [
     title: 'Cuenta',
     description:
       'Por defecto tu cuenta es temporal (anónima). Podés crear una cuenta con email y contraseña para sincronizar tus datos entre dispositivos desde el menú lateral o Configuración. Para iniciar sesión en otro dispositivo, usá tu email y contraseña. Después de registrarte, verificá tu email: vas a ver un badge en el menú y podés reenviar el correo desde Configuración. Podés cambiar tu contraseña desde Configuración. Si olvidaste tu contraseña, tocá "Olvidé mi contraseña" en el diálogo de inicio de sesión. Al cerrar sesión se crea una nueva cuenta anónima; necesitás tu email y contraseña para volver a ingresar.',
+  },
+  {
+    id: 'seguir',
+    icon: <PeopleOutlinedIcon color="primary" />,
+    title: 'Seguir usuarios',
+    description:
+      'Desde el menú lateral, entrá a "Seguidos" para buscar y seguir a otros usuarios. Vas a ver su actividad (calificaciones, comentarios y favoritos) en la sección "Actividad". También podés seguir a alguien desde su perfil público tocando el botón "Seguir". En Configuración podés activar o desactivar las notificaciones de nuevos seguidores.',
   },
   {
     id: 'feedback',

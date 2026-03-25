@@ -24,7 +24,7 @@
 |--------|-------------|
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
 | **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. |
-| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. Garantiza unicidad sin queries extra. |
+| **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
 | **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
@@ -45,7 +45,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. `useFollow` usa optimistic toggle con revert on error + offline support. |
 | **Toast global (`useToast`)** | Context provider en `ToastContext.tsx` con `useMemo` para valor estable. Metodos `success/error/warning/info`. Auto-dismiss 4s. Un toast a la vez. Integrado en ratings (error), comments (exito+error), favorites (exito+error). |
 | **Pull-to-refresh (`usePullToRefresh`)** | Hook custom para gesto touch vertical. Solo activa si `scrollTop === 0`. Threshold 80px. `PullToRefreshWrapper` component con CircularProgress. Integrado en FavoritesList, CommentsList, RatingsList, RankingsView. |
 | **Rate limit precheck (UI)** | En BusinessComments, si `userCommentsToday >= MAX_COMMENTS_PER_DAY`, se reemplaza el input por Alert informativo. Contador "X/20 hoy" en helperText con color warning cuando quedan ≤3. Evita que el usuario escriba un comentario que no podra publicar. |
@@ -86,6 +86,17 @@
 | **Public/private toggle** | Campo `isPublic` en sharedList. Rules: read solo para owner o `isPublic == true`. Share button solo visible si pública. |
 | **Deep link** | `?list={id}` en URL abre SideMenu en sección lists con la lista específica. `sharedListId` prop propagado AppShell → SideMenu → SharedListsView. |
 | **AddToListDialog** | Dialog desde BusinessSheet con checkboxes por lista. Carga estado checked via `fetchListItems` por cada lista del usuario. Crear nueva lista inline. |
+
+## Follows y activity feed
+
+| Patron | Descripcion |
+|--------|-------------|
+| **useFollow (optimistic toggle + offline)** | Hook que expone `following`, `loading`, `toggling`, `toggle`, `isSelf`. Check inicial con `isFollowing()`. Toggle optimista: invierte state local antes de escribir, revierte si falla. Integrado con `withOfflineSupport` para encolar en IndexedDB si offline. No permite seguirse a si mismo (`isSelf` guard). |
+| **useUserSearch (debounced prefix)** | Hook con debounce de 300ms via `setTimeout` + `clearTimeout` en ref. Minimo 2 caracteres. Llama a `searchUsers()` que consulta `displayNameLower` con range query (`>=` lower, `<=` lower + `\uf8ff`). Filtra por `profilePublic` client-side (revisa `userSettings` por candidato). Max 10 resultados. |
+| **displayNameLower search** | Campo `displayNameLower` en docs de `users` (mantenido por `AuthContext` al crear/editar displayName). Permite busqueda por prefijo case-insensitive usando Firestore range queries sin indices custom adicionales. |
+| **Fan-out writes pattern** | `fanOutToFollowers(db, data)` en Cloud Functions: lee todos los seguidores del actor, escribe un `ActivityFeedItem` en `activityFeed/{followerId}/items` para cada uno. Batch writes de 500. Solo ejecuta si el actor tiene perfil publico. Items expiran a 30 dias (`expiresAt`). Invocado desde triggers de ratings, comments y favorites. |
+| **Activity feed subcollection** | `activityFeed/{userId}/items` — subcolleccion por usuario para O(1) reads del feed. Cada item tiene `actorId`, `actorName`, `type` (rating/comment/favorite), `businessId`, `businessName`, `referenceId`, `createdAt`, `expiresAt`. Paginado con `usePaginatedQuery` (20 items/pagina). |
+| **Follow counters server-managed** | `followingCount` y `followersCount` en docs de `users` gestionados exclusivamente por Cloud Functions (`FieldValue.increment`). `onFollowCreated` incrementa, `onFollowDeleted` decrementa con floor 0 (lee valor actual antes de decrementar). |
 
 ## Abuse alerts (admin)
 
