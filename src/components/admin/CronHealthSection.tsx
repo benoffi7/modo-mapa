@@ -3,6 +3,7 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import { logger } from '../../utils/logger';
 import Box from '@mui/material/Box';
 import { fetchLatestRanking, fetchTrendingCurrent } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
@@ -44,8 +45,8 @@ interface CronData {
 export default function CronHealthSection() {
   const fetcher = useCallback(async (): Promise<CronData> => {
     const [ranking, trending] = await Promise.all([
-      fetchLatestRanking().catch(() => null),
-      fetchTrendingCurrent().catch(() => null),
+      fetchLatestRanking().catch((err) => { logger.error('[CronHealthSection] fetchLatestRanking failed:', err); return null; }),
+      fetchTrendingCurrent().catch((err) => { logger.error('[CronHealthSection] fetchTrendingCurrent failed:', err); return null; }),
     ]);
     return { ranking, trending };
   }, []);
