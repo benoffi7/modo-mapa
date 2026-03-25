@@ -49,6 +49,11 @@ export async function upsertRating(
 
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
   trackEvent('rating_submit', { business_id: businessId, score });
+
+  // Fan-out to followers (fire-and-forget)
+  import('./feedFanOut').then(({ fanOutFromAction }) =>
+    fanOutFromAction(userId, 'rating', businessId, docId),
+  ).catch(() => {});
 }
 
 export async function upsertCriteriaRating(
