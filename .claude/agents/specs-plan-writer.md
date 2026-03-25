@@ -43,6 +43,19 @@ Reference existing types from src/types/ where applicable.}
 
 {New or modified rules needed. Show the rule code.}
 
+### Rules impact analysis
+
+{For EVERY new Firestore query in services/hooks, verify it works with existing rules.
+Fill this table — it catches permission errors before implementation.}
+
+| Query (service file) | Collection | Auth context | Rule that allows it | Change needed? |
+|---------------------|------------|-------------|-------------------|----------------|
+| {e.g. fetchFollowing(userId)} | follows | Any authenticated | `allow read: if auth != null` | No |
+| {e.g. searchUsers(term)} | users | User B reading user A | `allow read: if auth.uid == userId` | YES — need cross-user read |
+
+{If any query requires a rule change, document the new rule in the section above.
+If a query reads from a collection the caller doesn't own, this MUST be flagged.}
+
 ## Cloud Functions
 
 {Any triggers, scheduled functions, or callable functions needed.

@@ -87,6 +87,38 @@ done
 
 If any test files are missing, write them before proceeding. The PRD specifies which files need tests — cross-reference with the plan's test section.
 
+### 1g. Coverage threshold (local)
+
+Run coverage locally to catch threshold failures before CI:
+
+```bash
+npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
+```
+
+If `does not meet` appears, the 80% branches threshold will fail in CI. Write more tests before proceeding.
+
+### 1h. Firestore index validation
+
+If `firestore.indexes.json` was modified, validate indexes locally:
+
+```bash
+if git diff --name-only origin/main | grep -q 'firestore.indexes.json'; then
+  # Check for single-field indexes (Firestore rejects these — they're automatic)
+  node -e "
+    const idx = require('./firestore.indexes.json').indexes;
+    const bad = idx.filter(i => i.fields.length === 1);
+    if (bad.length) {
+      console.error('ERROR: Single-field indexes found (Firestore auto-creates these):');
+      bad.forEach(i => console.error('  -', i.collectionGroup, i.fields[0].fieldPath));
+      process.exit(1);
+    }
+    console.log('OK: All', idx.length, 'indexes are composite');
+  "
+fi
+```
+
+Single-field indexes cause deploy failures because Firestore creates them automatically. Only composite (2+ fields) indexes belong in `firestore.indexes.json`.
+
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 ## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)
