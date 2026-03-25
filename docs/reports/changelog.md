@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| v2.28.0 | [#129](https://github.com/benoffi7/modo-mapa/issues/129) | Seguir usuarios: follows, activity feed, user search, new_follower notifications, displayNameLower migration |
 | — | [#181](https://github.com/benoffi7/modo-mapa/issues/181) | Tech debt residual: logger centralizado (60 console.* → logger.*, Sentry en prod), service layer cleanup (0 firebase imports en componentes), offline guards en InviteEditorDialog/MenuPhotoViewer/FeedbackForm, FilterChips CSS variables, OfflineIndicator z-index fix, bundle analysis documentado |
 | v2.27.5 | [#178](https://github.com/benoffi7/modo-mapa/issues/178) | Offline tech debt: check-in create/delete en offline queue con withOfflineSupport, guard de notification polling con navigator.onLine, getCountOfflineSafe utility para rankings y notifications (fallback a 0 offline) |
 | v2.27.4 | [#177](https://github.com/benoffi7/modo-mapa/issues/177), [#179](https://github.com/benoffi7/modo-mapa/issues/179) | Performance: AuthContext ref en vez de useLocation (elimina re-renders en navegacion), lazy-load SideMenu (~50-80KB fuera del critical path), excluir recharts del SW precache (-364KB), useMemo en useVisitHistory. UI/UX: migrar inputProps→slotProps MUI 7 (4 files), NameDialog dismissable con Escape/backdrop, FeedbackForm muestra error de file size, MenuPhotoSection keyboard accessible, privacy policy expandida |
