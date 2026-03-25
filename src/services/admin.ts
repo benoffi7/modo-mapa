@@ -30,7 +30,7 @@ import {
   menuPhotoConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse } from '../types/admin';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel } from '../types';
 
@@ -361,4 +361,49 @@ export async function fetchRecentCommentLikes(count: number): Promise<CommentLik
       createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
     };
   });
+}
+
+// ── Notification Details ────────────────────────────────────────────
+
+const NOTIFICATION_TYPES = ['like', 'photo_approved', 'photo_rejected', 'ranking', 'feedback_response', 'comment_reply', 'new_follower', 'recommendation'] as const;
+
+export async function fetchNotificationDetails(): Promise<NotificationDetails> {
+  const snap = await getDocs(collection(db, COLLECTIONS.NOTIFICATIONS));
+  const byTypeMap = new Map<string, { total: number; read: number }>();
+  
+  for (const t of NOTIFICATION_TYPES) {
+    byTypeMap.set(t, { total: 0, read: 0 });
+  }
+  
+  let total = 0;
+  let read = 0;
+  
+  for (const d of snap.docs) {
+    const data = d.data();
+    const type = String(data.type ?? 'unknown');
+    const isRead = data.read === true;
+    
+    total++;
+    if (isRead) read++;
+    
+    const entry = byTypeMap.get(type);
+    if (entry) {
+      entry.total++;
+      if (isRead) entry.read++;
+    } else {
+      byTypeMap.set(type, { total: 1, read: isRead ? 1 : 0 });
+    }
+  }
+  
+  const byType: NotificationTypeBreakdown[] = [...byTypeMap.entries()]
+    .filter(([, v]) => v.total > 0)
+    .map(([type, v]) => ({
+      type,
+      total: v.total,
+      read: v.read,
+      readRate: v.total > 0 ? Math.round((v.read / v.total) * 100) : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+  
+  return { total, read, unread: total - read, byType };
 }

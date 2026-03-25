@@ -85,3 +85,17 @@ export interface AnalyticsReportResponse {
   cachedAt: string;
   fromCache: boolean;
 }
+
+export interface NotificationTypeBreakdown {
+  type: string;
+  total: number;
+  read: number;
+  readRate: number;
+}
+
+export interface NotificationDetails {
+  total: number;
+  read: number;
+  unread: number;
+  byType: NotificationTypeBreakdown[];
+}

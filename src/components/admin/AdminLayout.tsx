@@ -20,6 +20,7 @@ import PhotoReviewPanel from './PhotoReviewPanel';
 import PerformancePanel from './PerformancePanel';
 import FeaturesPanel from './FeaturesPanel';
 import FeaturedListsPanel from './FeaturedListsPanel';
+import NotificationsPanel from './NotificationsPanel';
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -55,6 +56,7 @@ export default function AdminLayout() {
         <Tab label="Listas" />
         <Tab label="Rendimiento" />
         <Tab label="Funcionalidades" />
+        <Tab label="Notificaciones" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {tab === 0 && <DashboardOverview />}
@@ -69,6 +71,7 @@ export default function AdminLayout() {
         {tab === 9 && <FeaturedListsPanel />}
         {tab === 10 && <PerformancePanel />}
         {tab === 11 && <FeaturesPanel />}
+        {tab === 12 && <NotificationsPanel />}
       </Box>
     </Box>
   );
