@@ -47,6 +47,7 @@ export async function createRecommendation(
     createdAt: serverTimestamp(),
   });
 
+  incrementSentTodayCache(senderId);
   invalidateQueryCache(COLLECTIONS.RECOMMENDATIONS, senderId);
   trackEvent(EVT_RECOMMENDATION_SENT, { business_id: businessId, recipient_id: recipientId });
 }
@@ -85,6 +86,11 @@ export async function countUnreadRecommendations(userId: string): Promise<number
 
 const sentTodayCache = new Map<string, { count: number; day: number }>();
 
+/** @internal test-only */
+export function _resetSentTodayCacheForTest(): void {
+  sentTodayCache.clear();
+}
+
 export async function countRecommendationsSentToday(userId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -93,22 +99,31 @@ export async function countRecommendationsSentToday(userId: string): Promise<num
   const cached = sentTodayCache.get(userId);
   if (cached && cached.day === dayTs) return cached.count;
 
-  const snap = await getCountFromServer(
-    query(
-      collection(db, COLLECTIONS.RECOMMENDATIONS),
-      where('senderId', '==', userId),
-      where('createdAt', '>=', today),
-    ),
-  );
-  const count = snap.data().count;
-  sentTodayCache.set(userId, { count, day: dayTs });
-  return count;
+  try {
+    const snap = await getCountFromServer(
+      query(
+        collection(db, COLLECTIONS.RECOMMENDATIONS),
+        where('senderId', '==', userId),
+        where('createdAt', '>=', today),
+      ),
+    );
+    const count = snap.data().count;
+    sentTodayCache.set(userId, { count, day: dayTs });
+    return count;
+  } catch {
+    // Offline: return cached value from previous session or 0
+    return cached?.count ?? 0;
+  }
 }
 
-export function incrementSentTodayCache(userId: string): void {
+function incrementSentTodayCache(userId: string): void {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dayTs = today.getTime();
   const cached = sentTodayCache.get(userId);
-  if (cached && cached.day === dayTs) cached.count++;
+  if (cached && cached.day === dayTs) {
+    cached.count++;
+  } else {
+    sentTodayCache.set(userId, { count: 1, day: dayTs });
+  }
 }

@@ -7,8 +7,10 @@ import SendIcon from '@mui/icons-material/Send';
 import { where } from 'firebase/firestore';
 import type { QueryConstraint } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { getRecommendationsCollection, markRecommendationAsRead, markAllRecommendationsAsRead } from '../../services/recommendations';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { formatRelativeTime } from '../../utils/formatDate';
@@ -24,6 +26,7 @@ interface Props {
 
 export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const userId = user?.uid;
 
   const collectionRef = useMemo(() => getRecommendationsCollection(), []);
@@ -52,15 +55,21 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
   const handleClick = useCallback((rec: Recommendation) => {
     const business = allBusinesses.find((b) => b.id === rec.businessId);
     if (business) {
-      if (!rec.read) {
-        markRecommendationAsRead(rec.id).catch((err) => {
+      if (!rec.read && userId) {
+        withOfflineSupport(
+          isOffline,
+          'recommendation_read',
+          { userId, businessId: rec.businessId, referenceId: rec.id },
+          {},
+          () => markRecommendationAsRead(rec.id),
+        ).catch((err) => {
           if (import.meta.env.DEV) logger.error('markRead failed:', err);
         });
       }
       trackEvent(EVT_RECOMMENDATION_OPENED, { business_id: rec.businessId, sender_id: rec.senderId });
       onSelectBusiness(business);
     }
-  }, [onSelectBusiness]);
+  }, [onSelectBusiness, isOffline, userId]);
 
   return (
     <Box sx={{ px: 2, py: 1 }}>

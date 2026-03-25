@@ -460,7 +460,7 @@ service cloud.firestore {
         && request.resource.data.recipientId is string
         && request.resource.data.recipientId.size() > 0
         && request.resource.data.senderId != request.resource.data.recipientId
-        && request.resource.data.businessId is string
+        && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.businessName is string
         && request.resource.data.businessName.size() > 0
         && request.resource.data.businessName.size() <= 100

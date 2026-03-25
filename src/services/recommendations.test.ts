@@ -38,6 +38,7 @@ import {
   countUnreadRecommendations,
   countRecommendationsSentToday,
   markAllRecommendationsAsRead,
+  _resetSentTodayCacheForTest,
 } from './recommendations';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
@@ -152,7 +153,7 @@ describe('countUnreadRecommendations', () => {
 });
 
 describe('countRecommendationsSentToday', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { vi.clearAllMocks(); _resetSentTodayCacheForTest(); });
 
   it('returns the count from server', async () => {
     mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 3 }) });

@@ -8,10 +8,10 @@ export const OFFLINE_ENQUEUED_MSG = 'Guardado offline — se sincronizará al re
 export async function withOfflineSupport<T>(
   isOffline: boolean,
   actionType: OfflineActionType,
-  actionMeta: { userId: string; businessId: string; businessName?: string | undefined },
+  actionMeta: { userId: string; businessId: string; businessName?: string | undefined; referenceId?: string | undefined },
   payload: OfflineActionPayload,
   onlineAction: () => Promise<T>,
-  toast: { info: (msg: string) => void },
+  toast?: { info: (msg: string) => void },
 ): Promise<T | void> {
   if (!isOffline) {
     return onlineAction();
@@ -26,6 +26,9 @@ export async function withOfflineSupport<T>(
   if (actionMeta.businessName) {
     actionData.businessName = actionMeta.businessName;
   }
+  if (actionMeta.referenceId) {
+    actionData.referenceId = actionMeta.referenceId;
+  }
   await enqueue(actionData);
 
   trackEvent(EVT_OFFLINE_ACTION_QUEUED, {
@@ -33,5 +36,5 @@ export async function withOfflineSupport<T>(
     business_id: actionMeta.businessId,
   });
 
-  toast.info(OFFLINE_ENQUEUED_MSG);
+  toast?.info(OFFLINE_ENQUEUED_MSG);
 }
