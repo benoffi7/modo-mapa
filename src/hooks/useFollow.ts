@@ -30,7 +30,8 @@ export function useFollow(targetUserId: string | undefined) {
         setFollowing(val);
         setLoading(false);
       }
-    }).catch(() => {
+    }).catch((err) => {
+      if (import.meta.env.DEV) logger.error('isFollowing check failed:', err);
       if (!cancelled) setLoading(false);
     });
 
