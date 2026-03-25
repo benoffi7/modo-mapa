@@ -13,21 +13,7 @@ import HealthIndicator from './HealthIndicator';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import type { HealthStatus } from '../../types/admin';
 import type { TrendingData, UserRanking } from '../../types';
-
-// Tier thresholds (must match rankings logic)
-const TIER_THRESHOLDS = [
-  { name: 'Diamante', min: 500 },
-  { name: 'Oro', min: 200 },
-  { name: 'Plata', min: 50 },
-  { name: 'Bronce', min: 0 },
-];
-
-function getTier(score: number): string {
-  for (const t of TIER_THRESHOLDS) {
-    if (score >= t.min) return t.name;
-  }
-  return 'Bronce';
-}
+import { getUserTier } from '../../constants/rankings';
 
 function computeFreshness(date: Date, thresholdHours: number, warningHours: number): HealthStatus {
   const ageMs = Date.now() - date.getTime();
@@ -74,7 +60,7 @@ export default function CronHealthSection() {
     ? (() => {
         const counts: Record<string, number> = {};
         for (const entry of ranking.rankings) {
-          const tier = getTier(entry.score);
+          const tier = getUserTier(entry.score).name;
           counts[tier] = (counts[tier] ?? 0) + 1;
         }
         return Object.entries(counts).map(([name, value]) => ({ name, value }));
