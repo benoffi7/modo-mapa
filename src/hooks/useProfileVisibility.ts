@@ -56,7 +56,7 @@ async function fetchVisibility(userIds: string[]): Promise<void> {
       batches.map((batch) =>
         getDocs(
           query(
-            collection(db, COLLECTIONS.USER_SETTINGS),
+            collection(db, COLLECTIONS.USERS),
             where(documentId(), 'in', batch),
           ),
         ),

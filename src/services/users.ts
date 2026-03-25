@@ -1,7 +1,7 @@
 /**
  * Firestore service for user-related queries.
  */
-import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { logger } from '../utils/logger';
@@ -33,21 +33,17 @@ export async function searchUsers(
 
   if (snap.empty) return [];
 
-  // Filter by profilePublic (check userSettings for each candidate)
+  // Filter by denormalized profilePublic on users doc (synced by onUserSettingsWritten trigger)
   const results: UserSearchResult[] = [];
   for (const userDoc of snap.docs) {
-    const data = userDoc.data() as { displayName?: string };
-    const settingsSnap = await getDoc(doc(db, COLLECTIONS.USER_SETTINGS, userDoc.id));
-    const isPrivate = settingsSnap.exists()
-      && (settingsSnap.data() as { profilePublic?: boolean }).profilePublic === false;
+    const data = userDoc.data() as { displayName?: string; profilePublic?: boolean };
+    if (data.profilePublic === false) continue;
 
-    if (!isPrivate) {
-      results.push({
-        userId: userDoc.id,
-        displayName: data.displayName ?? userDoc.id,
-      });
-      if (results.length >= maxResults) break;
-    }
+    results.push({
+      userId: userDoc.id,
+      displayName: data.displayName ?? userDoc.id,
+    });
+    if (results.length >= maxResults) break;
   }
 
   return results;
