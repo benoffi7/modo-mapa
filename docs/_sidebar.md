@@ -127,6 +127,8 @@
     - [Plan](/feat/infra/metricas-panel/plan.md)
   - [Offline Tech Debt](/feat/infra/offline-tech-debt/)
     - [PRD](/feat/infra/offline-tech-debt/prd.md)
+  - [Residual Tech Debt](/feat/infra/residual-tech-debt/)
+    - [PRD](/feat/infra/residual-tech-debt/prd.md)
   - [Modo Offline](/feat/infra/modo-offline/)
     - [PRD](/feat/infra/modo-offline/prd.md)
   - [Modo Offline Mejorado](/feat/infra/modo-offline-mejorado/)
