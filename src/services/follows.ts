@@ -105,19 +105,43 @@ export async function searchUsers(
   if (!searchTerm || searchTerm.length < 2) return [];
 
   const lower = searchTerm.toLowerCase();
-  const end = lower + '\uf8ff';
 
-  const snap = await getDocs(
+  // Try displayNameLower first (new field), fallback to scanning displayName
+  let snap = await getDocs(
     query(
       collection(db, COLLECTIONS.USERS),
       where('displayNameLower', '>=', lower),
-      where('displayNameLower', '<=', end),
-      limit(maxResults),
+      where('displayNameLower', '<=', lower + '\uf8ff'),
+      limit(maxResults * 2),
     ),
   );
 
-  return snap.docs.map((d) => ({
-    userId: d.id,
-    displayName: (d.data() as { displayName?: string }).displayName ?? d.id,
-  }));
+  // Fallback: if no results (field not migrated yet), search by displayName
+  if (snap.empty) {
+    snap = await getDocs(
+      query(collection(db, COLLECTIONS.USERS), limit(200)),
+    );
+  }
+
+  const candidates = snap.docs
+    .map((d) => {
+      const data = d.data() as { displayName?: string; displayNameLower?: string };
+      return { userId: d.id, displayName: data.displayName ?? d.id };
+    })
+    .filter((u) => u.displayName.toLowerCase().includes(lower));
+
+  // Filter by profilePublic (check userSettings)
+  const results: Array<{ userId: string; displayName: string }> = [];
+  for (const candidate of candidates.slice(0, maxResults * 2)) {
+    const settingsSnap = await getDoc(doc(db, COLLECTIONS.USER_SETTINGS, candidate.userId));
+    const isPublic = settingsSnap.exists()
+      ? (settingsSnap.data() as { profilePublic?: boolean }).profilePublic === true
+      : false;
+    if (isPublic) {
+      results.push(candidate);
+      if (results.length >= maxResults) break;
+    }
+  }
+
+  return results;
 }
