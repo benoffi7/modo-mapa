@@ -48,9 +48,9 @@ export const onFollowCreated = onDocumentCreated(
       return;
     }
 
-    // Check followed user has public profile
+    // Check followed user has public profile (only block if explicitly set to private)
     const settingsSnap = await db.doc(`userSettings/${followedId}`).get();
-    if (settingsSnap.exists && settingsSnap.data()?.profilePublic !== true) {
+    if (settingsSnap.exists && settingsSnap.data()?.profilePublic === false) {
       await snap.ref.delete();
       return;
     }

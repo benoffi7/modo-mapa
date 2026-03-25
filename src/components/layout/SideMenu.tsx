@@ -145,6 +145,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
 
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [followedListKey, setFollowedListKey] = useState(0);
 
   const handleClose = () => {
     confirmClose(() => {
@@ -344,7 +345,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   {activeSection === 'lists' && <SharedListsView onSelectBusiness={handleSelectBusiness} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'checkins' && <CheckInsView onSelectBusiness={handleSelectBusiness} />}
-                  {activeSection === 'followed' && <FollowedList onUserClick={setProfileUserId} />}
+                  {activeSection === 'followed' && <FollowedList key={followedListKey} onUserClick={setProfileUserId} />}
                   {activeSection === 'activity' && <ActivityFeedView onBusinessClick={(bizId) => { handleSelectBusiness({ id: bizId } as Business); }} />}
                   {activeSection === 'suggestions' && <SuggestionsView onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'comments' && <CommentsList onSelectBusiness={handleSelectBusiness} />}
@@ -384,7 +385,7 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
       {/* User profile sheet */}
       <Suspense fallback={null}>
         {profileUserId && (
-          <UserProfileSheet userId={profileUserId} onClose={() => setProfileUserId(null)} />
+          <UserProfileSheet userId={profileUserId} onClose={() => { setProfileUserId(null); setFollowedListKey((k) => k + 1); }} />
         )}
       </Suspense>
 

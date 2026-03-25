@@ -18,9 +18,9 @@ export async function fanOutToFollowers(
   db: Firestore,
   data: FanOutData,
 ): Promise<void> {
-  // Check actor's profile is public
+  // Check actor's profile is public (skip fan-out only if explicitly set to private)
   const settingsSnap = await db.doc(`userSettings/${data.actorId}`).get();
-  if (settingsSnap.exists && settingsSnap.data()?.profilePublic !== true) {
+  if (settingsSnap.exists && settingsSnap.data()?.profilePublic === false) {
     return;
   }
 
