@@ -179,7 +179,19 @@ export interface ActivityFeedItem {
   expiresAt: Date;
 }
 
-export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply' | 'new_follower';
+export interface Recommendation {
+  id: string;
+  senderId: string;
+  senderName: string;
+  recipientId: string;
+  businessId: string;
+  businessName: string;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply' | 'new_follower' | 'recommendation';
 
 export interface AppNotification {
   id: string;
@@ -230,6 +242,7 @@ export interface UserSettings {
   notifyFeedback: boolean;
   notifyReplies: boolean;
   notifyFollowers: boolean;
+  notifyRecommendations: boolean;
   analyticsEnabled: boolean;
   locality?: string;
   localityLat?: number;
@@ -295,5 +308,6 @@ export type {
   TagTogglePayload,
   CommentLikePayload,
   FollowPayload,
+  RecommendationPayload,
   EmptyPayload,
 } from './offline';

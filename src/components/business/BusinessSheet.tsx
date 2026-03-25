@@ -22,6 +22,10 @@ import BusinessSheetSkeleton from './BusinessSheetSkeleton';
 import CheckInButton from './CheckInButton';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
+import SendIcon from '@mui/icons-material/Send';
+import { lazy, Suspense } from 'react';
+
+const RecommendDialog = lazy(() => import('./RecommendDialog'));
 
 export default function BusinessSheet() {
   const { user } = useAuth();
@@ -33,6 +37,7 @@ export default function BusinessSheet() {
   const { data: trendingData } = useTrending();
   const isTrending = trendingData?.businesses.some((b) => b.businessId === businessId) ?? false;
   const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const [commentsDirty, setCommentsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState<'comments' | 'questions'>('comments');
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
@@ -160,6 +165,13 @@ export default function BusinessSheet() {
                 />
               }
               shareButton={<ShareButton business={selectedBusiness} />}
+              recommendButton={
+                user && !user.isAnonymous ? (
+                  <IconButton onClick={() => setRecommendDialogOpen(true)} aria-label="Recomendar">
+                    <SendIcon />
+                  </IconButton>
+                ) : undefined
+              }
               addToListButton={
                 user && !user.isAnonymous ? (
                   <IconButton onClick={() => setListDialogOpen(true)} aria-label="Guardar en lista">
@@ -246,12 +258,24 @@ export default function BusinessSheet() {
     </SwipeableDrawer>
     <DiscardDialog {...dialogProps} />
     {selectedBusiness && (
-      <AddToListDialog
-        open={listDialogOpen}
-        onClose={() => setListDialogOpen(false)}
-        businessId={selectedBusiness.id}
-        businessName={selectedBusiness.name}
-      />
+      <>
+        <AddToListDialog
+          open={listDialogOpen}
+          onClose={() => setListDialogOpen(false)}
+          businessId={selectedBusiness.id}
+          businessName={selectedBusiness.name}
+        />
+        <Suspense fallback={null}>
+          {recommendDialogOpen && (
+            <RecommendDialog
+              open
+              onClose={() => setRecommendDialogOpen(false)}
+              businessId={selectedBusiness.id}
+              businessName={selectedBusiness.name}
+            />
+          )}
+        </Suspense>
+      </>
     )}
     </>
   );

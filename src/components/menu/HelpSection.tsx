@@ -17,6 +17,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 
 interface HelpItem {
   id: string;
@@ -81,6 +82,13 @@ const HELP_ITEMS: HelpItem[] = [
     title: 'Seguir usuarios',
     description:
       'Desde el menú lateral, entrá a "Seguidos" para buscar y seguir a otros usuarios. Vas a ver su actividad (calificaciones, comentarios y favoritos) en la sección "Actividad". También podés seguir a alguien desde su perfil público tocando el botón "Seguir". En Configuración podés activar o desactivar las notificaciones de nuevos seguidores.',
+  },
+  {
+    id: 'recomendaciones',
+    icon: <SendOutlinedIcon color="primary" />,
+    title: 'Recomendaciones',
+    description:
+      'Recomendá un comercio a otro usuario desde el detalle del comercio. Podés agregar un mensaje opcional (hasta 200 caracteres). Máximo 20 recomendaciones por día. Las recomendaciones que recibís aparecen en el menú lateral con un badge de no leídas. Tocá una para ir al comercio. En Configuración podés desactivar las notificaciones de recomendaciones.',
   },
   {
     id: 'feedback',

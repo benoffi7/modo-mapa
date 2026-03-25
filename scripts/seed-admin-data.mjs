@@ -111,6 +111,7 @@ async function seed() {
     customTags: 15,
     userTags: 80,
     commentLikes: 80,
+    recommendations: 12,
     dailyReads: 342,
     dailyWrites: 87,
     dailyDeletes: 12,
@@ -571,6 +572,7 @@ async function seed() {
       notifyFeedback: true,
       notifyReplies: true,
       notifyFollowers: true,
+      notifyRecommendations: true,
       analyticsEnabled: true,
       updatedAt: new Date(),
     });
@@ -659,6 +661,54 @@ async function seed() {
     }
   }
   const totalFeedItems = Object.values(feedItemCount).reduce((a, b) => a + b, 0);
+
+  // ── Recommendations (user_001 recommends businesses to various recipients) ────
+  console.log('Creating recommendations...');
+  const recommendationMessages = [
+    'Te va a encantar este lugar, tienen las mejores medialunas!',
+    'Pasé por acá el fin de semana, altamente recomendado',
+    'Probá el café, es excelente. La atención también es muy buena',
+    'Si te gustan las pizzas, este es tu lugar',
+    'Lo mejor de la zona para comer rápido y bien',
+    'La comida es buena y los precios muy accesibles',
+  ];
+
+  const recommendations = [
+    // user_001 recommends to user_002
+    { senderId: 'user_001', senderName: 'Juan', recipientId: 'user_002', businessId: 'biz_001', businessName: 'El Buen Paladar', messageIdx: 0, daysAgoVal: 5 },
+    // user_002 recommends to user_003
+    { senderId: 'user_002', senderName: 'María', recipientId: 'user_003', businessId: 'biz_002', businessName: 'Cafe Libertad', messageIdx: 1, daysAgoVal: 4 },
+    // user_003 recommends to user_001
+    { senderId: 'user_003', senderName: 'Carlos', recipientId: 'user_001', businessId: 'biz_005', businessName: 'Panaderia San Jose', messageIdx: 2, daysAgoVal: 3 },
+    // user_001 recommends to user_004
+    { senderId: 'user_001', senderName: 'Juan', recipientId: 'user_004', businessId: 'biz_003', businessName: 'Pizzeria Nonna', messageIdx: 3, daysAgoVal: 2 },
+    // user_004 recommends to user_005
+    { senderId: 'user_004', senderName: 'Ana', recipientId: 'user_005', businessId: 'biz_010', businessName: 'Heladeria Gelato', messageIdx: 4, daysAgoVal: 1 },
+    // user_005 recommends to user_002
+    { senderId: 'user_005', senderName: 'Pedro', recipientId: 'user_002', businessId: 'biz_004', businessName: 'Bar Botanico', messageIdx: 5, daysAgoVal: 0 },
+    // Additional cross recommendations
+    { senderId: 'user_006', senderName: 'Laura', recipientId: 'user_007', businessId: 'biz_006', businessName: 'Cafe Bonanza', messageIdx: 0, daysAgoVal: 6 },
+    { senderId: 'user_007', senderName: 'Diego', recipientId: 'user_008', businessId: 'biz_007', businessName: 'Sushi Tokyo', messageIdx: 1, daysAgoVal: 5 },
+    { senderId: 'user_008', senderName: 'Lucía', recipientId: 'user_009', businessId: 'biz_008', businessName: 'Burger House', messageIdx: 2, daysAgoVal: 4 },
+    { senderId: 'user_009', senderName: 'Martín', recipientId: 'user_010', businessId: 'biz_009', businessName: 'Resto Asia', messageIdx: 3, daysAgoVal: 3 },
+    { senderId: 'user_010', senderName: 'Sofía', recipientId: 'user_001', businessId: 'biz_011', businessName: 'Parrilla Gaucho', messageIdx: 4, daysAgoVal: 2 },
+    { senderId: 'user_002', senderName: 'María', recipientId: 'user_006', businessId: 'biz_012', businessName: 'Feria Orgánica', messageIdx: 5, daysAgoVal: 1 },
+  ];
+
+  for (const rec of recommendations) {
+    const docRef = doc(db, 'recommendations', `${rec.senderId}_${rec.recipientId}_${rec.businessId}`);
+    await setDoc(docRef, {
+      id: `${rec.senderId}_${rec.recipientId}_${rec.businessId}`,
+      senderId: rec.senderId,
+      senderName: rec.senderName,
+      recipientId: rec.recipientId,
+      businessId: rec.businessId,
+      businessName: rec.businessName,
+      message: recommendationMessages[rec.messageIdx],
+      read: Math.random() > 0.4, // 60% read, 40% unread
+      createdAt: daysAgo(rec.daysAgoVal),
+    });
+  }
 
   // Notifications (including feedback_response)
   console.log('Creating notifications...');
@@ -901,7 +951,8 @@ async function seed() {
   console.log('- 1 all-time ranking');
   console.log('- 30 top-user comments (1 per business from top 3)');
   console.log('- 15 notifications (incl. feedback_response)');
-  console.log('- 10 user settings (all public)');
+  console.log('- 12 recommendations (varied senders/recipients, 60% read)');
+  console.log('- 10 user settings (all public, notifyRecommendations enabled)');
   console.log('- 7 perf metrics (1 per day, mix mobile/desktop, wifi/4g/3g)');
   console.log('- 1 trending businesses document (5 sample trending businesses)');
   console.log('- Counters and moderation config');

@@ -63,14 +63,15 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Mapa**: Google Maps con 40 marcadores, busqueda, filtros por tags y precio
 - **Business Sheet**: rating (global + multi-criterio), tags (predefinidos + custom), comentarios (editar/likes/sorting/threads), nivel de gasto ($/$$/$$), foto de menu (upload/report), compartir (deep link)
 - **Menu lateral**: recientes (localStorage), **seguidos** (lista + busqueda de usuarios), **actividad** (feed de seguidos), sugeridos para vos (con distancia al usuario), **sorpréndeme** (random cercano), **mis listas** (compartidas, deep link, público/privado), favoritos (con distancia, pull-to-refresh), comentarios (busqueda, sorting, filtro por comercio, edit inline, stats, swipe actions, skeleton loader, preview enriquecido, pull-to-refresh, rate limit precheck), calificaciones (pull-to-refresh), rankings (pull-to-refresh), feedback (enviar + mis envios), ayuda, estadisticas. Onboarding gamificado (checklist 5 tareas). Toast global de exito/error. Todas las secciones lazy-loaded via `React.lazy()`
-- **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback, nuevos seguidores)
+- **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback, nuevos seguidores, recomendaciones)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
 - **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
-- **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares incl. nuevos seguidores), datos de uso (analytics)
+- **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares incl. nuevos seguidores y recomendaciones), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 11 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (métricas por funcionalidad con gráficos 30 días)
 - **Seguir usuarios** (#129): seguir a otros usuarios, feed de actividad de seguidos (ratings, comentarios, favoritos), busqueda de usuarios por nombre, FollowButton en perfil, secciones Seguidos y Actividad en SideMenu, notificacion `new_follower`, configuracion `notifyFollowers`
-- **Cloud Functions**: 12 callable + 16 triggers + 6 scheduled
+- **Recomendaciones** (#135): recomendar comercios a otros usuarios con mensaje opcional (max 200 chars). Rate limit 20/dia. Lista de recibidas con badge de no leidas. Notificacion `recommendation`. Soporte offline. Configuracion `notifyRecommendations`
+- **Cloud Functions**: 12 callable + 17 triggers + 6 scheduled
 - **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave
@@ -93,4 +94,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 646 tests (502 frontend + 144 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 699 tests (555 frontend + 144 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)

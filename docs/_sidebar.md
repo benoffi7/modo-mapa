@@ -272,6 +272,8 @@
     - [Plan](/feat/social/rate-limit-precheck/plan.md)
   - [Recomendaciones entre Usuarios](/feat/social/recomendaciones-usuarios/)
     - [PRD](/feat/social/recomendaciones-usuarios/prd.md)
+    - [Specs](/feat/social/recomendaciones-usuarios/specs.md)
+    - [Plan](/feat/social/recomendaciones-usuarios/plan.md)
   - [Seguir Usuarios](/feat/social/seguir-usuarios/)
     - [PRD](/feat/social/seguir-usuarios/prd.md)
     - [Specs](/feat/social/seguir-usuarios/specs.md)
