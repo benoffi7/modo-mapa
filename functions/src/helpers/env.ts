@@ -20,11 +20,13 @@ export const ENFORCE_APP_CHECK = false;
 
 /**
  * App Check enforcement for admin-only callables.
- * Admin always uses the production client (has reCAPTCHA key),
- * so we can safely enforce App Check on admin functions.
- * Disabled in emulators for local development.
+ *
+ * DISABLED — staging and production share the same Cloud Functions deployment.
+ * Staging client does NOT have App Check (no reCAPTCHA key), so enforcing it
+ * blocks all admin callable requests on staging with 401.
+ * Security is guaranteed by assertAdmin() (auth + custom claim check).
  */
-export const ENFORCE_APP_CHECK_ADMIN = !IS_EMULATOR;
+export const ENFORCE_APP_CHECK_ADMIN = false;
 
 /** Allowed Firestore database IDs. Only these can be passed from the client. */
 const ALLOWED_DATABASE_IDS = new Set(['staging']);

@@ -268,10 +268,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Notificaciones — solo el destinatario puede leer y marcar como leída.
+    // Notificaciones — destinatario o admin puede leer. Solo destinatario puede marcar como leída.
     // Solo Cloud Functions (admin SDK) puede crear y eliminar.
     match /notifications/{notifId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null
+        && (resource.data.userId == request.auth.uid || isAdmin());
       allow update: if request.auth != null && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow create, delete: if false;

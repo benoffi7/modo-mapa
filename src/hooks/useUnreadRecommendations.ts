@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { countUnreadRecommendations } from '../services/recommendations';
+import { logger } from '../utils/logger';
 
 export function useUnreadRecommendations() {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ export function useUnreadRecommendations() {
     let cancelled = false;
     countUnreadRecommendations(user.uid)
       .then((count) => { if (!cancelled) setUnreadCount(count); })
-      .catch(() => { if (!cancelled) setUnreadCount(0); })  
+      .catch((err) => { logger.error('[useUnreadRecommendations] failed:', err); if (!cancelled) setUnreadCount(0); })
       .finally(() => { if (!cancelled) setLoading(false); });  
     return () => { cancelled = true; };
   }, [user]);

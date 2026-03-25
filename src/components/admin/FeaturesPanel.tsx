@@ -21,6 +21,11 @@ import ShareIcon from '@mui/icons-material/Share';
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import RecommendOutlinedIcon from '@mui/icons-material/RecommendOutlined';
+import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { fetchDailyMetrics, fetchCounters, fetchAnalyticsReport } from '../../services/admin';
@@ -47,6 +52,10 @@ const FEATURES: FeatureDef[] = [
   { key: 'favorites', name: 'Favoritos', icon: <FavoriteIcon />, getValue: (c) => c.favorites, collectionKey: 'favorites', color: '#F44336' },
   { key: 'tags', name: 'Tags', icon: <LabelOutlinedIcon />, getValue: (c) => c.customTags + c.userTags, collectionKey: 'customTags', color: '#9C27B0' },
   { key: 'feedback', name: 'Feedback', icon: <FeedbackOutlinedIcon />, getValue: (c) => c.feedback, collectionKey: 'feedback', color: '#4CAF50' },
+  { key: 'checkins', name: 'Check-ins', icon: <PlaceOutlinedIcon />, getValue: (c) => c.checkins, collectionKey: 'checkins', color: '#009688' },
+  { key: 'follows', name: 'Follows', icon: <PeopleOutlinedIcon />, getValue: (c) => c.follows, collectionKey: 'follows', color: '#3F51B5' },
+  { key: 'recommendations', name: 'Recomendaciones', icon: <RecommendOutlinedIcon />, getValue: (c) => c.recommendations, collectionKey: 'recommendations', color: '#FF9800' },
+  { key: 'priceLevels', name: 'Nivel de gasto', icon: <AttachMoneyOutlinedIcon />, getValue: (c) => c.priceLevels, collectionKey: 'priceLevels', color: '#4CAF50' },
 ];
 
 // ── GA4 feature definitions ───────────────────────────────────────────
@@ -66,6 +75,7 @@ const GA4_FEATURES: GA4FeatureDef[] = [
   { key: 'share', name: 'Compartir', icon: <ShareIcon />, eventNames: ['business_share'], color: '#00BCD4' },
   { key: 'photos', name: 'Fotos', icon: <CameraAltOutlinedIcon />, eventNames: ['menu_photo_upload'], color: '#8BC34A' },
   { key: 'darkMode', name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, eventNames: ['dark_mode_toggle'], color: '#424242' },
+  { key: 'questions', name: 'Preguntas', icon: <HelpOutlineIcon />, eventNames: ['question_created', 'question_answered'], color: '#00BCD4' },
 ];
 
 // ── Shared components ─────────────────────────────────────────────────

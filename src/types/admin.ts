@@ -9,6 +9,10 @@ export interface AdminCounters {
   customTags: number;
   userTags: number;
   commentLikes: number;
+  checkins: number;
+  follows: number;
+  recommendations: number;
+  priceLevels: number;
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;
@@ -84,4 +88,29 @@ export interface AnalyticsReportResponse {
   events: GA4EventCount[];
   cachedAt: string;
   fromCache: boolean;
+}
+
+export type HealthStatus = 'ok' | 'warning' | 'error';
+
+export interface NotificationTypeBreakdown {
+  type: string;
+  total: number;
+  read: number;
+  readRate: number;
+}
+
+export interface NotificationDetails {
+  total: number;
+  read: number;
+  unread: number;
+  byType: NotificationTypeBreakdown[];
+}
+
+export interface ListStats {
+  totalLists: number;
+  publicLists: number;
+  privateLists: number;
+  collaborativeLists: number;
+  totalItems: number;
+  avgItemsPerList: number;
 }

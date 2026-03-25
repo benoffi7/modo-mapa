@@ -9,6 +9,7 @@ import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
 import type { AdminCounters, AuthStats, NotificationStats } from '../../types/admin';
 import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
+import CronHealthSection from './CronHealthSection';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
 import { logger } from '../../utils/logger';
@@ -124,6 +125,18 @@ export default function DashboardOverview() {
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatCard label="Likes" value={counters?.commentLikes ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Check-ins" value={counters?.checkins ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Follows" value={counters?.follows ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Recomendaciones" value={counters?.recommendations ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Precios" value={counters?.priceLevels ?? 0} />
         </Grid>
 
         {commentStats && commentStats.total > 0 && (
@@ -242,6 +255,9 @@ export default function DashboardOverview() {
             title="Custom Tags — Candidatas a promover"
             items={customTagCounts}
           />
+        </Grid>
+        <Grid size={12}>
+          <CronHealthSection />
         </Grid>
       </Grid>
     </AdminPanelWrapper>
