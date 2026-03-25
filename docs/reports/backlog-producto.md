@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-24 (post #178 offline tech debt)*
+*Actualizado: 2026-03-25 (post #181 residual tech debt)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
