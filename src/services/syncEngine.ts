@@ -118,7 +118,7 @@ export async function executeAction(action: OfflineAction): Promise<void> {
     }
     case 'recommendation_read': {
       const { markRecommendationAsRead } = await import('./recommendations');
-      await markRecommendationAsRead(businessId); // businessId holds the recommendation ID for this action
+      await markRecommendationAsRead(action.referenceId ?? businessId);
       break;
     }
   }

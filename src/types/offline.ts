@@ -29,6 +29,8 @@ export interface OfflineAction {
   userId: string;
   businessId: string;
   businessName?: string;
+  /** Generic reference ID for actions where businessId doesn't apply (e.g. recommendation_read stores recommendationId here) */
+  referenceId?: string;
   createdAt: number;
   retryCount: number;
   status: OfflineActionStatus;

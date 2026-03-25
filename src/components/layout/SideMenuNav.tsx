@@ -41,7 +41,7 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
         {pendingActionsCount > 0 && (
           <ListItemButton onClick={() => onNavigate('pendientes')}>
             <ListItemIcon>
-              <Badge badgeContent={pendingActionsCount} color="warning" max={99}>
+              <Badge badgeContent={pendingActionsCount} color="warning" max={99} aria-label={`${pendingActionsCount} acciones pendientes`}>
                 <SyncProblemIcon sx={{ color: 'warning.main' }} />
               </Badge>
             </ListItemIcon>
@@ -90,7 +90,7 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
 
         <ListItemButton onClick={() => onNavigate('recommendations')}>
           <ListItemIcon>
-            <Badge badgeContent={unreadRecommendations} color="error" max={9}>
+            <Badge badgeContent={unreadRecommendations} color="error" max={9} aria-label={unreadRecommendations ? `${unreadRecommendations} recomendaciones no leidas` : undefined}>
               <SendIcon sx={{ color: 'secondary.main' }} />
             </Badge>
           </ListItemIcon>
@@ -99,7 +99,7 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
 
         <ListItemButton onClick={() => onNavigate('comments')}>
           <ListItemIcon>
-            <Badge badgeContent={unreadReplyCount} color="error" max={9}>
+            <Badge badgeContent={unreadReplyCount} color="error" max={9} aria-label={unreadReplyCount ? `${unreadReplyCount} respuestas no leidas` : undefined}>
               <ChatBubbleOutlineIcon sx={{ color: 'primary.main' }} />
             </Badge>
           </ListItemIcon>

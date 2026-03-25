@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import { UserSearchField } from '../UserSearchField';
-import { createRecommendation, countRecommendationsSentToday } from '../../services/recommendations';
+import { createRecommendation, countRecommendationsSentToday, incrementSentTodayCache } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { MAX_RECOMMENDATION_MESSAGE_LENGTH, MAX_RECOMMENDATIONS_PER_DAY } from '../../constants/validation';
 import { logger } from '../../utils/logger';
@@ -59,6 +59,8 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
         ),
         toast,
       );
+      incrementSentTodayCache(userId);
+      setSentToday((prev) => prev + 1);
       toast.success('Recomendacion enviada');
       onClose();
       setSelectedUser(null);
@@ -74,7 +76,7 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Recomendar {businessName}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ maxHeight: '70vh', overflow: 'auto' }}>
         {limitReached && !loadingCount ? (
           <Alert severity="info" sx={{ mb: 2 }}>
             Alcanzaste el limite de {MAX_RECOMMENDATIONS_PER_DAY} recomendaciones por dia

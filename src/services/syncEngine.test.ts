@@ -181,13 +181,22 @@ describe('syncEngine', () => {
       expect(createRecommendation).toHaveBeenCalledWith('u1', 'Ana', 'u2', 'b1', 'Café', 'Probalo!');
     });
 
-    it('maps recommendation_read', async () => {
+    it('maps recommendation_read using referenceId', async () => {
       await executeAction(makeFullAction({
         type: 'recommendation_read',
-        businessId: 'rec1',
+        referenceId: 'rec1',
         payload: {},
       }));
       expect(markRecommendationAsRead).toHaveBeenCalledWith('rec1');
+    });
+
+    it('maps recommendation_read falls back to businessId', async () => {
+      await executeAction(makeFullAction({
+        type: 'recommendation_read',
+        businessId: 'rec-legacy',
+        payload: {},
+      }));
+      expect(markRecommendationAsRead).toHaveBeenCalledWith('rec-legacy');
     });
   });
 

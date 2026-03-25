@@ -2,7 +2,7 @@
  * Firestore service for the `recommendations` collection.
  */
 import {
-  collection, addDoc, getDocs, updateDoc, doc,
+  collection, addDoc, getDocs, updateDoc, doc, writeBatch,
   query, where, serverTimestamp, getCountFromServer,
 } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
@@ -63,9 +63,12 @@ export async function markAllRecommendationsAsRead(userId: string): Promise<void
       where('read', '==', false),
     ),
   );
+  if (unread.empty) return;
+  const batch = writeBatch(db);
   for (const d of unread.docs) {
-    await updateDoc(d.ref, { read: true });
+    batch.update(d.ref, { read: true });
   }
+  await batch.commit();
   invalidateQueryCache(COLLECTIONS.RECOMMENDATIONS, userId);
 }
 
@@ -80,16 +83,32 @@ export async function countUnreadRecommendations(userId: string): Promise<number
   return snap.data().count;
 }
 
+const sentTodayCache = new Map<string, { count: number; day: number }>();
+
 export async function countRecommendationsSentToday(userId: string): Promise<number> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayTs = today.getTime();
+
+  const cached = sentTodayCache.get(userId);
+  if (cached && cached.day === dayTs) return cached.count;
 
   const snap = await getCountFromServer(
     query(
       collection(db, COLLECTIONS.RECOMMENDATIONS),
       where('senderId', '==', userId),
-      where('createdAt', '>=', startOfDay),
+      where('createdAt', '>=', today),
     ),
   );
-  return snap.data().count;
+  const count = snap.data().count;
+  sentTodayCache.set(userId, { count, day: dayTs });
+  return count;
+}
+
+export function incrementSentTodayCache(userId: string): void {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayTs = today.getTime();
+  const cached = sentTodayCache.get(userId);
+  if (cached && cached.day === dayTs) cached.count++;
 }

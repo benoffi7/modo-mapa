@@ -15,6 +15,9 @@ const mockAddDoc = vi.fn().mockResolvedValue(undefined);
 const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
 const mockGetDocs = vi.fn();
 const mockGetCountFromServer = vi.fn();
+const mockBatchUpdate = vi.fn();
+const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
+const mockWriteBatch = vi.fn().mockReturnValue({ update: mockBatchUpdate, commit: mockBatchCommit });
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
@@ -23,6 +26,7 @@ vi.mock('firebase/firestore', () => ({
   updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
   getDocs: (...args: unknown[]) => mockGetDocs(...args),
   getCountFromServer: (...args: unknown[]) => mockGetCountFromServer(...args),
+  writeBatch: (...args: unknown[]) => mockWriteBatch(...args),
   query: vi.fn(),
   where: vi.fn(),
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
@@ -106,19 +110,28 @@ describe('markRecommendationAsRead', () => {
 describe('markAllRecommendationsAsRead', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('updates all unread docs and invalidates cache', async () => {
+  it('batch updates all unread docs and invalidates cache', async () => {
     const fakeRef1 = { id: 'r1' };
     const fakeRef2 = { id: 'r2' };
     mockGetDocs.mockResolvedValueOnce({
+      empty: false,
       docs: [{ ref: fakeRef1 }, { ref: fakeRef2 }],
     });
 
     await markAllRecommendationsAsRead('u1');
 
-    expect(mockUpdateDoc).toHaveBeenCalledTimes(2);
-    expect(mockUpdateDoc).toHaveBeenCalledWith(fakeRef1, { read: true });
-    expect(mockUpdateDoc).toHaveBeenCalledWith(fakeRef2, { read: true });
+    expect(mockWriteBatch).toHaveBeenCalled();
+    expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
+    expect(mockBatchUpdate).toHaveBeenCalledWith(fakeRef1, { read: true });
+    expect(mockBatchUpdate).toHaveBeenCalledWith(fakeRef2, { read: true });
+    expect(mockBatchCommit).toHaveBeenCalled();
     expect(invalidateQueryCache).toHaveBeenCalledWith('recommendations', 'u1');
+  });
+
+  it('skips batch when no unread docs', async () => {
+    mockGetDocs.mockResolvedValueOnce({ empty: true, docs: [] });
+    await markAllRecommendationsAsRead('u1');
+    expect(mockWriteBatch).not.toHaveBeenCalled();
   });
 });
 

@@ -82,7 +82,12 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
               <ListItemButton
                 key={rec.id}
                 onClick={() => handleClick(rec)}
-                sx={{ bgcolor: rec.read ? 'transparent' : 'action.hover', py: 1 }}
+                sx={{
+                  bgcolor: rec.read ? 'transparent' : 'action.hover',
+                  borderLeft: rec.read ? 'none' : '3px solid',
+                  borderLeftColor: rec.read ? 'transparent' : 'secondary.main',
+                  py: 1,
+                }}
               >
                 <ListItemAvatar>
                   <Avatar sx={{ width: 36, height: 36, fontSize: 16, bgcolor: 'secondary.main' }}>
