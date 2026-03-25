@@ -15,6 +15,7 @@ import { fetchUserScoreHistory } from '../../services/rankings';
 import BadgesList from './BadgesList';
 import ScoreSparkline from './ScoreSparkline';
 import type { UserRankingEntry } from '../../types';
+import { logger } from '../../utils/logger';
 
 /** Theme-aware bar colors: [light, dark] */
 const BAR_COLOR_PAIRS: Record<keyof UserRankingEntry['breakdown'], [string, string]> = {
@@ -99,7 +100,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
     let cancelled = false;
     fetchUserScoreHistory(userId, periodType).then((h) => {
       if (!cancelled) setScoreHistory(h);
-    }).catch((err) => console.error('[UserScoreCard] fetchUserScoreHistory failed:', err));
+    }).catch((err) => logger.error('[UserScoreCard] fetchUserScoreHistory failed:', err));
     return () => { cancelled = true; };
   }, [userId, periodType]);
 

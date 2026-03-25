@@ -18,10 +18,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../hooks/useConnectivity';
 import { sendFeedback } from '../../services/feedback';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
 import type { FeedbackCategory, Business } from '../../types';
+import { logger } from '../../utils/logger';
 
 const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
 
@@ -30,6 +32,7 @@ const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
 function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<FeedbackCategory>('sugerencia');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +85,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
       setSelectedBusiness(null);
       setBusinessQuery('');
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Error sending feedback:', error);
+      if (import.meta.env.DEV) logger.error('Error sending feedback:', error);
     }
     setIsSubmitting(false);
   };
@@ -225,7 +228,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
         fullWidth
         variant="contained"
         onClick={handleSubmit}
-        disabled={isSubmitting || !message.trim()}
+        disabled={isSubmitting || !message.trim() || (isOffline && !!mediaFile)}
         startIcon={<SendIcon />}
       >
         Enviar

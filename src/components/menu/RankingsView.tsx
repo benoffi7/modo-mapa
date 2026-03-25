@@ -18,6 +18,7 @@ import { PERIOD_OPTIONS } from '../../constants/rankings';
 import { STORAGE_KEY_ONBOARDING_RANKING_VIEWED } from '../../constants/storage';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { UserRankingEntry } from '../../types';
+import { logger } from '../../utils/logger';
 
 export default function RankingsView() {
   const { user, displayName } = useAuth();
@@ -48,7 +49,7 @@ export default function RankingsView() {
         if (!cancelled) setLiveEntry(entry.score > 0 ? entry : null);
       })
       .catch((err) => {
-        console.error('[RankingsView] fetchUserLiveScore failed:', err);
+        logger.error('[RankingsView] fetchUserLiveScore failed:', err);
         if (!cancelled) setLiveEntry(null);
       });
 

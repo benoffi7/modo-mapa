@@ -20,6 +20,7 @@ import {
 import type { PerfMetricsDoc } from '../../types/perfMetrics';
 import type { StorageStats } from '../../types/admin';
 import type { Period, DeviceFilter, ConnectionFilter, VitalKey, FunctionTiming } from './perf/perfHelpers';
+import { logger } from '../../utils/logger';
 
 interface RawData {
   docs: PerfMetricsDoc[];
@@ -45,8 +46,8 @@ export default function PerformancePanel() {
   const fetcher = useCallback(async (): Promise<RawData> => {
     const [docs, storageStats, dailyMetrics] = await Promise.all([
       fetchPerfMetrics(500),
-      fetchStorageStats().catch((err) => { console.error('[PerformancePanel] fetchStorageStats failed:', err); return null; }),
-      fetchDailyMetrics('desc', 1).catch((err) => { console.error('[PerformancePanel] fetchDailyMetrics failed:', err); return []; }),
+      fetchStorageStats().catch((err) => { logger.error('[PerformancePanel] fetchStorageStats failed:', err); return null; }),
+      fetchDailyMetrics('desc', 1).catch((err) => { logger.error('[PerformancePanel] fetchDailyMetrics failed:', err); return []; }),
     ]);
     const latestMetrics = dailyMetrics[0] as unknown as Record<string, unknown> | undefined;
     const perfData = (latestMetrics?.performance ?? {}) as Record<string, unknown>;

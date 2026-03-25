@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../context/AuthContext';
+import { logger } from '../../utils/logger';
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? '';
 const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD ?? 'dev123456';
@@ -58,7 +59,7 @@ function DevAdminGuard({ children }: AdminGuardProps) {
     };
 
     setup().catch((err) => {
-      console.error('[DevAdminGuard] setup failed:', err);
+      logger.error('[DevAdminGuard] setup failed:', err);
       if (!cancelled) setReady(true);
     });
 

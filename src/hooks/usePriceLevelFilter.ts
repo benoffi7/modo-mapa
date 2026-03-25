@@ -4,6 +4,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { priceLevelConverter } from '../config/converters';
 import type { PriceLevel } from '../types';
+import { logger } from '../utils/logger';
 
 /** Map of businessId -> average price level (rounded to nearest int) */
 type PriceMap = Map<string, number>;
@@ -60,7 +61,7 @@ export function usePriceLevelFilter() {
       cacheTimestamp = Date.now();
       setPriceMap(map);
     }).catch((err) => {
-      console.error('[usePriceLevelFilter] fetchPriceLevels failed:', err);
+      logger.error('[usePriceLevelFilter] fetchPriceLevels failed:', err);
     });
   }, []);
 

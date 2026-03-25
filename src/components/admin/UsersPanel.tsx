@@ -8,6 +8,7 @@ import { TopList } from '../stats';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
 import type { AuthStats, SettingsAggregates } from '../../types/admin';
+import { logger } from '../../utils/logger';
 
 interface UserStats {
   comments: number;
@@ -123,8 +124,8 @@ export default function UsersPanel() {
   const fetcher = useCallback(async () => {
     const [raw, authStats, settingsAggregates] = await Promise.all([
       fetchUsersPanelData(500),
-      fetchAuthStats().catch((err) => { console.error('[UsersPanel] fetchAuthStats failed:', err); return null; }),
-      fetchSettingsAggregates().catch((err) => { console.error('[UsersPanel] fetchSettingsAggregates failed:', err); return null; }),
+      fetchAuthStats().catch((err) => { logger.error('[UsersPanel] fetchAuthStats failed:', err); return null; }),
+      fetchSettingsAggregates().catch((err) => { logger.error('[UsersPanel] fetchSettingsAggregates failed:', err); return null; }),
     ]);
     return { raw, authStats, settingsAggregates };
   }, []);

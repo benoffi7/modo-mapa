@@ -12,11 +12,8 @@ import {
   Box,
 } from '@mui/material';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { getDoc, doc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { useToast } from '../../context/ToastContext';
-import { removeEditor } from '../../services/sharedLists';
+import { removeEditor, fetchEditorName } from '../../services/sharedLists';
 
 interface Props {
   open: boolean;
@@ -49,13 +46,8 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
     (async () => {
       const results: EditorInfo[] = [];
       for (const uid of editorIds) {
-        try {
-          const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
-          const data = snap.data();
-          results.push({ uid, displayName: (data as { displayName?: string })?.displayName ?? 'Usuario' });
-        } catch {
-          results.push({ uid, displayName: 'Usuario' });
-        }
+        const displayName = await fetchEditorName(uid);
+        results.push({ uid, displayName });
       }
       if (!ignore) {
         setEditors(results);

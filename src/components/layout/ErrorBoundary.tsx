@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { logger } from '../../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -27,7 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     });
 
     if (import.meta.env.DEV) {
-      console.error('ErrorBoundary caught:', error, info.componentStack);
+      logger.error('ErrorBoundary caught:', error, info.componentStack);
     }
   }
 

@@ -224,6 +224,15 @@ export async function fetchEditorName(uid: string): Promise<string> {
   }
 }
 
+export async function fetchAllAccessibleLists(userId: string): Promise<SharedList[]> {
+  const [owned, editor] = await Promise.all([
+    fetchUserLists(userId),
+    fetchSharedWithMe(userId),
+  ]);
+  const ownedIds = new Set(owned.map((l) => l.id));
+  return [...owned, ...editor.filter((l) => !ownedIds.has(l.id))];
+}
+
 export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
   const snap = await getDocs(
     query(

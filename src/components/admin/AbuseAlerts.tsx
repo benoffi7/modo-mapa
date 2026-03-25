@@ -42,6 +42,7 @@ import {
   SEVERITY_CONFIG, SEVERITY_FILTER_OPTIONS,
 } from './alerts/alertsHelpers';
 import type { AbuseType, SortField, SortDir, DatePreset, StatusFilter, SeverityFilter } from './alerts/alertsHelpers';
+import { logger } from '../../utils/logger';
 
 interface AbuseAlertsProps {
   onPendingCount?: (count: number) => void;
@@ -137,14 +138,14 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const handleReview = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await reviewAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) console.error('Error reviewing:', err); }
+    catch (err) { if (import.meta.env.DEV) logger.error('Error reviewing:', err); }
     setActionInProgress(null);
   };
 
   const handleDismiss = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await dismissAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) console.error('Error dismissing:', err); }
+    catch (err) { if (import.meta.env.DEV) logger.error('Error dismissing:', err); }
     setActionInProgress(null);
   };
 

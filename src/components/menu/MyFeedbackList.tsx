@@ -18,6 +18,7 @@ import { fetchUserFeedback, markFeedbackViewed } from '../../services/feedback';
 import { FEEDBACK_STATUSES } from '../../constants/feedback';
 import { formatDateMedium } from '../../utils/formatDate';
 import type { Feedback, FeedbackStatus, FeedbackCategory } from '../../types';
+import { logger } from '../../utils/logger';
 
 function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'info' | 'warning' | 'default' {
   if (cat === 'bug') return 'error';
@@ -45,7 +46,7 @@ export default function MyFeedbackList() {
     if (!user) return;
     fetchUserFeedback(user.uid)
       .then(setItems)
-      .catch((err) => console.error('[MyFeedbackList] fetchUserFeedback failed:', err))
+      .catch((err) => logger.error('[MyFeedbackList] fetchUserFeedback failed:', err))
       .finally(() => setLoading(false));
   }, [user]);
 

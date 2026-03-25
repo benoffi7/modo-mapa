@@ -8,6 +8,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
 import { STATUS_CHIP } from '../../constants/admin';
 import type { MenuPhoto } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface Props {
   photo: MenuPhoto;
@@ -28,7 +29,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
     if (!path) return;
     getDownloadURL(ref(storage, path))
       .then(setImageUrl)
-      .catch((err) => { console.error('[PhotoReviewCard] getDownloadURL failed:', err); setImageUrl(null); });
+      .catch((err) => { logger.error('[PhotoReviewCard] getDownloadURL failed:', err); setImageUrl(null); });
   }, [photo]);
 
   const handleApprove = async () => {
@@ -38,7 +39,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
       await approve({ photoId: photo.id });
       onAction();
     } catch (err) {
-      console.error('Error approving photo:', err);
+      logger.error('Error approving photo:', err);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
       await reject({ photoId: photo.id, reason });
       onAction();
     } catch (err) {
-      console.error('Error rejecting photo:', err);
+      logger.error('Error rejecting photo:', err);
     } finally {
       setLoading(false);
       setRejecting(false);
@@ -65,7 +66,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
       await del({ photoId: photo.id });
       onAction();
     } catch (err) {
-      console.error('Error deleting photo:', err);
+      logger.error('Error deleting photo:', err);
     } finally {
       setLoading(false);
     }

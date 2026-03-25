@@ -3,6 +3,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typogra
 import imageCompression from 'browser-image-compression';
 import { useAuth } from '../../context/AuthContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
+import { logger } from '../../utils/logger';
 
 interface Props {
   open: boolean;
@@ -50,7 +51,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
       onSuccess();
       handleReset();
     } catch (err) {
-      if (import.meta.env.DEV) console.error('MenuPhotoUpload error:', err);
+      if (import.meta.env.DEV) logger.error('MenuPhotoUpload error:', err);
       if (!abort.signal.aborted) {
         setError(err instanceof Error ? err.message : 'Error al subir la foto');
       }

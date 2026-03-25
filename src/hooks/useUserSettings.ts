@@ -5,6 +5,7 @@ import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../serv
 import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
+import { logger } from '../utils/logger';
 
 type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'analyticsEnabled';
 
@@ -45,7 +46,7 @@ export function useUserSettings() {
       setOptimistic((prev) => ({ ...prev, [key]: value }));
 
       updateUserSettings(user.uid, { [key]: value }).catch((err) => {
-        console.error('[useUserSettings] updateUserSettings failed:', err);
+        logger.error('[useUserSettings] updateUserSettings failed:', err);
         setOptimistic((prev) => {
           const next = { ...prev };
           delete next[key];
@@ -61,7 +62,7 @@ export function useUserSettings() {
       if (!user) return;
       setLocalityOverride({ locality, localityLat: lat, localityLng: lng });
       updateUserSettings(user.uid, { locality, localityLat: lat, localityLng: lng }).catch((err) => {
-        console.error('[useUserSettings] updateLocality failed:', err);
+        logger.error('[useUserSettings] updateLocality failed:', err);
         setLocalityOverride(null);
       });
     },
@@ -73,7 +74,7 @@ export function useUserSettings() {
       if (!user) return;
       setLocalityOverride({ locality: '', localityLat: 0, localityLng: 0 });
       updateUserSettings(user.uid, { locality: '', localityLat: 0, localityLng: 0 }).catch((err) => {
-        console.error('[useUserSettings] clearLocality failed:', err);
+        logger.error('[useUserSettings] clearLocality failed:', err);
         setLocalityOverride(null);
       });
     },
