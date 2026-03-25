@@ -27,12 +27,27 @@ vi.mock('./tags', () => ({
   addUserTag: vi.fn().mockResolvedValue(undefined),
   removeUserTag: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('./checkins', () => ({
+  createCheckIn: vi.fn().mockResolvedValue(undefined),
+  deleteCheckIn: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./follows', () => ({
+  followUser: vi.fn().mockResolvedValue(undefined),
+  unfollowUser: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./recommendations', () => ({
+  createRecommendation: vi.fn().mockResolvedValue(undefined),
+  markRecommendationAsRead: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { upsertRating, deleteRating } from './ratings';
 import { addComment, createQuestion, likeComment, unlikeComment } from './comments';
 import { addFavorite, removeFavorite } from './favorites';
 import { upsertPriceLevel, deletePriceLevel } from './priceLevels';
 import { addUserTag, removeUserTag } from './tags';
+import { createCheckIn, deleteCheckIn } from './checkins';
+import { followUser, unfollowUser } from './follows';
+import { createRecommendation, markRecommendationAsRead } from './recommendations';
 
 function makeFullAction(overrides: Partial<OfflineAction> = {}): OfflineAction {
   return {
@@ -124,6 +139,55 @@ describe('syncEngine', () => {
     it('maps comment_unlike', async () => {
       await executeAction(makeFullAction({ type: 'comment_unlike', payload: { commentId: 'c1' } }));
       expect(unlikeComment).toHaveBeenCalledWith('u1', 'c1');
+    });
+
+    it('maps checkin_create', async () => {
+      await executeAction(makeFullAction({
+        type: 'checkin_create',
+        payload: { businessName: 'Café', location: { lat: -34.6, lng: -58.3 } },
+      }));
+      expect(createCheckIn).toHaveBeenCalledWith('u1', 'b1', 'Café', { lat: -34.6, lng: -58.3 });
+    });
+
+    it('maps checkin_delete', async () => {
+      await executeAction(makeFullAction({
+        type: 'checkin_delete',
+        payload: { checkInId: 'ci1' },
+      }));
+      expect(deleteCheckIn).toHaveBeenCalledWith('u1', 'ci1');
+    });
+
+    it('maps follow_add', async () => {
+      await executeAction(makeFullAction({
+        type: 'follow_add',
+        payload: { followedId: 'u2' },
+      }));
+      expect(followUser).toHaveBeenCalledWith('u1', 'u2');
+    });
+
+    it('maps follow_remove', async () => {
+      await executeAction(makeFullAction({
+        type: 'follow_remove',
+        payload: { followedId: 'u2' },
+      }));
+      expect(unfollowUser).toHaveBeenCalledWith('u1', 'u2');
+    });
+
+    it('maps recommendation_create', async () => {
+      await executeAction(makeFullAction({
+        type: 'recommendation_create',
+        payload: { recipientId: 'u2', businessName: 'Café', senderName: 'Ana', message: 'Probalo!' },
+      }));
+      expect(createRecommendation).toHaveBeenCalledWith('u1', 'Ana', 'u2', 'b1', 'Café', 'Probalo!');
+    });
+
+    it('maps recommendation_read', async () => {
+      await executeAction(makeFullAction({
+        type: 'recommendation_read',
+        businessId: 'rec1',
+        payload: {},
+      }));
+      expect(markRecommendationAsRead).toHaveBeenCalledWith('rec1');
     });
   });
 
