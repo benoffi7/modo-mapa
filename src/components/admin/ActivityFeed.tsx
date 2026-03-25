@@ -11,12 +11,13 @@ import {
   fetchRecentCustomTags,
   fetchRecentPriceLevels,
   fetchRecentCommentLikes,
+  fetchRecentCheckins,
 } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { getBusinessName } from '../../utils/businessHelpers';
 import { PRICE_LEVEL_LABELS } from '../../constants/business';
-import type { Comment, Rating, Favorite, UserTag, CustomTag, PriceLevel, CommentLike } from '../../types';
+import type { Comment, Rating, Favorite, UserTag, CustomTag, PriceLevel, CommentLike, CheckIn } from '../../types';
 import { ADMIN_PAGE_SIZE } from '../../constants/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
@@ -35,13 +36,14 @@ interface ActivityData {
   customTags: CustomTag[];
   priceLevels: PriceLevel[];
   commentLikes: CommentLike[];
+  checkins: CheckIn[];
 }
 
 export default function ActivityFeed() {
   const [tab, setTab] = useState(0);
 
   const fetcher = useCallback(async (): Promise<ActivityData> => {
-    const [comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes] = await Promise.all([
+    const [comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes, checkins] = await Promise.all([
       fetchRecentComments(ADMIN_PAGE_SIZE),
       fetchRecentRatings(ADMIN_PAGE_SIZE),
       fetchRecentFavorites(ADMIN_PAGE_SIZE),
@@ -49,8 +51,9 @@ export default function ActivityFeed() {
       fetchRecentCustomTags(ADMIN_PAGE_SIZE),
       fetchRecentPriceLevels(ADMIN_PAGE_SIZE),
       fetchRecentCommentLikes(ADMIN_PAGE_SIZE),
+      fetchRecentCheckins(ADMIN_PAGE_SIZE),
     ]);
-    return { comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes };
+    return { comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes, checkins };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -62,6 +65,7 @@ export default function ActivityFeed() {
   const customTags = data?.customTags ?? [];
   const priceLevels = data?.priceLevels ?? [];
   const commentLikes = data?.commentLikes ?? [];
+  const checkins = data?.checkins ?? [];
 
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando actividad.">
@@ -73,6 +77,7 @@ export default function ActivityFeed() {
           <Tab label={`Tags (${userTags.length + customTags.length})`} />
           <Tab label={`Precios (${priceLevels.length})`} />
           <Tab label={`Likes (${commentLikes.length})`} />
+          <Tab label={`Check-ins (${checkins.length})`} />
         </Tabs>
 
         {tab === 0 && (
@@ -164,6 +169,18 @@ export default function ActivityFeed() {
               { label: 'Usuario', render: (l) => l.userId.slice(0, 8) },
               { label: 'Comment ID', render: (l) => l.commentId.slice(0, 12) },
               { label: 'Fecha', render: (l) => formatDateShort(l.createdAt) },
+            ]}
+          />
+        )}
+
+        {tab === 6 && (
+          <ActivityTable
+            items={checkins}
+            columns={[
+              { label: 'Usuario', render: (c) => c.userId.slice(0, 8) },
+              { label: 'Comercio', render: (c) => getBusinessName(c.businessId) },
+              { label: 'Ubicación', render: (c) => c.location ? 'Sí' : 'No' },
+              { label: 'Fecha', render: (c) => formatDateShort(c.createdAt) },
             ]}
           />
         )}
