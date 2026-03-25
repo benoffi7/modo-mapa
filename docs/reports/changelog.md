@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripción |
 |---------|--------|-------------|
+| v2.29.0 | [#135](https://github.com/benoffi7/modo-mapa/issues/135) | Recomendaciones entre usuarios: recomendar comercios a otros usuarios con mensaje opcional (max 200 chars), lista de recibidas con badge no leídas, notificación `recommendation`, rate limit 20/día, soporte offline, privacy policy actualizada, seed data, HelpSection actualizada |
 | v2.28.0 | [#129](https://github.com/benoffi7/modo-mapa/issues/129) | Seguir usuarios: follows, activity feed, user search, new_follower notifications, displayNameLower migration |
 | — | [#181](https://github.com/benoffi7/modo-mapa/issues/181) | Tech debt residual: logger centralizado (60 console.* → logger.*, Sentry en prod), service layer cleanup (0 firebase imports en componentes), offline guards en InviteEditorDialog/MenuPhotoViewer/FeedbackForm, FilterChips CSS variables, OfflineIndicator z-index fix, bundle analysis documentado |
 | v2.27.5 | [#178](https://github.com/benoffi7/modo-mapa/issues/178) | Offline tech debt: check-in create/delete en offline queue con withOfflineSupport, guard de notification polling con navigator.onLine, getCountOfflineSafe utility para rankings y notifications (fallback a 0 offline) |
