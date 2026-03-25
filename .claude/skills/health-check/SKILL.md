@@ -17,9 +17,10 @@ Run sequentially — report results but don't abort:
 1. `npm run lint` — count errors and warnings
 2. `npx vitest run --dir src` — count passed/failed
 3. `cd functions && npm run test:run` — count passed/failed
-4. `npx vite build` — pass/fail
+4. `npm run test:coverage 2>&1 | grep -E "does not meet|All files|ERROR"` — verify 80% branch threshold
+5. `npx vite build` — pass/fail
 
-Report as summary table.
+Report as summary table. **If coverage is below threshold, flag as blocker** — CI will reject the deploy.
 
 ### Step 2: Full audit (all 7 agents, in parallel)
 

@@ -129,3 +129,17 @@ Usa esta checklist para evaluar cualquier feature:
 - [ ] UI: hay indicador de estado offline en contextos relevantes?
 - [ ] Datos criticos: estan disponibles en cache para primera carga?
 - [ ] Sync: hay mecanismo de reconciliacion al volver online?
+
+## httpsCallable audit (OBLIGATORIO)
+
+Grep for `httpsCallable` en componentes no-admin. Cada uso en componentes user-facing DEBE tener:
+1. Guard `isOffline` que deshabilite el botón/acción, O
+2. Tooltip/mensaje "Requiere conexión" cuando offline, O
+3. Manejo explícito del error de red con feedback al usuario
+
+```bash
+# Buscar httpsCallable en componentes user-facing (excluir admin/):
+grep -rn "httpsCallable" src/components/ src/services/ --include="*.ts" --include="*.tsx" | grep -v admin | grep -v test
+```
+
+Reportar cada `httpsCallable` sin guard offline como hallazgo de severidad Alta.

@@ -122,6 +122,33 @@ Reference the CI solution matrix memory file for known error patterns and their 
 4. **Tests that import hooks** using firebase must mock the firebase dependency chain
 5. **VITE_ env vars** are only available at build time in CI, never at test time
 
+## Pre-push verification protocol
+
+Before ANY push to main, run this sequence locally to catch what the pre-push hook and CI will check:
+
+```bash
+WORKDIR="$(git rev-parse --show-toplevel)"
+cd "$WORKDIR"
+
+# 1. TypeScript (catches exactOptionalPropertyTypes errors)
+npx tsc --noEmit -p tsconfig.app.json
+
+# 2. Lint
+npm run lint
+
+# 3. Tests with coverage (catches threshold failures)
+npm run test:coverage 2>&1 | tail -5
+# Look for: "ERROR: Coverage for X does not meet global threshold (80%)"
+
+# 4. Functions tests
+cd functions && npm run test:run && cd ..
+
+# 5. Build (same as pre-push hook)
+npx vite build
+```
+
+If coverage is below 80%, add tests BEFORE pushing. The deploy WILL fail otherwise.
+
 ## When Adding New Tests
 
 Before committing any new test file, verify:
@@ -129,3 +156,4 @@ Before committing any new test file, verify:
 1. Does it import anything that chains to `src/config/firebase.ts`? If yes, mock the chain.
 2. Is it in `functions/`? If yes, make sure `functions/vitest.config.ts` covers it and root vitest excludes it.
 3. Run `npm run test:run` AND `cd functions && npm run test:run` locally.
+4. Run `npm run test:coverage` and verify branches >= 80%.

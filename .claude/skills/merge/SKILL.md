@@ -16,9 +16,23 @@ Issue numbers (optional): $ARGUMENTS
 2. Verify working tree is clean: `git status --short` — commit or stash if dirty
 3. Store the branch name and issue number (parse from branch name or $ARGUMENTS)
 
+## CRITICAL: Working directory
+
+**Before EVERY `npm`, `npx`, or `vite` command, verify you are in the correct directory.** If in a worktree, all commands MUST run from the worktree path. Running from the main repo will silently use main's files.
+
+```bash
+# Set once at the start, use for all commands:
+WORKDIR="$(git rev-parse --show-toplevel)"
+echo "Working directory: $WORKDIR"
+```
+
+Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
+
 ## Phase 1: Quality gates (abort on failure)
 
 Run these sequentially — any failure aborts the merge:
+
+**Note:** Add `npm run test:coverage 2>&1 | grep -E "does not meet|All files"` after tests to catch coverage threshold failures early (CI enforces 80% branches).
 
 ### 1a. Sync with main
 

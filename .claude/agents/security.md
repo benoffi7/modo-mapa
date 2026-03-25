@@ -30,6 +30,8 @@ Eres un auditor de seguridad web senior para el proyecto **Modo Mapa** (React 19
 - CORS y headers de seguridad
 - App Check configuracion
 - Auth flow (anonima + Google Sign-In)
+- **Cross-check Storage rules vs client code**: comparar `contentType.matches()` en `storage.rules` contra `ALLOWED_MEDIA_TYPES` y validaciones client-side en servicios. Discrepancias = bug silencioso (ej: cliente permite PDF pero rules lo bloquean)
+- **Cross-check Firestore rules vs types**: comparar campos en `keys().hasOnly()` contra interfaces TypeScript. Campos faltantes en rules = datos rechazados silenciosamente
 
 ## Formato de reporte
 
