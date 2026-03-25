@@ -170,6 +170,7 @@ Before finishing, verify:
 - [ ] Test section predicts actual test file names matching src/__tests__/ convention
 - [ ] No orphan specs — every component/hook/service in specs appears in the plan
 - [ ] Offline section specifies concrete cache strategies and conflict resolution per data flow
+- [ ] No placeholder props in integration — every component action prop (onClick, onSelect, onNavigate) must have a real handler specified in the plan. If the integration phase connects a component, the plan must include wiring its interactive props to actual state/logic. Never leave noop callbacks like `() => {}`
 
 ## After creating
 
