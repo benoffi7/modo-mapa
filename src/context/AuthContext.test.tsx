@@ -320,7 +320,7 @@ describe('AuthContext', () => {
 
       expect(mockSetDoc).toHaveBeenCalledWith(
         mockDocRef,
-        { displayName: 'María', createdAt: 'server-timestamp' },
+        { displayName: 'María', displayNameLower: 'maría', createdAt: 'server-timestamp' },
       );
       expect(mockUpdateDoc).not.toHaveBeenCalled();
       expect(result.current.displayName).toBe('María');
@@ -343,7 +343,7 @@ describe('AuthContext', () => {
 
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         mockDocRef,
-        { displayName: 'María' },
+        { displayName: 'María', displayNameLower: 'maría' },
       );
       expect(mockSetDoc).not.toHaveBeenCalled();
       expect(result.current.displayName).toBe('María');
@@ -654,7 +654,7 @@ describe('AuthContext', () => {
         await result.current.setDisplayName('NewName');
       });
 
-      expect(mockUpdateDoc).toHaveBeenCalledWith(mockDocRef, { displayName: 'NewName' });
+      expect(mockUpdateDoc).toHaveBeenCalledWith(mockDocRef, { displayName: 'NewName', displayNameLower: 'newname' });
       expect(mockSetDoc).not.toHaveBeenCalled();
     });
 
@@ -675,6 +675,7 @@ describe('AuthContext', () => {
 
       expect(mockSetDoc).toHaveBeenCalledWith(mockDocRef, {
         displayName: 'NewName',
+        displayNameLower: 'newname',
         createdAt: 'server-timestamp',
       });
       expect(mockUpdateDoc).not.toHaveBeenCalled();

@@ -419,7 +419,7 @@ describe('userSettingsConverter', () => {
   const full = {
     profilePublic: true, notificationsEnabled: true,
     notifyLikes: true, notifyPhotos: true, notifyRankings: true,
-    notifyFeedback: false, notifyReplies: false,
+    notifyFeedback: false, notifyReplies: false, notifyFollowers: false,
     analyticsEnabled: true, updatedAt: NOW,
   };
 
@@ -437,6 +437,7 @@ describe('userSettingsConverter', () => {
     expect(result.notifyRankings).toBe(false);
     expect(result.notifyFeedback).toBe(true);
     expect(result.notifyReplies).toBe(true);
+    expect(result.notifyFollowers).toBe(true);
     expect(result.analyticsEnabled).toBe(false);
   });
 

@@ -152,6 +152,7 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 - [ ] Componentes nuevos son reutilizables fuera del contexto actual de layout
 - [ ] No se agregan useState de logica de negocio a AppShell o SideMenu
 - [ ] Props explicitas en vez de dependencias implicitas a contextos de layout
+- [ ] Cada prop de accion (onClick, onSelect, onNavigate) tiene un handler real especificado — nunca noop `() => {}`
 
 ---
 

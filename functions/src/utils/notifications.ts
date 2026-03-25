@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
-type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply';
+type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply' | 'new_follower';
 
 interface CreateNotificationData {
   userId: string;
@@ -23,6 +23,7 @@ const TYPE_TO_SETTING: Record<NotificationType, string> = {
   ranking: 'notifyRankings',
   feedback_response: 'notifyFeedback',
   comment_reply: 'notifyReplies',
+  new_follower: 'notifyFollowers',
 };
 
 // Must match DEFAULT_SETTINGS in src/services/userSettings.ts
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: Record<string, boolean> = {
   notifyRankings: false,
   notifyFeedback: true,
   notifyReplies: true,
+  notifyFollowers: true,
 };
 
 // Types that bypass the master toggle — these are direct admin-to-user

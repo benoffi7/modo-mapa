@@ -105,6 +105,29 @@ Si el deploy falla, revisar logs con `gh run view <id> --log-failed` y arreglar 
 
 ---
 
+## Limitaciones de staging
+
+### Cloud Function triggers NO disparan en staging DB
+
+Los triggers de Firestore (`onDocumentCreated`, `onDocumentWritten`, etc.) solo escuchan la base de datos `(default)`. Cuando el cliente staging escribe a la DB `staging`, **ningun trigger se ejecuta**.
+
+**Implicaciones:**
+- Counters server-side no se actualizan (likes, replies, follows)
+- Fan-out writes no ocurren (activity feed)
+- Rate limits no se aplican
+- Notificaciones no se generan
+- Moderacion de contenido no se ejecuta
+
+**Solucion:** Para features que dependen de triggers, implementar un fallback client-side que se ejecute en ambos entornos. El trigger server-side y el fallback client-side pueden coexistir (deduplicar por referenceId en UI si es necesario).
+
+### Datos estaticos vs Firestore
+
+Los comercios (`businesses`) son datos estaticos en `src/data/businesses.json`, **NO** una coleccion de Firestore. Nunca hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`.
+
+Ver la seccion "Datos estaticos + dinamicos" en `docs/reference/patterns.md` para el registro completo.
+
+---
+
 ## Cuando actualizar este documento
 
 - Al cambiar el workflow de deploy staging

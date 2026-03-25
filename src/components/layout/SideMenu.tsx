@@ -48,8 +48,11 @@ const HelpSection = lazy(() => import('../menu/HelpSection'));
 const CheckInsView = lazy(() => import('../menu/CheckInsView'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection'));
+const FollowedList = lazy(() => import('../menu/FollowedList').then((m) => ({ default: m.FollowedList })));
+const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
+const UserProfileSheet = lazy(() => import('../user/UserProfileSheet'));
 import VerificationNudge from '../onboarding/VerificationNudge';
 
 function SectionLoader() {
@@ -76,7 +79,7 @@ interface Props {
   onEmailDialogClose: () => void;
 }
 
-export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
+export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'followed' | 'activity' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -84,6 +87,8 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   recent: 'Recientes',
   checkins: 'Mis visitas',
   suggestions: 'Sugeridos para vos',
+  followed: 'Seguidos',
+  activity: 'Actividad',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
@@ -139,6 +144,8 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
   const { handleSurprise } = useSurpriseMe({ onSelect: setSelectedBusiness, onClose });
 
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [followedListKey, setFollowedListKey] = useState(0);
 
   const handleClose = () => {
     confirmClose(() => {
@@ -338,6 +345,8 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   {activeSection === 'lists' && <SharedListsView onSelectBusiness={handleSelectBusiness} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'checkins' && <CheckInsView onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'followed' && <FollowedList key={followedListKey} onUserClick={setProfileUserId} />}
+                  {activeSection === 'activity' && <ActivityFeedView onBusinessClick={(bizId) => { handleSelectBusiness({ id: bizId } as Business); }} />}
                   {activeSection === 'suggestions' && <SuggestionsView onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'comments' && <CommentsList onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'ratings' && <RatingsList onSelectBusiness={handleSelectBusiness} />}
@@ -370,6 +379,13 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
       <Suspense fallback={null}>
         {nameDialogOpen && (
           <EditDisplayNameDialog open onClose={() => setNameDialogOpen(false)} />
+        )}
+      </Suspense>
+
+      {/* User profile sheet */}
+      <Suspense fallback={null}>
+        {profileUserId && (
+          <UserProfileSheet userId={profileUserId} onClose={() => { setProfileUserId(null); setFollowedListKey((k) => k + 1); }} />
         )}
       </Suspense>
 

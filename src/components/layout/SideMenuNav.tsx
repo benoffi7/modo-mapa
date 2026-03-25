@@ -14,6 +14,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CasinoIcon from '@mui/icons-material/Casino';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
+import PeopleIcon from '@mui/icons-material/People';
+import RssFeedIcon from '@mui/icons-material/RssFeed';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import type { Section } from './SideMenu';
@@ -71,6 +73,16 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
         <ListItemButton onClick={onSurprise}>
           <ListItemIcon><CasinoIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
           <ListItemText primary="Sorpréndeme" />
+        </ListItemButton>
+
+        <ListItemButton onClick={() => onNavigate('followed')}>
+          <ListItemIcon><PeopleIcon sx={{ color: 'info.main' }} /></ListItemIcon>
+          <ListItemText primary="Seguidos" />
+        </ListItemButton>
+
+        <ListItemButton onClick={() => onNavigate('activity')}>
+          <ListItemIcon><RssFeedIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
+          <ListItemText primary="Actividad" />
         </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('comments')}>

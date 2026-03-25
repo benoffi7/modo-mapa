@@ -170,6 +170,11 @@ Before finishing, verify:
 - [ ] Test section predicts actual test file names matching src/__tests__/ convention
 - [ ] No orphan specs — every component/hook/service in specs appears in the plan
 - [ ] Offline section specifies concrete cache strategies and conflict resolution per data flow
+- [ ] No placeholder props in integration — every component action prop (onClick, onSelect, onNavigate) must have a real handler specified in the plan. If the integration phase connects a component, the plan must include wiring its interactive props to actual state/logic. Never leave noop callbacks like `() => {}`
+- [ ] Firestore rules compatibility — for every new query in services/hooks, verify the existing rules allow it. If a service reads collection X from user Y's context, confirm rules permit cross-user reads. Document rule changes needed in the plan
+- [ ] Staging trigger gap — if the feature depends on Cloud Function triggers, the plan MUST include a client-side fallback. Triggers don't fire on the staging named DB. See `docs/reference/staging.md#limitaciones-de-staging`
+- [ ] Data source verification — never read `businesses` from Firestore (it's a local JSON). Check `docs/reference/patterns.md` for the data source of each entity before writing Firestore queries
+- [ ] Default values awareness — if filtering by a boolean field (e.g. `profilePublic`), consider that most users won't have it set. Design queries/checks to work when the field is missing or the settings doc doesn't exist
 
 ## After creating
 

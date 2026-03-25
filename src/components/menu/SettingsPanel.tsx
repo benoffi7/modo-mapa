@@ -278,6 +278,13 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyReplies', val)}
       />
+      <SettingRow
+        label="Nuevos seguidores"
+        checked={settings.notifyFollowers}
+        disabled={!settings.notificationsEnabled}
+        indented
+        onChange={(val) => updateSetting('notifyFollowers', val)}
+      />
 
       <Divider sx={{ my: 1.5 }} />
 

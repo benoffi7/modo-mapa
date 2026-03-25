@@ -1,0 +1,59 @@
+import { useCallback } from 'react';
+import { Box, List } from '@mui/material';
+import RssFeedIcon from '@mui/icons-material/RssFeed';
+import { useAuth } from '../../context/AuthContext';
+import { useActivityFeed } from '../../hooks/useActivityFeed';
+import { PaginatedListShell } from './PaginatedListShell';
+import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { ActivityFeedItemRow } from './ActivityFeedItem';
+import { trackEvent } from '../../utils/analytics';
+import { EVT_FEED_VIEWED, EVT_FEED_ITEM_CLICKED } from '../../constants/analyticsEvents';
+import { useEffect } from 'react';
+
+interface ActivityFeedViewProps {
+  onBusinessClick: (businessId: string) => void;
+}
+
+export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
+  const { user } = useAuth();
+  const { items, isLoading, isLoadingMore, error, hasMore, loadMore, reload } = useActivityFeed(user?.uid);
+
+  useEffect(() => {
+    trackEvent(EVT_FEED_VIEWED);
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reload on mount only
+
+  const handleItemClick = useCallback((businessId: string) => {
+    trackEvent(EVT_FEED_ITEM_CLICKED, { business_id: businessId });
+    onBusinessClick(businessId);
+  }, [onBusinessClick]);
+
+  return (
+    <Box sx={{ px: 2, py: 1 }}>
+      <PullToRefreshWrapper onRefresh={reload}>
+        <PaginatedListShell
+          isLoading={isLoading}
+          error={error}
+          isEmpty={items.length === 0}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          emptyIcon={<RssFeedIcon sx={{ fontSize: 48 }} />}
+          emptyMessage="No hay actividad reciente"
+          emptySubtext="Segui a otros usuarios para ver su actividad aca"
+          onRetry={reload}
+          onLoadMore={loadMore}
+        >
+          <List dense disablePadding>
+            {items.map((item) => (
+              <ActivityFeedItemRow
+                key={item.id}
+                item={item}
+                onClick={handleItemClick}
+              />
+            ))}
+          </List>
+        </PaginatedListShell>
+      </PullToRefreshWrapper>
+    </Box>
+  );
+}

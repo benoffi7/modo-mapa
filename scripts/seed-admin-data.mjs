@@ -374,11 +374,14 @@ async function seed() {
     });
   }
 
-  // 11. Users
+  // 11. Users (with displayNameLower and follow counters, matching onUserCreated trigger)
   console.log('Creating users...');
   for (let i = 0; i < USER_IDS.length; i++) {
     await setDoc(doc(db, 'users', USER_IDS[i]), {
       displayName: USER_NAMES[i],
+      displayNameLower: USER_NAMES[i].toLowerCase(),
+      followersCount: 0,
+      followingCount: 0,
       createdAt: daysAgo(randomInt(1, 30)),
     });
   }
@@ -567,14 +570,99 @@ async function seed() {
       notifyRankings: i % 3 === 0,
       notifyFeedback: true,
       notifyReplies: true,
+      notifyFollowers: true,
       analyticsEnabled: true,
       updatedAt: new Date(),
     });
   }
 
+  // ── Follows (user_001..user_005 follow each other in varied patterns) ────
+  console.log('Creating follows...');
+  const followPairs = [
+    // user_001 (Juan) follows 3 people
+    ['user_001', 'user_002'],
+    ['user_001', 'user_003'],
+    ['user_001', 'user_005'],
+    // user_002 (Maria) follows 2 people
+    ['user_002', 'user_001'],
+    ['user_002', 'user_004'],
+    // user_003 (Carlos) follows 4 people
+    ['user_003', 'user_001'],
+    ['user_003', 'user_002'],
+    ['user_003', 'user_005'],
+    ['user_003', 'user_006'],
+    // user_004 (Ana) follows 1 person
+    ['user_004', 'user_001'],
+    // user_005 (Pedro) follows 2 people
+    ['user_005', 'user_001'],
+    ['user_005', 'user_003'],
+    // user_006 (Laura) follows 1 person
+    ['user_006', 'user_002'],
+  ];
+
+  for (const [followerId, followedId] of followPairs) {
+    const key = `${followerId}__${followedId}`;
+    await setDoc(doc(db, 'follows', key), {
+      followerId,
+      followedId,
+      createdAt: daysAgo(randomInt(0, 14)),
+    });
+  }
+
+  // Update follow counters on user docs to match seeded follows
+  const followerCounts = {};
+  const followingCounts = {};
+  for (const [followerId, followedId] of followPairs) {
+    followingCounts[followerId] = (followingCounts[followerId] || 0) + 1;
+    followerCounts[followedId] = (followerCounts[followedId] || 0) + 1;
+  }
+  for (const uid of USER_IDS) {
+    if (followerCounts[uid] || followingCounts[uid]) {
+      await db.collection('users').doc(uid).update({
+        followersCount: followerCounts[uid] || 0,
+        followingCount: followingCounts[uid] || 0,
+      });
+    }
+  }
+
+  // ── Activity Feed (subcollection: activityFeed/{userId}/items) ────
+  // Simulates fan-out items that followers would see from people they follow
+  console.log('Creating activity feed items...');
+  const ACTIVITY_TYPES = ['rating', 'comment', 'favorite'];
+  const BIZ_NAMES = [
+    'El Buen Paladar', 'Cafe Libertad', 'Pizzeria Nonna',
+    'Heladeria Gelato', 'Panaderia San Jose',
+  ];
+
+  // For each user who follows someone, create 2-3 feed items from the people they follow
+  const feedItemCount = {};
+  for (const [followerId, followedId] of followPairs) {
+    const numItems = randomInt(2, 3);
+    const followedIdx = USER_IDS.indexOf(followedId);
+    for (let fi = 0; fi < numItems; fi++) {
+      const bizIdx = randomInt(0, 4);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const feedRef = db.collection('activityFeed').doc(followerId)
+        .collection('items').doc();
+      await feedRef.set({
+        actorId: followedId,
+        actorName: USER_NAMES[followedIdx],
+        type: ACTIVITY_TYPES[fi % ACTIVITY_TYPES.length],
+        businessId: BUSINESS_IDS[bizIdx],
+        businessName: BIZ_NAMES[bizIdx],
+        referenceId: `seed_ref_${followerId}_${followedId}_${fi}`,
+        createdAt: daysAgo(randomInt(0, 10)),
+        expiresAt,
+      });
+      feedItemCount[followerId] = (feedItemCount[followerId] || 0) + 1;
+    }
+  }
+  const totalFeedItems = Object.values(feedItemCount).reduce((a, b) => a + b, 0);
+
   // Notifications (including feedback_response)
   console.log('Creating notifications...');
-  const notifTypes = ['like', 'photo_approved', 'photo_rejected', 'ranking', 'feedback_response', 'comment_reply'];
+  const notifTypes = ['like', 'photo_approved', 'photo_rejected', 'ranking', 'feedback_response', 'comment_reply', 'new_follower'];
   for (let i = 0; i < 15; i++) {
     const userId = USER_IDS[i % USER_IDS.length];
     const type = notifTypes[i % notifTypes.length];

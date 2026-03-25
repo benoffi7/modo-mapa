@@ -13,6 +13,7 @@ import { formatDateMedium } from '../../utils/formatDate';
 import { MEDALS } from '../../constants/rankings';
 import { truncate } from '../../utils/text';
 import UserStatsRow from './UserStatsRow';
+import { FollowButton } from '../FollowButton';
 import type { Business } from '../../types';
 
 interface Props {
@@ -104,6 +105,13 @@ export default function UserProfileSheet({ userId, userName, onClose }: Props) {
                   </Typography>
                 </Box>
               </Box>
+
+              {/* Follow button */}
+              {userId && (
+                <Box sx={{ mt: 1, mb: 1 }}>
+                  <FollowButton targetUserId={userId} />
+                </Box>
+              )}
 
               <Divider sx={{ my: 1.5 }} />
 

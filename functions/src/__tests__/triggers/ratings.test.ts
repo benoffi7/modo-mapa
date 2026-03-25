@@ -5,7 +5,9 @@ const mockTrackWrite = vi.fn().mockResolvedValue(undefined);
 const mockTrackDelete = vi.fn().mockResolvedValue(undefined);
 const mockUpdateRatingAggregates = vi.fn().mockResolvedValue(undefined);
 const mockTrackFunctionTiming = vi.fn().mockResolvedValue(undefined);
-const mockGetFirestore = vi.fn().mockReturnValue({});
+const mockDocGet = vi.fn().mockResolvedValue({ exists: false, data: () => null });
+const mockDoc = vi.fn().mockReturnValue({ get: mockDocGet });
+const mockGetFirestore = vi.fn().mockReturnValue({ doc: mockDoc });
 
 vi.mock('firebase-admin/firestore', () => ({
   getFirestore: () => mockGetFirestore(),
@@ -25,6 +27,10 @@ vi.mock('../../utils/perfTracker', () => ({
   trackFunctionTiming: (...args: unknown[]) => mockTrackFunctionTiming(...args),
 }));
 
+vi.mock('../../utils/fanOut', () => ({
+  fanOutToFollowers: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Import the raw handler — we'll call it directly instead of going through onDocumentWritten
 vi.mock('firebase-functions/v2/firestore', () => ({
   onDocumentWritten: (_path: string, handler: (...args: unknown[]) => unknown) => handler,
@@ -39,6 +45,7 @@ function makeEvent(
   afterData: Record<string, unknown> | null,
 ) {
   return {
+    params: { ratingId: 'rating_123' },
     data: {
       before: beforeData
         ? { exists: true, data: () => beforeData }

@@ -7,7 +7,7 @@ import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
 import { logger } from '../utils/logger';
 
-type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'analyticsEnabled';
+type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'notifyFollowers' | 'analyticsEnabled';
 
 export function useUserSettings() {
   const { user } = useAuth();

@@ -9,6 +9,7 @@ import type {
   CommentLikePayload,
   CheckinCreatePayload,
   CheckinDeletePayload,
+  FollowPayload,
 } from '../types/offline';
 
 let syncing = false;
@@ -94,6 +95,18 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       const { checkInId } = p as CheckinDeletePayload;
       const { deleteCheckIn } = await import('./checkins');
       await deleteCheckIn(userId, checkInId);
+      break;
+    }
+    case 'follow_add': {
+      const { followedId } = p as FollowPayload;
+      const { followUser } = await import('./follows');
+      await followUser(userId, followedId);
+      break;
+    }
+    case 'follow_remove': {
+      const { followedId } = p as FollowPayload;
+      const { unfollowUser } = await import('./follows');
+      await unfollowUser(userId, followedId);
       break;
     }
   }

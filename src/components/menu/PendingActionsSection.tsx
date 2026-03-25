@@ -15,6 +15,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -35,6 +36,8 @@ const ACTION_LABELS: Record<OfflineActionType, string> = {
   comment_unlike: 'Unlike',
   checkin_create: 'Check-in',
   checkin_delete: 'Deshacer check-in',
+  follow_add: 'Seguir usuario',
+  follow_remove: 'Dejar de seguir',
 };
 
 const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
@@ -51,6 +54,8 @@ const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
   comment_unlike: ChatBubbleOutlineIcon,
   checkin_create: PlaceOutlinedIcon,
   checkin_delete: PlaceOutlinedIcon,
+  follow_add: PersonAddIcon,
+  follow_remove: PersonAddIcon,
 };
 
 function timeAgo(timestamp: number): string {

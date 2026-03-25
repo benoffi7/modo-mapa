@@ -326,6 +326,16 @@ Both caches are invalidated on write operations via `invalidateBusinessCache()` 
 
 ---
 
+## Integration Rules
+
+### No placeholder props
+
+When connecting a component to a parent (e.g., adding a section to SideMenu), every action prop (`onClick`, `onSelect`, `onNavigate`) **must** have a real, functional handler. Never commit noop callbacks like `() => {}`.
+
+If the handler needs state or logic that doesn't exist yet, create it in the same step. If truly blocked, use `throw new Error('not implemented')` so it fails loudly instead of silently doing nothing.
+
+---
+
 ## Security Coding Standards
 
 ### Firestore Rules — Mandatory Patterns

@@ -159,7 +159,27 @@ export interface PriceLevel {
   updatedAt: Date;
 }
 
-export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply';
+export interface Follow {
+  followerId: string;
+  followedId: string;
+  createdAt: Date;
+}
+
+export type ActivityType = 'rating' | 'comment' | 'favorite';
+
+export interface ActivityFeedItem {
+  id: string;
+  actorId: string;
+  actorName: string;
+  type: ActivityType;
+  businessId: string;
+  businessName: string;
+  referenceId: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+export type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply' | 'new_follower';
 
 export interface AppNotification {
   id: string;
@@ -209,6 +229,7 @@ export interface UserSettings {
   notifyRankings: boolean;
   notifyFeedback: boolean;
   notifyReplies: boolean;
+  notifyFollowers: boolean;
   analyticsEnabled: boolean;
   locality?: string;
   localityLat?: number;
@@ -273,5 +294,6 @@ export type {
   PriceLevelDeletePayload,
   TagTogglePayload,
   CommentLikePayload,
+  FollowPayload,
   EmptyPayload,
 } from './offline';

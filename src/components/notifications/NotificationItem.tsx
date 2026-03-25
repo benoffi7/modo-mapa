@@ -4,6 +4,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import ReplyIcon from '@mui/icons-material/Reply';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { formatRelativeTime } from '../../utils/formatDate';
 import type { AppNotification } from '../../types';
 
@@ -25,6 +26,8 @@ function getIcon(type: AppNotification['type']) {
       return <FeedbackOutlinedIcon sx={{ color: 'success.main' }} fontSize="small" />;
     case 'comment_reply':
       return <ReplyIcon color="info" fontSize="small" />;
+    case 'new_follower':
+      return <PersonAddIcon color="info" fontSize="small" />;
   }
 }
 

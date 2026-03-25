@@ -59,6 +59,7 @@ vi.mock('../../utils/counters', () => ({
 vi.mock('../../utils/abuseLogger', () => ({ logAbuse: (...args: unknown[]) => mockLogAbuse(...args) }));
 vi.mock('../../utils/aggregates', () => ({ incrementBusinessCount: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../../utils/notifications', () => ({ createNotification: (...args: unknown[]) => mockCreateNotification(...args) }));
+vi.mock('../../utils/fanOut', () => ({ fanOutToFollowers: vi.fn().mockResolvedValue(undefined) }));
 
 // --- Firestore mock helpers ---
 
@@ -87,9 +88,13 @@ function createMockDb(overrides?: {
   const mockCollection = vi.fn().mockReturnValue({ doc: mockDocRef, where: mockWhere });
   const mockBatch = vi.fn().mockReturnValue({ delete: mockBatchDelete, commit: mockBatchCommit });
 
+  const mockDocGet = vi.fn().mockResolvedValue({ exists: false, data: () => null });
+  const mockTopDoc = vi.fn().mockReturnValue({ get: mockDocGet });
+
   const db = {
     collection: mockCollection,
     batch: mockBatch,
+    doc: mockTopDoc,
   };
 
   // Wire getFirestore to return this db
@@ -111,7 +116,7 @@ describe('onCommentCreated', () => {
   });
 
   it('skips if no snapshot data', async () => {
-    await handlers['created:comments/{commentId}']({ data: null });
+    await handlers['created:comments/{commentId}']({ data: null, params: { commentId: 'c1' } });
     expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 
@@ -119,6 +124,7 @@ describe('onCommentCreated', () => {
     createMockDb();
     const snapRef = { delete: vi.fn() };
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: { data: () => ({ userId: 'u1', text: 'hello', businessId: 'b1' }), ref: snapRef },
     });
 
@@ -138,6 +144,7 @@ describe('onCommentCreated', () => {
     const snapRef = { delete: vi.fn().mockResolvedValue(undefined) };
 
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: { data: () => ({ userId: 'u1', text: 'spam', businessId: 'b1' }), ref: snapRef },
     });
 
@@ -157,6 +164,7 @@ describe('onCommentCreated', () => {
     const snapRef = { delete: vi.fn(), update: mockSnapUpdate };
 
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: { data: () => ({ userId: 'u1', text: 'bad word', businessId: 'b1' }), ref: snapRef },
     });
 
@@ -187,6 +195,7 @@ describe('onCommentCreated', () => {
     const { mockUpdate } = createMockDb();
 
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: {
         data: () => ({ userId: 'u1', text: 'root comment', businessId: 'b1' }),
         ref: { delete: vi.fn() },
@@ -250,6 +259,7 @@ describe('onCommentCreated', () => {
     createMockDb();
 
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: {
         data: () => ({ userId: 'u1', text: 'root', businessId: 'b1' }),
         ref: { delete: vi.fn() },
@@ -263,6 +273,7 @@ describe('onCommentCreated', () => {
     createMockDb();
     const snapRef = { delete: vi.fn() };
     await handlers['created:comments/{commentId}']({
+      params: { commentId: 'c1' },
       data: { data: () => ({ userId: 'u1', text: 'Do you have vegan?', businessId: 'b1', type: 'question' }), ref: snapRef },
     });
 

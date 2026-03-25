@@ -42,6 +42,27 @@ bash scripts/pre-staging-check.sh
 
 If any step fails, stop and fix. Do NOT proceed.
 
+### Step 1b: E2E smoke test (local emulators)
+
+Before deploying, verify the feature works end-to-end with emulators:
+
+```bash
+bash scripts/dev-env.sh start
+```
+
+Then manually verify:
+
+1. **Every interactive UI element does something** — click buttons, submit forms, navigate. No silent no-ops.
+2. **New Firestore queries succeed** — check browser console for permission denied errors. If a service reads another user's data, verify rules allow it.
+3. **Cloud Function trigger dependencies** — if the feature writes data that triggers process, verify the client-side fallback works (triggers don't fire on staging named DB).
+4. **Data sources** — if the feature reads business data, verify it uses `allBusinesses` (JSON), not `getDoc('businesses/{id}')`.
+
+```bash
+bash scripts/dev-env.sh stop
+```
+
+If any flow is broken locally, fix before deploying. Do NOT deploy untested features.
+
 ### Step 2: Push feature branch
 
 ```bash
