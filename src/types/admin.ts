@@ -85,3 +85,12 @@ export interface AnalyticsReportResponse {
   cachedAt: string;
   fromCache: boolean;
 }
+
+export interface ListStats {
+  totalLists: number;
+  publicLists: number;
+  privateLists: number;
+  collaborativeLists: number;
+  totalItems: number;
+  avgItemsPerList: number;
+}
