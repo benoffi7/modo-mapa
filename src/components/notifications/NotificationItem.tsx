@@ -5,6 +5,7 @@ import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import ReplyIcon from '@mui/icons-material/Reply';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import SendIcon from '@mui/icons-material/Send';
 import { formatRelativeTime } from '../../utils/formatDate';
 import type { AppNotification } from '../../types';
 
@@ -28,6 +29,8 @@ function getIcon(type: AppNotification['type']) {
       return <ReplyIcon color="info" fontSize="small" />;
     case 'new_follower':
       return <PersonAddIcon color="info" fontSize="small" />;
+    case 'recommendation':
+      return <SendIcon color="secondary" fontSize="small" />;
   }
 }
 

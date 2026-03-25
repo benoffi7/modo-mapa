@@ -285,6 +285,13 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyFollowers', val)}
       />
+      <SettingRow
+        label="Recomendaciones"
+        checked={settings.notifyRecommendations}
+        disabled={!settings.notificationsEnabled}
+        indented
+        onChange={(val) => updateSetting('notifyRecommendations', val)}
+      />
 
       <Divider sx={{ my: 1.5 }} />
 

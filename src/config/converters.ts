@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness, CheckIn, Follow, ActivityFeedItem, ActivityType } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness, CheckIn, Follow, ActivityFeedItem, ActivityType, Recommendation } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -287,6 +287,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyFeedback: settings.notifyFeedback,
       notifyReplies: settings.notifyReplies,
       notifyFollowers: settings.notifyFollowers,
+      notifyRecommendations: settings.notifyRecommendations,
       analyticsEnabled: settings.analyticsEnabled,
       ...(settings.locality != null && { locality: settings.locality }),
       ...(settings.localityLat != null && { localityLat: settings.localityLat }),
@@ -305,6 +306,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyFeedback: d.notifyFeedback ?? true,
       notifyReplies: d.notifyReplies ?? true,
       notifyFollowers: d.notifyFollowers ?? true,
+      notifyRecommendations: d.notifyRecommendations ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
       ...(d.locality != null && { locality: d.locality }),
       ...(d.localityLat != null && { localityLat: d.localityLat }),
@@ -461,6 +463,35 @@ export const checkinConverter: FirestoreDataConverter<CheckIn> = {
       businessName: d.businessName,
       createdAt: toDate(d.createdAt),
       ...(d.location != null && { location: d.location as { lat: number; lng: number } }),
+    };
+  },
+};
+
+export const recommendationConverter: FirestoreDataConverter<Recommendation> = {
+  toFirestore(rec: Recommendation) {
+    return {
+      senderId: rec.senderId,
+      senderName: rec.senderName,
+      recipientId: rec.recipientId,
+      businessId: rec.businessId,
+      businessName: rec.businessName,
+      message: rec.message,
+      read: rec.read,
+      createdAt: rec.createdAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): Recommendation {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      senderId: d.senderId,
+      senderName: d.senderName,
+      recipientId: d.recipientId,
+      businessId: d.businessId,
+      businessName: d.businessName ?? '',
+      message: d.message ?? '',
+      read: d.read === true,
+      createdAt: toDate(d.createdAt),
     };
   },
 };

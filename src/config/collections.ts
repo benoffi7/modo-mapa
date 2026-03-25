@@ -22,4 +22,5 @@ export const COLLECTIONS = {
   CHECKINS: 'checkins',
   FOLLOWS: 'follows',
   ACTIVITY_FEED: 'activityFeed',
+  RECOMMENDATIONS: 'recommendations',
 } as const;

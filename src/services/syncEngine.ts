@@ -10,6 +10,7 @@ import type {
   CheckinCreatePayload,
   CheckinDeletePayload,
   FollowPayload,
+  RecommendationPayload,
 } from '../types/offline';
 
 let syncing = false;
@@ -107,6 +108,17 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       const { followedId } = p as FollowPayload;
       const { unfollowUser } = await import('./follows');
       await unfollowUser(userId, followedId);
+      break;
+    }
+    case 'recommendation_create': {
+      const { recipientId, businessName, senderName, message } = p as RecommendationPayload;
+      const { createRecommendation } = await import('./recommendations');
+      await createRecommendation(userId, senderName, recipientId, businessId, businessName, message);
+      break;
+    }
+    case 'recommendation_read': {
+      const { markRecommendationAsRead } = await import('./recommendations');
+      await markRecommendationAsRead(businessId); // businessId holds the recommendation ID for this action
       break;
     }
   }

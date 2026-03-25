@@ -17,6 +17,7 @@ export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels
 export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
 export { onFollowCreated, onFollowDeleted } from './triggers/follows';
 export { onUserSettingsWritten } from './triggers/userSettings';
+export { onRecommendationCreated } from './triggers/recommendations';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';

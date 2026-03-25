@@ -16,6 +16,7 @@ const MOCK_SETTINGS: UserSettings = {
   notifyFeedback: true,
   notifyReplies: true,
   notifyFollowers: true,
+  notifyRecommendations: true,
   analyticsEnabled: false,
   updatedAt: new Date(),
 };

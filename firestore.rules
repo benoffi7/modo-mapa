@@ -284,7 +284,7 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == userId)
                   || isAdmin();
       allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'notifyRecommendations', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
@@ -447,6 +447,28 @@ service cloud.firestore {
     match /activityFeed/{userId}/items/{itemId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if false;
+    }
+
+    // Recomendaciones entre usuarios — destinatario o admin puede leer.
+    // Remitente puede crear. Destinatario puede marcar como leida. No deletes.
+    match /recommendations/{docId} {
+      allow read: if request.auth != null
+        && (resource.data.recipientId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['senderId', 'recipientId', 'businessId', 'businessName', 'senderName', 'message', 'read', 'createdAt'])
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.recipientId is string
+        && request.resource.data.recipientId.size() > 0
+        && request.resource.data.senderId != request.resource.data.recipientId
+        && request.resource.data.businessId is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 200
+        && request.resource.data.read == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if request.auth != null
+        && resource.data.recipientId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
 
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.

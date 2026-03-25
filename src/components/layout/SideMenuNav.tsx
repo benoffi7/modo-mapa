@@ -16,8 +16,10 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import PeopleIcon from '@mui/icons-material/People';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
+import SendIcon from '@mui/icons-material/Send';
 import { ADD_BUSINESS_URL } from '../../constants/ui';
 import { useConnectivity } from '../../hooks/useConnectivity';
+import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import type { Section } from './SideMenu';
 
 interface Props {
@@ -31,6 +33,7 @@ import { memo } from 'react';
 
 export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurprise, onFeedback }: Props) {
   const { pendingActionsCount } = useConnectivity();
+  const { unreadCount: unreadRecommendations } = useUnreadRecommendations();
 
   return (
     <>
@@ -83,6 +86,15 @@ export default memo(function SideMenuNav({ unreadReplyCount, onNavigate, onSurpr
         <ListItemButton onClick={() => onNavigate('activity')}>
           <ListItemIcon><RssFeedIcon sx={{ color: 'secondary.main' }} /></ListItemIcon>
           <ListItemText primary="Actividad" />
+        </ListItemButton>
+
+        <ListItemButton onClick={() => onNavigate('recommendations')}>
+          <ListItemIcon>
+            <Badge badgeContent={unreadRecommendations} color="error" max={9}>
+              <SendIcon sx={{ color: 'secondary.main' }} />
+            </Badge>
+          </ListItemIcon>
+          <ListItemText primary="Recomendaciones" />
         </ListItemButton>
 
         <ListItemButton onClick={() => onNavigate('comments')}>

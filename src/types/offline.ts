@@ -14,7 +14,9 @@ export type OfflineActionType =
   | 'checkin_create'
   | 'checkin_delete'
   | 'follow_add'
-  | 'follow_remove';
+  | 'follow_remove'
+  | 'recommendation_create'
+  | 'recommendation_read';
 
 /** Status de una accion en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -45,6 +47,7 @@ export type OfflineActionPayload =
   | CheckinCreatePayload
   | CheckinDeletePayload
   | FollowPayload
+  | RecommendationPayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -90,6 +93,13 @@ export interface CheckinCreatePayload {
 
 export interface CheckinDeletePayload {
   checkInId: string;
+}
+
+export interface RecommendationPayload {
+  recipientId: string;
+  businessName: string;
+  senderName: string;
+  message: string;
 }
 
 export interface FollowPayload {
