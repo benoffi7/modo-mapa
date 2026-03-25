@@ -182,11 +182,11 @@
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificacion en frontend (AdminGuard) y server-side (Firestore rules)
-- 11 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
+- 13 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
 
 | Tab | Descripcion |
 |-----|-------------|
-| **Resumen** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback, commentLikes), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard), "Salud de comentarios" section (editados count, % editados, respuestas count, % respuestas) |
+| **Resumen** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback, commentLikes, check-ins, follows, recomendaciones, precios), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard), "Salud de comentarios" section, **Estado de Crons**: health indicators para Rankings (freshness, distribucion de tiers pie chart, top 5) y Trending (freshness, lista de comercios trending con scores) |
 | **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags, price levels, comment likes) con ultimos 20 items, indicador de flagged. Comentarios: columnas Likes y Resp. (replyCount), chips "editado" (si `updatedAt`) y "Respuesta" (si `parentId`) |
 | **Feedback** | Tabla de feedback con categoria, mensaje, status (pending/viewed/responded/resolved), filtro por status. Columna "Comercio" con chip clickeable que abre dialog con detalles (nombre, ID, dirección, tags). Filtro por comercio (Autocomplete). Preview de PDF adjunto como link. Acciones admin: responder (respondToFeedback callable), resolver (resolveFeedback callable), crear issue en GitHub (createGithubIssueFromFeedback callable). Link a GitHub issue si existe |
 | **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo (incl. commentLikes line), usuarios activos, total escrituras, new accounts trend. Click en leyenda para mostrar/ocultar series |
@@ -196,7 +196,9 @@
 | **Backups** | Crear backup manual, listar con paginacion (20/pagina), restaurar con backup de seguridad automatico, eliminar con confirmacion. Usa Cloud Functions callable |
 | **Fotos** | Panel de revision de fotos de menu. Filtro por status (todas/pendientes/aprobadas/rechazadas) con contadores. Acciones contextuales por status: aprobar pendientes/rechazadas, rechazar con razon, eliminar aprobadas/rechazadas. Badge de reportes en cada card |
 | **Rendimiento** | Web Vitals (LCP, INP, CLS, TTFB) con semaforos verde/amarillo/rojo segun umbrales. Percentiles p50/p75/p95. Graficos de tendencia temporal. Latencia de queries Firestore (p50/p95). Timing de Cloud Functions (p50/p95/count, agregado por `dailyMetrics`). Storage stats (bytes, archivos, barra de cuota). Filtros: periodo (hoy/7d/30d), dispositivo (all/mobile/desktop), conexion (all/wifi/4g/3g). Descompuesto en subcomponentes en `admin/perf/` |
-| **Funcionalidades** | Metricas por funcionalidad: cards con numero de hoy (prominente) + total acumulado. Tendencia vs ayer (flecha). Click expande grafico lineal 30 dias. Features con counters server-side: ratings, comments, likes, favorites, tags, feedback. Features GA4 integradas via `getAnalyticsReport` Cloud Function: Sorprendeme, listas, busqueda, compartir, fotos, dark mode. Cache en `config/analyticsCache` con TTL 1h. Graceful degradation si GA4 API falla (Alert warning, no crash). Seccion Adopcion: usuarios totales, activos hoy, tasa de actividad |
+| **Listas** | Stats globales (total, publicas, privadas, colaborativas, total items, promedio items/lista), top 10 listas por tamano. Toggle listas destacadas (callable getPublicLists/toggleFeaturedList) |
+| **Funcionalidades** | Metricas por funcionalidad: cards con numero de hoy (prominente) + total acumulado. Tendencia vs ayer (flecha). Click expande grafico lineal 30 dias. Features Firestore: ratings, comments, likes, favorites, tags, feedback, check-ins, follows, recomendaciones, nivel de gasto. Features GA4: Sorprendeme, listas, busqueda, compartir, fotos, dark mode, preguntas Q&A. Cache en `config/analyticsCache` con TTL 1h. Graceful degradation si GA4 API falla. Seccion Adopcion: usuarios totales, activos hoy, tasa de actividad |
+| **Notificaciones** | Stats globales (total, leidas, no leidas, tasa de lectura). Tabla desglose por tipo (8 tipos) con total, leidas, tasa de lectura con barra de progreso. Highlight rojo si tasa <20% |
 
 ---
 
