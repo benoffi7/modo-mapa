@@ -125,6 +125,7 @@
 | **Markdown lint** | Archivos `.md` deben cumplir markdownlint (`.markdownlint.json`). Reglas clave: blank lines around headings/lists/fences, language en code blocks. |
 | **Lazy loading admin** | `/admin` usa `lazy()` + `Suspense`. No carga MapProvider/APIProvider. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
+| **Logger centralizado** | `src/utils/logger.ts` — `logger.error()`, `.warn()`, `.log()`. En DEV: console. En PROD: errors a Sentry, warn/log silenciados. Nunca usar `console.*` directamente. |
 
 ## Dark mode
 
