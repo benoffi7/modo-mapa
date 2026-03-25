@@ -37,7 +37,7 @@ export async function addFavorite(userId: string, businessId: string): Promise<v
   // Fan-out to followers
   import('./feedFanOut').then(({ fanOutFromAction }) =>
     fanOutFromAction(userId, 'favorite', businessId, docId(userId, businessId)),
-  ).catch(() => {});
+  ).catch((err) => { if (import.meta.env.DEV) console.debug('fan-out skipped:', err); });
 }
 
 export async function removeFavorite(userId: string, businessId: string): Promise<void> {

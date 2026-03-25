@@ -53,7 +53,7 @@ export async function upsertRating(
   // Fan-out to followers (fire-and-forget)
   import('./feedFanOut').then(({ fanOutFromAction }) =>
     fanOutFromAction(userId, 'rating', businessId, docId),
-  ).catch(() => {});
+  ).catch((err) => { if (import.meta.env.DEV) console.debug('fan-out skipped:', err); });
 }
 
 export async function upsertCriteriaRating(

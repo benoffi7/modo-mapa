@@ -51,7 +51,7 @@ export async function addComment(
   if (!parentId) {
     import('./feedFanOut').then(({ fanOutFromAction }) =>
       fanOutFromAction(userId, 'comment', businessId, `comment_${Date.now()}`),
-    ).catch(() => {});
+    ).catch((err) => { if (import.meta.env.DEV) console.debug('fan-out skipped:', err); });
   }
 }
 
