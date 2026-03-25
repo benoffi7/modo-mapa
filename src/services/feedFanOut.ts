@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { allBusinesses } from '../hooks/useBusinesses';
 import type { ActivityType } from '../types';
 import { logger } from '../utils/logger';
 
@@ -28,18 +29,15 @@ export async function fanOutFromAction(
     );
     if (followersSnap.empty) return;
 
-    // Resolve names
+    // Resolve actor name from users collection
     const userSnap = await getDoc(doc(db, COLLECTIONS.USERS, actorId));
     const actorName = userSnap.exists()
       ? (userSnap.data() as { displayName?: string }).displayName ?? 'Alguien'
       : 'Alguien';
 
-    let businessName = '';
-    // businesses collection uses allBusinesses cache — just read from Firestore
-    const bizSnap = await getDoc(doc(db, 'businesses', businessId));
-    if (bizSnap.exists()) {
-      businessName = (bizSnap.data() as { name?: string }).name ?? '';
-    }
+    // Resolve business name from local JSON data (not Firestore)
+    const biz = allBusinesses.find((b) => b.id === businessId);
+    const businessName = biz?.name ?? '';
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -62,7 +60,6 @@ export async function fanOutFromAction(
       });
     }
   } catch (err) {
-    // Fan-out is best-effort — don't break the main action
     if (import.meta.env.DEV) logger.error('Feed fan-out failed:', err);
   }
 }
