@@ -9,6 +9,10 @@ export interface AdminCounters {
   customTags: number;
   userTags: number;
   commentLikes: number;
+  checkins: number;
+  follows: number;
+  recommendations: number;
+  priceLevels: number;
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;

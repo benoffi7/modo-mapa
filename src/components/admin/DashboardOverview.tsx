@@ -125,6 +125,18 @@ export default function DashboardOverview() {
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatCard label="Likes" value={counters?.commentLikes ?? 0} />
         </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Check-ins" value={counters?.checkins ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Follows" value={counters?.follows ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Recomendaciones" value={counters?.recommendations ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label="Precios" value={counters?.priceLevels ?? 0} />
+        </Grid>
 
         {commentStats && commentStats.total > 0 && (
           <>
