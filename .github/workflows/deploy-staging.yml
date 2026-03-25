@@ -8,7 +8,48 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+        continue-on-error: true
+      - name: Check for problematic patterns
+        run: bash scripts/pre-staging-check.sh
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:run
+
+  functions-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cd functions && npm ci && npm run test:run
+
   build-and-deploy:
+    needs: [lint, test, functions-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,22 +62,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Install functions dependencies
-        run: cd functions && npm ci
-
-      - name: Check for problematic patterns
-        run: bash scripts/pre-staging-check.sh
-
-      - run: npm run lint
-
-      - run: npm run test:run
-
-      - name: Run functions tests
-        run: cd functions && npm run test:run
 
       - run: npm run build
         env:

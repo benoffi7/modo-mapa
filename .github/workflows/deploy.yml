@@ -8,7 +8,42 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+        continue-on-error: true
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
+
+  functions-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cd functions && npm ci && npm run test:coverage
+
   build-and-deploy:
+    needs: [lint, test, functions-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,17 +54,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - run: npm run lint
-
-      - run: npm run test:coverage
-
-      - name: Run functions tests with coverage
-        run: |
-          cd functions && npm ci && npm run test:coverage
 
       - run: npm run build
         env:
