@@ -397,7 +397,7 @@ service cloud.firestore {
     // Solo lectura de docs propios. No updates ni deletes (registro permanente).
     match /checkins/{docId} {
       allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+        && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['userId', 'businessId', 'businessName', 'createdAt', 'location'])
         && request.resource.data.userId == request.auth.uid
@@ -428,7 +428,8 @@ service cloud.firestore {
     match /follows/{docId} {
       allow read: if request.auth != null
         && (resource.data.followerId == request.auth.uid
-            || resource.data.followedId == request.auth.uid);
+            || resource.data.followedId == request.auth.uid
+            || isAdmin());
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt'])
         && request.resource.data.followerId == request.auth.uid
