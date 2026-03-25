@@ -20,7 +20,8 @@ export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
 
   useEffect(() => {
     trackEvent(EVT_FEED_VIEWED);
-  }, []);
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reload on mount only
 
   const handleItemClick = useCallback((businessId: string) => {
     trackEvent(EVT_FEED_ITEM_CLICKED, { business_id: businessId });
