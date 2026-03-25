@@ -20,6 +20,8 @@ interface AggregatedPoint {
   feedback: number;
   tags: number;
   commentLikes: number;
+  follows: number;
+  recommendations: number;
   activeUsers: number;
   totalWrites: number;
   newAccounts: number;
@@ -70,6 +72,8 @@ function aggregate(metrics: DailyMetrics[], granularity: Granularity): Aggregate
       feedback: points.reduce((s, p) => s + (p.writesByCollection.feedback ?? 0), 0),
       tags: points.reduce((s, p) => s + (p.writesByCollection.userTags ?? 0) + (p.writesByCollection.customTags ?? 0), 0),
       commentLikes: points.reduce((s, p) => s + (p.writesByCollection.commentLikes ?? 0), 0),
+      follows: points.reduce((s, p) => s + (p.writesByCollection.follows ?? 0), 0),
+      recommendations: points.reduce((s, p) => s + (p.writesByCollection.recommendations ?? 0), 0),
       activeUsers: granularity === 'day'
         ? points[0].activeUsers
         : Math.round(points.reduce((s, p) => s + p.activeUsers, 0) / points.length),
@@ -116,6 +120,8 @@ export default function TrendsPanel() {
                 { dataKey: 'feedback', color: '#7b1fa2', label: 'Feedback' },
                 { dataKey: 'tags', color: '#00796b', label: 'Tags' },
                 { dataKey: 'commentLikes', color: '#e91e63', label: 'Likes' },
+                { dataKey: 'follows', color: '#3F51B5', label: 'Follows' },
+                { dataKey: 'recommendations', color: '#FF9800', label: 'Recomendaciones' },
               ]}
             />
           </Grid>
