@@ -1,6 +1,6 @@
 # Deuda Técnica — Backlog
 
-**Última actualización:** 2026-03-24
+**Última actualización:** 2026-03-25
 **Consolidado de:** audit-phase4-v1, pre-launch-audit, security-audit-v1.4
 
 ---
@@ -27,16 +27,19 @@
 
 | Chunk | Raw | Gzipped | Contenido |
 |-------|-----|---------|-----------|
-| `index-*.js` (1) | 448 KB | 148 KB | react, react-dom, react-router-dom, app code |
-| `index-*.js` (2) | 448 KB | 147 KB | @vis.gl/react-google-maps, @sentry/react, app hooks/services |
+| `index-*.js` | 269 KB | 88 KB | react, react-dom, react-router-dom, app code |
+| `MapAppShell-*.js` | 137 KB | 48 KB | AppShell + map components (lazy-loaded) |
+| `google-maps-*.js` | 21 KB | 8 KB | @vis.gl/react-google-maps (lazy-loaded) |
 | `mui-*.js` | 468 KB | 142 KB | @mui/material (tree-shaken) |
 | `firebase-*.js` | 465 KB | 142 KB | firebase/firestore, firebase/auth, firebase/storage |
 | `recharts-*.js` | 375 KB | 110 KB | recharts (admin + stats only) |
 
-**Candidatos a code-split futuro:**
-- `@vis.gl/react-google-maps` (~100KB) — podría lazy-loadarse con el mapa
-- `@sentry/react` (~30KB) — podría cargarse después del initial render
+**Optimizaciones aplicadas:**
+- `@vis.gl/react-google-maps` — lazy-loaded con MapAppShell (manual chunk + React.lazy)
+- `@sentry/react` — ya lazy-loaded via dynamic import en sentry.ts, logger.ts, ErrorBoundary.tsx
 - recharts ya está excluido del precache (v2.27.4)
+
+**Resultado:** index principal reducido de 448 KB (148 KB gz) a 269 KB (88 KB gz) — **40% menos**
 
 ### Recientemente resueltos
 

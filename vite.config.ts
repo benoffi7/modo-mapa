@@ -112,6 +112,7 @@ export default defineConfig({
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
           mui: ['@mui/material', '@mui/icons-material'],
           recharts: ['recharts'],
+          'google-maps': ['@vis.gl/react-google-maps'],
         },
       },
     },
