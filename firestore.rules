@@ -283,7 +283,7 @@ service cloud.firestore {
     match /userSettings/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
@@ -417,6 +417,30 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
+    }
+
+    // Follows — relacion unidireccional entre usuarios.
+    // Cualquier autenticado puede leer. Owner (followerId) puede crear/eliminar.
+    // No updates.
+    match /follows/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt'])
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followedId is string
+        && request.resource.data.followedId.size() > 0
+        && request.resource.data.followerId != request.resource.data.followedId
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if request.auth != null
+        && resource.data.followerId == request.auth.uid;
+    }
+
+    // Activity feed — subcollection por usuario, solo lectura por owner.
+    // Cloud Functions escribe via admin SDK (fan-out writes).
+    match /activityFeed/{userId}/items/{itemId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
     }
 
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.

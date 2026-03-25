@@ -15,6 +15,7 @@ export { onUserCreated } from './triggers/users';
 export { onMenuPhotoCreated } from './triggers/menuPhotos';
 export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels';
 export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
+export { onFollowCreated, onFollowDeleted } from './triggers/follows';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';
@@ -23,6 +24,7 @@ export { computeWeeklyRanking, computeMonthlyRanking, computeAlltimeRanking } fr
 export { cleanupExpiredNotifications } from './scheduled/cleanupNotifications';
 export { generateFeaturedLists } from './scheduled/featuredLists';
 export { computeTrendingBusinesses } from './scheduled/trending';
+export { cleanupActivityFeed } from './scheduled/cleanupActivityFeed';
 
 // Admin
 export { createBackup, listBackups, restoreBackup, deleteBackup } from './admin/backups';

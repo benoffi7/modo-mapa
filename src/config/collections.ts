@@ -20,4 +20,6 @@ export const COLLECTIONS = {
   LIST_ITEMS: 'listItems',
   TRENDING_BUSINESSES: 'trendingBusinesses',
   CHECKINS: 'checkins',
+  FOLLOWS: 'follows',
+  ACTIVITY_FEED: 'activityFeed',
 } as const;

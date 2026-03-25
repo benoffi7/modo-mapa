@@ -48,6 +48,8 @@ const HelpSection = lazy(() => import('../menu/HelpSection'));
 const CheckInsView = lazy(() => import('../menu/CheckInsView'));
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection'));
+const FollowedList = lazy(() => import('../menu/FollowedList').then((m) => ({ default: m.FollowedList })));
+const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
 import VerificationNudge from '../onboarding/VerificationNudge';
@@ -76,7 +78,7 @@ interface Props {
   onEmailDialogClose: () => void;
 }
 
-export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
+export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'followed' | 'activity' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
 
 const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   favorites: 'Favoritos',
@@ -84,6 +86,8 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   recent: 'Recientes',
   checkins: 'Mis visitas',
   suggestions: 'Sugeridos para vos',
+  followed: 'Seguidos',
+  activity: 'Actividad',
   comments: 'Comentarios',
   ratings: 'Calificaciones',
   feedback: 'Feedback',
@@ -338,6 +342,8 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
                   {activeSection === 'lists' && <SharedListsView onSelectBusiness={handleSelectBusiness} sharedListId={sharedListId} onRegisterBackHandler={registerListsBackHandler} />}
                   {activeSection === 'recent' && <RecentVisits onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'checkins' && <CheckInsView onSelectBusiness={handleSelectBusiness} />}
+                  {activeSection === 'followed' && <FollowedList onUserClick={() => {}} />}
+                  {activeSection === 'activity' && <ActivityFeedView onBusinessClick={(bizId) => { handleSelectBusiness({ id: bizId } as Business); }} />}
                   {activeSection === 'suggestions' && <SuggestionsView onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'comments' && <CommentsList onSelectBusiness={handleSelectBusiness} />}
                   {activeSection === 'ratings' && <RatingsList onSelectBusiness={handleSelectBusiness} />}

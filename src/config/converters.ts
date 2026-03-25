@@ -3,7 +3,7 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness, CheckIn } from '../types';
+import type { UserProfile, Rating, RatingCriteria, Comment, CommentLike, UserTag, CustomTag, Favorite, Feedback, FeedbackCategory, FeedbackStatus, MenuPhoto, PriceLevel, UserRanking, UserRankingEntry, AppNotification, NotificationType, UserSettings, SharedList, ListItem, TrendingData, TrendingBusiness, CheckIn, Follow, ActivityFeedItem, ActivityType } from '../types';
 import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
@@ -286,6 +286,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyRankings: settings.notifyRankings,
       notifyFeedback: settings.notifyFeedback,
       notifyReplies: settings.notifyReplies,
+      notifyFollowers: settings.notifyFollowers,
       analyticsEnabled: settings.analyticsEnabled,
       ...(settings.locality != null && { locality: settings.locality }),
       ...(settings.localityLat != null && { localityLat: settings.localityLat }),
@@ -303,6 +304,7 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       notifyRankings: d.notifyRankings ?? false,
       notifyFeedback: d.notifyFeedback ?? true,
       notifyReplies: d.notifyReplies ?? true,
+      notifyFollowers: d.notifyFollowers ?? true,
       analyticsEnabled: d.analyticsEnabled ?? false,
       ...(d.locality != null && { locality: d.locality }),
       ...(d.localityLat != null && { localityLat: d.localityLat }),
@@ -389,6 +391,53 @@ export const listItemConverter: FirestoreDataConverter<ListItem> = {
       businessId: String(d.businessId ?? ''),
       addedBy: String(d.addedBy ?? ''),
       createdAt: toDate(d.createdAt),
+    };
+  },
+};
+
+export const followConverter: FirestoreDataConverter<Follow> = {
+  toFirestore(follow: Follow) {
+    return {
+      followerId: follow.followerId,
+      followedId: follow.followedId,
+      createdAt: follow.createdAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): Follow {
+    const d = snapshot.data(options);
+    return {
+      followerId: d.followerId,
+      followedId: d.followedId,
+      createdAt: toDate(d.createdAt),
+    };
+  },
+};
+
+export const activityFeedItemConverter: FirestoreDataConverter<ActivityFeedItem> = {
+  toFirestore(item: ActivityFeedItem) {
+    return {
+      actorId: item.actorId,
+      actorName: item.actorName,
+      type: item.type,
+      businessId: item.businessId,
+      businessName: item.businessName,
+      referenceId: item.referenceId,
+      createdAt: item.createdAt,
+      expiresAt: item.expiresAt,
+    };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): ActivityFeedItem {
+    const d = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      actorId: d.actorId,
+      actorName: d.actorName,
+      type: d.type as ActivityType,
+      businessId: d.businessId,
+      businessName: d.businessName,
+      referenceId: d.referenceId ?? '',
+      createdAt: toDate(d.createdAt),
+      expiresAt: toDate(d.expiresAt),
     };
   },
 };

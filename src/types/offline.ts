@@ -12,7 +12,9 @@ export type OfflineActionType =
   | 'comment_like'
   | 'comment_unlike'
   | 'checkin_create'
-  | 'checkin_delete';
+  | 'checkin_delete'
+  | 'follow_add'
+  | 'follow_remove';
 
 /** Status de una accion en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -42,6 +44,7 @@ export type OfflineActionPayload =
   | CommentLikePayload
   | CheckinCreatePayload
   | CheckinDeletePayload
+  | FollowPayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -87,6 +90,10 @@ export interface CheckinCreatePayload {
 
 export interface CheckinDeletePayload {
   checkInId: string;
+}
+
+export interface FollowPayload {
+  followedId: string;
 }
 
 /** For action types that need no extra data beyond userId/businessId on the action */

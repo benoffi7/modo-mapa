@@ -3,6 +3,7 @@ import { getDb } from '../helpers/env';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { updateRatingAggregates } from '../utils/aggregates';
 import { trackFunctionTiming } from '../utils/perfTracker';
+import { fanOutToFollowers } from '../utils/fanOut';
 
 export const onRatingWritten = onDocumentWritten(
   'ratings/{ratingId}',
@@ -22,6 +23,17 @@ export const onRatingWritten = onDocumentWritten(
       await incrementCounter(db, 'ratings', 1);
       await trackWrite(db, 'ratings');
       await updateRatingAggregates(db, businessId, 'add', score);
+
+      // Fan-out to followers
+      const userId = data.userId as string;
+      const userSnap = await db.doc(`users/${userId}`).get();
+      const actorName = userSnap.exists ? (userSnap.data()!.displayName as string) : 'Alguien';
+      const bizSnap = await db.doc(`businesses/${businessId}`).get();
+      const businessName = bizSnap.exists ? (bizSnap.data()!.name as string) : '';
+      await fanOutToFollowers(db, {
+        actorId: userId, actorName, type: 'rating',
+        businessId, businessName, referenceId: event.params.ratingId,
+      });
     } else if (beforeExists && afterExists) {
       // Update (score change)
       const oldScore = before!.data()!.score as number;

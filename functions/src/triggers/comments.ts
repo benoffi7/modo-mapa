@@ -8,6 +8,7 @@ import { incrementBusinessCount } from '../utils/aggregates';
 import { logAbuse } from '../utils/abuseLogger';
 import { createNotification } from '../utils/notifications';
 import { trackFunctionTiming } from '../utils/perfTracker';
+import { fanOutToFollowers } from '../utils/fanOut';
 
 export const onCommentCreated = onDocumentCreated(
   'comments/{commentId}',
@@ -89,6 +90,17 @@ export const onCommentCreated = onDocumentCreated(
           referenceId: parentId,
         });
       }
+    }
+
+    // 6. Fan-out to followers (only for root comments, not replies)
+    if (!parentId && businessId) {
+      const displayName = (data.userName as string) || 'Alguien';
+      const bizSnap = await db.doc(`businesses/${businessId}`).get();
+      const bizName = bizSnap.exists ? (bizSnap.data()!.name as string) : '';
+      await fanOutToFollowers(db, {
+        actorId: userId, actorName: displayName, type: 'comment',
+        businessId, businessName: bizName, referenceId: event.params.commentId,
+      });
     }
 
     await trackFunctionTiming('onCommentCreated', startMs);

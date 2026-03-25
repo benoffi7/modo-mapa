@@ -274,6 +274,8 @@
     - [PRD](/feat/social/recomendaciones-usuarios/prd.md)
   - [Seguir Usuarios](/feat/social/seguir-usuarios/)
     - [PRD](/feat/social/seguir-usuarios/prd.md)
+    - [Specs](/feat/social/seguir-usuarios/specs.md)
+    - [Plan](/feat/social/seguir-usuarios/plan.md)
 
 - **[UX](/feat/ux/)**
   - [Change Password Dialog UX](/feat/ux/change-password-dialog-ux/)

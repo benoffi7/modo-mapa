@@ -117,10 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
-      await updateDoc(userRef, { displayName: trimmed });
+      await updateDoc(userRef, { displayName: trimmed, displayNameLower: trimmed.toLowerCase() });
     } else {
       await setDoc(userRef, {
         displayName: trimmed,
+        displayNameLower: trimmed.toLowerCase(),
         createdAt: serverTimestamp(),
       });
     }
