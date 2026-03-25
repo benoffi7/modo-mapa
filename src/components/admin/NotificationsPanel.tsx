@@ -51,7 +51,7 @@ export default function NotificationsPanel() {
               <StatCard label="No leidas" value={data.unread} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <StatCard label="Tasa de lectura" value={`${globalReadRate}%`} />
+              <StatCard label={`Tasa de lectura (${globalReadRate}%)`} value={globalReadRate} />
             </Grid>
           </Grid>
 

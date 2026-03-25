@@ -54,7 +54,9 @@ export default function CronHealthSection() {
 
   if (loading || error) {
     return (
-      <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando estado de crons." />
+      <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando estado de crons.">
+        {null}
+      </AdminPanelWrapper>
     );
   }
 
