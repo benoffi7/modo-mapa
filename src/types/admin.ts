@@ -105,3 +105,12 @@ export interface NotificationDetails {
   unread: number;
   byType: NotificationTypeBreakdown[];
 }
+
+export interface ListStats {
+  totalLists: number;
+  publicLists: number;
+  privateLists: number;
+  collaborativeLists: number;
+  totalItems: number;
+  avgItemsPerList: number;
+}

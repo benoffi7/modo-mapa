@@ -30,9 +30,10 @@ import {
   menuPhotoConverter,
   trendingDataConverter,
   userRankingConverter,
+  sharedListConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown } from '../types/admin';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel, TrendingData, UserRanking } from '../types';
 
@@ -427,4 +428,43 @@ export async function fetchNotificationDetails(): Promise<NotificationDetails> {
     .sort((a, b) => b.total - a.total);
 
   return { total, read, unread: total - read, byType };
+}
+
+// ── Lists ──────────────────────────────────────────────────────────────
+
+export async function fetchListStats(): Promise<ListStats> {
+  const snap = await getDocs(
+    collection(db, COLLECTIONS.SHARED_LISTS).withConverter(sharedListConverter),
+  );
+
+  let publicLists = 0;
+  let privateLists = 0;
+  let collaborativeLists = 0;
+  let totalItems = 0;
+
+  for (const d of snap.docs) {
+    const list = d.data();
+    if (list.isPublic) publicLists++;
+    else privateLists++;
+    if (list.editorIds.length > 0) collaborativeLists++;
+    totalItems += list.itemCount;
+  }
+
+  const totalLists = snap.size;
+  const avgItemsPerList = totalLists > 0 ? Math.round(totalItems / totalLists) : 0;
+
+  return { totalLists, publicLists, privateLists, collaborativeLists, totalItems, avgItemsPerList };
+}
+
+export async function fetchTopLists(topN = 10): Promise<Array<{ name: string; ownerId: string; itemCount: number; isPublic: boolean }>> {
+  const q = query(
+    collection(db, COLLECTIONS.SHARED_LISTS).withConverter(sharedListConverter),
+    orderBy('itemCount', 'desc'),
+    limit(topN),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => {
+    const list = d.data();
+    return { name: list.name, ownerId: list.ownerId, itemCount: list.itemCount, isPublic: list.isPublic };
+  });
 }
