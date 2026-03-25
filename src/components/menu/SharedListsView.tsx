@@ -93,7 +93,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
       if (!ignore) setSharedList(list);
       const items = await fetchListItems(list.id);
       if (!ignore) { setSharedItems(items); setLoadingShared(false); }
-    }).catch(() => { if (!ignore) setLoadingShared(false); });
+    }).catch((err) => { if (import.meta.env.DEV) logger.error('Failed to load shared list:', err); if (!ignore) setLoadingShared(false); });
     return () => { ignore = true; };
   }, [sharedListId]);
 
@@ -130,7 +130,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
     let ignore = false;
     fetchUserLists(user.uid).then((result) => {
       if (!ignore) { setLists(result); setIsLoading(false); }
-    }).catch(() => { if (!ignore) setIsLoading(false); });
+    }).catch((err) => { if (import.meta.env.DEV) logger.error('Failed to load user lists:', err); if (!ignore) setIsLoading(false); });
     return () => { ignore = true; };
   }, [user]);
 
