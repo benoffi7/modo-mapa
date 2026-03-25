@@ -435,17 +435,11 @@ service cloud.firestore {
         && resource.data.followerId == request.auth.uid;
     }
 
-    // Activity feed — subcollection por usuario.
-    // Written by Cloud Functions (fan-out) and client-side fan-out.
-    // Only authenticated users can create items (for followers they are actor of).
+    // Activity feed — subcollection por usuario, solo lectura por owner.
+    // Cloud Functions escribe via admin SDK (fan-out writes).
     match /activityFeed/{userId}/items/{itemId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['actorId', 'actorName', 'type', 'businessId', 'businessName', 'referenceId', 'createdAt', 'expiresAt'])
-        && request.resource.data.actorId == request.auth.uid
-        && request.resource.data.type in ['rating', 'comment', 'favorite']
-        && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow write: if false;
     }
 
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.

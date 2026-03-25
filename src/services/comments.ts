@@ -46,13 +46,6 @@ export async function addComment(
 
   invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
   trackEvent('comment_submit', { business_id: businessId, is_edit: false, is_reply: !!parentId });
-
-  // Fan-out to followers (only for root comments, not replies)
-  if (!parentId) {
-    import('./feedFanOut').then(({ fanOutFromAction }) =>
-      fanOutFromAction(userId, 'comment', businessId, `comment_${Date.now()}`),
-    ).catch((err) => { if (import.meta.env.DEV) console.debug('fan-out skipped:', err); });
-  }
 }
 
 export async function editComment(commentId: string, userId: string, newText: string): Promise<void> {

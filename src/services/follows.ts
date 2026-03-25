@@ -98,37 +98,4 @@ export async function fetchFollowers(
   return { docs, hasMore };
 }
 
-export async function searchUsers(
-  searchTerm: string,
-  maxResults = 10,
-): Promise<Array<{ userId: string; displayName: string }>> {
-  if (!searchTerm || searchTerm.length < 2) return [];
-
-  const lower = searchTerm.toLowerCase();
-
-  // Try displayNameLower first (new field), fallback to scanning displayName
-  let snap = await getDocs(
-    query(
-      collection(db, COLLECTIONS.USERS),
-      where('displayNameLower', '>=', lower),
-      where('displayNameLower', '<=', lower + '\uf8ff'),
-      limit(maxResults * 2),
-    ),
-  );
-
-  // Fallback: if no results (field not migrated yet), search by displayName
-  if (snap.empty) {
-    snap = await getDocs(
-      query(collection(db, COLLECTIONS.USERS), limit(200)),
-    );
-  }
-
-  const candidates = snap.docs
-    .map((d) => {
-      const data = d.data() as { displayName?: string; displayNameLower?: string };
-      return { userId: d.id, displayName: data.displayName ?? d.id };
-    })
-    .filter((u) => u.displayName.toLowerCase().includes(lower));
-
-  return candidates.slice(0, maxResults);
-}
+// searchUsers moved to src/services/users.ts

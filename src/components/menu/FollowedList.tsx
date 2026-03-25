@@ -6,6 +6,7 @@ import {
 import PeopleIcon from '@mui/icons-material/People';
 import { useAuth } from '../../context/AuthContext';
 import { fetchFollowing } from '../../services/follows';
+import { fetchUserDisplayNames } from '../../services/users';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Follow } from '../../types';
@@ -39,19 +40,12 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
 
     try {
       const result = await fetchFollowing(userId, 20, cursor ?? undefined);
-      const newItems = await Promise.all(
-        result.docs.map(async (d) => {
-          const data = d.data();
-          // We need displayName — fetch from users doc
-          const { getDoc, doc } = await import('firebase/firestore');
-          const { db } = await import('../../config/firebase');
-          const userSnap = await getDoc(doc(db, 'users', data.followedId));
-          const displayName = userSnap.exists()
-            ? (userSnap.data() as { displayName?: string }).displayName ?? data.followedId
-            : data.followedId;
-          return { userId: data.followedId, displayName };
-        }),
-      );
+      const followedIds = result.docs.map((d) => d.data().followedId);
+      const names = await fetchUserDisplayNames(followedIds);
+      const newItems = result.docs.map((d) => {
+        const followedId = d.data().followedId;
+        return { userId: followedId, displayName: names.get(followedId) ?? followedId };
+      });
 
       setHasMore(result.hasMore);
       setLastDoc(result.docs[result.docs.length - 1] ?? null);

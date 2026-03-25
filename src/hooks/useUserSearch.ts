@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { searchUsers } from '../services/follows';
+import { searchUsers } from '../services/users';
 import { logger } from '../utils/logger';
 
 export interface UserSearchResult {
