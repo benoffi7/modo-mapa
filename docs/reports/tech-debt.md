@@ -18,12 +18,16 @@
 | DT-8 | `AbuseAlerts` 643 líneas mega-component | ✅ v2.14.2 — Extraído alertsHelpers.ts (95 líneas) + KpiCard.tsx (29 líneas). Reducido a 238 líneas |
 | DT-9 | `CommentsList` 699 líneas mega-component | ✅ v2.14.3 — Extraído CommentsStats.tsx (64) + CommentsToolbar.tsx (88). Reducido a 586 líneas |
 | DT-10 | `SideMenu` 504 líneas con 12 nav items | ✅ v2.14.3 — Extraído SideMenuNav.tsx (106). Reducido a 396 líneas |
+| DT-11 | `SharedListsView.tsx` 703 líneas + Firestore inline queries | ✅ v2.27.1 — Extraído SharedListDetailView, CreateListDialog, InviteEditorDialog. Queries movidas a services. 703→398 líneas |
+| DT-12 | Bundle size: Google Maps + Sentry en main chunk | ✅ v2.27.5 — Google Maps lazy-loaded con MapAppShell, Sentry ya lazy. Index 448→269 KB (−40%) |
 
 ---
 
 ## Pendientes
 
-### Bundle size (análisis 2026-03-25)
+Sin deuda técnica pendiente.
+
+### Bundle size (referencia 2026-03-25)
 
 | Chunk | Raw | Gzipped | Contenido |
 |-------|-----|---------|-----------|
@@ -33,19 +37,6 @@
 | `mui-*.js` | 468 KB | 142 KB | @mui/material (tree-shaken) |
 | `firebase-*.js` | 465 KB | 142 KB | firebase/firestore, firebase/auth, firebase/storage |
 | `recharts-*.js` | 375 KB | 110 KB | recharts (admin + stats only) |
-
-**Optimizaciones aplicadas:**
-- `@vis.gl/react-google-maps` — lazy-loaded con MapAppShell (manual chunk + React.lazy)
-- `@sentry/react` — ya lazy-loaded via dynamic import en sentry.ts, logger.ts, ErrorBoundary.tsx
-- recharts ya está excluido del precache (v2.27.4)
-
-**Resultado:** index principal reducido de 448 KB (148 KB gz) a 269 KB (88 KB gz) — **40% menos**
-
-### Recientemente resueltos
-
-| ID | Descripción | Resolución |
-|----|-------------|------------|
-| DT-11 | `SharedListsView.tsx` 703 líneas + Firestore inline queries | v2.27.1 — Extraído SharedListDetailView, CreateListDialog, InviteEditorDialog. Queries movidas a services. 703→398 líneas, 0 firebase imports en componentes |
 
 ---
 
