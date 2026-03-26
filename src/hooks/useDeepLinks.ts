@@ -6,6 +6,7 @@ import { allBusinesses } from './useBusinesses';
 import type { TabId } from '../types';
 
 const VALID_TABS: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
+const BUSINESS_ID_RE = /^biz_\d{1,6}$/;
 
 /**
  * Handles URL deep links on mount:
@@ -21,12 +22,15 @@ export function useDeepLinks() {
     let changed = false;
 
     const bizId = searchParams.get('business');
-    if (bizId) {
+    if (bizId && BUSINESS_ID_RE.test(bizId)) {
       const biz = allBusinesses.find((b) => b.id === bizId);
       if (biz) {
         setActiveTab('buscar');
         setSelectedBusiness(biz);
       }
+      searchParams.delete('business');
+      changed = true;
+    } else if (bizId) {
       searchParams.delete('business');
       changed = true;
     }

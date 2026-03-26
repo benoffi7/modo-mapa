@@ -54,12 +54,18 @@ const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
 const DEFAULT_IDS = ['restaurant', 'cafe', 'bar', 'pizza', 'fastfood', 'bakery', 'icecream', 'sorprendeme'];
 const STORAGE_KEY = 'quick_actions_config';
 
+const VALID_SLOT_IDS = new Set(ALL_AVAILABLE_SLOTS.map((s) => s.id));
+
 function loadConfig(): string[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length === 8) return parsed;
+      if (
+        Array.isArray(parsed)
+        && parsed.length === 8
+        && parsed.every((id: unknown) => typeof id === 'string' && VALID_SLOT_IDS.has(id))
+      ) return parsed;
     }
   } catch { /* ignore */ }
   return DEFAULT_IDS;
