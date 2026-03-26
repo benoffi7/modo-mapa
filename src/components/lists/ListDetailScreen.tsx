@@ -57,7 +57,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleDelete = async () => {
-    await deleteList(list.id);
+    await deleteList(list.id, list.ownerId);
     toast.success('Lista eliminada');
     onDeleted();
   };
