@@ -152,7 +152,8 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu navegador
             (tema claro/oscuro, visitas recientes, preferencia de analytics, estado del
-            tutorial de bienvenida, y opcionalmente tu email si activás &quot;Recordar mi
+            tutorial de bienvenida, configuración de acciones rápidas del inicio, avatar
+            seleccionado, y opcionalmente tu email si activás &quot;Recordar mi
             email&quot;). Estos datos no se envían a
             ningún servidor y podés borrarlos en cualquier momento desde la configuración
             del navegador o desactivando la opción.
@@ -257,9 +258,8 @@ export default function PrivacyPolicy() {
       <Section title="Contacto">
         <P>
           Si tenés consultas sobre tus datos personales o los datos de comercios,
-          podés enviarnos un mensaje desde la sección <strong>Feedback</strong> del
-          menú lateral usando las categorías &quot;Datos de usuario&quot; o
-          &quot;Datos de comercio&quot;.
+          podés enviarnos un mensaje desde <strong>Perfil &gt; Ayuda y soporte &gt; Feedback</strong> usando
+          las categorías &quot;Datos de usuario&quot; o &quot;Datos de comercio&quot;.
         </P>
       </Section>
     </Box>

@@ -10,7 +10,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
@@ -18,6 +18,8 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 
 interface HelpItem {
   id: string;
@@ -28,74 +30,88 @@ interface HelpItem {
 
 const HELP_ITEMS: HelpItem[] = [
   {
-    id: 'mapa',
-    icon: <MapOutlinedIcon color="primary" />,
-    title: 'Mapa',
+    id: 'inicio',
+    icon: <HomeOutlinedIcon color="primary" />,
+    title: 'Inicio',
     description:
-      'Buscá comercios por nombre, dirección o categoría. Filtrá por tags y nivel de gasto ($/$$/$$). Tocá el botón de ubicación para centrar el mapa en tu posición.',
+      'Tu pantalla principal con saludo personalizado. Acciones rapidas para buscar por categoria o probar "Sorprendeme". Seccion "Especiales" con contenido destacado. Busquedas recientes para volver a lo que visitaste. Seccion "Para ti" con sugerencias personalizadas basadas en tus gustos.',
+  },
+  {
+    id: 'buscar',
+    icon: <MapOutlinedIcon color="primary" />,
+    title: 'Buscar',
+    description:
+      'Busca comercios por nombre, direccion o categoria. Filtra por tags y nivel de gasto ($/$$/$$). Toca el boton de ubicacion para centrar el mapa en tu posicion. Usa el toggle mapa/lista para alternar entre vista de mapa y lista de resultados ordenados por distancia. Las acciones rapidas del Inicio te llevan directamente aca con el filtro aplicado.',
   },
   {
     id: 'comercio',
     icon: <StorefrontOutlinedIcon color="primary" />,
     title: 'Comercio',
     description:
-      'Tocá un pin para ver el detalle. Podés calificar (global + multi-criterio), comentar o hacer preguntas (con respuestas, likes y mejor respuesta destacada, máximo 20 por día), marcar favorito, compartir con deep link, ver o subir foto de menú, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Las acciones muestran confirmación o error automáticamente. Si no tenés conexión, tus acciones se guardan y se sincronizan automáticamente al reconectar. Podés ver las acciones pendientes en el menú lateral.',
+      'Toca un pin en el mapa o un comercio en cualquier lista para ver el detalle. Podes calificar (global + multi-criterio), comentar o hacer preguntas (con respuestas, likes y mejor respuesta destacada, maximo 20 por dia), marcar favorito, compartir con deep link, ver o subir foto de menu, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Si no tenes conexion, tus acciones se guardan y se sincronizan automaticamente al reconectar.',
   },
   {
-    id: 'menu',
-    icon: <MenuOutlinedIcon color="primary" />,
-    title: 'Menú lateral',
+    id: 'social',
+    icon: <PeopleOutlinedIcon color="primary" />,
+    title: 'Social',
     description:
-      'Accedé a favoritos (con distancia al comercio), "Mis Listas" (creá listas temáticas y compartilas con un link), recientes, sugeridos para vos (con distancia y pestaña Tendencia con los comercios más populares de la semana), "Sorpréndeme" (te sugiere un comercio al azar que no visitaste, priorizando los cercanos), comentarios, calificaciones, feedback (con pestaña Mis envíos), rankings (semanal, mensual, anual e histórico con tendencia, tiers, badges, gráfico de evolución y perfil público al tocar un usuario), estadísticas, agregar comercio, configuración y ayuda. En Comentarios podés buscar por texto o nombre de comercio, ordenar (recientes, antiguos, más likes), filtrar por comercio, editar directamente desde el menú, ver un resumen con estadísticas, y en mobile deslizar para editar o eliminar. Las preguntas se identifican con un badge "Pregunta". Tirá hacia abajo en cualquier lista para refrescar los datos. Si es tu primera vez, vas a ver un checklist de "Primeros pasos" para orientarte. Cambiá el modo oscuro desde el footer del menú.',
+      'En la pestana Social encontras cuatro secciones: Actividad (feed de lo que hacen los usuarios que seguis), Seguidos (busca y segui a otros usuarios), Recomendaciones (comercios que te recomendaron, con badge de no leidas) y Rankings (semanal, mensual, anual e historico con tiers, badges y grafico de evolucion).',
   },
   {
-    id: 'notificaciones',
-    icon: <NotificationsOutlinedIcon color="primary" />,
-    title: 'Notificaciones',
+    id: 'listas',
+    icon: <BookmarkBorderIcon color="primary" />,
+    title: 'Listas',
     description:
-      'Campana en la barra de búsqueda. Recibís avisos de likes en comentarios, respuestas a tus comentarios, fotos aprobadas o rechazadas, cambios en rankings y respuestas a tu feedback. Podés desactivar cada tipo en Configuración. Tocá para ir al comercio o marcá como leídas.',
+      'En la pestana Listas tenes cuatro secciones: Favoritos (con filtros y distancia), Listas (crea listas tematicas con icono personalizado, hacelas publicas o privadas, e invita editores), Recientes (historial unificado de visitas y check-ins) y Colaborativas (listas donde te invitaron como editor).',
   },
   {
     id: 'perfil',
     icon: <PersonOutlinedIcon color="primary" />,
     title: 'Perfil',
     description:
-      'Tocá el nombre de cualquier usuario para ver su perfil público con actividad, medallas top-3 y estadísticas. Podés hacer tu perfil público o privado desde Configuración.',
+      'Tu perfil muestra un avatar personalizable (toca para elegir entre 20 opciones), tus estadisticas (lugares visitados, resenas, seguidores, favoritos), y tus logros con barra de progreso. Toca "Ver todos" para ver la grilla completa de logros con descripcion de como completar cada uno.',
+  },
+  {
+    id: 'notificaciones',
+    icon: <NotificationsOutlinedIcon color="primary" />,
+    title: 'Notificaciones',
+    description:
+      'Las notificaciones se encuentran en Perfil > Notificaciones, con un badge que muestra las no leidas. Recibis avisos de likes en comentarios, respuestas, fotos aprobadas o rechazadas, cambios en rankings, respuestas a feedback, nuevos seguidores y recomendaciones. Toca para ir al comercio o marca como leidas. Podes desactivar cada tipo en Configuracion.',
   },
   {
     id: 'configuracion',
     icon: <SettingsOutlinedIcon color="primary" />,
-    title: 'Configuración',
+    title: 'Configuracion',
     description:
-      'La primera sección es Cuenta: si sos anónimo, podés crear una cuenta o iniciar sesión; si ya tenés cuenta con email, podés ver el estado de verificación, cambiar contraseña o cerrar sesión. Debajo, perfil público o privado, datos de uso (analytics) y preferencias de notificaciones (likes, fotos, rankings, feedback). El toggle de modo oscuro está en el footer del menú lateral.',
+      'Accede desde Perfil > Configuracion. Incluye cuenta (crear cuenta, verificar email, cambiar contrasena, cerrar sesion), perfil publico/privado, datos de uso (analytics), localidad, preferencias de notificaciones y modo oscuro (en Privacidad y ajuste).',
   },
   {
     id: 'cuenta',
     icon: <AccountCircleOutlinedIcon color="primary" />,
     title: 'Cuenta',
     description:
-      'Por defecto tu cuenta es temporal (anónima). Podés crear una cuenta con email y contraseña para sincronizar tus datos entre dispositivos desde el menú lateral o Configuración. Para iniciar sesión en otro dispositivo, usá tu email y contraseña. Después de registrarte, verificá tu email: vas a ver un badge en el menú y podés reenviar el correo desde Configuración. Podés cambiar tu contraseña desde Configuración. Si olvidaste tu contraseña, tocá "Olvidé mi contraseña" en el diálogo de inicio de sesión. Al cerrar sesión se crea una nueva cuenta anónima; necesitás tu email y contraseña para volver a ingresar.',
-  },
-  {
-    id: 'seguir',
-    icon: <PeopleOutlinedIcon color="primary" />,
-    title: 'Seguir usuarios',
-    description:
-      'Desde el menú lateral, entrá a "Seguidos" para buscar y seguir a otros usuarios. Vas a ver su actividad (calificaciones, comentarios y favoritos) en la sección "Actividad". También podés seguir a alguien desde su perfil público tocando el botón "Seguir". En Configuración podés activar o desactivar las notificaciones de nuevos seguidores.',
+      'Por defecto tu cuenta es temporal (anonima). Podes crear una cuenta con email y contrasena para sincronizar tus datos entre dispositivos. Para iniciar sesion en otro dispositivo, usa tu email y contrasena. Despues de registrarte, verifica tu email. Podes cambiar tu contrasena desde Configuracion. Si olvidaste tu contrasena, toca "Olvide mi contrasena" en el dialogo de inicio de sesion.',
   },
   {
     id: 'recomendaciones',
     icon: <SendOutlinedIcon color="primary" />,
     title: 'Recomendaciones',
     description:
-      'Recomendá un comercio a otro usuario desde el detalle del comercio. Podés agregar un mensaje opcional (hasta 200 caracteres). Máximo 20 recomendaciones por día. Las recomendaciones que recibís aparecen en el menú lateral con un badge de no leídas. Tocá una para ir al comercio. En Configuración podés desactivar las notificaciones de recomendaciones.',
+      'Recomenda un comercio a otro usuario desde el detalle del comercio. Podes agregar un mensaje opcional (hasta 200 caracteres). Maximo 20 recomendaciones por dia. Las recomendaciones que recibis aparecen en Social > Recomendaciones con badge de no leidas. Toca una para ir al comercio.',
+  },
+  {
+    id: 'logros',
+    icon: <EmojiEventsOutlinedIcon color="primary" />,
+    title: 'Logros',
+    description:
+      'En tu Perfil podes ver tus logros con barra de progreso. Hay 8 logros disponibles: Explorador (check-ins), Social (seguidos), Critico (calificaciones), Viajero (localidades), Coleccionista (favoritos), Fotografo (fotos de menu), Embajador (recomendaciones) y En racha (dias consecutivos). Toca cualquier logro para ver que necesitas hacer para completarlo.',
   },
   {
     id: 'feedback',
     icon: <FeedbackOutlinedIcon color="primary" />,
     title: 'Feedback',
     description:
-      'Enviá sugerencias, reportá bugs o dejá tu opinión desde el menú lateral. Podés adjuntar una imagen al envío. En "Mis envíos" podés seguir el estado (pendiente, visto, respondido, resuelto), ver las respuestas del equipo y un indicador verde cuando hay una respuesta nueva.',
+      'Envia sugerencias, reporta bugs o deja tu opinion desde Perfil > Ayuda y soporte. Podes adjuntar una imagen al envio. En "Mis envios" podes seguir el estado (pendiente, visto, respondido, resuelto) y ver las respuestas del equipo.',
   },
 ];
 
