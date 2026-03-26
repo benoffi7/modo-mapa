@@ -1,9 +1,9 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import {
-  List, ListItemButton, ListItemAvatar, ListItemText,
-  Avatar, Typography, Box,
+  Typography, Box,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import { where } from 'firebase/firestore';
 import type { QueryConstraint } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
@@ -13,11 +13,15 @@ import { getRecommendationsCollection, markRecommendationAsRead, markAllRecommen
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
-import { formatRelativeTime } from '../../utils/formatDate';
+
+
 import { trackEvent } from '../../utils/analytics';
 import { EVT_RECOMMENDATION_OPENED, EVT_RECOMMENDATION_LIST_VIEWED } from '../../constants/analyticsEvents';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import type { Business, Recommendation } from '../../types';
+import { useSortLocation } from '../../hooks/useSortLocation';
+import { distanceKm, formatDistance } from '../../utils/distance';
+import { CATEGORY_LABELS } from '../../constants/business';
+import type { Business, BusinessCategory, Recommendation } from '../../types';
 import { logger } from '../../utils/logger';
 
 interface Props {
@@ -28,6 +32,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
   const userId = user?.uid;
+  const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getRecommendationsCollection(), []);
   const constraints = useMemo(
@@ -86,46 +91,49 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
           onRetry={reload}
           onLoadMore={loadMore}
         >
-          <List dense disablePadding>
-            {items.map((rec) => (
-              <ListItemButton
-                key={rec.id}
-                onClick={() => handleClick(rec)}
-                sx={{
-                  bgcolor: rec.read ? 'transparent' : 'action.hover',
-                  borderLeft: rec.read ? 'none' : '3px solid',
-                  borderLeftColor: rec.read ? 'transparent' : 'secondary.main',
-                  py: 1,
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar sx={{ width: 36, height: 36, fontSize: 16, bgcolor: 'secondary.main' }}>
-                    {rec.senderName.charAt(0).toUpperCase()}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Typography variant="body2">
-                      <strong>{rec.senderName}</strong> te recomienda{' '}
-                      <strong>{rec.businessName}</strong>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {items.map((rec) => {
+              const biz = allBusinesses.find((b) => b.id === rec.businessId);
+              const dist = biz ? formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, biz.lat, biz.lng)) : '';
+              const cat = biz ? (CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category) : '';
+              return (
+                <Box
+                  key={rec.id}
+                  onClick={() => handleClick(rec)}
+                  sx={{
+                    border: 1,
+                    borderColor: rec.read ? 'divider' : 'primary.main',
+                    borderRadius: 2,
+                    p: 1.5,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={600}>{rec.businessName}</Typography>
+                      <Typography variant="caption" color="primary.main">{cat}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                      <Typography sx={{ fontSize: 14, color: 'warning.main' }}>&#9733;</Typography>
+                      <Typography variant="caption" fontWeight={600}>--</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ borderTop: 1, borderColor: 'divider', mt: 1, pt: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
+                    {dist && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                        <PlaceOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="caption" color="text.secondary">{dist}</Typography>
+                      </Box>
+                    )}
+                    <Typography variant="caption" color="text.secondary">
+                      Recomendado por {rec.senderName}
                     </Typography>
-                  }
-                  secondary={
-                    <>
-                      {rec.message && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }} noWrap>
-                          &ldquo;{rec.message}&rdquo;
-                        </Typography>
-                      )}
-                      <Typography variant="caption" color="text.secondary">
-                        {formatRelativeTime(rec.createdAt)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItemButton>
-            ))}
-          </List>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
         </PaginatedListShell>
       </PullToRefreshWrapper>
     </Box>
