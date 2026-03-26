@@ -5,9 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
+import { getAvatarById } from '../../constants/avatars';
 import StatsCards from './StatsCards';
 import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
+
+const AvatarPicker = lazy(() => import('./AvatarPicker'));
 
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const NotificationsSection = lazy(() => import('./NotificationsSection'));
@@ -44,6 +47,9 @@ export default function ProfileScreen() {
   const { isOffline } = useConnectivity();
   const { navigateToListsSubTab } = useTabNavigation();
   const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | null>(null);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(undefined);
+  const avatar = getAvatarById(selectedAvatarId);
 
   const userName = displayName || 'Anonimo';
   const hasPendingActions = isOffline;
@@ -97,11 +103,24 @@ export default function ProfileScreen() {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 3, pb: 1 }}>
-        <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: 28, mb: 1 }}>
-          {userName.charAt(0).toUpperCase()}
+        <Avatar
+          onClick={() => setAvatarPickerOpen(true)}
+          sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: avatar ? 32 : 28, mb: 1, cursor: 'pointer' }}
+        >
+          {avatar ? avatar.emoji : userName.charAt(0).toUpperCase()}
         </Avatar>
         <Typography variant="h6" fontWeight={700}>{userName}</Typography>
       </Box>
+      <Suspense fallback={null}>
+        {avatarPickerOpen && (
+          <AvatarPicker
+            open
+            onClose={() => setAvatarPickerOpen(false)}
+            onSelect={(a) => setSelectedAvatarId(a.id)}
+            selectedId={selectedAvatarId}
+          />
+        )}
+      </Suspense>
 
       {/* Onboarding */}
       {user && !user.isAnonymous && (
