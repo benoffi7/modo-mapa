@@ -1,6 +1,15 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
+
+vi.mock('../config/firebase', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  onSnapshot: vi.fn(() => vi.fn()),
+  getCountFromServer: vi.fn(() => Promise.resolve({ data: () => ({ count: 0 }) })),
+}));
 import { createElement } from 'react';
 import { SelectionProvider, useSelection } from '../context/SelectionContext';
 import { TabProvider, useTab } from '../context/TabContext';
