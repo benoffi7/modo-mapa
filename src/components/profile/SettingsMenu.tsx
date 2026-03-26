@@ -1,4 +1,4 @@
-import { List, ListItemButton, ListItemIcon, ListItemText, Badge, Button, Box } from '@mui/material';
+import { Badge, Button, Box, Typography } from '@mui/material';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -11,6 +11,38 @@ import { useAuth } from '../../context/AuthContext';
 
 export type SettingsSection = 'notifications' | 'pendientes' | 'privacy' | 'config' | 'help';
 
+interface MenuItemProps {
+  icon: React.ReactElement;
+  label: string;
+  badge?: number;
+  onClick: () => void;
+}
+
+function MenuItem({ icon, label, badge, onClick }: MenuItemProps) {
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        p: 1.5,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 2,
+        cursor: 'pointer',
+        '&:hover': { bgcolor: 'action.hover' },
+      }}
+    >
+      {badge ? (
+        <Badge badgeContent={badge} color="primary" max={99}>{icon}</Badge>
+      ) : icon}
+      <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>{label}</Typography>
+      <ChevronRightIcon color="action" sx={{ fontSize: 20 }} />
+    </Box>
+  );
+}
+
 interface Props {
   onNavigate: (section: SettingsSection) => void;
   hasPendingActions: boolean;
@@ -18,70 +50,54 @@ interface Props {
 
 export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
   const { notifications } = useNotifications();
-  const { authMethod, signOut } = useAuth();
+  const { signOut } = useAuth();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <>
-      <List disablePadding>
-        <ListItemButton onClick={() => onNavigate('notifications')}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <Badge badgeContent={unreadCount} color="primary" max={99}>
-              <NotificationsOutlinedIcon />
-            </Badge>
-          </ListItemIcon>
-          <ListItemText primary="Notificaciones" />
-          <ChevronRightIcon color="action" />
-        </ListItemButton>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, pb: 2 }}>
+      <MenuItem
+        icon={<NotificationsOutlinedIcon />}
+        label="Notificaciones"
+        badge={unreadCount}
+        onClick={() => onNavigate('notifications')}
+      />
 
-        {hasPendingActions && (
-          <ListItemButton onClick={() => onNavigate('pendientes')}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <SyncProblemIcon color="warning" />
-            </ListItemIcon>
-            <ListItemText primary="Pendientes" />
-            <ChevronRightIcon color="action" />
-          </ListItemButton>
-        )}
-
-        <ListItemButton onClick={() => onNavigate('privacy')}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <ShieldOutlinedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Privacidad" />
-          <ChevronRightIcon color="action" />
-        </ListItemButton>
-
-        <ListItemButton onClick={() => onNavigate('config')}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <SettingsOutlinedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Configuración" />
-          <ChevronRightIcon color="action" />
-        </ListItemButton>
-
-        <ListItemButton onClick={() => onNavigate('help')}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <HelpOutlineIcon />
-          </ListItemIcon>
-          <ListItemText primary="Ayuda y soporte" />
-          <ChevronRightIcon color="action" />
-        </ListItemButton>
-      </List>
-
-      {authMethod !== 'anonymous' && (
-        <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon />}
-            onClick={signOut}
-          >
-            Cerrar sesión
-          </Button>
-        </Box>
+      {hasPendingActions && (
+        <MenuItem
+          icon={<SyncProblemIcon color="warning" />}
+          label="Pendientes"
+          onClick={() => onNavigate('pendientes')}
+        />
       )}
-    </>
+
+      <MenuItem
+        icon={<ShieldOutlinedIcon />}
+        label="Privacidad"
+        onClick={() => onNavigate('privacy')}
+      />
+
+      <MenuItem
+        icon={<SettingsOutlinedIcon />}
+        label="Configuración"
+        onClick={() => onNavigate('config')}
+      />
+
+      <MenuItem
+        icon={<HelpOutlineIcon />}
+        label="Ayuda y soporte"
+        onClick={() => onNavigate('help')}
+      />
+
+      <Button
+        fullWidth
+        variant="outlined"
+        color="error"
+        startIcon={<LogoutIcon />}
+        onClick={signOut}
+        sx={{ mt: 1 }}
+      >
+        Cerrar sesión
+      </Button>
+    </Box>
   );
 }
