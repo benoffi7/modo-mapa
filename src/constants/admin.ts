@@ -21,6 +21,17 @@ export const STATUS_LABELS: Record<StatusFilter, string> = {
   rejected: 'Rechazadas',
 };
 
+export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
+  like: 'Like',
+  photo_approved: 'Foto aprobada',
+  photo_rejected: 'Foto rechazada',
+  ranking: 'Ranking',
+  feedback_response: 'Respuesta feedback',
+  comment_reply: 'Respuesta comentario',
+  new_follower: 'Nuevo seguidor',
+  recommendation: 'Recomendacion',
+};
+
 export const ABUSE_TYPE_LABELS: Record<AbuseLog['type'], string> = {
   rate_limit: 'Rate Limit',
   flagged: 'Contenido Flaggeado',

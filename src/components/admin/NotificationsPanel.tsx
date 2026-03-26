@@ -15,18 +15,8 @@ import { fetchNotificationDetails } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import StatCard from './StatCard';
+import { NOTIFICATION_TYPE_LABELS } from '../../constants/admin';
 import type { NotificationDetails } from '../../types/admin';
-
-const TYPE_LABELS: Record<string, string> = {
-  like: 'Like',
-  photo_approved: 'Foto aprobada',
-  photo_rejected: 'Foto rechazada',
-  ranking: 'Ranking',
-  feedback_response: 'Respuesta feedback',
-  comment_reply: 'Respuesta comentario',
-  new_follower: 'Nuevo seguidor',
-  recommendation: 'Recomendacion',
-};
 
 export default function NotificationsPanel() {
   const fetcher = useCallback(() => fetchNotificationDetails(), []);
@@ -70,7 +60,7 @@ export default function NotificationsPanel() {
               <TableBody>
                 {data.byType.map((row) => (
                   <TableRow key={row.type}>
-                    <TableCell>{TYPE_LABELS[row.type] ?? row.type}</TableCell>
+                    <TableCell>{NOTIFICATION_TYPE_LABELS[row.type] ?? row.type}</TableCell>
                     <TableCell align="right">{row.total}</TableCell>
                     <TableCell align="right">{row.read}</TableCell>
                     <TableCell align="right">{row.total - row.read}</TableCell>

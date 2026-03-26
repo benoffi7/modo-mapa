@@ -43,13 +43,6 @@ export interface AuthStats {
   users: AuthUserInfo[];
 }
 
-export interface NotificationStats {
-  total: number;
-  read: number;
-  unread: number;
-  byType: Record<string, number>;
-}
-
 export interface SettingsAggregates {
   totalSettings: number;
   publicProfiles: number;
