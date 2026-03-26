@@ -9,6 +9,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ConnectivityProvider } from './context/ConnectivityContext';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { useScreenTracking } from './hooks/useScreenTracking';
+import { useForceUpdate } from './hooks/useForceUpdate';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ThemePlayground = lazy(() => import('./pages/ThemePlayground'));
@@ -25,6 +26,7 @@ function AdminFallback() {
 
 function App() {
   useScreenTracking();
+  useForceUpdate();
 
   return (
     <ColorModeProvider>
