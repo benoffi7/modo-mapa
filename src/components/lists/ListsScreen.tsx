@@ -21,7 +21,7 @@ const SUB_TABS: { id: ListsSubTab; label: string; icon: React.ReactElement }[] =
   { id: 'favoritos', label: 'Favoritos', icon: <FavoriteBorderIcon sx={{ fontSize: 18 }} /> },
   { id: 'listas', label: 'Listas', icon: <FolderOutlinedIcon sx={{ fontSize: 18 }} /> },
   { id: 'recientes', label: 'Recientes', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} /> },
-  { id: 'colaborativas', label: 'Colab.', icon: <GroupOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'colaborativas', label: 'Social', icon: <GroupOutlinedIcon sx={{ fontSize: 18 }} /> },
 ];
 
 export default function ListsScreen() {
