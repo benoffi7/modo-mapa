@@ -130,9 +130,10 @@ src/
 │   ├── auth/
 │   │   └── NameDialog.tsx
 │   ├── layout/
-│   │   ├── AppShell.tsx
+│   │   ├── TabShell.tsx              # Shell principal: 5 tabs + TabBar + deep links
+│   │   ├── TabBar.tsx               # BottomNavigation con 5 tabs, boton central elevado
 │   │   ├── ErrorBoundary.tsx
-│   │   └── SideMenu.tsx
+│   │   └── MapAppShell.tsx           # Provider tree: Selection + Tab + Onboarding → TabShell
 │   ├── map/
 │   │   ├── MapView.tsx
 │   │   ├── BusinessMarker.tsx

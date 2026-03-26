@@ -1,138 +1,143 @@
-# Arquitectura
+# Arquitectura v2 — Navegacion por Tabs
 
-## Arbol de componentes
+## Arbol de providers
 
 ```text
 main.tsx
-  └─ BrowserRouter (react-router-dom)
+  └─ BrowserRouter
        └─ App.tsx
-            ├─ ColorModeProvider (dark/light theme + persistence)
-            ├─ AuthProvider (Firebase Auth + displayName + Google Sign-In)
-            ├─ Routes
-            ├─ [/dev/theme] ThemePlayground (lazy, DEV only)
-            ├─ [/dev/constants] ConstantsDashboard (lazy, DEV only)
-            ├─ [/admin/*] AdminDashboard (lazy loaded)
-       │    ├─ AdminGuard (Google Sign-In + email verification)
-       │    └─ AdminLayout (tabs: Overview, Actividad, Feedback, Tendencias, Usuarios, Firebase Usage, Alertas, Backups, Fotos)
-       │         ├─ DashboardOverview (StatCards + PieCharts + TopLists + Custom Tags ranking)
-       │         ├─ ActivityFeed (tabs: comentarios, ratings, favoritos, tags)
-       │         ├─ FeedbackList (feedback con status filters, respond/resolve/create-issue actions)
-       │         ├─ TrendsPanel (graficos evolucion + selector dia/semana/mes/ano)
-       │         ├─ UsersPanel (rankings por usuario + stats)
-       │         ├─ FirebaseUsage (LineCharts + PieCharts + barras cuota)
-       │         ├─ AbuseAlerts (orquestador → alerts/KpiCard, alerts/alertsHelpers)
-       │         ├─ BackupsPanel (crear, listar, restaurar, eliminar backups Firestore)
-       │         ├─ PerformancePanel (orquestador → perf/SemaphoreCard, QueryLatencyTable, etc.)
-       │         ├─ FeaturesPanel (métricas por funcionalidad, adopción, gráficos 30 días)
-       │         └─ PhotoReviewPanel (revisar, aprobar, rechazar fotos de menu)
-       └─ [/*] MapProvider + APIProvider
-            └─ AppShell.tsx  [useOnboardingHint, useOnboardingFlow]
-                 ├─ OfflineIndicator (chip offline, PWA)
-                 ├─ SearchBar (busqueda + menu hamburguesa)
-                 ├─ FilterChips (tags predefinidos + nivel de gasto $/$$/$$)
-                 ├─ MapView (Google Maps + markers)
-                 ├─ LocationFAB (geolocalizacion)
-                 ├─ BusinessSheet (bottom sheet con detalle)
-                 │    ├─ BusinessHeader (nombre, direccion, favorito, share, direcciones)
-                 │    ├─ BusinessRating (estrellas promedio + calificar)
-                 │    ├─ BusinessPriceLevel (nivel de gasto $/$$/$$$ + votar)
-                 │    ├─ BusinessTags (tags predefinidos + custom)
-                 │    ├─ MenuPhotoSection (foto de menu + upload + viewer)
-                 │    ├─ BusinessComments (lista + editar + undo delete + likes + sorting + replies)
-                 │    │    ├─ CommentInput (memo, formulario con rate limit precheck)
-                 │    │    └─ CommentRow (memo, individual comment rendering)
-                 │    ├─ AddToListDialog (guardar comercio en listas compartidas)
-                 │    └─ ShareButton (Web Share API + clipboard fallback)
-                 ├─ NameDialog (nombre de usuario, primera visita)
-                 ├─ EmailPasswordDialog (registro/login con tabs, forgot password)
-                 ├─ ChangePasswordDialog (cambio de contrasena con re-auth)
-                 └─ SideMenu (drawer lateral)  [useSurpriseMe, prop: onSelectBusiness]
-                      ├─ Header (avatar + nombre + editar + badge tipo cuenta + botones auth)
-                      ├─ EditDisplayNameDialog (dialog editar nombre, extraido de SideMenu)
-                      ├─ Nav (Favoritos, Recientes, Comentarios, Calificaciones, Feedback, Agregar comercio)
-                      ├─ FavoritesList + ListFilters
-                      ├─ RecentVisits (historial localStorage)
-                      ├─ CommentsList (search, sorting, filter, edit, stats, swipe)
-                      │    └─ PaginatedListShell (skeleton/error/empty/pagination)
-                      ├─ RatingsList + ListFilters
-                      ├─ FeedbackForm (Tabs: Enviar / Mis envíos)
-                      │    └─ MyFeedbackList (status chips, admin responses, nueva respuesta indicator)
-                      ├─ HelpSection (7 Accordion topics, lazy-loaded)
-                      ├─ Dark mode toggle (switch + icon)
-                      └─ Footer (version + Theme/Constants links in DEV)
+            ├─ ColorModeProvider
+            ├─ AuthProvider
+            ├─ ToastProvider
+            ├─ ConnectivityProvider
+            ├─ NotificationsProvider
+            └─ Routes
+                 ├─ [/dev/theme] ThemePlayground (lazy, DEV only)
+                 ├─ [/dev/constants] ConstantsDashboard (lazy, DEV only)
+                 ├─ [/admin/*] AdminDashboard (lazy)
+                 └─ [/*] MapAppShell
+                      ├─ SelectionProvider (global)
+                      ├─ TabProvider (global)
+                      └─ OnboardingProvider (global)
+                           └─ TabShell
 ```
 
-## Capas de la arquitectura
+## Tab Shell
+
+TabShell es el componente raiz de la app. Renderiza las 5 tabs y el TabBar.
 
 ```text
-Components ──► Services ──► Firestore SDK ──► Cloud Firestore
-     │              │
-     │              └─ config/ (firebase.ts, collections.ts, converters)
-     │
-     ├─ Constants (src/constants/ — valores centralizados por dominio)
-     ├─ Hooks (useAsyncData, useBusinessData, usePaginatedQuery, etc.)
-     ├─ Context (AuthContext, MapContext)
-     └─ Utils (formatDate, businessHelpers)
+TabShell
+  ├─ OfflineIndicator
+  ├─ TabContent (x5, display toggle por tab activa)
+  │    ├─ HomeScreen (tab Inicio)
+  │    ├─ SocialScreen (tab Social)
+  │    ├─ SearchScreen (tab Buscar)
+  │    ├─ ListsScreen (tab Listas)
+  │    └─ ProfileScreen (tab Perfil)
+  ├─ NameDialog
+  └─ TabBar (BottomNavigation, 5 tabs, boton central elevado)
 ```
 
-Los componentes **nunca** importan `firebase/firestore` directamente. Usan el service layer (`src/services/`) para escrituras y collection ref getters para lecturas paginadas. Las lecturas de admin pasan por `services/admin.ts`.
-
-## Cloud Functions
+## Tab: Inicio (HomeScreen)
 
 ```text
-functions/
-├── src/
-│   ├── index.ts              → exports de todas las functions
-│   ├── admin/
-│   │   ├── backups.ts        → createBackup, listBackups, restoreBackup, deleteBackup (callable)
-│   │   ├── menuPhotos.ts     → approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto, reportMenuPhoto (callable)
-│   │   └── feedback.ts       → respondToFeedback, resolveFeedback, createGithubIssueFromFeedback (callable)
-│   ├── triggers/
-│   │   ├── comments.ts       → rate limit + moderacion + counters + onUpdate re-moderation
-│   │   ├── commentLikes.ts   → likeCount increment/decrement + rate limit + counters
-│   │   ├── customTags.ts     → rate limit + moderacion + counters
-│   │   ├── feedback.ts       → rate limit + moderacion + counters
-│   │   ├── ratings.ts        → counters (create/update/delete)
-│   │   ├── favorites.ts      → counters (create/delete)
-│   │   ├── users.ts          → counters (create)
-│   │   ├── menuPhotos.ts     → thumbnail generation con sharp + counters
-│   │   └── priceLevels.ts    → counters (create/update)
-│   ├── scheduled/
-│   │   ├── dailyMetrics.ts   → cron diario: distribucion, tops, active users
-│   │   └── cleanupPhotos.ts  → cron diario: elimina fotos rechazadas > 7 dias
-│   └── utils/
-│       ├── rateLimiter.ts    → rate limiting (daily/per-entity)
-│       ├── moderator.ts      → filtro de palabras prohibidas (cache 5 min)
-│       ├── counters.ts       → helpers increment/trackWrite/trackDelete
-│       ├── notifications.ts  → createNotification helper (feedback_response type, BYPASS_MASTER_TOGGLE, DEFAULT_SETTINGS)
-│       └── abuseLogger.ts    → logger a coleccion abuseLogs
-├── .env                       → ADMIN_EMAIL (parametrizado con defineString)
-├── package.json               → Node 22, firebase-admin, firebase-functions, @google-cloud/firestore, @google-cloud/storage
-├── tsconfig.json              → CommonJS, strict
-└── vitest.config.ts
+HomeScreen (scrollable)
+  ├─ GreetingHeader (saludo por hora + nombre + localidad)
+  ├─ QuickActions (grilla 2x4, editable, localStorage)
+  ├─ SpecialsSection (3 items curados, placeholder → Firestore)
+  ├─ RecentSearches (4 chips de visitas recientes)
+  └─ ForYouSection (cards horizontales de useSuggestions)
 ```
 
-## Flujo de datos
+## Tab: Social (SocialScreen)
 
-1. **Datos estaticos**: `businesses.json` (40 comercios) se carga como import estatico. No hay fetch.
-2. **Datos dinamicos**: Firestore (favoritos, ratings, comentarios, tags, feedback, priceLevels, menuPhotos). El hook `useBusinessData` orquesta las 7 queries en paralelo con `Promise.all` y cache client-side. `refetch(collectionName)` recarga selectivamente una sola coleccion sin incrementar `fetchIdRef`. `patchedRef` previene que full loads sobreescriban datos de refetches parciales.
-3. **Service layer**: Componentes llaman funciones de `src/services/` para operaciones CRUD. Los servicios encapsulan Firestore SDK e invalidan caches internamente.
-4. **Estado global**: `AuthContext` (user, displayName, signInWithGoogle, signOut) + `MapContext` (selectedBusiness, searchQuery, filters, activePriceFilter, userLocation).
-5. **Estado local**: Cada seccion del menu carga sus datos al montarse y los filtra client-side con `useListFilters`.
-6. **Cache de datos**: Dos capas de cache client-side reducen lecturas Firestore:
-   - `useBusinessDataCache`: cache de vista de negocio (5 min TTL) para las 7 queries del bottom sheet.
-   - `usePaginatedQuery`: cache de primera pagina (2 min TTL) para listas del menu lateral.
-7. **Server-side**: Cloud Functions triggers validan rate limits, moderan contenido y actualizan counters/metricas.
+```text
+SocialScreen
+  ├─ Tabs: Actividad | Seguidos | Recomendaciones | Rankings
+  ├─ ActivityFeedView (infinite scroll, seguidos)
+  ├─ FollowedList (lista + buscador + UserProfileSheet)
+  ├─ ReceivedRecommendations (con badge no leidas)
+  ├─ RankingsView (semanal/mensual/anual/all-time)
+  └─ UserProfileSheet (bottom sheet para perfiles)
+```
 
-## Tema visual
+## Tab: Buscar (SearchScreen)
 
-- **Primary:** #1a73e8 (Google Blue)
-- **Secondary:** #ea4335 (Google Red)
-- **Light mode:** bg #ffffff, text #202124 / #5f6368
-- **Dark mode:** bg #121212, paper #1e1e1e, text #e8eaed / #9aa0a6
-- **Fuente:** Roboto
-- **Border radius:** 8px (general), 16px (chips)
-- **Estilo:** inspirado en Google Maps
-- **Toggle:** Switch en menu lateral, persiste en localStorage, respeta `prefers-color-scheme`
-- **Playground:** `/dev/theme` (solo DEV) — color pickers, palette generator, component preview, copyable output
-- **Constants Dashboard:** `/dev/constants` (solo DEV) — browser de todas las constantes centralizadas, busqueda, filtro por modulo, copy import, deteccion de duplicados
+```text
+SearchScreen
+  ├─ FiltersProvider (solo esta tab)
+  ├─ APIProvider (Google Maps, solo esta tab)
+  ├─ SearchBar (busqueda pura, sin hamburguesa)
+  ├─ FilterChips (tags + precio)
+  ├─ ViewToggle (mapa/lista)
+  ├─ MapView + FABs + MapHint (vista mapa)
+  ├─ SearchListView (vista lista, sorted by distance)
+  └─ BusinessSheet (bottom sheet de comercio)
+```
+
+## Tab: Listas (ListsScreen)
+
+```text
+ListsScreen
+  ├─ Tabs: Favoritos | Listas | Recientes | Colaborativas
+  ├─ FavoritesList (sort by nombre/distancia/rating)
+  ├─ SharedListsView (grilla cards, CRUD, privacidad)
+  ├─ RecentsUnifiedTab (visitas + check-ins unificados)
+  └─ CollaborativeTab (listas donde soy editor invitado)
+```
+
+## Tab: Perfil (ProfileScreen)
+
+```text
+ProfileScreen (scrollable, sub-pantallas con back)
+  ├─ Avatar (tap → AvatarPicker, 20 emojis)
+  ├─ Nombre
+  ├─ OnboardingChecklist (condicional)
+  ├─ StatsCards (Lugares, Resenas, Seguidores, Favoritos)
+  ├─ AchievementsSection (cards con barra progreso → AchievementsGrid)
+  └─ SettingsMenu
+       ├─ Notificaciones (badge + NotificationsSection)
+       ├─ Pendientes (condicional si offline)
+       ├─ Privacidad y ajuste (SettingsPanel + PrivacyPolicy)
+       ├─ Configuracion (SettingsPanel)
+       └─ Ayuda y soporte (HelpSection + FeedbackForm)
+```
+
+## Contextos
+
+| Contexto | Scope | Contenido |
+|----------|-------|-----------|
+| SelectionProvider | Global | selectedBusiness, activeSharedListId |
+| TabProvider | Global | activeTab, socialSubTab, listsSubTab, searchFilter |
+| OnboardingProvider | Global | handleCreateAccount, handleLogin, BenefitsDialog, AccountBanner |
+| FiltersProvider | Solo SearchScreen | searchQuery, activeFilters, activePriceFilter, userLocation |
+| AuthProvider | Global (App.tsx) | user, displayName, authMethod |
+| NotificationsProvider | Global (App.tsx) | notifications, markRead, markAllRead |
+| ConnectivityProvider | Global (App.tsx) | isOffline, pendingActions |
+| ToastProvider | Global (App.tsx) | toast messages |
+| ColorModeProvider | Global (App.tsx) | dark/light mode |
+
+## Hooks de navegacion
+
+| Hook | Uso |
+|------|-----|
+| `useTab()` | Lee/escribe tab activa y sub-tabs |
+| `useTabNavigation()` | Helpers: navigateToSearch, navigateToSearchWithFilter, navigateToSocialSubTab, navigateToListsSubTab |
+| `useNavigateToBusiness()` | Comportamiento estandar: setActiveTab('buscar') + setSelectedBusiness |
+| `useDeepLinks()` | ?business=xxx, ?tab=xxx |
+
+## Comportamiento estandar
+
+Al tocar un comercio desde cualquier tab:
+1. Se cambia a tab Buscar
+2. Se centra el mapa en el comercio
+3. Se abre el BusinessSheet
+4. El usuario queda en tab Buscar
+
+## Archivos eliminados (v1 → v2)
+
+- `src/components/layout/AppShell.tsx` → reemplazado por TabShell
+- `src/components/layout/SideMenu.tsx` → reemplazado por tabs
+- `src/components/layout/SideMenuNav.tsx` → reemplazado por tabs
+- `src/components/notifications/NotificationBell.tsx` → reemplazado por badge en Perfil
