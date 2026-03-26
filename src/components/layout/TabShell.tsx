@@ -9,6 +9,7 @@ import { useDeepLinks } from '../../hooks/useDeepLinks';
 import type { TabId } from '../../types';
 
 const NameDialog = lazy(() => import('../auth/NameDialog'));
+const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 
 function TabPlaceholder({ label }: { label: string }) {
   return (
@@ -47,7 +48,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
         ) : tab === 'social' ? (
           <TabPlaceholder label="Social" />
         ) : tab === 'listas' ? (
-          <TabPlaceholder label="Listas" />
+          <ListsScreen />
         ) : (
           <TabPlaceholder label="Perfil" />
         )}
