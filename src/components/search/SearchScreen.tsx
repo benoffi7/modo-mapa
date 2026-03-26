@@ -14,6 +14,8 @@ import BusinessSheet from '../business/BusinessSheet';
 import { FiltersProvider, useFilters } from '../../context/FiltersContext';
 import { useSelection } from '../../context/SelectionContext';
 import { useTab } from '../../context/TabContext';
+import { CATEGORY_LABELS } from '../../constants/business';
+import type { BusinessCategory } from '../../types';
 import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useOnboardingHint } from '../../hooks/useOnboardingHint';
 import { trackEvent } from '../../utils/analytics';
@@ -100,7 +102,8 @@ function SearchFilterBridge() {
       if (searchFilter.type === 'text') {
         setSearchQuery(searchFilter.value);
       } else if (searchFilter.type === 'category') {
-        setSearchQuery(searchFilter.value);
+        const label = CATEGORY_LABELS[searchFilter.value as BusinessCategory] ?? searchFilter.value;
+        setSearchQuery(label);
       } else if (searchFilter.type === 'tag') {
         toggleFilter(searchFilter.value);
       }
