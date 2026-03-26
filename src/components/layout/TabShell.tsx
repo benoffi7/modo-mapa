@@ -5,11 +5,13 @@ import TabBar from './TabBar';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import { useDeepLinks } from '../../hooks/useDeepLinks';
 import type { TabId } from '../../types';
 
 const NameDialog = lazy(() => import('../auth/NameDialog'));
 const ListsScreen = lazy(() => import('../lists/ListsScreen'));
+const SocialScreen = lazy(() => import('../social/SocialScreen'));
 
 function TabPlaceholder({ label }: { label: string }) {
   return (
@@ -46,7 +48,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
         ) : tab === 'inicio' ? (
           <TabPlaceholder label="Inicio" />
         ) : tab === 'social' ? (
-          <TabPlaceholder label="Social" />
+          <SocialScreen />
         ) : tab === 'listas' ? (
           <ListsScreen />
         ) : (
@@ -63,6 +65,7 @@ export default function TabShell() {
   const { activeTab } = useTab();
   const { notifications } = useNotifications();
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const { unreadCount: recoUnread } = useUnreadRecommendations();
 
   // Deep links
   useDeepLinks();
@@ -84,7 +87,7 @@ export default function TabShell() {
       <Suspense fallback={null}>
         <NameDialog />
       </Suspense>
-      <TabBar notificationBadge={unreadCount} />
+      <TabBar notificationBadge={unreadCount} recommendationBadge={recoUnread} />
     </Box>
   );
 }
