@@ -38,8 +38,9 @@ export default function EmailPasswordDialog({
   onClose,
   initialTab = 'register',
 }: EmailPasswordDialogProps) {
-  const { linkEmailPassword, signInWithEmail, authError, clearAuthError } = useAuth();
+  const { linkEmailPassword, signInWithEmail, authError, clearAuthError, displayName, setDisplayName } = useAuth();
   const [tab, setTab] = useState<TabValue>(initialTab);
+  const [name, setName] = useState('');
   const { email, setEmail, remember, toggleRemember, save: saveEmail, reset: resetEmail } = useRememberedEmail();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -89,6 +90,9 @@ export default function EmailPasswordDialog({
     setLoading(true);
     try {
       await linkEmailPassword(email, password);
+      if (name.trim() && (!displayName || displayName === 'Anonimo')) {
+        await setDisplayName(name.trim());
+      }
       saveEmail(email);
       handleClose();
     } catch {
@@ -167,6 +171,17 @@ export default function EmailPasswordDialog({
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+              {tab === 'register' && (!displayName || displayName === 'Anonimo') && (
+                <TextField
+                  label="Tu nombre"
+                  placeholder="Ej: Juan"
+                  fullWidth
+                  size="small"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  slotProps={{ htmlInput: { maxLength: 30 } }}
+                />
+              )}
               <Box>
                 <TextField
                   inputRef={emailRef}
