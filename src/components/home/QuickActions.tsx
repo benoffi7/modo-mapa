@@ -76,7 +76,7 @@ function saveConfig(ids: string[]) {
 }
 
 export default function QuickActions() {
-  const { navigateToSearchWithFilter } = useTabNavigation();
+  const { navigateToSearchWithFilter, navigateToListsSubTab } = useTabNavigation();
   const { setActiveTab } = useTab();
   const { setSelectedBusiness } = useSelection();
   const { handleSurprise } = useSurpriseMe({
@@ -98,9 +98,9 @@ export default function QuickActions() {
     } else if (slot.id === 'sorprendeme') {
       handleSurprise();
     } else if (slot.id === 'favoritos') {
-      setActiveTab('listas');
+      navigateToListsSubTab('favoritos');
     } else if (slot.id === 'recientes' || slot.id === 'visitas') {
-      setActiveTab('listas');
+      navigateToListsSubTab('recientes');
     }
   };
 

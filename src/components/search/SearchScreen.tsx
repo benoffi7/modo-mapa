@@ -11,8 +11,9 @@ import SearchBar from './SearchBar';
 import FilterChips from './FilterChips';
 import SearchListView from './SearchListView';
 import BusinessSheet from '../business/BusinessSheet';
-import { FiltersProvider } from '../../context/FiltersContext';
+import { FiltersProvider, useFilters } from '../../context/FiltersContext';
 import { useSelection } from '../../context/SelectionContext';
+import { useTab } from '../../context/TabContext';
 import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useOnboardingHint } from '../../hooks/useOnboardingHint';
 import { trackEvent } from '../../utils/analytics';
@@ -87,6 +88,30 @@ function ViewToggle({ mode, onChange }: { mode: SearchViewMode; onChange: (m: Se
 }
 
 /**
+ * Bridge: reads searchFilter from TabContext (one-shot) and applies it to FiltersContext.
+ * This enables cross-tab navigation like QuickActions → Buscar with filter pre-loaded.
+ */
+function SearchFilterBridge() {
+  const { activeTab, searchFilter, setSearchFilter } = useTab();
+  const { setSearchQuery, toggleFilter } = useFilters();
+
+  useEffect(() => {
+    if (activeTab === 'buscar' && searchFilter) {
+      if (searchFilter.type === 'text') {
+        setSearchQuery(searchFilter.value);
+      } else if (searchFilter.type === 'category') {
+        setSearchQuery(searchFilter.value);
+      } else if (searchFilter.type === 'tag') {
+        toggleFilter(searchFilter.value);
+      }
+      setSearchFilter(null);
+    }
+  }, [activeTab, searchFilter, setSearchFilter, setSearchQuery, toggleFilter]);
+
+  return null;
+}
+
+/**
  * SearchScreen — the "Buscar" tab content.
  * Owns its own FiltersProvider and Google Maps APIProvider.
  * Supports map/list toggle view.
@@ -96,6 +121,7 @@ export default function SearchScreen() {
 
   return (
     <FiltersProvider>
+      <SearchFilterBridge />
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
         <Box
           sx={{

@@ -6,11 +6,10 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useTab } from '../../context/TabContext';
 import { trackEvent } from '../../utils/analytics';
-import type { TabId } from '../../types';
+import { ALL_TAB_IDS } from '../../types';
 import { EVT_TAB_SWITCHED } from '../../constants/analyticsEvents';
 
 export const TAB_BAR_HEIGHT = 64;
-const TAB_ORDER: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
 
 interface TabBarProps {
   notificationBadge?: number;
@@ -21,7 +20,7 @@ export default function TabBar({ notificationBadge = 0, recommendationBadge = 0 
   const { activeTab, setActiveTab } = useTab();
 
   const handleChange = (_: unknown, newValue: number) => {
-    const tab = TAB_ORDER[newValue];
+    const tab = ALL_TAB_IDS[newValue];
     if (tab !== activeTab) {
       trackEvent(EVT_TAB_SWITCHED, { from: activeTab, to: tab });
       setActiveTab(tab);
@@ -41,7 +40,7 @@ export default function TabBar({ notificationBadge = 0, recommendationBadge = 0 
       }}
     >
       <BottomNavigation
-        value={TAB_ORDER.indexOf(activeTab)}
+        value={ALL_TAB_IDS.indexOf(activeTab)}
         onChange={handleChange}
         showLabels
         sx={{

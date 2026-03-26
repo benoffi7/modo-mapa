@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
+import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { getAvatarById } from '../../constants/avatars';
 import StatsCards from './StatsCards';
 import SettingsMenu from './SettingsMenu';
@@ -49,6 +50,7 @@ export default function ProfileScreen() {
   const { stats } = useMyCheckIns();
   const { isOffline } = useConnectivity();
   const { navigateToListsSubTab } = useTabNavigation();
+  const { navigateToBusiness } = useNavigateToBusiness();
   const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | 'achievements' | null>(null);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(undefined);
@@ -90,9 +92,9 @@ export default function ProfileScreen() {
             )}
             {activeSection === 'reviews' && (
               <>
-                <RatingsList onSelectBusiness={() => {}} />
+                <RatingsList onSelectBusiness={(biz) => navigateToBusiness(biz)} />
                 <Divider sx={{ my: 1 }} />
-                <CommentsList onSelectBusiness={() => {}} />
+                <CommentsList onSelectBusiness={(biz) => navigateToBusiness(biz)} />
               </>
             )}
             {activeSection === 'stats' && <StatsView />}

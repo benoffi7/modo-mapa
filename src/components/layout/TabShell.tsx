@@ -1,14 +1,15 @@
 import { lazy, Suspense } from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import SearchScreen from '../search/SearchScreen';
 import TabBar, { TAB_BAR_HEIGHT } from './TabBar';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import { useDeepLinks } from '../../hooks/useDeepLinks';
+import { ALL_TAB_IDS } from '../../types';
 import type { TabId } from '../../types';
 
+const SearchScreen = lazy(() => import('../search/SearchScreen'));
 const NameDialog = lazy(() => import('../auth/NameDialog'));
 const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 const SocialScreen = lazy(() => import('../social/SocialScreen'));
@@ -52,7 +53,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
   );
 }
 
-const ALL_TABS: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
+// Uses ALL_TAB_IDS from types/index.ts
 
 export default function TabShell() {
   const { activeTab } = useTab();
@@ -74,7 +75,7 @@ export default function TabShell() {
       }}
     >
       <OfflineIndicator />
-      {ALL_TABS.map((tab) => (
+      {ALL_TAB_IDS.map((tab) => (
         <TabContent key={tab} tab={tab} isActive={activeTab === tab} />
       ))}
       <Suspense fallback={null}>
