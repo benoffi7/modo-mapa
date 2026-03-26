@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import SearchScreen from '../search/SearchScreen';
-import TabBar from './TabBar';
+import TabBar, { TAB_BAR_HEIGHT } from './TabBar';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -70,7 +70,7 @@ export default function TabShell() {
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
-        pb: '64px', // Space for TabBar
+        pb: `${TAB_BAR_HEIGHT}px`,
       }}
     >
       <OfflineIndicator />

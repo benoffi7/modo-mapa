@@ -9,6 +9,7 @@ import { trackEvent } from '../../utils/analytics';
 import type { TabId } from '../../types';
 import { EVT_TAB_SWITCHED } from '../../constants/analyticsEvents';
 
+export const TAB_BAR_HEIGHT = 64;
 const TAB_ORDER: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
 
 interface TabBarProps {
@@ -44,7 +45,7 @@ export default function TabBar({ notificationBadge = 0, recommendationBadge = 0 
         onChange={handleChange}
         showLabels
         sx={{
-          height: 64,
+          height: TAB_BAR_HEIGHT,
           '& .MuiBottomNavigationAction-root': {
             minWidth: 'auto',
             py: 0.5,

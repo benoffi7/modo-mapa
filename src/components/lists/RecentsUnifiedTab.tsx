@@ -84,7 +84,7 @@ export default function RecentsUnifiedTab() {
         {entries.map((entry) => (
           <ListItemButton
             key={entry.id}
-            onClick={() => navigateToBusiness(entry.business.id)}
+            onClick={() => navigateToBusiness(entry.type === 'visit' ? entry.business : entry.business.id)}
           >
             <ListItemIcon sx={{ minWidth: 36 }}>
               {entry.type === 'checkin' ? (
