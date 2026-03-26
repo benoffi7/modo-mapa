@@ -1,17 +1,16 @@
 import { useState, lazy, Suspense } from 'react';
-import { Box, Tabs, Tab, Badge, Typography } from '@mui/material';
+import { Box, Chip, Badge, Typography } from '@mui/material';
 import TabLoader from '../ui/TabLoader';
-import RssFeedIcon from '@mui/icons-material/RssFeed';
-import PeopleIcon from '@mui/icons-material/People';
-import SendIcon from '@mui/icons-material/Send';
-import LeaderboardIcon from '@mui/icons-material/Leaderboard';
+import RssFeedOutlinedIcon from '@mui/icons-material/RssFeedOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import LeaderboardOutlinedIcon from '@mui/icons-material/LeaderboardOutlined';
 import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_SUB_TAB_SWITCHED } from '../../constants/analyticsEvents';
-import type { SocialSubTab } from '../../types';
-import type { Business } from '../../types';
+import type { SocialSubTab, Business } from '../../types';
 
 const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
 const FollowedList = lazy(() => import('../menu/FollowedList').then((m) => ({ default: m.FollowedList })));
@@ -20,10 +19,10 @@ const RankingsView = lazy(() => import('../menu/RankingsView'));
 const UserProfileSheet = lazy(() => import('../user/UserProfileSheet'));
 
 const SUB_TABS: { id: SocialSubTab; label: string; icon: React.ReactElement }[] = [
-  { id: 'actividad', label: 'Actividad', icon: <RssFeedIcon fontSize="small" /> },
-  { id: 'seguidos', label: 'Seguidos', icon: <PeopleIcon fontSize="small" /> },
-  { id: 'recomendaciones', label: 'Recos', icon: <SendIcon fontSize="small" /> },
-  { id: 'rankings', label: 'Rankings', icon: <LeaderboardIcon fontSize="small" /> },
+  { id: 'actividad', label: 'Actividad', icon: <RssFeedOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'seguidos', label: 'Seguidos', icon: <PeopleOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'recomendaciones', label: 'Recos', icon: <SendOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'rankings', label: 'Rankings', icon: <LeaderboardOutlinedIcon sx={{ fontSize: 18 }} /> },
 ];
 
 export default function SocialScreen() {
@@ -32,8 +31,7 @@ export default function SocialScreen() {
   const { unreadCount } = useUnreadRecommendations();
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
-  const handleChange = (_: unknown, newValue: number) => {
-    const tab = SUB_TABS[newValue].id;
+  const handleChipClick = (tab: SocialSubTab) => {
     trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'social', sub_tab: tab });
     setSocialSubTab(tab);
   };
@@ -45,27 +43,30 @@ export default function SocialScreen() {
       <Box sx={{ px: 2, pt: 2, pb: 0.5 }}>
         <Typography variant="h6" fontWeight={700}>Social</Typography>
       </Box>
-      <Tabs
-        value={SUB_TABS.findIndex((t) => t.id === socialSubTab)}
-        onChange={handleChange}
-        variant="fullWidth"
-        sx={{ minHeight: 40, '& .MuiTab-root': { minHeight: 40, py: 0.5 } }}
-      >
+
+      <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1, overflow: 'auto' }}>
         {SUB_TABS.map((t) => (
-          <Tab
+          <Chip
             key={t.id}
             icon={
-              t.id === 'recomendaciones' ? (
-                <Badge badgeContent={unreadCount} color="error" max={9}>
+              t.id === 'recomendaciones' && unreadCount > 0 ? (
+                <Badge badgeContent={unreadCount} color="error" max={9} sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}>
                   {t.icon}
                 </Badge>
               ) : t.icon
             }
             label={t.label}
-            iconPosition="start"
+            onClick={() => handleChipClick(t.id)}
+            variant={socialSubTab === t.id ? 'filled' : 'outlined'}
+            color={socialSubTab === t.id ? 'primary' : 'default'}
+            sx={{
+              fontWeight: socialSubTab === t.id ? 600 : 400,
+              '& .MuiChip-icon': { ml: 0.5 },
+            }}
           />
         ))}
-      </Tabs>
+      </Box>
+
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         <Suspense fallback={<TabLoader />}>
           {socialSubTab === 'actividad' && (
@@ -77,9 +78,7 @@ export default function SocialScreen() {
           {socialSubTab === 'recomendaciones' && (
             <ReceivedRecommendations onSelectBusiness={handleSelectBusiness} />
           )}
-          {socialSubTab === 'rankings' && (
-            <RankingsView />
-          )}
+          {socialSubTab === 'rankings' && <RankingsView />}
         </Suspense>
       </Box>
       <Suspense fallback={null}>
