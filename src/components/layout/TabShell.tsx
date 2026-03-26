@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import SearchScreen from '../search/SearchScreen';
 import TabBar from './TabBar';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
@@ -13,15 +13,7 @@ const NameDialog = lazy(() => import('../auth/NameDialog'));
 const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 const SocialScreen = lazy(() => import('../social/SocialScreen'));
 const ProfileScreen = lazy(() => import('../profile/ProfileScreen'));
-
-function TabPlaceholder({ label }: { label: string }) {
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 }}>
-      <Typography variant="h6" color="text.secondary">{label}</Typography>
-      <Typography variant="body2" color="text.disabled">Proximamente</Typography>
-    </Box>
-  );
-}
+const HomeScreen = lazy(() => import('../home/HomeScreen'));
 
 function TabLoader() {
   return (
@@ -47,7 +39,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
         {tab === 'buscar' ? (
           <SearchScreen />
         ) : tab === 'inicio' ? (
-          <TabPlaceholder label="Inicio" />
+          <HomeScreen />
         ) : tab === 'social' ? (
           <SocialScreen />
         ) : tab === 'listas' ? (
