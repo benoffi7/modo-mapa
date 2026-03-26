@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import { useColorMode } from '../../hooks/useColorMode';
 import LocalityPicker from './LocalityPicker';
 import { useAuth } from '../../context/AuthContext';
 
@@ -63,6 +64,7 @@ function SettingRow({ label, description, checked, disabled, indented, onChange 
 
 export default function SettingsPanel() {
   const { settings, loading, updateSetting, updateLocality, clearLocality } = useUserSettings();
+  const { mode, toggleColorMode } = useColorMode();
   const { authMethod, emailVerified, user, signOut, resendVerification, refreshEmailVerified } = useAuth();
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -304,6 +306,19 @@ export default function SettingsPanel() {
         description="Ayuda a mejorar la app enviando datos anónimos de uso"
         checked={settings.analyticsEnabled}
         onChange={(val) => updateSetting('analyticsEnabled', val)}
+      />
+
+      <Divider sx={{ my: 1.5 }} />
+
+      {/* Apariencia */}
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+        Apariencia
+      </Typography>
+      <SettingRow
+        label="Modo oscuro"
+        description="Cambiar entre tema claro y oscuro"
+        checked={mode === 'dark'}
+        onChange={toggleColorMode}
       />
 
       {/* Email auth dialog */}
