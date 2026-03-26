@@ -11,7 +11,6 @@ import { ALL_TAB_IDS } from '../../types';
 import type { TabId } from '../../types';
 
 const SearchScreen = lazy(() => import('../search/SearchScreen'));
-const NameDialog = lazy(() => import('../auth/NameDialog'));
 const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 const SocialScreen = lazy(() => import('../social/SocialScreen'));
 const ProfileScreen = lazy(() => import('../profile/ProfileScreen'));
@@ -71,9 +70,6 @@ export default function TabShell() {
       {ALL_TAB_IDS.map((tab) => (
         <TabContent key={tab} tab={tab} isActive={activeTab === tab} />
       ))}
-      <Suspense fallback={null}>
-        <NameDialog />
-      </Suspense>
       <TabBar notificationBadge={unreadCount} recommendationBadge={recoUnread} />
     </Box>
   );
