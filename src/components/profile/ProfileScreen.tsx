@@ -22,6 +22,8 @@ const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
 const CommentsList = lazy(() => import('../menu/CommentsList'));
 const RatingsList = lazy(() => import('../menu/RatingsList'));
 const StatsView = lazy(() => import('../menu/StatsView'));
+const AchievementsSection = lazy(() => import('./AchievementsSection'));
+const AchievementsGrid = lazy(() => import('./AchievementsGrid'));
 
 const SECTION_TITLES: Record<string, string> = {
   notifications: 'Notificaciones',
@@ -31,6 +33,7 @@ const SECTION_TITLES: Record<string, string> = {
   help: 'Ayuda y soporte',
   reviews: 'Resenas',
   stats: 'Estadisticas',
+  achievements: 'Logros',
 };
 
 function SectionLoader() {
@@ -46,7 +49,7 @@ export default function ProfileScreen() {
   const { stats } = useMyCheckIns();
   const { isOffline } = useConnectivity();
   const { navigateToListsSubTab } = useTabNavigation();
-  const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | null>(null);
+  const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | 'achievements' | null>(null);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(undefined);
   const avatar = getAvatarById(selectedAvatarId);
@@ -93,6 +96,7 @@ export default function ProfileScreen() {
               </>
             )}
             {activeSection === 'stats' && <StatsView />}
+            {activeSection === 'achievements' && <AchievementsGrid />}
           </Suspense>
         </Box>
       </Box>
@@ -142,13 +146,10 @@ export default function ProfileScreen() {
 
       <Divider sx={{ my: 1 }} />
 
-      {/* Achievements placeholder */}
-      <Box sx={{ px: 2, py: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary">Logros</Typography>
-        <Typography variant="body2" color="text.disabled" sx={{ py: 2, textAlign: 'center' }}>
-          Proximamente
-        </Typography>
-      </Box>
+      {/* Achievements */}
+      <Suspense fallback={null}>
+        <AchievementsSection onViewAll={() => setActiveSection('achievements')} />
+      </Suspense>
 
       <Divider />
 
