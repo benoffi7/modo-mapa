@@ -5,7 +5,7 @@ import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { trackEvent } from '../../utils/analytics';
 
 export default function RecentSearches() {
-  const { visits } = useVisitHistory();
+  const { visits, clearHistory } = useVisitHistory();
   const { navigateToSearchWithFilter } = useTabNavigation();
 
   const recent = visits.filter((v) => v.business !== null).slice(0, 4);
@@ -14,10 +14,20 @@ export default function RecentSearches() {
 
   return (
     <Box sx={{ px: 2, py: 1 }}>
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Busquedas recientes
-      </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Busquedas Recientes
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          onClick={clearHistory}
+          sx={{ cursor: 'pointer', '&:hover': { color: 'text.secondary' } }}
+        >
+          Borrar
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
         {recent.map((v) => (
           <Chip
             key={v.businessId}
@@ -29,7 +39,7 @@ export default function RecentSearches() {
               trackEvent('recent_search_tapped', { business_id: v.businessId });
               navigateToSearchWithFilter({ type: 'text', value: v.business!.name });
             }}
-            sx={{ justifyContent: 'flex-start', maxWidth: '100%' }}
+            sx={{ maxWidth: '100%' }}
           />
         ))}
       </Box>
