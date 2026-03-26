@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Box, List, ListItemButton, ListItemText, ListItemIcon,
   Typography, CircularProgress, Button,
@@ -25,6 +26,9 @@ export default function RecentsUnifiedTab() {
   const { visits, clearHistory } = useVisitHistory();
   const { checkIns, isLoading, refresh } = useMyCheckIns();
   const { navigateToBusiness } = useNavigateToBusiness();
+
+  const handleRefresh = useCallback(async () => { await refresh(); }, [refresh]);
+  useListsSubTabRefresh('recientes', handleRefresh);
 
   const entries = useMemo(() => {
     const result: UnifiedEntry[] = [];

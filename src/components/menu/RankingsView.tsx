@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -17,6 +18,7 @@ import UserScoreCard from './UserScoreCard';
 import { PERIOD_OPTIONS } from '../../constants/rankings';
 import { STORAGE_KEY_ONBOARDING_RANKING_VIEWED } from '../../constants/storage';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { NAV_CHIP_SX } from '../../constants/ui';
 import type { UserRankingEntry } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -28,6 +30,9 @@ export default function RankingsView() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_ONBOARDING_RANKING_VIEWED, 'true');
   }, []);
+
+  const handleRefreshRankings = useCallback(async () => { await refetch(); }, [refetch]);
+  useSocialSubTabRefresh('rankings', handleRefreshRankings);
 
   const maxScore = ranking?.rankings[0]?.score ?? 0;
   const currentUserEntry = ranking?.rankings.find((e) => e.userId === user?.uid);
@@ -71,6 +76,7 @@ export default function RankingsView() {
             color={periodType === opt.value ? 'primary' : 'default'}
             variant={periodType === opt.value ? 'filled' : 'outlined'}
             onClick={() => setPeriodType(opt.value)}
+            sx={NAV_CHIP_SX}
           />
         ))}
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.25 }}>

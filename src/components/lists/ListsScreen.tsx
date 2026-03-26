@@ -10,6 +10,7 @@ import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_SUB_TAB_SWITCHED } from '../../constants/analyticsEvents';
+import { NAV_CHIP_SX } from '../../constants/ui';
 import type { ListsSubTab } from '../../types';
 
 const FavoritesList = lazy(() => import('../menu/FavoritesList'));
@@ -57,12 +58,9 @@ export default function ListsScreen() {
             variant={listsSubTab === t.id ? 'filled' : 'outlined'}
             color={listsSubTab === t.id ? 'primary' : 'default'}
             sx={{
+              ...NAV_CHIP_SX,
               fontWeight: listsSubTab === t.id ? 600 : 400,
-              borderRadius: 2,
-              px: 1,
-              height: 36,
               '& .MuiChip-icon': { ml: 0.5 },
-              '& .MuiChip-label': { px: 1 },
             }}
           />
         ))}

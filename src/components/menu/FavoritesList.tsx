@@ -1,13 +1,21 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, lazy, Suspense } from 'react';
 import {
   Box,
   IconButton,
   Typography,
   Button,
   CircularProgress,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ShareIcon from '@mui/icons-material/Share';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useAuth } from '../../context/AuthContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
@@ -16,9 +24,13 @@ import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
+import { trackEvent } from '../../utils/analytics';
+import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import ListFilters from './ListFilters';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Favorite } from '../../types';
+
+const AddToListDialog = lazy(() => import('../business/AddToListDialog'));
 
 interface FavoriteItem {
   businessId: string;
@@ -63,10 +75,55 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
 
   const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
-  const handleRemoveFavorite = async (businessId: string) => {
-    if (!user) return;
-    await removeFavorite(user.uid, businessId);
+  // Reload when this tab becomes active
+  useListsSubTabRefresh('favoritos', handleRefresh);
+
+  // Menu state
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<FavoriteItem | null>(null);
+  const [addToListTarget, setAddToListTarget] = useState<FavoriteItem | null>(null);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, fav: FavoriteItem) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+    setMenuTarget(fav);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchor(null);
+    setMenuTarget(null);
+  };
+
+  const handleRemoveFavorite = async () => {
+    if (!user || !menuTarget) return;
+    await removeFavorite(user.uid, menuTarget.businessId);
+    trackEvent('favorite_toggle', { action: 'remove', business_id: menuTarget.businessId });
+    handleCloseMenu();
     reload();
+  };
+
+  const handleShare = async () => {
+    if (!menuTarget) return;
+    const biz = menuTarget.business;
+    const url = `${window.location.origin}/?business=${biz.id}`;
+    const text = `Mirá ${biz.name} en Modo Mapa — ${biz.address}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: biz.name, text, url });
+        trackEvent('business_share', { business_id: biz.id, method: 'share_api' });
+      } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      trackEvent('business_share', { business_id: biz.id, method: 'clipboard' });
+    }
+    handleCloseMenu();
+  };
+
+  const handleAddToList = () => {
+    if (!menuTarget) return;
+    setAddToListTarget(menuTarget);
+    handleCloseMenu();
   };
 
   const handleSelectBusiness = (business: Business) => {
@@ -146,9 +203,10 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
                 </Box>
                 <IconButton
                   size="small"
-                  onClick={(e) => { e.stopPropagation(); handleRemoveFavorite(fav.businessId); }}
+                  onClick={(e) => handleOpenMenu(e, fav)}
+                  aria-label="Opciones"
                 >
-                  <Typography sx={{ fontSize: 18 }}>...</Typography>
+                  <MoreVertIcon fontSize="small" />
                 </IconButton>
               </Box>
               <Box sx={{ borderTop: 1, borderColor: 'divider', mt: 1, pt: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -171,6 +229,40 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
             Cargar más
           </Button>
         </Box>
+      )}
+
+      {/* Context menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={handleShare}>
+          <ListItemIcon><ShareIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Compartir</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleAddToList}>
+          <ListItemIcon><PlaylistAddIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Agregar a lista</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleRemoveFavorite} sx={{ color: 'error.main' }}>
+          <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText>Quitar de favoritos</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Add to list dialog */}
+      {addToListTarget && (
+        <Suspense fallback={null}>
+          <AddToListDialog
+            open
+            onClose={() => setAddToListTarget(null)}
+            businessId={addToListTarget.businessId}
+            businessName={addToListTarget.business.name}
+          />
+        </Suspense>
       )}
     </PullToRefreshWrapper>
   );

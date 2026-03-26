@@ -8,6 +8,7 @@ import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_SUB_TAB_SWITCHED } from '../../constants/analyticsEvents';
+import { NAV_CHIP_SX } from '../../constants/ui';
 import type { SocialSubTab, Business } from '../../types';
 
 const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
@@ -56,7 +57,7 @@ export default function SocialScreen() {
               onClick={() => handleChipClick(t.id)}
               variant={socialSubTab === t.id ? 'filled' : 'outlined'}
               color={socialSubTab === t.id ? 'primary' : 'default'}
-              sx={{ fontWeight: socialSubTab === t.id ? 600 : 400, borderRadius: 2, px: 1, height: 36, '& .MuiChip-label': { px: 1 } }}
+              sx={{ ...NAV_CHIP_SX, fontWeight: socialSubTab === t.id ? 600 : 400 }}
             />
           </Badge>
         ))}

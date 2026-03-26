@@ -15,3 +15,4 @@ export const STORAGE_KEY_ONBOARDING_RANKING_VIEWED = 'onboarding_ranking_viewed'
 export const STORAGE_KEY_ONBOARDING_CELEBRATED = 'onboarding_celebrated';
 export const STORAGE_KEY_ONBOARDING_EXPANDED = 'onboarding_expanded';
 export const STORAGE_KEY_REMEMBERED_EMAIL = 'remembered_email';
+export const SESSION_KEY_FORCE_UPDATE_LAST_REFRESH = 'force_update_last_refresh';

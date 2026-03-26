@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo } from 'react';
+import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Typography, Box,
 } from '@mui/material';
@@ -56,6 +57,9 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
       });
     }
   }, [userId]);
+
+  // Reload when social > recomendaciones becomes active
+  useSocialSubTabRefresh('recomendaciones', reload);
 
   const handleClick = useCallback((rec: Recommendation) => {
     const business = allBusinesses.find((b) => b.id === rec.businessId);

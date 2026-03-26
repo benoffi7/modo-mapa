@@ -80,11 +80,26 @@ SearchScreen
 
 ```text
 ListsScreen
-  ├─ Tabs: Favoritos | Listas | Recientes | Colaborativas
-  ├─ FavoritesList (sort by nombre/distancia/rating)
-  ├─ SharedListsView (grilla cards, CRUD, privacidad)
+  ├─ Chip tabs: Favoritos | Listas | Recientes | Social
+  ├─ FavoritesList (cards con rating, distancia, corazon)
+  ├─ SharedListsView
+  │    ├─ Featured lists (scroll horizontal)
+  │    ├─ ListCardGrid (grilla 2 columnas con iconos de color)
+  │    └─ ListDetailScreen (detalle con acciones CRUD)
   ├─ RecentsUnifiedTab (visitas + check-ins unificados)
-  └─ CollaborativeTab (listas donde soy editor invitado)
+  └─ CollaborativeTab (misma grilla, readOnly detail)
+```
+
+### Design System
+
+```text
+src/theme/cards.ts — Estilos reutilizables:
+  ├─ cardSx (borde + radius + hover)
+  ├─ iconCardSx (card con icono de color)
+  ├─ iconCircleSx (circulo de icono)
+  ├─ chipTabSx (chips de sub-tabs)
+  ├─ sectionTitleSx (titulo de seccion)
+  └─ dashedButtonSx (boton con borde dashed)
 ```
 
 ## Tab: Perfil (ProfileScreen)

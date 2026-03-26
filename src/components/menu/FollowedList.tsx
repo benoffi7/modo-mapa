@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Avatar, Typography, Box, CircularProgress,
 } from '@mui/material';
@@ -64,6 +65,8 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
     setLastDoc(null);
     await loadPage();
   }, [loadPage]);
+
+  useSocialSubTabRefresh('seguidos', handleRefresh);
 
   return (
     <Box sx={{ px: 2, py: 1 }}>
