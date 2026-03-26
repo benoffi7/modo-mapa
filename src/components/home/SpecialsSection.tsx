@@ -50,7 +50,7 @@ export default function SpecialsSection() {
           setSpecials(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special)));
         }
       })
-      .catch(() => { /* use fallback */ });
+      .catch((err) => { console.warn('[SpecialsSection] Failed to load from Firestore, using fallback:', err); });
   }, []);
 
   return (
