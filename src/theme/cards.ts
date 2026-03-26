@@ -35,15 +35,10 @@ export const iconCircleSx = (color: string, size = 44): SxProps<Theme> => ({
   flexShrink: 0,
 });
 
-/** Chip tab styles — used in ListsScreen, SocialScreen */
-export const chipTabSx = (isActive: boolean): SxProps<Theme> => ({
-  fontWeight: isActive ? 600 : 400,
-  borderRadius: 2,
-  px: 1,
-  height: 36,
-  '& .MuiChip-label': { px: 1 },
-  '& .MuiChip-icon': { ml: 0.5 },
-});
+/**
+ * Chip tab styles live in constants/ui.ts as NAV_CHIP_SX.
+ * Import from there: import { NAV_CHIP_SX } from '../constants/ui';
+ */
 
 /** Section title — "Acciones rapidas", "Especiales", "Para Ti", etc. */
 export const sectionTitleSx: SxProps<Theme> = {
