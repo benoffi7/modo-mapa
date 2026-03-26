@@ -1,34 +1,44 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelection } from '../context/SelectionContext';
+import { useTab } from '../context/TabContext';
 import { allBusinesses } from './useBusinesses';
+import type { TabId } from '../types';
+
+const VALID_TABS: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
 
 /**
  * Handles URL deep links on mount:
- * - ?business=biz_001 → selects the business (opens BusinessSheet)
- * - ?list=xxx → returns the list ID for the caller to handle
- *
- * Returns the shared list ID if present in URL (one-time read).
+ * - ?business=biz_001 → selects the business and switches to Buscar tab
+ * - ?tab=social → switches to the specified tab
  */
-export function useDeepLinks(onListDeepLink?: (listId: string) => void) {
+export function useDeepLinks() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { setSelectedBusiness } = useSelection();
+  const { setActiveTab } = useTab();
 
   useEffect(() => {
+    let changed = false;
+
     const bizId = searchParams.get('business');
     if (bizId) {
       const biz = allBusinesses.find((b) => b.id === bizId);
       if (biz) {
+        setActiveTab('buscar');
         setSelectedBusiness(biz);
       }
       searchParams.delete('business');
-      setSearchParams(searchParams, { replace: true });
+      changed = true;
     }
 
-    const listId = searchParams.get('list');
-    if (listId) {
-      onListDeepLink?.(listId);
-      searchParams.delete('list');
+    const tabParam = searchParams.get('tab');
+    if (tabParam && VALID_TABS.includes(tabParam as TabId)) {
+      setActiveTab(tabParam as TabId);
+      searchParams.delete('tab');
+      changed = true;
+    }
+
+    if (changed) {
       setSearchParams(searchParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run only on mount

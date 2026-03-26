@@ -294,6 +294,12 @@ export interface TrendingData {
   periodEnd: Date;
 }
 
+// Tab navigation (#158)
+export type TabId = 'inicio' | 'social' | 'buscar' | 'listas' | 'perfil';
+export type SocialSubTab = 'actividad' | 'seguidos' | 'recomendaciones' | 'rankings';
+export type ListsSubTab = 'favoritos' | 'listas' | 'recientes' | 'colaborativas';
+export type SearchViewMode = 'map' | 'list';
+
 export type {
   OfflineAction,
   OfflineActionType,
