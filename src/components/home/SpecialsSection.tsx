@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StarIcon from '@mui/icons-material/Star';
@@ -58,26 +58,34 @@ export default function SpecialsSection() {
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
         Especiales
       </Typography>
-      <List disablePadding>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {specials.slice(0, 3).map((item) => (
-          <ListItemButton
+          <Box
             key={item.id}
             onClick={() => trackEvent('special_tapped', { special_id: item.id, type: item.type })}
-            sx={{ borderRadius: 1, mb: 0.5 }}
+            sx={{
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 2,
+              p: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              cursor: 'pointer',
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
           >
-            <ListItemIcon sx={{ minWidth: 36 }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: 'action.selected', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {ICON_MAP[item.icon] ?? <StarIcon color="primary" />}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.title}
-              secondary={item.subtitle}
-              primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-              secondaryTypographyProps={{ fontSize: '0.75rem' }}
-            />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" fontWeight={600}>{item.title}</Typography>
+              <Typography variant="caption" color="text.secondary">{item.subtitle}</Typography>
+            </Box>
             <ChevronRightIcon color="action" />
-          </ListItemButton>
+          </Box>
         ))}
-      </List>
+      </Box>
     </Box>
   );
 }

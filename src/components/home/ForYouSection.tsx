@@ -1,11 +1,36 @@
-import { Box, Card, CardActionArea, CardContent, Typography, CircularProgress } from '@mui/material';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import { Box, Card, CardActionArea, Typography, CircularProgress } from '@mui/material';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
+import SportsBarIcon from '@mui/icons-material/SportsBar';
+import FastfoodIcon from '@mui/icons-material/Fastfood';
+import IcecreamIcon from '@mui/icons-material/Icecream';
+import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { trackEvent } from '../../utils/analytics';
 import type { BusinessCategory } from '../../types';
+
+const CATEGORY_COLORS: Record<string, string> = {
+  restaurant: '#e65100',
+  cafe: '#4e342e',
+  bakery: '#f9a825',
+  bar: '#1565c0',
+  fastfood: '#d32f2f',
+  icecream: '#ec407a',
+  pizza: '#ff6f00',
+};
+
+const CATEGORY_ICONS: Record<string, React.ReactElement> = {
+  restaurant: <RestaurantIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  cafe: <LocalCafeIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  bakery: <BakeryDiningIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  bar: <SportsBarIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  fastfood: <FastfoodIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  icecream: <IcecreamIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+  pizza: <LocalPizzaIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,
+};
 
 export default function ForYouSection() {
   const { suggestions, isLoading } = useSuggestions();
@@ -24,42 +49,52 @@ export default function ForYouSection() {
   return (
     <Box sx={{ px: 2, py: 1 }}>
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Para ti
+        Para Ti
       </Typography>
-      <Box sx={{ display: 'flex', gap: 1.5, overflow: 'auto', pb: 1 }}>
-        {suggestions.slice(0, 8).map((s) => (
-          <Card
-            key={s.business.id}
-            variant="outlined"
-            sx={{ minWidth: 160, maxWidth: 180, flexShrink: 0 }}
-          >
-            <CardActionArea
-              onClick={() => {
-                trackEvent('for_you_tapped', { business_id: s.business.id });
-                navigateToBusiness(s.business);
-              }}
+      <Box sx={{ display: 'flex', gap: 1.5, overflow: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
+        {suggestions.slice(0, 8).map((s) => {
+          const cat = s.business.category as BusinessCategory;
+          const bgColor = CATEGORY_COLORS[cat] ?? '#546e7a';
+          const icon = CATEGORY_ICONS[cat] ?? CATEGORY_ICONS.restaurant;
+          return (
+            <Card
+              key={s.business.id}
+              variant="outlined"
+              sx={{ minWidth: 170, maxWidth: 190, flexShrink: 0 }}
             >
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <Typography variant="subtitle2" noWrap fontWeight={600}>
-                  {s.business.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  {CATEGORY_LABELS[s.business.category as BusinessCategory] ?? s.business.category}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                    <ChatBubbleOutlineIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                    <Typography variant="caption" color="text.secondary">0</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                    <ThumbUpOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                    <Typography variant="caption" color="text.secondary">0</Typography>
-                  </Box>
+              <CardActionArea
+                onClick={() => {
+                  trackEvent('for_you_tapped', { business_id: s.business.id });
+                  navigateToBusiness(s.business);
+                }}
+              >
+                {/* Category image placeholder */}
+                <Box
+                  sx={{
+                    height: 90,
+                    bgcolor: bgColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {icon}
                 </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        ))}
+                <Box sx={{ p: 1.5 }}>
+                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                    {s.business.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {CATEGORY_LABELS[cat] ?? cat}
+                  </Typography>
+                  <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.25 }}>
+                    {s.reasons.length > 0 ? (s.reasons.includes('nearby') ? 'Cerca tuyo' : 'Sugerido') : 'Sugerido'}
+                  </Typography>
+                </Box>
+              </CardActionArea>
+            </Card>
+          );
+        })}
       </Box>
     </Box>
   );
