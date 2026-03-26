@@ -1,10 +1,11 @@
 import { lazy, Suspense } from 'react';
-import { Box, Tabs, Tab, Typography } from '@mui/material';
+import { Box, Chip, Typography, IconButton } from '@mui/material';
 import TabLoader from '../ui/TabLoader';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import HistoryIcon from '@mui/icons-material/History';
-import GroupIcon from '@mui/icons-material/Group';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
+import AddIcon from '@mui/icons-material/Add';
 import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { trackEvent } from '../../utils/analytics';
@@ -17,37 +18,53 @@ const RecentsUnifiedTab = lazy(() => import('./RecentsUnifiedTab'));
 const CollaborativeTab = lazy(() => import('./CollaborativeTab'));
 
 const SUB_TABS: { id: ListsSubTab; label: string; icon: React.ReactElement }[] = [
-  { id: 'favoritos', label: 'Favoritos', icon: <FavoriteIcon fontSize="small" /> },
-  { id: 'listas', label: 'Listas', icon: <ListAltIcon fontSize="small" /> },
-  { id: 'recientes', label: 'Recientes', icon: <HistoryIcon fontSize="small" /> },
-  { id: 'colaborativas', label: 'Colab.', icon: <GroupIcon fontSize="small" /> },
+  { id: 'favoritos', label: 'Favoritos', icon: <FavoriteBorderIcon sx={{ fontSize: 18 }} /> },
+  { id: 'listas', label: 'Listas', icon: <FolderOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'recientes', label: 'Recientes', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} /> },
+  { id: 'colaborativas', label: 'Colab.', icon: <GroupOutlinedIcon sx={{ fontSize: 18 }} /> },
 ];
 
 export default function ListsScreen() {
   const { listsSubTab, setListsSubTab } = useTab();
   const { navigateToBusiness } = useNavigateToBusiness();
 
-  const handleChange = (_: unknown, newValue: number) => {
-    const tab = SUB_TABS[newValue].id;
+  const handleChipClick = (tab: ListsSubTab) => {
     trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'listas', sub_tab: tab });
     setListsSubTab(tab);
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ px: 2, pt: 2, pb: 0.5 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pt: 2, pb: 0.5 }}>
         <Typography variant="h6" fontWeight={700}>Mis Listas</Typography>
+        <IconButton
+          size="small"
+          sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
+        >
+          <AddIcon />
+        </IconButton>
       </Box>
-      <Tabs
-        value={SUB_TABS.findIndex((t) => t.id === listsSubTab)}
-        onChange={handleChange}
-        variant="fullWidth"
-        sx={{ minHeight: 40, '& .MuiTab-root': { minHeight: 40, py: 0.5 } }}
-      >
+
+      {/* Chip tabs */}
+      <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1, overflow: 'auto' }}>
         {SUB_TABS.map((t) => (
-          <Tab key={t.id} icon={t.icon} label={t.label} iconPosition="start" />
+          <Chip
+            key={t.id}
+            icon={t.icon}
+            label={t.label}
+            onClick={() => handleChipClick(t.id)}
+            variant={listsSubTab === t.id ? 'filled' : 'outlined'}
+            color={listsSubTab === t.id ? 'primary' : 'default'}
+            sx={{
+              fontWeight: listsSubTab === t.id ? 600 : 400,
+              '& .MuiChip-icon': { ml: 0.5 },
+            }}
+          />
         ))}
-      </Tabs>
+      </Box>
+
+      {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         <Suspense fallback={<TabLoader />}>
           {listsSubTab === 'favoritos' && (
