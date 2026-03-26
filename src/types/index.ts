@@ -93,6 +93,8 @@ export interface SharedList {
   featured: boolean;
   editorIds: string[];
   itemCount: number;
+  icon?: string;
+  color?: string;
   createdAt: Date;
   updatedAt: Date;
 }

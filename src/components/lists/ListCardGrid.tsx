@@ -16,10 +16,8 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5 }}>
         {lists.map((list) => {
-          // icon/color are optional fields not in SharedList type yet
-          const extList = list as unknown as { icon?: string; color?: string };
-          const iconData = getListIconById(extList.icon);
-          const color = extList.color || '#1e88e5';
+          const iconData = getListIconById(list.icon);
+          const color = list.color || '#1e88e5';
           return (
             <Box
               key={list.id}
