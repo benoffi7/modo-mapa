@@ -1,17 +1,22 @@
-import { useEffect, useRef } from 'react';
-import { Box, Snackbar, Alert, IconButton } from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import { Box, Snackbar, Alert, IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
+import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import MapView from '../map/MapView';
 import LocationFAB from '../map/LocationFAB';
 import OfficeFAB from '../map/OfficeFAB';
 import SearchBar from './SearchBar';
 import FilterChips from './FilterChips';
+import SearchListView from './SearchListView';
 import BusinessSheet from '../business/BusinessSheet';
 import { FiltersProvider } from '../../context/FiltersContext';
 import { useSelection } from '../../context/SelectionContext';
 import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useOnboardingHint } from '../../hooks/useOnboardingHint';
+import { trackEvent } from '../../utils/analytics';
+import type { SearchViewMode } from '../../types';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -49,17 +54,46 @@ function MapHint() {
   );
 }
 
-/**
- * SearchScreen — the "Buscar" tab content.
- * Contains the map, search bar, filters, FABs, business sheet, and hint.
- * Self-contained: can be mounted inside any layout.
- */
+function ViewToggle({ mode, onChange }: { mode: SearchViewMode; onChange: (m: SearchViewMode) => void }) {
+  return (
+    <ToggleButtonGroup
+      value={mode}
+      exclusive
+      onChange={(_, val) => {
+        if (val) {
+          trackEvent('search_view_toggled', { mode: val });
+          onChange(val);
+        }
+      }}
+      size="small"
+      sx={{
+        position: 'absolute',
+        top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px) + 52px)',
+        right: 16,
+        zIndex: 1100,
+        bgcolor: 'background.paper',
+        boxShadow: 2,
+        borderRadius: 2,
+      }}
+    >
+      <ToggleButton value="map" aria-label="Vista mapa">
+        <MapOutlinedIcon fontSize="small" />
+      </ToggleButton>
+      <ToggleButton value="list" aria-label="Vista lista">
+        <ViewListOutlinedIcon fontSize="small" />
+      </ToggleButton>
+    </ToggleButtonGroup>
+  );
+}
+
 /**
  * SearchScreen — the "Buscar" tab content.
  * Owns its own FiltersProvider and Google Maps APIProvider.
- * SelectionProvider lives above (global) so other tabs can read selectedBusiness.
+ * Supports map/list toggle view.
  */
 export default function SearchScreen() {
+  const [viewMode, setViewMode] = useState<SearchViewMode>('map');
+
   return (
     <FiltersProvider>
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
@@ -73,11 +107,28 @@ export default function SearchScreen() {
         >
           <SearchBar />
           <FilterChips />
-          <MapView />
-          <LocationFAB />
-          <OfficeFAB />
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
+          {viewMode === 'map' ? (
+            <>
+              <MapView />
+              <LocationFAB />
+              <OfficeFAB />
+              <MapHint />
+            </>
+          ) : (
+            <Box sx={{
+              position: 'absolute',
+              top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px) + 52px + 48px)',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              overflow: 'auto',
+              bgcolor: 'background.default',
+            }}>
+              <SearchListView />
+            </Box>
+          )}
           <BusinessSheet />
-          <MapHint />
         </Box>
       </APIProvider>
     </FiltersProvider>
