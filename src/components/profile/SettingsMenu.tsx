@@ -52,7 +52,7 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         <ListItemIcon sx={{ minWidth: 40 }}>
           <SettingsIcon />
         </ListItemIcon>
-        <ListItemText primary="Configuracion" />
+        <ListItemText primary="Configuración" />
         <ChevronRightIcon color="action" />
       </ListItemButton>
 

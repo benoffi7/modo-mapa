@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { Box, Typography, Avatar, Divider, IconButton, CircularProgress, Toolbar } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditIcon from '@mui/icons-material/Edit';
 import { useAuth } from '../../context/AuthContext';
 import { useProfileStats } from '../../hooks/useProfileStats';
 import { useConnectivity } from '../../context/ConnectivityContext';
@@ -12,6 +13,7 @@ import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
 
 const AvatarPicker = lazy(() => import('./AvatarPicker'));
+const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
 
 const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
 const NotificationsSection = lazy(() => import('./NotificationsSection'));
@@ -30,7 +32,7 @@ const SECTION_TITLES: Record<string, string> = {
   notifications: 'Notificaciones',
   pendientes: 'Pendientes',
   privacy: 'Privacidad y ajuste',
-  config: 'Configuracion',
+  config: 'Configuración',
   help: 'Ayuda y soporte',
   reviews: 'Resenas',
   stats: 'Estadisticas',
@@ -53,6 +55,7 @@ export default function ProfileScreen() {
   const { navigateToBusiness } = useNavigateToBusiness();
   const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | 'achievements' | null>(null);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(undefined);
   const avatar = getAvatarById(selectedAvatarId);
 
@@ -75,13 +78,7 @@ export default function ProfileScreen() {
           <Suspense fallback={<SectionLoader />}>
             {activeSection === 'notifications' && <NotificationsSection />}
             {activeSection === 'pendientes' && <PendingActionsSection />}
-            {activeSection === 'privacy' && (
-              <>
-                <SettingsPanel />
-                <Divider sx={{ my: 1 }} />
-                <PrivacyPolicy />
-              </>
-            )}
+            {activeSection === 'privacy' && <PrivacyPolicy />}
             {activeSection === 'config' && <SettingsPanel />}
             {activeSection === 'help' && (
               <>
@@ -115,7 +112,12 @@ export default function ProfileScreen() {
         >
           {avatar ? avatar.emoji : userName.charAt(0).toUpperCase()}
         </Avatar>
-        <Typography variant="h6" fontWeight={700}>{userName}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="h6" fontWeight={700}>{userName}</Typography>
+          <IconButton size="small" onClick={() => setNameDialogOpen(true)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
       <Suspense fallback={null}>
         {avatarPickerOpen && (
@@ -125,6 +127,11 @@ export default function ProfileScreen() {
             onSelect={(a) => setSelectedAvatarId(a.id)}
             selectedId={selectedAvatarId}
           />
+        )}
+      </Suspense>
+      <Suspense fallback={null}>
+        {nameDialogOpen && (
+          <EditDisplayNameDialog open onClose={() => setNameDialogOpen(false)} />
         )}
       </Suspense>
 
