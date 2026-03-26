@@ -54,8 +54,14 @@ color?: string;  // hex color del fondo del icono
 | `src/services/sharedLists.ts` | Agregar updateListIcon, updateListColor |
 | `firestore.rules` | Permitir icon/color en sharedLists update |
 
+### Tab Colaborativas (CollaborativeTab)
+
+- Misma grilla 2 columnas que Listas propias
+- Cards con icono + color + titulo + "X lugares"
+- Al tocar, misma pantalla de detalle pero sin opciones de edicion (solo ver comercios)
+- Renombrar tab de "Colab." a "Social" (para evitar texto cortado)
+
 ## Fuera de scope
 
 - Featured lists (se mantienen como scroll horizontal arriba)
-- Shared-with-me lists (se ven en tab Colaborativas)
 - Drag-and-drop reorder de comercios dentro de la lista
