@@ -12,6 +12,7 @@ import type { TabId } from '../../types';
 const NameDialog = lazy(() => import('../auth/NameDialog'));
 const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 const SocialScreen = lazy(() => import('../social/SocialScreen'));
+const ProfileScreen = lazy(() => import('../profile/ProfileScreen'));
 
 function TabPlaceholder({ label }: { label: string }) {
   return (
@@ -52,7 +53,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
         ) : tab === 'listas' ? (
           <ListsScreen />
         ) : (
-          <TabPlaceholder label="Perfil" />
+          <ProfileScreen />
         )}
       </Suspense>
     </Box>
