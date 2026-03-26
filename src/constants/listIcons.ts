@@ -37,6 +37,10 @@ export const LIST_ICON_OPTIONS: ListIconOption[] = [
   { id: 'tree', label: 'Arbol', emoji: '🌳' },
 ];
 
+const VALID_ICON_IDS = new Set(LIST_ICON_OPTIONS.map((i) => i.id));
+
+/** Returns icon option by ID. Returns undefined for invalid/unknown IDs. */
 export function getListIconById(id: string | undefined): ListIconOption | undefined {
+  if (!id || typeof id !== 'string' || !VALID_ICON_IDS.has(id)) return undefined;
   return LIST_ICON_OPTIONS.find((i) => i.id === id);
 }

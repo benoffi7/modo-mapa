@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useState, lazy, Suspense } from 'react';
+import { cardSx } from '../../theme/cards';
 import {
   Box,
   IconButton,
@@ -182,14 +183,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
             <Box
               key={fav.businessId}
               onClick={() => handleSelectBusiness(fav.business)}
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                p: 1.5,
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
+              sx={cardSx}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>

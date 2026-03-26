@@ -3,6 +3,7 @@ import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Typography, Box,
 } from '@mui/material';
+import { cardSx } from '../../theme/cards';
 import SendIcon from '@mui/icons-material/Send';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import { where } from 'firebase/firestore';
@@ -104,14 +105,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
                 <Box
                   key={rec.id}
                   onClick={() => handleClick(rec)}
-                  sx={{
-                    border: 1,
-                    borderColor: rec.read ? 'divider' : 'primary.main',
-                    borderRadius: 2,
-                    p: 1.5,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
-                  }}
+                  sx={{ ...cardSx, borderColor: rec.read ? 'divider' : 'primary.main' }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>

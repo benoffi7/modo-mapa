@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
+import { cardSx, iconCircleSx } from '../../theme/cards';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StarIcon from '@mui/icons-material/Star';
@@ -63,19 +64,9 @@ export default function SpecialsSection() {
           <Box
             key={item.id}
             onClick={() => trackEvent('special_tapped', { special_id: item.id, type: item.type })}
-            sx={{
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              p: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              cursor: 'pointer',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
+            sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
           >
-            <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: 'action.selected', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Box sx={iconCircleSx('action.selected')}>
               {ICON_MAP[item.icon] ?? <StarIcon color="primary" />}
             </Box>
             <Box sx={{ flex: 1 }}>

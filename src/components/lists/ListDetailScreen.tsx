@@ -24,8 +24,10 @@ interface Props {
 }
 
 export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: Props) {
-  useAuth();
+  const { user } = useAuth();
   const toast = useToast();
+  const isOwner = user?.uid === list.ownerId;
+  const canEdit = isOwner && !readOnly;
   const { navigateToBusiness } = useNavigateToBusiness();
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +75,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       <Toolbar variant="dense" sx={{ gap: 1 }}>
         <IconButton edge="start" onClick={onBack}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
-        {!readOnly && (
+        {canEdit && (
           <>
             <IconButton size="small" onClick={handleTogglePublic}>
               {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
@@ -126,7 +128,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
                     secondary={CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
                     primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
                   />
-                  {!readOnly && (
+                  {canEdit && (
                     <IconButton
                       size="small"
                       onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
