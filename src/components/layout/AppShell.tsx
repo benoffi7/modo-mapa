@@ -16,11 +16,7 @@ export default function AppShell() {
   const { handleCreateAccount, handleLogin } = useOnboarding();
 
   // Deep links
-  useDeepLinks((listId) => {
-    setSharedListId(listId);
-    setMenuInitialSection('lists');
-    setMenuOpen(true);
-  });
+  useDeepLinks();
 
   // Reopen shared list when BusinessSheet closes.
   const returnToListId = useRef<string | null>(null);
