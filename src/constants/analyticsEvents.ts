@@ -34,3 +34,6 @@ export const EVT_SUB_TAB_SWITCHED = 'sub_tab_switched';
 export const EVT_RECOMMENDATION_SENT = 'recommendation_sent';
 export const EVT_RECOMMENDATION_OPENED = 'recommendation_opened';
 export const EVT_RECOMMENDATION_LIST_VIEWED = 'recommendation_list_viewed';
+
+// Force update events (#191)
+export const EVT_FORCE_UPDATE_TRIGGERED = 'force_update_triggered';

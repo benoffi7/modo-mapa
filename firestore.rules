@@ -197,6 +197,13 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    // App version — lectura publica para force-update check (#191).
+    // Solo Admin SDK (CI/CD) puede escribir.
+    match /config/appVersion {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Config (counters, moderation) — solo admin puede leer.
     // Cloud Functions escribe con admin SDK (bypasea rules).
     match /config/{document=**} {

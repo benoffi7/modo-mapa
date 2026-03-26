@@ -9,3 +9,9 @@ export const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
 
 /** Delay before showing onboarding hint to new users (4 hours) */
 export const ONBOARDING_HINT_DELAY_MS = 4 * 60 * 60 * 1000;
+
+/** Interval between force-update version checks (30 minutes) */
+export const FORCE_UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+
+/** Minimum time between forced refreshes to prevent loops (5 minutes) */
+export const FORCE_UPDATE_COOLDOWN_MS = 5 * 60 * 1000;
