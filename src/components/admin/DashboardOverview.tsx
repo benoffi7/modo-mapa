@@ -1,26 +1,19 @@
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { fetchCounters, fetchAllCustomTags, fetchAuthStats, fetchNotificationStats, fetchCommentStats } from '../../services/admin';
+import { fetchCounters, fetchAllCustomTags, fetchAuthStats, fetchNotificationDetails, fetchCommentStats } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
 import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
-import type { AdminCounters, AuthStats, NotificationStats } from '../../types/admin';
+import { NOTIFICATION_TYPE_LABELS } from '../../constants/admin';
+import type { AdminCounters, AuthStats, NotificationDetails } from '../../types/admin';
 import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import CronHealthSection from './CronHealthSection';
 import StatCard from './StatCard';
 import { TopList, PieChartCard } from '../stats';
 import { logger } from '../../utils/logger';
-
-const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
-  like: 'Like',
-  photo_approved: 'Foto aprobada',
-  photo_rejected: 'Foto rechazada',
-  ranking: 'Ranking',
-  feedback_response: 'Respuesta feedback',
-};
 
 interface CommentStats {
   edited: number;
@@ -32,7 +25,7 @@ interface DashboardData {
   counters: AdminCounters | null;
   customTagCounts: Array<{ label: string; value: number }>;
   authStats: AuthStats | null;
-  notificationStats: NotificationStats | null;
+  notificationDetails: NotificationDetails | null;
   commentStats: CommentStats | null;
 }
 
@@ -42,7 +35,7 @@ export default function DashboardOverview() {
       fetchCounters(),
       fetchAllCustomTags(),
       fetchAuthStats().catch((err) => { logger.error('[DashboardOverview] fetchAuthStats failed:', err); return null; }),
-      fetchNotificationStats().catch((err) => { logger.error('[DashboardOverview] fetchNotificationStats failed:', err); return null; }),
+      fetchNotificationDetails().catch((err) => { logger.error('[DashboardOverview] fetchNotificationDetails failed:', err); return null; }),
       fetchCommentStats().catch((err) => { logger.error('[DashboardOverview] fetchCommentStats failed:', err); return null; }),
     ]);
 
@@ -54,7 +47,7 @@ export default function DashboardOverview() {
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
 
-    return { counters, customTagCounts, authStats, notificationStats, commentStats };
+    return { counters, customTagCounts, authStats, notificationDetails: notificationStats, commentStats };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
@@ -66,7 +59,7 @@ export default function DashboardOverview() {
   const counters = data?.counters;
   const customTagCounts = data?.customTagCounts ?? [];
   const authStats = data?.authStats;
-  const notifStats = data?.notificationStats;
+  const notifStats = data?.notificationDetails;
   const commentStats = data?.commentStats;
 
   const ratingPieData = metrics
@@ -88,9 +81,9 @@ export default function DashboardOverview() {
     : [];
 
   const notifPieData = notifStats
-    ? Object.entries(notifStats.byType).map(([type, count]) => ({
-        name: NOTIFICATION_TYPE_LABELS[type] ?? type,
-        value: count,
+    ? notifStats.byType.map((entry) => ({
+        name: NOTIFICATION_TYPE_LABELS[entry.type] ?? entry.type,
+        value: entry.total,
       }))
     : [];
 

@@ -34,9 +34,10 @@ import {
   followConverter,
   recommendationConverter,
   checkinConverter,
+  userSettingsConverter,
 } from '../config/converters';
 import { countersConverter, dailyMetricsConverter, abuseLogConverter, perfMetricsConverter } from '../config/adminConverters';
-import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, NotificationStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats } from '../types/admin';
+import type { AdminCounters, DailyMetrics, AbuseLog, AuthStats, SettingsAggregates, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats } from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, Feedback, UserProfile, MenuPhoto, CommentLike, PriceLevel, TrendingData, UserRanking, Follow, Recommendation, CheckIn } from '../types';
 
@@ -267,25 +268,10 @@ export async function fetchAuthStats(): Promise<AuthStats> {
   return result.data;
 }
 
-// ── Notification Stats ────────────────────────────────────────────────
-
-export async function fetchNotificationStats(): Promise<NotificationStats> {
-  const snap = await getDocs(collection(db, COLLECTIONS.NOTIFICATIONS));
-  let read = 0;
-  const byType: Record<string, number> = {};
-  for (const d of snap.docs) {
-    const data = d.data();
-    if (data.read) read++;
-    const type = String(data.type ?? 'unknown');
-    byType[type] = (byType[type] ?? 0) + 1;
-  }
-  return { total: snap.size, read, unread: snap.size - read, byType };
-}
-
 // ── Settings Aggregates ───────────────────────────────────────────────
 
 export async function fetchSettingsAggregates(): Promise<SettingsAggregates> {
-  const snap = await getDocs(collection(db, COLLECTIONS.USER_SETTINGS));
+  const snap = await getDocs(collection(db, COLLECTIONS.USER_SETTINGS).withConverter(userSettingsConverter));
   let publicProfiles = 0;
   let notificationsEnabled = 0;
   let analyticsEnabled = 0;
