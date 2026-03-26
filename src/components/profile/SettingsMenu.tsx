@@ -44,7 +44,7 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         <ListItemIcon sx={{ minWidth: 40 }}>
           <SecurityIcon />
         </ListItemIcon>
-        <ListItemText primary="Privacidad y ajuste" />
+        <ListItemText primary="Privacidad" />
         <ChevronRightIcon color="action" />
       </ListItemButton>
 

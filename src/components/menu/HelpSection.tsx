@@ -83,7 +83,7 @@ const HELP_ITEMS: HelpItem[] = [
     icon: <SettingsOutlinedIcon color="primary" />,
     title: 'Configuracion',
     description:
-      'Accede desde Perfil > Configuracion. Incluye cuenta (crear cuenta, verificar email, cambiar contrasena, cerrar sesion), perfil publico/privado, datos de uso (analytics), localidad, preferencias de notificaciones y modo oscuro (en Privacidad y ajuste).',
+      'Accede desde Perfil > Configuracion. Incluye cuenta (crear cuenta, verificar email, cambiar contrasena, cerrar sesion), perfil publico/privado, datos de uso (analytics), localidad, preferencias de notificaciones y modo oscuro.',
   },
   {
     id: 'cuenta',
