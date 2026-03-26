@@ -56,7 +56,7 @@ export default function SocialScreen() {
               onClick={() => handleChipClick(t.id)}
               variant={socialSubTab === t.id ? 'filled' : 'outlined'}
               color={socialSubTab === t.id ? 'primary' : 'default'}
-              sx={{ fontWeight: socialSubTab === t.id ? 600 : 400 }}
+              sx={{ fontWeight: socialSubTab === t.id ? 600 : 400, borderRadius: 2, px: 1, height: 36, '& .MuiChip-label': { px: 1 } }}
             />
           </Badge>
         ))}
