@@ -341,6 +341,9 @@
   - [Staging Cloud Functions Friction](/postmortem/2026-03-19-staging-cloud-functions-friction.md)
 
 - **[PRDs](/prd/)**
+  - [#158 Redesign Tab Navigation](/prd/158-redesign-tab-navigation.md)
+    - [Specs](/prd/158-specs.md)
+    - [Plan](/prd/158-plan.md)
   - [#167 Office Marker](/prd/167-office-marker.md)
 
 - **[Issues](/issues/)**
