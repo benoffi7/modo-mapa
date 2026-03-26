@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { Box, Typography, Avatar, Divider, IconButton, CircularProgress, Toolbar } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../../context/AuthContext';
-import { useMyCheckIns } from '../../hooks/useMyCheckIns';
+import { useProfileStats } from '../../hooks/useProfileStats';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
@@ -47,7 +47,7 @@ function SectionLoader() {
 
 export default function ProfileScreen() {
   const { displayName, user } = useAuth();
-  const { stats } = useMyCheckIns();
+  const profileStats = useProfileStats();
   const { isOffline } = useConnectivity();
   const { navigateToListsSubTab } = useTabNavigation();
   const { navigateToBusiness } = useNavigateToBusiness();
@@ -137,10 +137,10 @@ export default function ProfileScreen() {
 
       {/* Stats */}
       <StatsCards
-        places={stats.uniqueBusinesses}
-        reviews={0}
-        followers={0}
-        favorites={0}
+        places={profileStats.places}
+        reviews={profileStats.reviews}
+        followers={profileStats.followers}
+        favorites={profileStats.favorites}
         onPlacesTap={() => setActiveSection('stats')}
         onReviewsTap={() => setActiveSection('reviews')}
         onFavoritesTap={() => navigateToListsSubTab('favoritos')}

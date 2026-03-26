@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
-import { Box, Tabs, Tab, Badge, Typography, CircularProgress } from '@mui/material';
+import { Box, Tabs, Tab, Badge, Typography } from '@mui/material';
+import TabLoader from '../ui/TabLoader';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
 import PeopleIcon from '@mui/icons-material/People';
 import SendIcon from '@mui/icons-material/Send';
@@ -24,14 +25,6 @@ const SUB_TABS: { id: SocialSubTab; label: string; icon: React.ReactElement }[] 
   { id: 'recomendaciones', label: 'Recos', icon: <SendIcon fontSize="small" /> },
   { id: 'rankings', label: 'Rankings', icon: <LeaderboardIcon fontSize="small" /> },
 ];
-
-function TabLoader() {
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-      <CircularProgress size={28} />
-    </Box>
-  );
-}
 
 export default function SocialScreen() {
   const { socialSubTab, setSocialSubTab } = useTab();

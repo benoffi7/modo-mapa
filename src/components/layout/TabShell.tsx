@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import TabBar, { TAB_BAR_HEIGHT } from './TabBar';
+import TabLoader from '../ui/TabLoader';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -15,14 +16,6 @@ const ListsScreen = lazy(() => import('../lists/ListsScreen'));
 const SocialScreen = lazy(() => import('../social/SocialScreen'));
 const ProfileScreen = lazy(() => import('../profile/ProfileScreen'));
 const HomeScreen = lazy(() => import('../home/HomeScreen'));
-
-function TabLoader() {
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-      <CircularProgress size={28} />
-    </Box>
-  );
-}
 
 function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
   return (

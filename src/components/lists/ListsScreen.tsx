@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { Box, Tabs, Tab, Typography, CircularProgress } from '@mui/material';
+import { Box, Tabs, Tab, Typography } from '@mui/material';
+import TabLoader from '../ui/TabLoader';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import HistoryIcon from '@mui/icons-material/History';
@@ -21,14 +22,6 @@ const SUB_TABS: { id: ListsSubTab; label: string; icon: React.ReactElement }[] =
   { id: 'recientes', label: 'Recientes', icon: <HistoryIcon fontSize="small" /> },
   { id: 'colaborativas', label: 'Colab.', icon: <GroupIcon fontSize="small" /> },
 ];
-
-function TabLoader() {
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-      <CircularProgress size={28} />
-    </Box>
-  );
-}
 
 export default function ListsScreen() {
   const { listsSubTab, setListsSubTab } = useTab();

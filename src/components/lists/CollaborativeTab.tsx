@@ -6,6 +6,7 @@ import PublicIcon from '@mui/icons-material/Public';
 import { useAuth } from '../../context/AuthContext';
 import { fetchSharedWithMe } from '../../services/sharedLists';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { trackEvent } from '../../utils/analytics';
 import type { SharedList } from '../../types';
 
 export default function CollaborativeTab() {
@@ -49,7 +50,10 @@ export default function CollaborativeTab() {
     <PullToRefreshWrapper onRefresh={load}>
       <List disablePadding>
         {lists.map((list) => (
-          <ListItemButton key={list.id}>
+          <ListItemButton key={list.id} onClick={() => {
+            trackEvent('collaborative_list_opened', { list_id: list.id });
+            // TODO: navigate to list detail view when available
+          }}>
             <ListItemIcon sx={{ minWidth: 36 }}>
               {list.isPublic ? (
                 <PublicIcon fontSize="small" color="info" />
