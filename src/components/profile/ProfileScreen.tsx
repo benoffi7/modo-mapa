@@ -30,7 +30,7 @@ const SECTION_TITLES: Record<string, string> = {
   notifications: 'Notificaciones',
   pendientes: 'Pendientes',
   privacy: 'Privacidad y ajuste',
-  config: 'Configuracion',
+  config: 'Configuración',
   help: 'Ayuda y soporte',
   reviews: 'Resenas',
   stats: 'Estadisticas',
@@ -75,13 +75,7 @@ export default function ProfileScreen() {
           <Suspense fallback={<SectionLoader />}>
             {activeSection === 'notifications' && <NotificationsSection />}
             {activeSection === 'pendientes' && <PendingActionsSection />}
-            {activeSection === 'privacy' && (
-              <>
-                <SettingsPanel />
-                <Divider sx={{ my: 1 }} />
-                <PrivacyPolicy />
-              </>
-            )}
+            {activeSection === 'privacy' && <PrivacyPolicy />}
             {activeSection === 'config' && <SettingsPanel />}
             {activeSection === 'help' && (
               <>
