@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
-  List, ListItemButton, ListItemText, ListItemAvatar,
   Avatar, Typography, Box, CircularProgress,
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
@@ -93,18 +92,47 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
           onRetry={handleRefresh}
           onLoadMore={() => loadPage(lastDoc)}
         >
-          <List dense disablePadding>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {items.map((item) => (
-              <ListItemButton key={item.userId} onClick={() => onUserClick(item.userId)}>
-                <ListItemAvatar>
-                  <Avatar sx={{ width: 36, height: 36, fontSize: 16 }}>
-                    {item.displayName.charAt(0).toUpperCase()}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText primary={item.displayName} />
-              </ListItemButton>
+              <Box
+                key={item.userId}
+                onClick={() => onUserClick(item.userId)}
+                sx={{
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  p: 1.5,
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'action.hover' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                }}
+              >
+                <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.dark', fontSize: 16 }}>
+                  {item.displayName.substring(0, 2).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>{item.displayName}</Typography>
+                  <Typography variant="caption" color="text.secondary">Siguiendo</Typography>
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 4,
+                    px: 1.5,
+                    py: 0.5,
+                    fontSize: '0.75rem',
+                    color: 'text.primary',
+                  }}
+                >
+                  Siguiendo
+                </Box>
+              </Box>
             ))}
-          </List>
+          </Box>
         </PaginatedListShell>
       </PullToRefreshWrapper>
     </Box>

@@ -1,10 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import {
   Box,
-  List,
-  ListItemButton,
-  ListItemText,
-  Chip,
   IconButton,
   Typography,
   Button,
@@ -122,45 +118,52 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
         resultCount={filtered.length}
         totalCount={total}
       />
-      <List disablePadding>
-        {filtered.map((fav) => (
-          <ListItemButton
-            key={fav.businessId}
-            onClick={() => handleSelectBusiness(fav.business)}
-            sx={{ pr: 2, py: 1 }}
-          >
-            <ListItemText
-              primary={fav.business.name}
-              secondary={
-                <>
-                  <Chip
-                    label={CATEGORY_LABELS[fav.business.category]}
-                    size="small"
-                    component="span"
-                    sx={{ alignSelf: 'flex-start', fontSize: '0.7rem', height: 20, display: 'inline-flex', mt: 0.5 }}
-                  />
-                  <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                    {fav.business.address}
-                    {' · '}
-                    {formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, fav.business.lat, fav.business.lng))}
-                  </Typography>
-                </>
-              }
-              primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-            />
-            <IconButton
-              edge="end"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveFavorite(fav.businessId);
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
+        {filtered.map((fav) => {
+          const dist = formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, fav.business.lat, fav.business.lng));
+          return (
+            <Box
+              key={fav.businessId}
+              onClick={() => handleSelectBusiness(fav.business)}
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 2,
+                p: 1.5,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
               }}
-              sx={{ color: 'secondary.main' }}
             >
-              <FavoriteIcon />
-            </IconButton>
-          </ListItemButton>
-        ))}
-      </List>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="subtitle2" fontWeight={600}>{fav.business.name}</Typography>
+                    <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />
+                  </Box>
+                  <Typography variant="caption" color="primary.main">
+                    {CATEGORY_LABELS[fav.business.category]}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); handleRemoveFavorite(fav.businessId); }}
+                >
+                  <Typography sx={{ fontSize: 18 }}>...</Typography>
+                </IconButton>
+              </Box>
+              <Box sx={{ borderTop: 1, borderColor: 'divider', mt: 1, pt: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                  <Typography sx={{ fontSize: 14, color: 'warning.main' }}>&#9733;</Typography>
+                  <Typography variant="caption" fontWeight={600}>--</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                  <Typography variant="caption" color="text.secondary">{dist}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
       {hasMore && (
         <Box sx={{ p: 2, textAlign: 'center' }}>
           <Button size="small" onClick={loadMore} disabled={isLoadingMore}>
