@@ -3,6 +3,7 @@ import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Avatar, Typography, Box, CircularProgress,
 } from '@mui/material';
+import { cardSx } from '../../theme/cards';
 import PeopleIcon from '@mui/icons-material/People';
 import { useAuth } from '../../context/AuthContext';
 import { fetchFollowing } from '../../services/follows';
@@ -100,17 +101,7 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
               <Box
                 key={item.userId}
                 onClick={() => onUserClick(item.userId)}
-                sx={{
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  p: 1.5,
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'action.hover' },
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
+                sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
               >
                 <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.dark', fontSize: 16 }}>
                   {item.displayName.substring(0, 2).toUpperCase()}

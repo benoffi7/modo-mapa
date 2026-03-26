@@ -1,4 +1,5 @@
 import { Badge, Button, Box, Typography } from '@mui/material';
+import { cardSx } from '../../theme/cards';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -22,17 +23,7 @@ function MenuItem({ icon, label, badge, onClick }: MenuItemProps) {
   return (
     <Box
       onClick={onClick}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        p: 1.5,
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
-        cursor: 'pointer',
-        '&:hover': { bgcolor: 'action.hover' },
-      }}
+      sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
     >
       {badge ? (
         <Badge badgeContent={badge} color="primary" max={99}>{icon}</Badge>

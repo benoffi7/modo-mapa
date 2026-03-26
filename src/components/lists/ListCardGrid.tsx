@@ -2,6 +2,8 @@ import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { getListIconById } from '../../constants/listIcons';
+import { sanitizeListColor } from './ColorPicker';
+import { cardSx, iconCircleSx, dashedButtonSx } from '../../theme/cards';
 import type { SharedList } from '../../types';
 
 interface Props {
@@ -16,37 +18,15 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5 }}>
         {lists.map((list) => {
-          // icon/color are optional fields not in SharedList type yet
-          const extList = list as unknown as { icon?: string; color?: string };
-          const iconData = getListIconById(extList.icon);
-          const color = extList.color || '#1e88e5';
+          const iconData = getListIconById(list.icon);
+          const color = sanitizeListColor(list.color);
           return (
             <Box
               key={list.id}
               onClick={() => onListClick(list)}
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                p: 1.5,
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' },
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.5,
-              }}
+              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', gap: 0.5 }}
             >
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 1.5,
-                  bgcolor: color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+              <Box sx={iconCircleSx(color)}>
                 <Typography fontSize={22}>
                   {iconData ? iconData.emoji : <FolderOutlinedIcon sx={{ color: 'common.white', fontSize: 22 }} />}
                 </Typography>
@@ -68,13 +48,7 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={onCreateClick}
-          sx={{
-            mt: 2,
-            borderStyle: 'dashed',
-            py: 1.5,
-            color: 'text.secondary',
-            borderColor: 'divider',
-          }}
+          sx={{ mt: 2, ...dashedButtonSx }}
         >
           Crear nueva lista
         </Button>

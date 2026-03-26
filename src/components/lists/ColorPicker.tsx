@@ -12,6 +12,15 @@ export const LIST_COLORS = [
   { id: 'amber', hex: '#ffb300' },
 ];
 
+const ALLOWED_COLORS = new Set(LIST_COLORS.map((c) => c.hex));
+export const DEFAULT_LIST_COLOR = '#1e88e5';
+
+/** Validates a color hex against the whitelist. Returns default if invalid. */
+export function sanitizeListColor(color: string | undefined): string {
+  if (!color || !ALLOWED_COLORS.has(color)) return DEFAULT_LIST_COLOR;
+  return color;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
