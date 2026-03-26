@@ -31,7 +31,7 @@ const AchievementsGrid = lazy(() => import('./AchievementsGrid'));
 const SECTION_TITLES: Record<string, string> = {
   notifications: 'Notificaciones',
   pendientes: 'Pendientes',
-  privacy: 'Privacidad y ajuste',
+  privacy: 'Privacidad',
   config: 'Configuración',
   help: 'Ayuda y soporte',
   reviews: 'Resenas',

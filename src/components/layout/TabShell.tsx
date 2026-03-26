@@ -21,7 +21,10 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
     <Box
       sx={{
         position: 'absolute',
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: `${TAB_BAR_HEIGHT}px`,
         display: isActive ? 'flex' : 'none',
         flexDirection: 'column',
       }}
@@ -45,8 +48,6 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
   );
 }
 
-// Uses ALL_TAB_IDS from types/index.ts
-
 export default function TabShell() {
   const { activeTab } = useTab();
   const { notifications } = useNotifications();
@@ -63,7 +64,6 @@ export default function TabShell() {
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
-        pb: `${TAB_BAR_HEIGHT}px`,
       }}
     >
       <OfflineIndicator />
