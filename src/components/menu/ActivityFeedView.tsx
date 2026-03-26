@@ -9,6 +9,7 @@ import { ActivityFeedItemRow } from './ActivityFeedItem';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_FEED_VIEWED, EVT_FEED_ITEM_CLICKED } from '../../constants/analyticsEvents';
 import { useEffect } from 'react';
+import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 
 interface ActivityFeedViewProps {
   onBusinessClick: (businessId: string) => void;
@@ -22,6 +23,9 @@ export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
     trackEvent(EVT_FEED_VIEWED);
     reload();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reload on mount only
+
+  // Reload when social > actividad becomes active
+  useSocialSubTabRefresh('actividad', reload);
 
   const handleItemClick = useCallback((businessId: string) => {
     trackEvent(EVT_FEED_ITEM_CLICKED, { business_id: businessId });

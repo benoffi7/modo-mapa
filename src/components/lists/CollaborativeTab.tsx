@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import { Box, Typography, CircularProgress, List, ListItemButton, ListItemText, ListItemIcon } from '@mui/material';
 import GroupIcon from '@mui/icons-material/Group';
 import LockIcon from '@mui/icons-material/Lock';
@@ -26,6 +27,9 @@ export default function CollaborativeTab() {
   };
 
   useEffect(() => { load(); }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRefresh = useCallback(async () => { await load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useListsSubTabRefresh('colaborativas', handleRefresh);
 
   if (isLoading) {
     return (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Box, List, ListItemButton, ListItemText, IconButton, Typography, Button,
   Chip, CircularProgress, Collapse, Card, CardActionArea, CardContent,
@@ -135,6 +136,7 @@ export default function SharedListsView({ onSelectBusiness, sharedListId, onRegi
   }, [user]);
 
   const handleRefresh = useCallback(async () => { await loadLists(); }, [loadLists]);
+  useListsSubTabRefresh('listas', handleRefresh);
 
   const handleDelete = async (list: SharedList) => {
     if (!user) return;
