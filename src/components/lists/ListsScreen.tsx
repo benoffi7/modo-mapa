@@ -58,7 +58,11 @@ export default function ListsScreen() {
             color={listsSubTab === t.id ? 'primary' : 'default'}
             sx={{
               fontWeight: listsSubTab === t.id ? 600 : 400,
+              borderRadius: 2,
+              px: 1,
+              height: 36,
               '& .MuiChip-icon': { ml: 0.5 },
+              '& .MuiChip-label': { px: 1 },
             }}
           />
         ))}
