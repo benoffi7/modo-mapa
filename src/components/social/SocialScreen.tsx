@@ -1,10 +1,8 @@
 import { useState, lazy, Suspense } from 'react';
 import { Box, Chip, Badge, Typography } from '@mui/material';
 import TabLoader from '../ui/TabLoader';
-import RssFeedOutlinedIcon from '@mui/icons-material/RssFeedOutlined';
-import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
-import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
-import LeaderboardOutlinedIcon from '@mui/icons-material/LeaderboardOutlined';
+
+
 import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
@@ -18,11 +16,11 @@ const ReceivedRecommendations = lazy(() => import('../menu/ReceivedRecommendatio
 const RankingsView = lazy(() => import('../menu/RankingsView'));
 const UserProfileSheet = lazy(() => import('../user/UserProfileSheet'));
 
-const SUB_TABS: { id: SocialSubTab; label: string; icon: React.ReactElement }[] = [
-  { id: 'actividad', label: 'Actividad', icon: <RssFeedOutlinedIcon sx={{ fontSize: 18 }} /> },
-  { id: 'seguidos', label: 'Seguidos', icon: <PeopleOutlinedIcon sx={{ fontSize: 18 }} /> },
-  { id: 'recomendaciones', label: 'Recos', icon: <SendOutlinedIcon sx={{ fontSize: 18 }} /> },
-  { id: 'rankings', label: 'Rankings', icon: <LeaderboardOutlinedIcon sx={{ fontSize: 18 }} /> },
+const SUB_TABS: { id: SocialSubTab; label: string }[] = [
+  { id: 'actividad', label: 'Actividad' },
+  { id: 'seguidos', label: 'Seguidos' },
+  { id: 'recomendaciones', label: 'Recomendaciones' },
+  { id: 'rankings', label: 'Rankings' },
 ];
 
 export default function SocialScreen() {
@@ -46,24 +44,21 @@ export default function SocialScreen() {
 
       <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1, overflow: 'auto' }}>
         {SUB_TABS.map((t) => (
-          <Chip
+          <Badge
             key={t.id}
-            icon={
-              t.id === 'recomendaciones' && unreadCount > 0 ? (
-                <Badge badgeContent={unreadCount} color="error" max={9} sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}>
-                  {t.icon}
-                </Badge>
-              ) : t.icon
-            }
-            label={t.label}
-            onClick={() => handleChipClick(t.id)}
-            variant={socialSubTab === t.id ? 'filled' : 'outlined'}
-            color={socialSubTab === t.id ? 'primary' : 'default'}
-            sx={{
-              fontWeight: socialSubTab === t.id ? 600 : 400,
-              '& .MuiChip-icon': { ml: 0.5 },
-            }}
-          />
+            badgeContent={t.id === 'recomendaciones' ? unreadCount : 0}
+            color="error"
+            max={9}
+            sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}
+          >
+            <Chip
+              label={t.label}
+              onClick={() => handleChipClick(t.id)}
+              variant={socialSubTab === t.id ? 'filled' : 'outlined'}
+              color={socialSubTab === t.id ? 'primary' : 'default'}
+              sx={{ fontWeight: socialSubTab === t.id ? 600 : 400 }}
+            />
+          </Badge>
         ))}
       </Box>
 
