@@ -10,19 +10,25 @@ function getGreeting(): string {
 }
 
 export default function GreetingHeader() {
-  const { displayName } = useAuth();
+  const { displayName, authMethod } = useAuth();
   const { settings } = useUserSettings();
-  const name = displayName || 'Anonimo';
   const locality = settings.locality || 'Oficina';
+  const isAnonymous = authMethod === 'anonymous';
+  const hasName = displayName && displayName !== 'Anonimo';
 
   return (
     <Box sx={{ px: 2, pt: 2, pb: 1 }}>
       <Typography variant="h5" fontWeight={700}>
-        {getGreeting()}, {name}
+        {hasName ? `${getGreeting()}, ${displayName}` : getGreeting()}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         {locality}
       </Typography>
+      {isAnonymous && !hasName && (
+        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
+          Podes elegir tu nombre en la pestana Perfil
+        </Typography>
+      )}
     </Box>
   );
 }
