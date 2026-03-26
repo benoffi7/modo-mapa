@@ -2,19 +2,11 @@ import { useState, useCallback } from 'react';
 import { Paper, InputBase, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import MenuIcon from '@mui/icons-material/Menu';
 import { useFilters } from '../../context/MapContext';
-import { useAuth } from '../../context/AuthContext';
 import { trackEvent } from '../../utils/analytics';
-import NotificationBell from '../notifications/NotificationBell';
 
-interface Props {
-  onMenuClick: () => void;
-}
-
-export default function SearchBar({ onMenuClick }: Props) {
+export default function SearchBar() {
   const { searchQuery, setSearchQuery } = useFilters();
-  const { user } = useAuth();
   const [focused, setFocused] = useState(false);
 
   const handleClear = useCallback(() => {
@@ -40,8 +32,8 @@ export default function SearchBar({ onMenuClick }: Props) {
         transition: 'box-shadow 0.2s',
       }}
     >
-      <IconButton size="small" aria-label="Menú" onClick={onMenuClick} sx={{ p: 1, color: 'text.secondary' }}>
-        <MenuIcon />
+      <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: 'text.secondary' }}>
+        <SearchIcon />
       </IconButton>
       <InputBase
         placeholder="Buscar comercios..."
@@ -62,16 +54,11 @@ export default function SearchBar({ onMenuClick }: Props) {
           '& input': { p: 0 },
         }}
       />
-      {searchQuery ? (
+      {searchQuery && (
         <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ p: 1, color: 'text.secondary' }}>
           <ClearIcon />
         </IconButton>
-      ) : (
-        <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: 'text.secondary' }}>
-          <SearchIcon />
-        </IconButton>
       )}
-      {user && <NotificationBell />}
     </Paper>
   );
 }

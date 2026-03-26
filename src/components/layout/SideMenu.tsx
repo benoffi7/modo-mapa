@@ -51,7 +51,7 @@ const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection')
 const FollowedList = lazy(() => import('../menu/FollowedList').then((m) => ({ default: m.FollowedList })));
 const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
 const ReceivedRecommendations = lazy(() => import('../menu/ReceivedRecommendations'));
-const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
+
 const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
 const UserProfileSheet = lazy(() => import('../user/UserProfileSheet'));
 import VerificationNudge from '../onboarding/VerificationNudge';
@@ -75,9 +75,6 @@ interface Props {
   sharedListId?: string | undefined;
   onCreateAccount: (source: 'banner' | 'menu' | 'settings') => void;
   onLogin: () => void;
-  emailDialogOpen: boolean;
-  emailDialogTab: 'register' | 'login';
-  onEmailDialogClose: () => void;
 }
 
 export type Section = 'nav' | 'favorites' | 'lists' | 'recent' | 'checkins' | 'suggestions' | 'followed' | 'activity' | 'recommendations' | 'comments' | 'ratings' | 'feedback' | 'stats' | 'rankings' | 'settings' | 'help' | 'privacy' | 'pendientes';
@@ -102,7 +99,7 @@ const SECTION_TITLES: Record<Exclude<Section, 'nav'>, string> = {
   pendientes: 'Acciones pendientes',
 };
 
-export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, onLogin, emailDialogOpen, emailDialogTab, onEmailDialogClose }: Props) {
+export default function SideMenu({ open, onClose, onOpen, onClearSharedList, initialSection, sharedListId, onCreateAccount, onLogin }: Props) {
   const { displayName, authMethod, emailVerified, user } = useAuth();
   const { mode, toggleColorMode } = useColorMode();
   const { notifications } = useNotifications();
@@ -366,17 +363,6 @@ export default function SideMenu({ open, onClose, onOpen, onClearSharedList, ini
           )}
         </Box>
       </SwipeableDrawer>
-
-      {/* Email auth dialog — fully controlled by AppShell */}
-      <Suspense fallback={null}>
-        {emailDialogOpen && (
-          <EmailPasswordDialog
-            open
-            onClose={onEmailDialogClose}
-            initialTab={emailDialogTab}
-          />
-        )}
-      </Suspense>
 
       {/* Edit name dialog */}
       <Suspense fallback={null}>

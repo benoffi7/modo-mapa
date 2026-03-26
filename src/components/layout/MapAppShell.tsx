@@ -1,15 +1,13 @@
-import { APIProvider } from '@vis.gl/react-google-maps';
-import { MapProvider } from '../../context/MapContext';
+import { SelectionProvider } from '../../context/SelectionContext';
+import { OnboardingProvider } from '../../context/OnboardingContext';
 import AppShell from './AppShell';
-
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 export default function MapAppShell() {
   return (
-    <MapProvider>
-      <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+    <SelectionProvider>
+      <OnboardingProvider>
         <AppShell />
-      </APIProvider>
-    </MapProvider>
+      </OnboardingProvider>
+    </SelectionProvider>
   );
 }
