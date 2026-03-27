@@ -6,6 +6,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { incrementBusinessCount, updateRatingAggregates } from '../utils/aggregates';
+import { incrementCounter } from '../utils/counters';
 import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
 import type { UserOwnedCollection } from '../shared/userOwnedCollections';
 
@@ -140,6 +142,80 @@ export const deleteUserAccount = onCall(
     // Collect storage paths for cleanup
     const storagePaths: string[] = [];
 
+    // --- Aggregate corrections (before deletion) ---
+    // Count docs per business so we can decrement counters after deletion
+    const [ratingsSnap, commentsSnap, favoritesSnap, commentLikesSnap, followsAsFollower, followsAsFollowed] =
+      await Promise.all([
+        db.collection('ratings').where('userId', '==', uid).get(),
+        db.collection('comments').where('userId', '==', uid).get(),
+        db.collection('favorites').where('userId', '==', uid).get(),
+        db.collection('commentLikes').where('userId', '==', uid).get(),
+        db.collection('follows').where('followerId', '==', uid).get(),
+        db.collection('follows').where('followedId', '==', uid).get(),
+      ]);
+
+    // Decrement global counters
+    const counterDeltas: Record<string, number> = {};
+    if (!ratingsSnap.empty) counterDeltas.ratings = -ratingsSnap.size;
+    if (!commentsSnap.empty) counterDeltas.comments = -commentsSnap.size;
+    if (!favoritesSnap.empty) counterDeltas.favorites = -favoritesSnap.size;
+    if (!commentLikesSnap.empty) counterDeltas.commentLikes = -commentLikesSnap.size;
+    const totalFollowDocs = followsAsFollower.size + followsAsFollowed.size;
+    if (totalFollowDocs > 0) counterDeltas.follows = -totalFollowDocs;
+
+    for (const [field, delta] of Object.entries(counterDeltas)) {
+      await incrementCounter(db, field, delta);
+    }
+
+    // Decrement per-business aggregates (ratings, comments, favorites)
+    for (const doc of ratingsSnap.docs) {
+      const data = doc.data();
+      if (data.businessId && data.score) {
+        await updateRatingAggregates(db, data.businessId, 'remove', data.score);
+      }
+    }
+    for (const doc of commentsSnap.docs) {
+      const data = doc.data();
+      if (data.businessId && !data.parentId) {
+        await incrementBusinessCount(db, 'businessComments', data.businessId, -1);
+      }
+    }
+    for (const doc of favoritesSnap.docs) {
+      const data = doc.data();
+      if (data.businessId) {
+        await incrementBusinessCount(db, 'businessFavorites', data.businessId, -1);
+      }
+    }
+
+    // Decrement comment like counts on affected comments
+    for (const doc of commentLikesSnap.docs) {
+      const data = doc.data();
+      if (data.commentId) {
+        await db.doc(`comments/${data.commentId}`).update({
+          likeCount: FieldValue.increment(-1),
+        }).catch(() => {}); // comment may already be deleted
+      }
+    }
+
+    // Decrement follower/following counts on affected users
+    for (const doc of followsAsFollower.docs) {
+      const followedId = doc.data().followedId;
+      if (followedId) {
+        await db.doc(`users/${followedId}`).update({
+          followersCount: FieldValue.increment(-1),
+        }).catch(() => {});
+      }
+    }
+    for (const doc of followsAsFollowed.docs) {
+      const followerId = doc.data().followerId;
+      if (followerId) {
+        await db.doc(`users/${followerId}`).update({
+          followingCount: FieldValue.increment(-1),
+        }).catch(() => {});
+      }
+    }
+
+    // --- Delete all user-owned collections ---
     // Process cascade collections first (they delete from other collections)
     const cascadeEntries = USER_OWNED_COLLECTIONS.filter((e) => e.cascade);
     const otherEntries = USER_OWNED_COLLECTIONS.filter((e) => !e.cascade);
