@@ -142,4 +142,15 @@ describe('USER_OWNED_COLLECTIONS registry', () => {
     expect(collections).toContain('users');
     expect(collections).toContain('userSettings');
   });
+
+  it('all collection names exist in COLLECTIONS constant', () => {
+    const validNames = new Set(Object.values(COLLECTIONS_MAP));
+    const missing: string[] = [];
+    for (const entry of USER_OWNED_COLLECTIONS) {
+      if (!validNames.has(entry.collection)) {
+        missing.push(entry.collection);
+      }
+    }
+    expect(missing, `Collection names not in COLLECTIONS:\n${missing.join(', ')}`).toEqual([]);
+  });
 });

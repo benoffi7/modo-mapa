@@ -9,7 +9,8 @@ const mockBatch = { delete: mockBatchDelete, commit: mockBatchCommit };
 const mockDocGet = vi.fn();
 const mockDocDelete = vi.fn().mockResolvedValue(undefined);
 const mockDocSet = vi.fn().mockResolvedValue(undefined);
-const mockDocRef = { get: mockDocGet, delete: mockDocDelete, set: mockDocSet };
+const mockDocUpdate = vi.fn().mockResolvedValue(undefined);
+const mockDocRef = { get: mockDocGet, delete: mockDocDelete, set: mockDocSet, update: mockDocUpdate };
 
 const mockCollectionGet = vi.fn();
 const mockSubCollectionGet = vi.fn();
@@ -47,6 +48,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
     serverTimestamp: vi.fn(() => 'SERVER_TS'),
+    increment: vi.fn((n: number) => `INCREMENT(${n})`),
   },
 }));
 
@@ -155,11 +157,12 @@ describe('deleteUserAccount', () => {
     const mockDocRef1 = { ref: { id: 'r1', collection: vi.fn(() => ({ get: mockSubCollectionGet })) }, data: () => ({}) };
     const mockDocRef2 = { ref: { id: 'r2', collection: vi.fn(() => ({ get: mockSubCollectionGet })) }, data: () => ({}) };
 
-    // First collection query returns docs, rest empty
+    // Aggregate queries (6 parallel) return empty, then first real collection query returns docs
     let callCount = 0;
     mockCollectionGet.mockImplementation(() => {
       callCount++;
-      if (callCount === 1) {
+      // The 7th call is the first real collection query (after 6 aggregate queries)
+      if (callCount === 7) {
         return Promise.resolve({ empty: false, docs: [mockDocRef1, mockDocRef2] });
       }
       return Promise.resolve({ empty: true, docs: [] });
