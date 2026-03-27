@@ -111,7 +111,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
               <Card key={fl.id} variant="outlined" sx={{ minWidth: 170, flexShrink: 0 }}>
                 <CardActionArea onClick={() => setSelectedList(fl)}>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Chip label="Destacada" size="small" color="primary" sx={{ mb: 0.5, height: 20, fontSize: '0.65rem', borderRadius: 1.5 }} />
+                    <Chip label="Destacada" size="small" color="primary" sx={{ mb: 0.5, height: 20, fontSize: '0.65rem' }} />
                     <Typography variant="subtitle2" noWrap>{fl.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {fl.itemCount} comercio{fl.itemCount !== 1 ? 's' : ''}
