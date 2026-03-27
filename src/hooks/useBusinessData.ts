@@ -272,7 +272,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       setStale(false);
       setBusinessCache(bId, result);
       // Write to IndexedDB read cache (fire-and-forget)
-      setReadCacheEntry(bId, result).catch(() => {});
+      setReadCacheEntry(bId, result).catch((e) => logger.warn('[useBusinessData] cache write failed', e));
     } catch (err) {
       if (fetchIdRef.current !== id) return;
       if (import.meta.env.DEV) logger.error('Error loading business data:', err);
