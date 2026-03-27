@@ -11,7 +11,25 @@ import {
 import type { User } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { AUTH_ERRORS } from '../constants/auth';
-import { STORAGE_KEY_VISITS } from '../constants/storage';
+import {
+  STORAGE_KEY_VISITS,
+  STORAGE_KEY_ONBOARDING_CREATED_AT,
+  STORAGE_KEY_ONBOARDING_COMPLETED,
+  STORAGE_KEY_ONBOARDING_DISMISSED,
+  STORAGE_KEY_ONBOARDING_RANKING_VIEWED,
+  STORAGE_KEY_ONBOARDING_CELEBRATED,
+  STORAGE_KEY_ONBOARDING_EXPANDED,
+  STORAGE_KEY_HINT_POST_FIRST_RATING,
+  STORAGE_KEY_HINT_POST_FIRST_COMMENT,
+  STORAGE_KEY_ACCOUNT_BANNER_DISMISSED,
+  STORAGE_KEY_BENEFITS_SHOWN,
+  STORAGE_KEY_ACTIVITY_REMINDER_SHOWN,
+  STORAGE_KEY_ANON_RATING_COUNT,
+  STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED,
+  STORAGE_KEY_REMEMBERED_EMAIL,
+} from '../constants/storage';
+import { invalidateAllQueryCache } from './queryCache';
+import { clearAllBusinessCache } from '../hooks/useBusinessDataCache';
 
 /** Traduce un error de Firebase Auth a un mensaje en español */
 export function getAuthErrorMessage(error: unknown): string {
@@ -83,4 +101,52 @@ export async function changePassword(
 export async function signOutAndReset(): Promise<void> {
   await firebaseSignOut(auth);
   localStorage.removeItem(STORAGE_KEY_VISITS);
+}
+
+const USER_STORAGE_KEYS = [
+  STORAGE_KEY_VISITS,
+  STORAGE_KEY_ONBOARDING_CREATED_AT,
+  STORAGE_KEY_ONBOARDING_COMPLETED,
+  STORAGE_KEY_ONBOARDING_DISMISSED,
+  STORAGE_KEY_ONBOARDING_RANKING_VIEWED,
+  STORAGE_KEY_ONBOARDING_CELEBRATED,
+  STORAGE_KEY_ONBOARDING_EXPANDED,
+  STORAGE_KEY_HINT_POST_FIRST_RATING,
+  STORAGE_KEY_HINT_POST_FIRST_COMMENT,
+  STORAGE_KEY_ACCOUNT_BANNER_DISMISSED,
+  STORAGE_KEY_BENEFITS_SHOWN,
+  STORAGE_KEY_ACTIVITY_REMINDER_SHOWN,
+  STORAGE_KEY_ANON_RATING_COUNT,
+  STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED,
+  STORAGE_KEY_REMEMBERED_EMAIL,
+];
+
+/**
+ * Elimina permanentemente la cuenta del usuario y todos sus datos.
+ * Requiere re-autenticación con contraseña actual.
+ */
+export async function deleteAccount(
+  currentUser: User,
+  password: string,
+): Promise<void> {
+  // Re-authenticate
+  const credential = EmailAuthProvider.credential(currentUser.email!, password);
+  await reauthenticateWithCredential(currentUser, credential);
+
+  // Call Cloud Function to delete all server-side data
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ databaseId?: string }, { success: boolean }>(functions, 'deleteUserAccount');
+  await fn({ databaseId });
+
+  // Clear all local user data
+  for (const key of USER_STORAGE_KEYS) {
+    localStorage.removeItem(key);
+  }
+  invalidateAllQueryCache();
+  clearAllBusinessCache();
+
+  // Sign out — triggers onAuthStateChanged which auto-creates new anonymous account
+  await firebaseSignOut(auth);
 }

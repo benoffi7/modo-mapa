@@ -23,7 +23,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "baseUrl": ".",
+    "paths": { "@shared/*": ["shared/*"] }
   },
-  "include": ["src"]
+  "include": ["src", "shared"],
+  "exclude": ["shared/**/*.test.ts"]
 }

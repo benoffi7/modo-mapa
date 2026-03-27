@@ -6,6 +6,7 @@
     "node": "22"
   },
   "scripts": {
+    "prebuild": "mkdir -p src/shared && cp ../shared/*.ts src/shared/ && rm -f src/shared/*.test.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "vitest",

@@ -41,3 +41,8 @@ export function patchBusinessCache(
   if (!entry) return;
   cache.set(businessId, { ...entry, ...patch, timestamp: Date.now() });
 }
+
+/** Clear all cached business data (used during account deletion). */
+export function clearAllBusinessCache(): void {
+  cache.clear();
+}
