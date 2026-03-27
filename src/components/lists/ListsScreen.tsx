@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Box, Chip, Typography, IconButton } from '@mui/material';
 import TabLoader from '../ui/TabLoader';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -6,6 +6,7 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import AddIcon from '@mui/icons-material/Add';
+import CreateListDialog from '../menu/CreateListDialog';
 import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { trackEvent } from '../../utils/analytics';
@@ -28,6 +29,7 @@ const SUB_TABS: { id: ListsSubTab; label: string; icon: React.ReactElement }[] =
 export default function ListsScreen() {
   const { listsSubTab, setListsSubTab } = useTab();
   const { navigateToBusiness } = useNavigateToBusiness();
+  const [createOpen, setCreateOpen] = useState(false);
 
   const handleChipClick = (tab: ListsSubTab) => {
     trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'listas', sub_tab: tab });
@@ -41,6 +43,7 @@ export default function ListsScreen() {
         <Typography variant="h6" fontWeight={700}>Mis Listas</Typography>
         <IconButton
           size="small"
+          onClick={() => setCreateOpen(true)}
           sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
         >
           <AddIcon />
@@ -79,6 +82,14 @@ export default function ListsScreen() {
           {listsSubTab === 'colaborativas' && <CollaborativeTab />}
         </Suspense>
       </Box>
+      <CreateListDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          setCreateOpen(false);
+          setListsSubTab('listas');
+        }}
+      />
     </Box>
   );
 }

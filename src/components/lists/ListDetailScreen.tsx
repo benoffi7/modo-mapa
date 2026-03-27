@@ -8,9 +8,12 @@ import LockIcon from '@mui/icons-material/Lock';
 import PublicIcon from '@mui/icons-material/Public';
 import ShareIcon from '@mui/icons-material/Share';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import ColorPicker from './ColorPicker';
+import { sanitizeListColor } from './ColorPicker';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { fetchListItems, removeBusinessFromList, toggleListPublic, deleteList } from '../../services/sharedLists';
+import { fetchListItems, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -31,6 +34,8 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const { navigateToBusiness } = useNavigateToBusiness();
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [currentColor, setCurrentColor] = useState(() => sanitizeListColor(list.color));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +47,15 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   }, [list.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleColorChange = async (hex: string) => {
+    setCurrentColor(hex);
+    try {
+      await updateList(list.id, list.name, list.description, hex);
+    } catch {
+      toast.error('Error al cambiar color');
+    }
+  };
 
   const handleTogglePublic = async () => {
     await toggleListPublic(list.id, !list.isPublic);
@@ -77,6 +91,9 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEdit && (
           <>
+            <IconButton size="small" onClick={() => setColorPickerOpen(true)}>
+              <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
+            </IconButton>
             <IconButton size="small" onClick={handleTogglePublic}>
               {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
             </IconButton>
@@ -101,6 +118,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           label={list.isPublic ? 'Publica' : 'Privada'}
           icon={list.isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
+          sx={{ borderRadius: 1.5 }}
         />
       </Box>
 
@@ -142,6 +160,13 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           </List>
         )}
       </Box>
+
+      <ColorPicker
+        open={colorPickerOpen}
+        onClose={() => setColorPickerOpen(false)}
+        onSelect={handleColorChange}
+        selectedHex={currentColor}
+      />
     </Box>
   );
 }

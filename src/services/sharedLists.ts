@@ -54,12 +54,14 @@ export async function toggleListPublic(listId: string, isPublic: boolean): Promi
   });
 }
 
-export async function updateList(listId: string, name: string, description: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), {
+export async function updateList(listId: string, name: string, description: string, color?: string): Promise<void> {
+  const data: Record<string, unknown> = {
     name: name.trim(),
     description: description.trim(),
     updatedAt: serverTimestamp(),
-  });
+  };
+  if (color !== undefined) data.color = color;
+  await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), data);
 }
 
 export async function deleteList(listId: string, ownerId: string): Promise<void> {

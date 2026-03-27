@@ -1,4 +1,5 @@
-import { Badge, Button, Box, Typography } from '@mui/material';
+import { useState } from 'react';
+import { Badge, Button, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { cardSx } from '../../theme/cards';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
@@ -7,6 +8,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../context/AuthContext';
 
@@ -41,8 +43,15 @@ interface Props {
 
 export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
   const { notifications } = useNotifications();
-  const { signOut } = useAuth();
+  const { signOut, authMethod } = useAuth();
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const isAnonymous = authMethod === 'anonymous';
+
+  const handleConfirm = async () => {
+    await signOut();
+    setConfirmOpen(false);
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, pb: 2 }}>
@@ -79,16 +88,46 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         onClick={() => onNavigate('help')}
       />
 
-      <Button
-        fullWidth
-        variant="outlined"
-        color="error"
-        startIcon={<LogoutIcon />}
-        onClick={signOut}
-        sx={{ mt: 1 }}
-      >
-        Cerrar sesión
-      </Button>
+      {isAnonymous ? (
+        <Button
+          fullWidth
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteOutlineIcon />}
+          onClick={() => setConfirmOpen(true)}
+          sx={{ mt: 1 }}
+        >
+          Limpiar mis datos
+        </Button>
+      ) : (
+        <Button
+          fullWidth
+          variant="outlined"
+          color="error"
+          startIcon={<LogoutIcon />}
+          onClick={() => setConfirmOpen(true)}
+          sx={{ mt: 1 }}
+        >
+          Cerrar sesión
+        </Button>
+      )}
+
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs">
+        <DialogTitle>{isAnonymous ? '¿Limpiar datos?' : '¿Cerrar sesión?'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {isAnonymous
+              ? 'Se van a borrar todos tus datos (favoritos, calificaciones, listas, etc.) y vas a empezar de cero. Esta acción no se puede deshacer.'
+              : 'Vas a necesitar tu email y contraseña para volver a entrar.'}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+          <Button onClick={handleConfirm} color="error" variant="contained">
+            {isAnonymous ? 'Limpiar datos' : 'Cerrar sesión'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

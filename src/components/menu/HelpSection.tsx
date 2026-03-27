@@ -8,6 +8,7 @@ import {
   Box,
   Chip,
 } from '@mui/material';
+import { NAV_CHIP_SX } from '../../constants/ui';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
@@ -188,13 +189,13 @@ export default function HelpSection() {
           <Chip
             label={group.label}
             size="small"
+            variant="outlined"
             sx={{
-              mt: 2,
-              mb: 0.5,
+              ...NAV_CHIP_SX,
+              mt: 2.5,
+              mb: 1,
               ml: 2,
-              fontWeight: 700,
-              fontSize: '0.7rem',
-              height: 22,
+              fontWeight: 600,
             }}
           />
           {group.items.map((item) => (
