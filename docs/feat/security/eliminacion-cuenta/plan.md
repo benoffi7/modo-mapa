@@ -7,72 +7,76 @@
 
 ## Fases de implementacion
 
-### Fase 1: Registry y cache helpers
+### Fase 1: Shared registry, path aliases y cache helpers
 
 **Branch:** `feat/delete-account`
 
 | Paso | Archivo | Cambio |
 |---|---|---|
-| 1 | `src/config/collections.ts` | Add `UserOwnedCollection` interface and `USER_OWNED_COLLECTIONS` array after the existing `COLLECTIONS` const |
-| 2 | `src/services/queryCache.ts` | Add `invalidateAllQueryCache()` function that calls `queryCache.clear()` |
-| 3 | `src/hooks/useBusinessDataCache.ts` | Add `clearAllBusinessCache()` function that calls `cache.clear()` |
-| 4 | `src/constants/analyticsEvents.ts` | Add `export const EVT_ACCOUNT_DELETED = 'account_deleted'` |
-| 5 | `src/config/collections.test.ts` | Create validation test: scan `src/services/*.ts` for `where('userId'` etc., verify each collection+field pair exists in `USER_OWNED_COLLECTIONS`. Also validate array structure (no duplicates, valid types, required fields per type) |
+| 1 | `shared/userOwnedCollections.ts` | Crear carpeta `shared/` en raiz. Crear archivo con `UserOwnedCollection` interface y `USER_OWNED_COLLECTIONS` array (pure types + data, zero dependencies) |
+| 2 | `tsconfig.app.json` | Agregar `"paths": { "@shared/*": ["../shared/*"] }` |
+| 3 | `vite.config.ts` | Agregar alias `@shared` en `resolve.alias`: `'@shared': path.resolve(__dirname, 'shared')` |
+| 4 | `functions/tsconfig.json` | Agregar `"baseUrl": "."`, `"paths": { "@shared/*": ["../shared/*"] }`, `"../shared"` en `include` |
+| 5 | `functions/package.json` | Agregar `tsc-alias` como devDependency. Ajustar build script: `"build": "tsc && tsc-alias"` |
+| 6 | `src/services/queryCache.ts` | Agregar `invalidateAllQueryCache()` function que llama `queryCache.clear()` |
+| 7 | `src/hooks/useBusinessDataCache.ts` | Agregar `clearAllBusinessCache()` function que llama `cache.clear()` |
+| 8 | `src/constants/analyticsEvents.ts` | Agregar `export const EVT_ACCOUNT_DELETED = 'account_deleted'` |
+| 9 | `shared/userOwnedCollections.test.ts` | Crear test de validacion: scan `src/services/*.ts` buscando `where('userId'` etc., verificar que cada par coleccion+campo existe en `USER_OWNED_COLLECTIONS`. Validar estructura del array (sin duplicados, tipos validos, campos requeridos por tipo) |
 
 ### Fase 2: Cloud Function
 
 | Paso | Archivo | Cambio |
 |---|---|---|
-| 1 | `functions/src/config/userOwnedCollections.ts` | Create file with duplicated `UserOwnedCollection` interface and `USER_OWNED_COLLECTIONS` array (same values as `src/config/collections.ts`) |
-| 2 | `functions/src/callable/deleteUserAccount.ts` | Create callable: validate auth + email token, rate limit check, iterate `USER_OWNED_COLLECTIONS` with strategy per type (doc-by-uid, query, query+biField, subcollection), handle `hasStorage`/`subcollections`/`cascade`, Storage prefix cleanup (`feedback-media/{uid}/`, `menu-photos/{uid}/`), `admin.auth().deleteUser(uid)`, log with hashed uid |
-| 3 | `functions/src/index.ts` | Add `export { deleteUserAccount } from './callable/deleteUserAccount'` |
-| 4 | `functions/src/callable/deleteUserAccount.test.ts` | Create test file: mock Admin SDK (Firestore, Auth, Storage), test unauthenticated rejection, anonymous rejection, rate limit, all collection type strategies, Storage cleanup, auth deletion, idempotency, `user-not-found` graceful handling |
-| 5 | `functions/src/callable/deleteUserAccount.parity.test.ts` | Create parity test: read both `src/config/collections.ts` and `functions/src/config/userOwnedCollections.ts`, compare arrays field by field, fail if mismatch |
+| 1 | `functions/src/callable/deleteUserAccount.ts` | Crear callable: validar auth + email token, rate limit check, iterar `USER_OWNED_COLLECTIONS` (importado de `@shared/userOwnedCollections`) con estrategia por tipo (doc-by-uid, query, query+biField, subcollection), manejar `hasStorage`/`subcollections`/`cascade`, Storage prefix cleanup (`feedback-media/{uid}/`, `menu-photos/{uid}/`), `admin.auth().deleteUser(uid)`, log con uid hasheado |
+| 2 | `functions/src/index.ts` | Agregar `export { deleteUserAccount } from './callable/deleteUserAccount'` |
+| 3 | `functions/src/callable/deleteUserAccount.test.ts` | Crear test: mock Admin SDK (Firestore, Auth, Storage), test rechazo no autenticado, rechazo anonimo, rate limit, todas las estrategias por tipo de coleccion, Storage cleanup, auth deletion, idempotencia, manejo graceful de `user-not-found` |
 
 ### Fase 3: Service function
 
 | Paso | Archivo | Cambio |
 |---|---|---|
-| 1 | `src/services/emailAuth.ts` | Add `deleteAccount(currentUser, password)` function: re-auth with `reauthenticateWithCredential`, dynamic import `firebase/functions`, call `httpsCallable(functions, 'deleteUserAccount')`, clear localStorage keys (`STORAGE_KEY_VISITS` and all user-related `STORAGE_KEY_*`), call `invalidateAllQueryCache()`, call `clearAllBusinessCache()`, call `firebaseSignOut(auth)` |
-| 2 | `src/services/emailAuth.test.ts` | Extend: add 6-8 test cases for `deleteAccount()` -- mock `httpsCallable` via dynamic import, mock cache invalidation, test re-auth success/failure, callable invocation, cache cleanup, signOut, error propagation |
+| 1 | `src/services/emailAuth.ts` | Agregar `deleteAccount(currentUser, password)`: re-auth con `reauthenticateWithCredential`, dynamic import `firebase/functions`, llamar `httpsCallable(functions, 'deleteUserAccount')`, limpiar localStorage keys (`STORAGE_KEY_VISITS` y todos los `STORAGE_KEY_*` de usuario), llamar `invalidateAllQueryCache()`, llamar `clearAllBusinessCache()`, llamar `firebaseSignOut(auth)` |
+| 2 | `src/services/emailAuth.test.ts` | Extender: agregar 6-8 test cases para `deleteAccount()` -- mock `httpsCallable` via dynamic import, mock cache invalidation, test re-auth success/failure, callable invocation, cache cleanup, signOut, error propagation |
 
 ### Fase 4: UI components
 
 | Paso | Archivo | Cambio |
 |---|---|---|
-| 1 | `src/components/auth/DeleteAccountDialog.tsx` | Create component: Dialog with warning text, `PasswordField` for current password, "Eliminar cuenta permanentemente" button (error color, disabled until password entered), CircularProgress during loading, Alert for errors, Alert for success with auto-close after 1.5s, `useAuth()` for user/clearAuthError, `useToast()` for confirmation, `useConnectivity()` for offline guard, calls `deleteAccount()` from services. Pattern: follow `ChangePasswordDialog` structure |
-| 2 | `src/components/auth/DeleteAccountDialog.test.tsx` | Create test file: mock `useAuth`, `useToast`, `useConnectivity`, `deleteAccount`. Test: renders warning + password field, submit disabled when empty, submit calls deleteAccount, loading state, error display, success flow with toast, cancel closes, offline disables submit |
-| 3 | `src/components/menu/SettingsPanel.tsx` | Add `deleteDialogOpen` state. Add lazy import for `DeleteAccountDialog`. In `authMethod === 'email'` section, add "Eliminar cuenta" `Button` with `color="error"`, `variant="text"`, `startIcon={<DeleteOutlineIcon />}` below the existing buttons `Box`. Add `Suspense` + `DeleteAccountDialog` block after the `ChangePasswordDialog` block |
+| 1 | `src/components/auth/DeleteAccountDialog.tsx` | Crear componente: Dialog con texto de advertencia, `PasswordField` para contrasena actual, boton "Eliminar cuenta permanentemente" (error color, disabled hasta ingresar contrasena), CircularProgress durante loading, Alert para errores, Alert para exito con auto-close a 1.5s, `useAuth()` para user/clearAuthError, `useToast()` para confirmacion, `useConnectivity()` para guard offline. Patron: seguir estructura de `ChangePasswordDialog` |
+| 2 | `src/components/auth/DeleteAccountDialog.test.tsx` | Crear test: mock `useAuth`, `useToast`, `useConnectivity`, `deleteAccount`. Test: renders warning + password field, submit disabled when empty, submit calls deleteAccount, loading state, error display, success flow with toast, cancel closes, offline disables submit |
+| 3 | `src/components/menu/SettingsPanel.tsx` | Agregar `deleteDialogOpen` state. Agregar lazy import para `DeleteAccountDialog`. En seccion `authMethod === 'email'`, agregar boton "Eliminar cuenta" con `color="error"`, `variant="text"`, `startIcon={<DeleteOutlineIcon />}` debajo del `Box` de botones existente. Agregar `Suspense` + `DeleteAccountDialog` block despues del block de `ChangePasswordDialog` |
 
 ---
 
 ## Orden de implementacion
 
-1. `src/config/collections.ts` -- registry (no dependencies)
-2. `src/services/queryCache.ts` -- `invalidateAllQueryCache` helper (no dependencies)
-3. `src/hooks/useBusinessDataCache.ts` -- `clearAllBusinessCache` helper (no dependencies)
-4. `src/constants/analyticsEvents.ts` -- new event constant (no dependencies)
-5. `src/config/collections.test.ts` -- registry validation test (depends on 1)
-6. `functions/src/config/userOwnedCollections.ts` -- duplicated registry (depends on 1 for values)
-7. `functions/src/callable/deleteUserAccount.ts` -- Cloud Function (depends on 6)
-8. `functions/src/index.ts` -- export (depends on 7)
-9. `functions/src/callable/deleteUserAccount.test.ts` -- callable test (depends on 7)
-10. `functions/src/callable/deleteUserAccount.parity.test.ts` -- parity test (depends on 1, 6)
-11. `src/services/emailAuth.ts` -- `deleteAccount` service function (depends on 2, 3, 4)
-12. `src/services/emailAuth.test.ts` -- service test extension (depends on 11)
-13. `src/components/auth/DeleteAccountDialog.tsx` -- dialog component (depends on 11)
-14. `src/components/auth/DeleteAccountDialog.test.tsx` -- dialog test (depends on 13)
-15. `src/components/menu/SettingsPanel.tsx` -- button + lazy dialog integration (depends on 13)
+1. `shared/userOwnedCollections.ts` -- registry (no dependencies)
+2. `tsconfig.app.json` -- path alias frontend (depends on 1)
+3. `vite.config.ts` -- resolve alias frontend (depends on 1)
+4. `functions/tsconfig.json` -- path alias functions (depends on 1)
+5. `functions/package.json` -- `tsc-alias` devDep + build script (depends on 4)
+6. `src/services/queryCache.ts` -- `invalidateAllQueryCache` helper (no dependencies)
+7. `src/hooks/useBusinessDataCache.ts` -- `clearAllBusinessCache` helper (no dependencies)
+8. `src/constants/analyticsEvents.ts` -- new event constant (no dependencies)
+9. `shared/userOwnedCollections.test.ts` -- registry validation test (depends on 1)
+10. `functions/src/callable/deleteUserAccount.ts` -- Cloud Function (depends on 1, 4, 5)
+11. `functions/src/index.ts` -- export (depends on 10)
+12. `functions/src/callable/deleteUserAccount.test.ts` -- callable test (depends on 10)
+13. `src/services/emailAuth.ts` -- `deleteAccount` service function (depends on 6, 7, 8)
+14. `src/services/emailAuth.test.ts` -- service test extension (depends on 13)
+15. `src/components/auth/DeleteAccountDialog.tsx` -- dialog component (depends on 13)
+16. `src/components/auth/DeleteAccountDialog.test.tsx` -- dialog test (depends on 15)
+17. `src/components/menu/SettingsPanel.tsx` -- button + lazy dialog integration (depends on 15)
 
 ---
 
 ## Riesgos
 
-1. **Partial deletion on Cloud Function timeout.** The callable iterates many collections sequentially. If the function times out (default 60s for v2 callables), some data may be left behind. **Mitigation:** The function is idempotent -- the user can retry, and queries on already-deleted collections return empty results. Consider increasing timeout to 120s via `timeoutSeconds` option on the `onCall` config.
+1. **Partial deletion on Cloud Function timeout.** El callable itera muchas colecciones secuencialmente. Si la funcion tiene timeout (default 60s para v2 callables), algunos datos pueden quedar. **Mitigacion:** La funcion es idempotente -- el usuario puede reintentar, y queries sobre colecciones ya eliminadas retornan resultados vacios. Considerar aumentar timeout a 120s via `timeoutSeconds` en config de `onCall`.
 
-2. **Registry parity drift.** The `USER_OWNED_COLLECTIONS` array is duplicated between `src/` and `functions/`. A developer could update one and forget the other. **Mitigation:** The parity test in `functions/` fails CI if the arrays diverge. The registry validation test in `src/` catches new user-owned collections added to services without registry entries.
+2. **Path alias en functions runtime.** `tsc` no resuelve path aliases en el JS emitido. **Mitigacion:** `tsc-alias` como post-build step reescribe los imports. Si falla, el deploy de functions rompe (detectable en CI). Alternativa de fallback: copiar `shared/` a `functions/src/shared/` en prebuild.
 
-3. **Storage files not deleted.** If a feedback doc has a `mediaUrl` pointing to a full HTTPS URL rather than a storage path, the prefix-based deletion may miss it. **Mitigation:** The callable uses both prefix deletion (`feedback-media/{uid}/`) and explicit path extraction from docs. Menu photos use `menu-photos/{userId}/` prefix which covers all files for that user.
+3. **Storage files not deleted.** Si un doc de feedback tiene `mediaUrl` apuntando a URL HTTPS completa en vez de storage path, la eliminacion por prefijo puede no encontrarlo. **Mitigacion:** El callable usa eliminacion por prefijo (`feedback-media/{uid}/`, `menu-photos/{uid}/`) como estrategia principal, mas extraccion explicita de paths de los docs como fallback.
 
 ---
 
@@ -82,8 +86,8 @@
 - [ ] Tests pass with >= 80% coverage on new code
 - [ ] No lint errors
 - [ ] Build succeeds (both `src/` and `functions/`)
+- [ ] `@shared` alias resuelve correctamente en ambos lados (frontend build + functions build)
 - [ ] Registry validation test passes (no unregistered user-owned collections)
-- [ ] Parity test passes (functions/ registry matches src/ registry)
 - [ ] Manual test: delete an email account in emulators, verify all collections are clean
 - [ ] Manual test: retry deletion after partial failure completes without errors
-- [ ] Privacy policy reviewed (no new data collection, but deletion capability should be documented)
+- [ ] Privacy policy reviewed (deletion capability should be documented)
