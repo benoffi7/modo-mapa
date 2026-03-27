@@ -81,17 +81,17 @@ import { getAvatarById } from '../../constants/avatars';
 const avatar = getAvatarById('cat'); // { id, label, emoji } or undefined
 ```
 
-## Archivos grandes (>400 lineas) — candidatos a modularizar
+## Modularizacion completada
 
-| Archivo | Lineas | Estado |
-|---------|--------|--------|
-| CommentsList.tsx | 592 | v1, sin cambios |
-| BusinessComments.tsx | 523 | v1, sin cambios |
-| admin.ts | 517 | servicio admin, sin cambios |
-| BusinessQuestions.tsx | 507 | v1, sin cambios |
-| converters.ts | 497 | data layer, sin cambios |
+Los archivos >400 lineas fueron modularizados:
 
-Estos archivos son de la v1 y no se tocaron en el rediseno. Se modularizaran cuando se refactoreen sus features.
+| Archivo original | Accion | Resultado |
+|------------------|--------|-----------|
+| CommentsList.tsx (592) | Extraido `CommentItem.tsx` | 378 + 226 lineas |
+| BusinessComments.tsx (523) | Extraido `InlineReplyForm.tsx` compartido | 467 lineas |
+| BusinessQuestions.tsx (507) | Usa `InlineReplyForm.tsx` compartido | 459 lineas |
+| admin.ts (517) | Split en `admin/counters`, `activity`, `users`, `social`, `content` | 5 modulos (26-199 lineas) |
+| converters.ts (497) | Data layer, sin cambios | pendiente |
 
 ## Cobertura de tests
 
