@@ -35,35 +35,69 @@ Al hacer click se abre un `DeleteAccountDialog` (lazy-loaded) con:
 
 Patron existente de referencia: `ChangePasswordDialog` (re-autenticacion con contrasena actual, lazy-loaded con Suspense).
 
-### S2: Cloud Function callable `deleteUserAccount`
+### S2: Registro centralizado `USER_OWNED_COLLECTIONS`
+
+Agregar en `src/config/collections.ts` (junto al `COLLECTIONS` existente) un array tipado que declare todas las colecciones que contienen datos de usuario:
+
+```ts
+export interface UserOwnedCollection {
+  collection: string;
+  type: 'doc-by-uid' | 'query' | 'subcollection';
+  field?: string;          // campo donde esta el uid (para type: 'query')
+  biField?: string;        // segundo campo para relaciones bidireccionales
+  path?: string;           // path template para subcollections
+  hasStorage?: boolean;    // tiene archivos en Storage asociados
+  subcollections?: string[]; // subcollecciones a limpiar antes de borrar doc
+  cascade?: string[];      // colecciones dependientes a eliminar en cascada
+}
+
+export const USER_OWNED_COLLECTIONS: UserOwnedCollection[] = [
+  // Doc ID = uid
+  { collection: 'userSettings', type: 'doc-by-uid' },
+  { collection: 'users', type: 'doc-by-uid' },
+  // Query by field
+  { collection: 'ratings', type: 'query', field: 'userId' },
+  { collection: 'comments', type: 'query', field: 'userId' },
+  { collection: 'commentLikes', type: 'query', field: 'userId' },
+  { collection: 'favorites', type: 'query', field: 'userId' },
+  { collection: 'userTags', type: 'query', field: 'userId' },
+  { collection: 'customTags', type: 'query', field: 'userId' },
+  { collection: 'priceLevels', type: 'query', field: 'userId' },
+  { collection: 'feedback', type: 'query', field: 'userId', hasStorage: true },
+  { collection: 'menuPhotos', type: 'query', field: 'userId', hasStorage: true, subcollections: ['reports'] },
+  { collection: 'notifications', type: 'query', field: 'userId' },
+  { collection: 'sharedLists', type: 'query', field: 'ownerId', cascade: ['listItems'] },
+  { collection: 'listItems', type: 'query', field: 'addedBy' },
+  { collection: 'follows', type: 'query', field: 'followerId', biField: 'followedId' },
+  { collection: 'recommendations', type: 'query', field: 'fromUserId', biField: 'toUserId' },
+  { collection: 'checkins', type: 'query', field: 'userId' },
+  // Subcollection
+  { collection: 'activityFeed', type: 'subcollection', path: 'activityFeed/{uid}/items' },
+  // Rate limits cleanup
+  { collection: '_rateLimits', type: 'query', field: 'userId' },
+];
+```
+
+**Beneficios clave:**
+- **Single source of truth:** `deleteUserAccount` itera sobre este array en vez de hardcodear colecciones
+- **Validable por test:** un test automatico grep-ea el codigo buscando `where('userId'`, `where('ownerId'`, etc. y verifica que cada par coleccion+campo este en el registro. Si alguien agrega una coleccion con datos de usuario y no la registra, el test falla
+- **Documentacion viva:** el array mismo documenta la relacion entre colecciones y usuarios
+
+El archivo `functions/` importa este registro (o duplica el array con un test que valide paridad) para que la Cloud Function lo consuma.
+
+### S3: Cloud Function callable `deleteUserAccount`
 
 Nueva Cloud Function callable en `functions/src/callable/deleteUserAccount.ts` que:
 
 1. Verifica que el usuario esta autenticado y tiene `auth.token.email` (no anonimo)
-2. Elimina todos los documentos del usuario en las siguientes colecciones, usando batch writes (500 por batch):
-
-| Coleccion | Query | Notas |
-|-----------|-------|-------|
-| `userSettings` | `doc(uid)` | Doc ID = uid |
-| `users` | `doc(uid)` | Doc ID = uid |
-| `ratings` | `where('userId', '==', uid)` | Compound ID `{uid}__{businessId}` |
-| `comments` | `where('userId', '==', uid)` | Incluye root comments y replies |
-| `commentLikes` | `where('userId', '==', uid)` | Compound ID `{uid}__{commentId}` |
-| `favorites` | `where('userId', '==', uid)` | Compound ID `{uid}__{businessId}` |
-| `userTags` | `where('userId', '==', uid)` | |
-| `customTags` | `where('userId', '==', uid)` | |
-| `priceLevels` | `where('userId', '==', uid)` | |
-| `feedback` | `where('userId', '==', uid)` | Incluye media en Storage |
-| `menuPhotos` | `where('userId', '==', uid)` | Incluye archivos en Storage + subcolleccion `reports` |
-| `notifications` | `where('userId', '==', uid)` | |
-| `sharedLists` | `where('ownerId', '==', uid)` | Cascade: eliminar `listItems` asociados |
-| `listItems` | `where('addedBy', '==', uid)` | Items en listas ajenas (colaborativas) |
-| `follows` | `where('followerId', '==', uid)` OR `where('followedId', '==', uid)` | Bidireccional |
-| `recommendations` | `where('fromUserId', '==', uid)` OR `where('toUserId', '==', uid)` | Enviadas y recibidas |
-| `checkins` | `where('userId', '==', uid)` | |
-| `userRankings` | `doc(uid)` | Doc ID = uid |
-| `activityFeed` | subcolleccion `activityFeed/{uid}/items` | Eliminar toda la subcolleccion |
-| `_rateLimits` | `where('userId', '==', uid)` | Cleanup |
+2. Importa `USER_OWNED_COLLECTIONS` y recorre el array, ejecutando la estrategia correspondiente segun `type`:
+   - `doc-by-uid`: `db.doc(collection/uid).delete()`
+   - `query`: `db.collection(c).where(field, '==', uid)` + batch delete (500 por batch)
+   - `query` con `biField`: dos queries (una por cada campo) combinadas
+   - `subcollection`: `db.collection(path.replace('{uid}', uid))` + batch delete
+   - Si tiene `hasStorage`: extrae paths de Storage de los docs antes de borrarlos
+   - Si tiene `cascade`: elimina docs de las colecciones cascada asociadas
+   - Si tiene `subcollections`: elimina subcollecciones de cada doc antes de borrar el doc
 
 3. Elimina archivos de Storage asociados al usuario:
    - `feedback-media/{uid}/**` (media de feedback)
@@ -95,9 +129,11 @@ Si el callable falla, mostrar error en el dialog sin cerrar (el usuario puede re
 
 | Item | Prioridad | Esfuerzo |
 |------|-----------|----------|
+| `USER_OWNED_COLLECTIONS` registry en `src/config/collections.ts` | P0 | S |
+| Test de validacion: colecciones con userId registradas en registry | P0 | S |
 | `DeleteAccountDialog` component (UI + re-auth + loading/error states) | P0 | S |
 | Boton "Eliminar cuenta" en `SettingsPanel` (condicional a `authMethod`) | P0 | S |
-| `deleteUserAccount` Cloud Function callable | P0 | L |
+| `deleteUserAccount` Cloud Function callable (consume registry) | P0 | L |
 | Service function `deleteAccount()` en `services/emailAuth.ts` | P0 | S |
 | Storage cleanup (feedback media + menu photos) | P0 | M |
 | Subcollection cleanup (`activityFeed/{uid}/items`, `menuPhotos/{id}/reports`) | P0 | M |
@@ -127,7 +163,8 @@ Si el callable falla, mostrar error en el dialog sin cerrar (el usuario puede re
 
 | Archivo | Tipo | Que testear |
 |---------|------|-------------|
-| `functions/src/callable/deleteUserAccount.ts` | Callable | Eliminacion completa de todas las colecciones, Storage cleanup, auth deletion, errores (no autenticado, anonimo, callable fails mid-deletion), batch writes, rate limiting |
+| `src/config/collections.test.ts` | Validacion | Grep-ea `src/services/` buscando patrones `where('userId'`, `where('ownerId'`, `where('followerId'`, etc. y verifica que cada par coleccion+campo aparezca en `USER_OWNED_COLLECTIONS`. Si alguien agrega una coleccion con datos de usuario y no la registra, este test falla automaticamente. |
+| `functions/src/callable/deleteUserAccount.ts` | Callable | Eliminacion completa iterando `USER_OWNED_COLLECTIONS`, Storage cleanup, auth deletion, errores (no autenticado, anonimo, callable fails mid-deletion), batch writes, rate limiting |
 | `src/services/emailAuth.ts` (extension) | Service | `deleteAccount()`: re-auth + callable invocation + cache cleanup + signOut, error handling (wrong password, network error, callable error) |
 | `src/components/auth/DeleteAccountDialog.tsx` | Component | Render condicional, password input, submit flow, loading state, error display, cancel, success flow |
 
