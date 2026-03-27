@@ -9,7 +9,16 @@
 
 ### Nuevos tipos (`shared/userOwnedCollections.ts`)
 
-Archivo compartido entre frontend y functions via path aliases. Vive en `shared/` en la raiz del proyecto, sin dependencias externas.
+Archivo compartido entre frontend y functions via path aliases `@shared/*`. Vive en `shared/` en la raiz del proyecto, sin dependencias externas.
+
+### Path aliases
+
+**Frontend (`tsconfig.app.json`):** `"paths": { "@shared/*": ["../shared/*"] }`
+**Frontend (`vite.config.ts`):** `resolve.alias: { '@shared': path.resolve(__dirname, 'shared') }`
+**Functions (`functions/tsconfig.json`):** `"baseUrl": "."`, `"paths": { "@shared/*": ["../shared/*"] }`, include `"../shared"`
+**Functions build:** `tsc-alias` como devDep, build script: `"build": "tsc && tsc-alias"`
+
+### Tipo e interface
 
 ```typescript
 export interface UserOwnedCollection {
@@ -45,33 +54,6 @@ export const USER_OWNED_COLLECTIONS: UserOwnedCollection[] = [
   { collection: '_rateLimits', type: 'query', field: 'userId' },
 ];
 ```
-
-### Path aliases para compartir `shared/`
-
-**Frontend (`tsconfig.app.json`):**
-```json
-"paths": { "@shared/*": ["../shared/*"] }
-```
-
-**Frontend (`vite.config.ts`):**
-```ts
-resolve: {
-  alias: {
-    '@shared': path.resolve(__dirname, 'shared'),
-  }
-}
-```
-
-**Functions (`functions/tsconfig.json`):**
-```json
-"baseUrl": ".",
-"paths": { "@shared/*": ["../shared/*"] },
-"include": ["src", "../shared"]
-```
-- Agregar `tsc-alias` como devDependency para resolver paths en el JS emitido
-- Ajustar build script: `"build": "tsc && tsc-alias"`
-
-Ambos lados importan con `import { USER_OWNED_COLLECTIONS } from '@shared/userOwnedCollections'`.
 
 No new Firestore collections are created. No indexes needed (the callable uses Admin SDK which bypasses rules and indexes).
 
@@ -268,27 +250,16 @@ Simple helper to clear the entire module-level `Map`.
 
 ### `shared/userOwnedCollections.ts` (nuevo)
 
-- Crear carpeta `shared/` en raiz del proyecto
-- Contiene `UserOwnedCollection` interface y `USER_OWNED_COLLECTIONS` array
-- Sin dependencias externas (pure types + data)
+- Crear carpeta `shared/` en raiz
+- `UserOwnedCollection` interface + `USER_OWNED_COLLECTIONS` array (zero deps)
 
-### `tsconfig.app.json`
+### `tsconfig.app.json` / `vite.config.ts`
 
-- Agregar `"paths": { "@shared/*": ["../shared/*"] }`
+- Path alias `@shared/*` para frontend
 
-### `vite.config.ts`
+### `functions/tsconfig.json` / `functions/package.json`
 
-- Agregar alias `@shared` en `resolve.alias`
-
-### `functions/tsconfig.json`
-
-- Agregar `"baseUrl": "."`, `"paths": { "@shared/*": ["../shared/*"] }`
-- Agregar `"../shared"` a `include`
-
-### `functions/package.json`
-
-- Agregar `tsc-alias` como devDependency
-- Ajustar build script: `"build": "tsc && tsc-alias"`
+- Path alias `@shared/*` + `tsc-alias` devDep + build script ajustado
 
 ---
 

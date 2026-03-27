@@ -1,4 +1,4 @@
-import { getAuthErrorMessage, linkAnonymousWithEmail, signOutAndReset, resendVerificationEmail, sendResetEmail, changePassword } from './emailAuth';
+import { getAuthErrorMessage, linkAnonymousWithEmail, signOutAndReset, resendVerificationEmail, sendResetEmail, changePassword, deleteAccount } from './emailAuth';
 import { STORAGE_KEY_VISITS } from '../constants/storage';
 
 const mockLinkWithCredential = vi.fn();
@@ -27,6 +27,27 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('../config/firebase', () => ({
   auth: {},
+  functions: {},
+}));
+
+const mockCallableFn = vi.fn();
+const mockHttpsCallable = vi.fn<(f: unknown, n: string) => typeof mockCallableFn>(() => mockCallableFn);
+vi.mock('firebase/functions', () => ({
+  httpsCallable: (functions: unknown, name: string) => mockHttpsCallable(functions, name),
+}));
+
+const mockInvalidateAllQueryCache = vi.fn();
+vi.mock('./queryCache', () => ({
+  invalidateAllQueryCache: (...args: unknown[]) => mockInvalidateAllQueryCache(...args),
+}));
+
+const mockClearAllBusinessCache = vi.fn();
+vi.mock('../hooks/useBusinessDataCache', () => ({
+  clearAllBusinessCache: (...args: unknown[]) => mockClearAllBusinessCache(...args),
+}));
+
+vi.mock('../utils/analytics', () => ({
+  trackEvent: vi.fn(),
 }));
 
 describe('getAuthErrorMessage', () => {
@@ -158,5 +179,84 @@ describe('signOutAndReset', () => {
     localStorage.setItem('modo-mapa-color-mode', 'dark');
     await signOutAndReset();
     expect(localStorage.getItem('modo-mapa-color-mode')).toBe('dark');
+  });
+});
+
+describe('deleteAccount', () => {
+  const mockUser = { uid: 'test-uid', email: 'test@example.com' } as never;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReauthenticateWithCredential.mockResolvedValue(undefined);
+    mockCallableFn.mockResolvedValue({ data: { success: true } });
+    mockSignOut.mockResolvedValue(undefined);
+    localStorage.clear();
+  });
+
+  it('re-authenticates, calls callable, clears cache, and signs out in order', async () => {
+    const callOrder: string[] = [];
+    mockReauthenticateWithCredential.mockImplementation(() => { callOrder.push('reauth'); return Promise.resolve(); });
+    mockCallableFn.mockImplementation(() => { callOrder.push('callable'); return Promise.resolve({ data: { success: true } }); });
+    mockInvalidateAllQueryCache.mockImplementation(() => { callOrder.push('invalidateCache'); });
+    mockClearAllBusinessCache.mockImplementation(() => { callOrder.push('clearBusinessCache'); });
+    mockSignOut.mockImplementation(() => { callOrder.push('signOut'); return Promise.resolve(); });
+
+    await deleteAccount(mockUser, 'mypassword');
+
+    expect(callOrder).toEqual(['reauth', 'callable', 'invalidateCache', 'clearBusinessCache', 'signOut']);
+  });
+
+  it('passes databaseId to the callable', async () => {
+    await deleteAccount(mockUser, 'mypassword');
+
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      expect.anything(),
+      'deleteUserAccount',
+    );
+    expect(mockCallableFn).toHaveBeenCalledWith(
+      expect.objectContaining({}),
+    );
+  });
+
+  it('clears all user localStorage keys', async () => {
+    localStorage.setItem('modo-mapa-visits', 'data');
+    localStorage.setItem('onboarding_created_at', 'data');
+    localStorage.setItem('modo-mapa-color-mode', 'dark');
+
+    await deleteAccount(mockUser, 'mypassword');
+
+    expect(localStorage.getItem('modo-mapa-visits')).toBeNull();
+    expect(localStorage.getItem('onboarding_created_at')).toBeNull();
+    // Color mode is NOT a user key, should survive
+    expect(localStorage.getItem('modo-mapa-color-mode')).toBe('dark');
+  });
+
+  it('calls invalidateAllQueryCache and clearAllBusinessCache', async () => {
+    await deleteAccount(mockUser, 'mypassword');
+
+    expect(mockInvalidateAllQueryCache).toHaveBeenCalled();
+    expect(mockClearAllBusinessCache).toHaveBeenCalled();
+  });
+
+  it('throws on wrong password and does not call callable or signOut', async () => {
+    mockReauthenticateWithCredential.mockRejectedValue(
+      Object.assign(new Error('fail'), { code: 'auth/wrong-password' }),
+    );
+
+    await expect(deleteAccount(mockUser, 'wrong')).rejects.toThrow('fail');
+    expect(mockCallableFn).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it('throws when callable fails and does not sign out', async () => {
+    mockCallableFn.mockRejectedValue(new Error('server error'));
+
+    await expect(deleteAccount(mockUser, 'mypassword')).rejects.toThrow('server error');
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it('signs out after all cleanup succeeds', async () => {
+    await deleteAccount(mockUser, 'mypassword');
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 });

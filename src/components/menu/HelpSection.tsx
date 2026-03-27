@@ -155,7 +155,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <SettingsOutlinedIcon color="primary" />,
         title: 'Configuracion',
         description:
-          'Accede desde Perfil > Configuracion. Incluye cuenta (crear cuenta, verificar email, cambiar contrasena, cerrar sesion), perfil publico/privado, datos de uso (analytics), localidad (ubicacion por defecto cuando no hay GPS) y preferencias de notificaciones por tipo.',
+          'Accede desde Perfil > Configuracion. Incluye cuenta (crear cuenta, verificar email, cambiar contrasena, cerrar sesion, eliminar cuenta), perfil publico/privado, datos de uso (analytics), localidad (ubicacion por defecto cuando no hay GPS) y preferencias de notificaciones por tipo. La eliminacion de cuenta borra permanentemente todos tus datos y no se puede deshacer.',
       },
       {
         id: 'modooscuro',

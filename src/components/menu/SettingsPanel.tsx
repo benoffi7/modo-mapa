@@ -13,6 +13,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useUserSettings } from '../../hooks/useUserSettings';
 import { useColorMode } from '../../hooks/useColorMode';
 import LocalityPicker from './LocalityPicker';
@@ -20,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const EmailPasswordDialog = lazy(() => import('../auth/EmailPasswordDialog'));
 const ChangePasswordDialog = lazy(() => import('../auth/ChangePasswordDialog'));
+const DeleteAccountDialog = lazy(() => import('../auth/DeleteAccountDialog'));
 
 interface SettingRowProps {
   label: string;
@@ -71,6 +73,7 @@ export default function SettingsPanel() {
   const [emailDialogTab, setEmailDialogTab] = useState<'register' | 'login'>('register');
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
   const [verificationCooldown, setVerificationCooldown] = useState(0);
@@ -202,6 +205,18 @@ export default function SettingsPanel() {
               Cerrar sesión
             </Button>
           </Box>
+          {authMethod === 'email' && (
+            <Button
+              variant="text"
+              size="small"
+              color="error"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={() => setDeleteAccountOpen(true)}
+              sx={{ mt: 1, textTransform: 'none' }}
+            >
+              Eliminar cuenta
+            </Button>
+          )}
         </Box>
       )}
 
@@ -338,6 +353,16 @@ export default function SettingsPanel() {
           <ChangePasswordDialog
             open={changePasswordOpen}
             onClose={() => setChangePasswordOpen(false)}
+          />
+        )}
+      </Suspense>
+
+      {/* Delete account dialog */}
+      <Suspense fallback={null}>
+        {deleteAccountOpen && (
+          <DeleteAccountDialog
+            open={deleteAccountOpen}
+            onClose={() => setDeleteAccountOpen(false)}
           />
         )}
       </Suspense>
