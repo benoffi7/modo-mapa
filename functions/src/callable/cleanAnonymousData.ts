@@ -1,5 +1,4 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
@@ -8,15 +7,22 @@ import { deleteAllUserData } from '../utils/deleteUserData';
 
 const RATE_LIMIT_SECONDS = 60;
 
-export const deleteUserAccount = onCall(
+/**
+ * Cleans all server-side data for an anonymous user.
+ * Unlike deleteUserAccount, this does NOT require re-authentication
+ * (anonymous users have no password) and does NOT delete the Firebase
+ * Auth user (anonymous accounts auto-expire).
+ */
+export const cleanAnonymousData = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120 },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
 
-    if (!request.auth.token.email) {
-      throw new HttpsError('permission-denied', 'Anonymous accounts cannot be deleted via this endpoint');
+    // Only anonymous users can use this endpoint
+    if (request.auth.token.email) {
+      throw new HttpsError('permission-denied', 'Use deleteUserAccount for email accounts');
     }
 
     const uid = request.auth.uid;
@@ -24,7 +30,7 @@ export const deleteUserAccount = onCall(
     const db = getDb(databaseId);
 
     // Rate limit: 1 per minute
-    const rateLimitRef = db.doc(`_rateLimits/delete_${uid}`);
+    const rateLimitRef = db.doc(`_rateLimits/clean_${uid}`);
     const rateLimitSnap = await rateLimitRef.get();
     if (rateLimitSnap.exists) {
       const lastAttempt = rateLimitSnap.data()?.lastAttempt?.toDate?.();
@@ -37,17 +43,11 @@ export const deleteUserAccount = onCall(
     // Delete all user data (aggregates, collections, storage)
     await deleteAllUserData(db, uid);
 
-    // Delete Firebase Auth user
-    try {
-      await getAuth().deleteUser(uid);
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error && error.code !== 'auth/user-not-found') {
-        throw error;
-      }
-    }
+    // Do NOT delete Firebase Auth user — anonymous accounts auto-expire
+    // The client will signOut after this succeeds, creating a fresh anonymous session
 
     const uidHash = createHash('sha256').update(uid).digest('hex').slice(0, 12);
-    logger.info('account_deleted', { uidHash, timestamp: new Date().toISOString() });
+    logger.info('anonymous_data_cleaned', { uidHash, timestamp: new Date().toISOString() });
 
     return { success: true };
   },

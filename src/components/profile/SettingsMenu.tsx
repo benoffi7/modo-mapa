@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Badge, Button, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Badge, Button, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Alert } from '@mui/material';
 import { cardSx } from '../../theme/cards';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
@@ -11,6 +11,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { cleanAnonymousData } from '../../services/emailAuth';
 
 export type SettingsSection = 'notifications' | 'pendientes' | 'privacy' | 'config' | 'help';
 
@@ -44,17 +46,41 @@ interface Props {
 export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
   const { notifications } = useNotifications();
   const { signOut, authMethod } = useAuth();
+  const { isOffline } = useConnectivity();
   const unreadCount = notifications.filter((n) => !n.read).length;
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const isAnonymous = authMethod === 'anonymous';
 
   const handleConfirm = async () => {
-    try {
-      await signOut();
-    } catch {
-      // signOut error handled silently — new anonymous session still created
+    if (isAnonymous) {
+      // Clean server-side data before signing out
+      setLoading(true);
+      setError(null);
+      try {
+        await cleanAnonymousData();
+        await signOut();
+        setConfirmOpen(false);
+      } catch {
+        setError('Error al limpiar los datos. Intentá de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      try {
+        await signOut();
+      } catch {
+        // signOut error handled silently
+      }
+      setConfirmOpen(false);
     }
+  };
+
+  const handleClose = () => {
+    if (loading) return;
     setConfirmOpen(false);
+    setError(null);
   };
 
   return (
@@ -99,6 +125,7 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
           color="error"
           startIcon={<DeleteOutlineIcon />}
           onClick={() => setConfirmOpen(true)}
+          disabled={isOffline}
           sx={{ mt: 1 }}
         >
           Empezar de cero
@@ -116,18 +143,27 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         </Button>
       )}
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs">
+      <Dialog open={confirmOpen} onClose={handleClose} maxWidth="xs">
         <DialogTitle>{isAnonymous ? '¿Empezar de cero?' : '¿Cerrar sesión?'}</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>
+          )}
           <Typography variant="body2">
             {isAnonymous
-              ? 'Vas a empezar de cero con una cuenta nueva. Tus datos anteriores ya no van a estar vinculados a tu cuenta.'
+              ? 'Se van a borrar todos tus datos del servidor (favoritos, calificaciones, listas, etc.) y vas a empezar de cero con una cuenta nueva. Esta acción no se puede deshacer.'
               : 'Vas a necesitar tu email y contraseña para volver a entrar.'}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button onClick={handleConfirm} color="error" variant="contained">
+          <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
+          <Button
+            onClick={handleConfirm}
+            color="error"
+            variant="contained"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} /> : undefined}
+          >
             {isAnonymous ? 'Empezar de cero' : 'Cerrar sesión'}
           </Button>
         </DialogActions>
