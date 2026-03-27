@@ -7,8 +7,14 @@ import { useAuth } from '../context/AuthContext';
 import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
 import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
 import { logger } from '../utils/logger';
+import { trackEvent } from '../utils/analytics';
+import {
+  EVT_BUSINESS_SHEET_PHASE1_MS,
+  EVT_BUSINESS_SHEET_PHASE2_MS,
+  EVT_BUSINESS_SHEET_CACHE_HIT,
+} from '../constants/analyticsEvents';
 
-interface UseBusinessDataReturn {
+export interface UseBusinessDataReturn {
   isFavorite: boolean;
   ratings: Rating[];
   comments: Comment[];
@@ -18,6 +24,7 @@ interface UseBusinessDataReturn {
   priceLevels: PriceLevel[];
   menuPhoto: MenuPhoto | null;
   isLoading: boolean;
+  isLoadingComments: boolean;
   error: boolean;
   refetch: (collectionName?: CollectionName) => void;
 }
@@ -34,6 +41,7 @@ const EMPTY: UseBusinessDataReturn = {
   priceLevels: [],
   menuPhoto: null,
   isLoading: false,
+  isLoadingComments: false,
   error: false,
   refetch: () => {},
 };
@@ -123,17 +131,14 @@ async function fetchSingleCollection(bId: string, uid: string, col: CollectionNa
   }
 }
 
-async function fetchBusinessData(bId: string, uid: string) {
+/** Phase 1: fast Firestore queries (everything except comments + likes). */
+async function fetchPhase1(bId: string, uid: string) {
   const favDocId = `${uid}__${bId}`;
 
-  const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
+  const [favSnap, ratingsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
     getDoc(doc(db, COLLECTIONS.FAVORITES, favDocId)),
     getDocs(query(
       collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
-      where('businessId', '==', bId),
-    )),
-    getDocs(query(
-      collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
       where('businessId', '==', bId),
     )),
     getDocs(query(
@@ -156,23 +161,34 @@ async function fetchBusinessData(bId: string, uid: string) {
     )),
   ]);
 
-  const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
-  commentsResult.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   const customTagsResult = customTagsSnap.docs.map((d) => d.data());
   customTagsResult.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-
-  // Fetch user likes for comments (after we know comment IDs)
-  const userCommentLikes = await fetchUserLikes(uid, commentsResult.map((c) => c.id));
 
   return {
     isFavorite: favSnap.exists(),
     ratings: ratingsSnap.docs.map((d) => d.data()),
-    comments: commentsResult,
     userTags: userTagsSnap.docs.map((d) => d.data()),
     customTags: customTagsResult,
-    userCommentLikes,
     priceLevels: priceLevelsSnap.docs.map((d) => d.data()),
     menuPhoto: menuPhotoSnap.empty ? null : menuPhotoSnap.docs[0].data(),
+  };
+}
+
+/** Phase 2: slow queries (comments + user likes). */
+async function fetchPhase2(bId: string, uid: string) {
+  const commentsSnap = await getDocs(query(
+    collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
+    where('businessId', '==', bId),
+  ));
+
+  const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
+  commentsResult.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const userCommentLikes = await fetchUserLikes(uid, commentsResult.map((c) => c.id));
+
+  return {
+    comments: commentsResult,
+    userCommentLikes,
   };
 }
 
@@ -189,6 +205,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     menuPhoto: MenuPhoto | null;
   }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [], userCommentLikes: EMPTY_LIKES, priceLevels: [], menuPhoto: null });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [error, setError] = useState(false);
   const fetchIdRef = useRef(0);
   // Collections patched by partial refetches while a full load is in-flight.
@@ -204,34 +221,66 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     if (cached) {
       setData(cached);
       setIsLoading(false);
+      setIsLoadingComments(false);
       setError(false);
+      trackEvent(EVT_BUSINESS_SHEET_CACHE_HIT, { business_id: bId });
       return;
     }
 
     setIsLoading(true);
+    setIsLoadingComments(true);
     setError(false);
 
+    const t0 = performance.now();
+
     try {
-      const result = await fetchBusinessData(bId, uid);
+      // --- Phase 1: fast data ---
+      const phase1 = await fetchPhase1(bId, uid);
       if (fetchIdRef.current !== id) return; // stale
-      // Merge: keep fields that were patched by partial refetches during this load
+
+      const phase1Ms = Math.round(performance.now() - t0);
+      trackEvent(EVT_BUSINESS_SHEET_PHASE1_MS, { duration_ms: phase1Ms, business_id: bId });
+
+      // Merge phase 1 — keep fields that were patched by partial refetches during this load
       const patched = patchedRef.current;
-      if (patched.size > 0) {
-        setData((prev) => {
-          const merged = { ...result };
-          if (patched.has('isFavorite')) merged.isFavorite = prev.isFavorite;
-          if (patched.has('ratings')) merged.ratings = prev.ratings;
-          if (patched.has('comments')) { merged.comments = prev.comments; merged.userCommentLikes = prev.userCommentLikes; }
-          if (patched.has('userTags')) merged.userTags = prev.userTags;
-          if (patched.has('customTags')) merged.customTags = prev.customTags;
-          if (patched.has('priceLevels')) merged.priceLevels = prev.priceLevels;
-          if (patched.has('menuPhoto')) merged.menuPhoto = prev.menuPhoto;
-          return merged;
-        });
-      } else {
-        setData(result);
-      }
-      setBusinessCache(bId, result);
+      setData((prev) => {
+        const merged = {
+          ...prev,
+          ...phase1,
+          // Keep comments/likes from previous state (phase 2 hasn't run yet)
+          comments: prev.comments,
+          userCommentLikes: prev.userCommentLikes,
+        };
+        if (patched.has('isFavorite')) merged.isFavorite = prev.isFavorite;
+        if (patched.has('ratings')) merged.ratings = prev.ratings;
+        if (patched.has('userTags')) merged.userTags = prev.userTags;
+        if (patched.has('customTags')) merged.customTags = prev.customTags;
+        if (patched.has('priceLevels')) merged.priceLevels = prev.priceLevels;
+        if (patched.has('menuPhoto')) merged.menuPhoto = prev.menuPhoto;
+        return merged;
+      });
+      setIsLoading(false);
+
+      // --- Phase 2: comments + likes ---
+      const t1 = performance.now();
+      const phase2 = await fetchPhase2(bId, uid);
+      if (fetchIdRef.current !== id) return; // stale
+
+      const phase2Ms = Math.round(performance.now() - t1);
+      trackEvent(EVT_BUSINESS_SHEET_PHASE2_MS, { duration_ms: phase2Ms, business_id: bId });
+
+      setData((prev) => {
+        const merged = { ...prev, ...phase2 };
+        if (patched.has('comments')) {
+          merged.comments = prev.comments;
+          merged.userCommentLikes = prev.userCommentLikes;
+        }
+        return merged;
+      });
+
+      // Build full result for cache (combine phase1 + phase2)
+      const fullResult = { ...phase1, ...phase2 };
+      setBusinessCache(bId, fullResult);
     } catch (err) {
       if (fetchIdRef.current !== id) return;
       if (import.meta.env.DEV) logger.error('Error loading business data:', err);
@@ -239,7 +288,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     }
 
     if (fetchIdRef.current === id) {
-      setIsLoading(false);
+      setIsLoadingComments(false);
     }
   }, []);
 
@@ -275,5 +324,5 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
 
   if (!businessId) return EMPTY;
 
-  return { ...data, isLoading, error, refetch };
+  return { ...data, isLoading, isLoadingComments, error, refetch };
 }

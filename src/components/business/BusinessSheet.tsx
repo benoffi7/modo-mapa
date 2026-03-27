@@ -42,6 +42,7 @@ export default function BusinessSheet() {
   const [activeTab, setActiveTab] = useState<'comments' | 'questions'>('comments');
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
+  const isLoadingComments = data.isLoadingComments;
   const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
 
@@ -237,7 +238,7 @@ export default function BusinessSheet() {
                 businessName={selectedBusiness.name}
                 comments={regularComments}
                 userCommentLikes={data.userCommentLikes}
-                isLoading={data.isLoading}
+                isLoading={isLoadingComments}
                 onCommentsChange={() => data.refetch('comments')}
                 onDirtyChange={setCommentsDirty}
               />
@@ -247,7 +248,7 @@ export default function BusinessSheet() {
                 businessName={selectedBusiness.name}
                 comments={data.comments}
                 userCommentLikes={data.userCommentLikes}
-                isLoading={data.isLoading}
+                isLoading={isLoadingComments}
                 onCommentsChange={() => data.refetch('comments')}
               />
             )}
