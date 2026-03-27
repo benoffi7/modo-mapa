@@ -37,4 +37,25 @@ describe('PasswordField', () => {
     fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'newval' } });
     expect(defaultProps.onChange).toHaveBeenCalledWith('newval');
   });
+
+  it('sets aria-invalid when error is true', () => {
+    render(<PasswordField {...defaultProps} error helperText="Too short" />);
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('links helperText via aria-describedby', () => {
+    render(<PasswordField {...defaultProps} error helperText="Too short" />);
+    const input = screen.getByLabelText('Contraseña');
+    const describedBy = input.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    // The element referenced by aria-describedby should contain the helper text
+    const helperEl = document.getElementById(describedBy!);
+    expect(helperEl).toBeTruthy();
+    expect(helperEl!.textContent).toBe('Too short');
+  });
+
+  it('does not show helperText when error is false', () => {
+    render(<PasswordField {...defaultProps} error={false} helperText="Too short" />);
+    expect(screen.queryByText('Too short')).not.toBeInTheDocument();
+  });
 });

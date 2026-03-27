@@ -173,7 +173,22 @@ Before finishing, verify:
 - [ ] Scope table has realistic effort estimates
 - [ ] Offline section has specific data flows, not just generic checklist
 
+## Full mode: PRD + Specs + Plan in one pass
+
+When the prompt includes the keyword **"full"** or **"completo"**, produce all three documents in a single run:
+
+1. Write `prd.md` as usual
+2. Read the existing source code referenced in the PRD (hooks, components, services, types)
+3. Write `specs.md` following the template from the specs-plan-writer agent
+4. Write `plan.md` following the template from the specs-plan-writer agent
+
+Read `docs/reference/patterns.md`, `docs/reference/architecture.md`, `docs/reference/firestore.md` before writing specs (same as specs-plan-writer would).
+
+This mode saves a full round-trip of user approval between PRD and specs/plan. The user still reviews all three documents before implementation begins.
+
+**When NOT to use full mode:** If the feature is exploratory or the user wants to discuss the PRD before committing to specs.
+
 ## After creating
 
-1. Update `docs/_sidebar.md` — add PRD entry under correct category
+1. Update `docs/_sidebar.md` — add PRD entry (and specs/plan entries if full mode) under correct category
 2. Do NOT commit — let the caller handle commits

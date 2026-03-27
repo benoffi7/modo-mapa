@@ -13,6 +13,7 @@ import {
   Chip,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -20,12 +21,14 @@ import { useConnectivity } from '../../hooks/useConnectivity';
 import { createQuestion, addComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import CommentRow from './CommentRow';
-import InlineReplyForm from './InlineReplyForm';
+import QuestionInput from './QuestionInput';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
-import { MAX_QUESTION_LENGTH, BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
-import { MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { useOptimisticLikes } from '../../hooks/useOptimisticLikes';
+import { useQuestionThreads } from './useQuestionThreads';
+import { BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
+import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { trackEvent } from '../../utils/analytics';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
@@ -50,7 +53,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
   // Reply state
   const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const replyInputRef = useRef<HTMLInputElement>(null);
 
   // Profile visibility
@@ -71,64 +73,41 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     message: 'Pregunta eliminada',
   });
 
-  // Optimistic likes — single Map storing both toggle state and delta
-  const [optimisticLikes, setOptimisticLikes] = useState<Map<string, { toggled: boolean; delta: number }>>(new Map());
-
-  // Separate questions and answers from all comments
-  const { questions, answersByQuestion } = useMemo(() => {
-    const qs: Comment[] = [];
-    const answers = new Map<string, Comment[]>();
-
-    for (const c of comments) {
-      if (c.type === 'question' && !c.parentId) {
-        qs.push(c);
-      } else if (c.parentId) {
-        // Check if parent is a question
-        const existing = answers.get(c.parentId) ?? [];
-        existing.push(c);
-        answers.set(c.parentId, existing);
-      }
+  // Optimistic likes (extracted hook)
+  const toggleAction = useCallback(async (commentId: string, currentlyLiked: boolean) => {
+    if (!user) return;
+    if (currentlyLiked) {
+      await withOfflineSupport(
+        isOffline, 'comment_unlike',
+        { userId: user.uid, businessId, businessName },
+        { commentId },
+        () => unlikeComment(user.uid, commentId),
+        toast,
+      );
+    } else {
+      await withOfflineSupport(
+        isOffline, 'comment_like',
+        { userId: user.uid, businessId, businessName },
+        { commentId },
+        () => likeComment(user.uid, commentId),
+        toast,
+      );
     }
+  }, [user, isOffline, businessId, businessName, toast]);
 
-    // Sort answers by likeCount desc (best answer first)
-    for (const [key, arr] of answers) {
-      answers.set(key, arr.sort((a, b) => b.likeCount - a.likeCount));
-    }
+  const { isLiked, getLikeCount, toggleLike } = useOptimisticLikes({
+    userLikes: userCommentLikes,
+    toggleAction,
+  });
 
-    // Sort questions by date desc
-    qs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    return { questions: qs, answersByQuestion: answers };
-  }, [comments]);
-
-  // Filter answers to only those belonging to questions (not regular comments)
-  const questionIds = useMemo(() => new Set(questions.map((q) => q.id)), [questions]);
-  const filteredAnswersByQuestion = useMemo(() => {
-    const filtered = new Map<string, Comment[]>();
-    for (const [parentId, answers] of answersByQuestion) {
-      if (questionIds.has(parentId)) {
-        filtered.set(parentId, answers);
-      }
-    }
-    return filtered;
-  }, [answersByQuestion, questionIds]);
+  // Question threads (extracted hook)
+  const { questions, answersByQuestion, expandedQuestions, toggleQuestion, expandQuestion, getAnswerCount } =
+    useQuestionThreads(comments, businessId);
 
   const userCommentsToday = useMemo(() => {
     const today = new Date().toDateString();
     return comments.filter((c) => c.userId === user?.uid && c.createdAt.toDateString() === today).length;
   }, [comments, user?.uid]);
-
-  // Like helpers
-  const isLiked = useCallback((commentId: string) => {
-    const entry = optimisticLikes.get(commentId);
-    if (entry) return entry.toggled;
-    return userCommentLikes.has(commentId);
-  }, [userCommentLikes, optimisticLikes]);
-
-  const getLikeCount = useCallback((comment: Comment) => {
-    const delta = optimisticLikes.get(comment.id)?.delta ?? 0;
-    return Math.max(0, comment.likeCount + delta);
-  }, [optimisticLikes]);
 
   // Handlers
   const handleSubmitQuestion = async () => {
@@ -155,37 +134,10 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
 
   const handleToggleLike = async (commentId: string) => {
     if (!user) return;
-    const currentlyLiked = isLiked(commentId);
-
-    setOptimisticLikes((prev) => {
-      const current = prev.get(commentId)?.delta ?? 0;
-      return new Map(prev).set(commentId, {
-        toggled: !currentlyLiked,
-        delta: currentlyLiked ? current - 1 : current + 1,
-      });
-    });
-
     try {
-      if (currentlyLiked) {
-        await withOfflineSupport(
-          isOffline, 'comment_unlike',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => unlikeComment(user.uid, commentId),
-          toast,
-        );
-      } else {
-        await withOfflineSupport(
-          isOffline, 'comment_like',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => likeComment(user.uid, commentId),
-          toast,
-        );
-      }
-    } catch (error) {
-      setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
+      await toggleLike(commentId);
+    } catch {
+      if (import.meta.env.DEV) logger.error('Error toggling like');
       toast.error('No se pudo actualizar el like');
     }
   };
@@ -197,9 +149,9 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
   const handleStartReply = useCallback((comment: Comment) => {
     setReplyingTo({ id: comment.id, userName: comment.userName });
     setReplyText('');
-    setExpandedQuestions((prev) => new Set(prev).add(comment.id));
+    expandQuestion(comment.id);
     setTimeout(() => replyInputRef.current?.focus(), 100);
-  }, []);
+  }, [expandQuestion]);
 
   const handleCancelReply = () => {
     setReplyingTo(null);
@@ -230,19 +182,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     setIsSubmitting(false);
   };
 
-  const toggleQuestion = (questionId: string) => {
-    setExpandedQuestions((prev) => {
-      const next = new Set(prev);
-      if (next.has(questionId)) {
-        next.delete(questionId);
-      } else {
-        next.add(questionId);
-        trackEvent('question_viewed', { business_id: businessId, question_id: questionId });
-      }
-      return next;
-    });
-  };
-
   const handleShowProfile = useCallback((userId: string, userName: string) => {
     setProfileUser({ id: userId, name: userName });
   }, []);
@@ -250,11 +189,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
   // No-op handlers for CommentRow edit props (questions don't support inline edit)
   const noopEdit = useCallback(() => {}, []);
   const noopEditText = useCallback(() => {}, []);
-
-  const getAnswerCount = (question: Comment): number => {
-    const localAnswers = filteredAnswersByQuestion.get(question.id);
-    return question.replyCount ?? localAnswers?.length ?? 0;
-  };
 
   const visibleQuestions = useMemo(
     () => questions.filter((q) => !isPendingDelete(q.id)),
@@ -265,57 +199,24 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     <Box sx={{ py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <HelpOutlineIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }} aria-live="polite" aria-atomic="true">
           Preguntas ({isLoading ? '...' : visibleQuestions.length})
         </Typography>
       </Box>
 
-      {/* Question input */}
-      {user && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Hacé una pregunta..."
-            value={questionText}
-            onChange={(e) => setQuestionText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmitQuestion();
-              }
-            }}
-            slotProps={{ htmlInput: { maxLength: MAX_QUESTION_LENGTH } }}
-            helperText={questionText.length > 0 ? `${questionText.length}/${MAX_QUESTION_LENGTH}` : undefined}
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px' } }}
-          />
-          <IconButton
-            color="primary"
-            onClick={handleSubmitQuestion}
-            disabled={isSubmitting || !questionText.trim()}
-            sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              width: 40,
-              height: 40,
-              flexShrink: 0,
-              '&:hover': { bgcolor: 'primary.dark' },
-              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-            }}
-          >
-            <SendIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Box>
-      )}
-      {user && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-        <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
-          Alcanzaste el límite de {MAX_COMMENTS_PER_DAY} publicaciones por hoy.
-        </Alert>
+      {user && (
+        <QuestionInput
+          questionText={questionText}
+          onQuestionTextChange={setQuestionText}
+          onSubmit={handleSubmitQuestion}
+          isSubmitting={isSubmitting}
+          userCommentsToday={userCommentsToday}
+        />
       )}
 
       <List disablePadding>
         {visibleQuestions.map((question, index) => {
-          const answers = filteredAnswersByQuestion.get(question.id) ?? [];
+          const answers = answersByQuestion.get(question.id) ?? [];
           const visibleAnswers = answers.filter((a) => !isPendingDelete(a.id));
           const answerCount = getAnswerCount(question);
           const isExpanded = expandedQuestions.has(question.id);
@@ -326,7 +227,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 comment={question}
                 isOwn={question.userId === user?.uid}
                 isLiked={isLiked(question.id)}
-                likeCount={getLikeCount(question)}
+                likeCount={getLikeCount(question.id, question.likeCount)}
                 replyCount={answerCount}
                 isEditing={false}
                 editText=""
@@ -342,7 +243,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 onShowProfile={handleShowProfile}
               />
 
-              {/* Answers */}
               {answerCount > 0 && (
                 <Box sx={{ pl: { xs: 3, sm: 5.5 }, mt: 0.5 }}>
                   <Button
@@ -375,7 +275,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                       }}
                     >
                       {visibleAnswers.map((answer) => {
-                        const isBestAnswer = getLikeCount(answer) >= BEST_ANSWER_MIN_LIKES &&
+                        const isBestAnswer = getLikeCount(answer.id, answer.likeCount) >= BEST_ANSWER_MIN_LIKES &&
                           visibleAnswers[0]?.id === answer.id;
 
                         return (
@@ -393,7 +293,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                               comment={answer}
                               isOwn={answer.userId === user?.uid}
                               isLiked={isLiked(answer.id)}
-                              likeCount={getLikeCount(answer)}
+                              likeCount={getLikeCount(answer.id, answer.likeCount)}
                               replyCount={0}
                               isReply
                               isEditing={false}
@@ -416,18 +316,65 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 </Box>
               )}
 
-              {/* Inline reply form */}
-              {replyingTo?.id === question.id && (
-                <InlineReplyForm
-                  replyingToName={replyingTo.userName}
-                  replyText={replyText}
-                  onReplyTextChange={setReplyText}
-                  onSubmit={handleSubmitReply}
-                  onCancel={handleCancelReply}
-                  isSubmitting={isSubmitting}
-                  isOverDailyLimit={userCommentsToday >= MAX_COMMENTS_PER_DAY}
-                  inputRef={replyInputRef}
-                />
+              {replyingTo?.id === question.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
+                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
+                    Alcanzaste el límite diario de publicaciones.
+                  </Alert>
+                </Box>
+              )}
+              {replyingTo?.id === question.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Respondiendo a {replyingTo.userName}...
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <TextField
+                      inputRef={replyInputRef}
+                      fullWidth
+                      size="small"
+                      placeholder="Escribí tu respuesta..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmitReply();
+                        }
+                        if (e.key === 'Escape') {
+                          handleCancelReply();
+                        }
+                      }}
+                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '16px' } }}
+                    />
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={handleSubmitReply}
+                      disabled={isSubmitting || !replyText.trim()}
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        width: 32,
+                        height: 32,
+                        flexShrink: 0,
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+                      }}
+                    >
+                      <SendIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleCancelReply}
+                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
+                      aria-label="Cancelar respuesta"
+                    >
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                </Box>
               )}
 
               {index < visibleQuestions.length - 1 && <Divider />}

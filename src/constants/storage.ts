@@ -16,3 +16,5 @@ export const STORAGE_KEY_ONBOARDING_CELEBRATED = 'onboarding_celebrated';
 export const STORAGE_KEY_ONBOARDING_EXPANDED = 'onboarding_expanded';
 export const STORAGE_KEY_REMEMBERED_EMAIL = 'remembered_email';
 export const SESSION_KEY_FORCE_UPDATE_LAST_REFRESH = 'force_update_last_refresh';
+export const STORAGE_KEY_RATING_PROMPT_DISMISSED = 'rating_prompt_dismissed';
+export const STORAGE_KEY_RATING_PROMPT_SHOWN_TODAY = 'rating_prompt_shown_today';

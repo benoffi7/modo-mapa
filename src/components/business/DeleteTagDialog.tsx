@@ -20,10 +20,10 @@ export default memo(function DeleteTagDialog({
   onClose,
 }: DeleteTagDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} role="alertdialog" aria-describedby="delete-tag-warning">
       <DialogTitle>Eliminar etiqueta</DialogTitle>
       <DialogContent>
-        <Typography>
+        <Typography id="delete-tag-warning">
           {'\u00BF'}Eliminar etiqueta &ldquo;{tagLabel}&rdquo;?
         </Typography>
       </DialogContent>

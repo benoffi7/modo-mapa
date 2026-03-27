@@ -119,6 +119,19 @@ fi
 
 Single-field indexes cause deploy failures because Firestore creates them automatically. Only composite (2+ fields) indexes belong in `firestore.indexes.json`.
 
+### 1i. Firestore rules field whitelist audit
+
+If `firestore.rules` OR any service file (`src/services/**`) was modified, cross-check that every field written by client code is allowed by the rules' `hasOnly()` whitelist.
+
+**How to check:**
+1. For each collection with `hasOnly()` in `firestore.rules`, extract the allowed field names from both `create` and `update` rules.
+2. In the corresponding service functions (`src/services/*.ts`), find all `updateDoc`, `setDoc`, `addDoc` calls for that collection and extract the field names being written.
+3. Any field written by services but NOT in the rules' `hasOnly()` list = **BLOCKER**. Firestore silently rejects the entire write with "Missing or insufficient permissions".
+
+**Common miss:** Adding a new optional field (e.g. `color`, `icon`) to a type and service without updating the rules whitelist.
+
+If mismatch found, update `firestore.rules` to include the missing fields before proceeding.
+
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 ## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)
@@ -159,12 +172,16 @@ Fix critical issues. Report all results as summary table before proceeding.
 
 Check what changed and update these files as needed:
 
-| File | Update if... |
-|------|-------------|
-| `docs/reference/features.md` | Any user-visible feature added/changed |
-| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention |
-| `docs/reference/project-reference.md` | Version, date, feature summary, test count |
-| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change |
+| File | Update if... | How to check |
+|------|-------------|-------------|
+| `docs/reference/features.md` | Any user-visible feature added/changed | `git diff origin/main -- 'src/components/**' 'src/pages/**'` |
+| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention | `git diff origin/main -- 'src/hooks/**' 'src/contexts/**'` |
+| `docs/reference/firestore.md` | New collections, types, or rules | `git diff origin/main -- 'src/types/**' 'firestore.rules' 'firestore.indexes.json'` |
+| `docs/reference/project-reference.md` | Version, date, feature summary, test count | Always update on feat/ branches |
+| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change | `git diff origin/main -- 'src/components/**'` |
+| `docs/reference/architecture.md` | New services, major refactors | `git diff origin/main -- 'src/services/**'` |
+
+**Systematic check:** Run `git diff --stat origin/main` and for each changed area, verify the corresponding doc is up to date. Do not rely on memory alone.
 
 ### 3b. Check privacy policy
 

@@ -40,3 +40,14 @@ export const EVT_FORCE_UPDATE_TRIGGERED = 'force_update_triggered';
 
 // Account deletion events (#192)
 export const EVT_ACCOUNT_DELETED = 'account_deleted';
+
+// Rating prompt post check-in events (#199)
+export const EVT_RATING_PROMPT_SHOWN = 'rating_prompt_shown';
+export const EVT_RATING_PROMPT_CLICKED = 'rating_prompt_clicked';
+export const EVT_RATING_PROMPT_DISMISSED = 'rating_prompt_dismissed';
+export const EVT_RATING_PROMPT_CONVERTED = 'rating_prompt_converted';
+
+// BusinessSheet performance events (#198)
+export const EVT_BUSINESS_SHEET_PHASE1_MS = 'business_sheet_phase1_ms';
+export const EVT_BUSINESS_SHEET_PHASE2_MS = 'business_sheet_phase2_ms';
+export const EVT_BUSINESS_SHEET_CACHE_HIT = 'business_sheet_cache_hit';

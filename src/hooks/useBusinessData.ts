@@ -5,6 +5,7 @@ import { COLLECTIONS } from '../config/collections';
 import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter } from '../config/converters';
 import { useAuth } from '../context/AuthContext';
 import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
+import { getReadCacheEntry, setReadCacheEntry } from '../services/readCache';
 import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
 import { logger } from '../utils/logger';
 
@@ -18,7 +19,9 @@ interface UseBusinessDataReturn {
   priceLevels: PriceLevel[];
   menuPhoto: MenuPhoto | null;
   isLoading: boolean;
+  isLoadingComments: boolean;
   error: boolean;
+  stale: boolean;
   refetch: (collectionName?: CollectionName) => void;
 }
 
@@ -34,7 +37,9 @@ const EMPTY: UseBusinessDataReturn = {
   priceLevels: [],
   menuPhoto: null,
   isLoading: false,
+  isLoadingComments: false,
   error: false,
+  stale: false,
   refetch: () => {},
 };
 
@@ -189,7 +194,9 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     menuPhoto: MenuPhoto | null;
   }>({ isFavorite: false, ratings: [], comments: [], userTags: [], customTags: [], userCommentLikes: EMPTY_LIKES, priceLevels: [], menuPhoto: null });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [error, setError] = useState(false);
+  const [stale, setStale] = useState(false);
   const fetchIdRef = useRef(0);
   // Collections patched by partial refetches while a full load is in-flight.
   // When the full load completes, these fields are kept from prev state
@@ -200,20 +207,51 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     const id = ++fetchIdRef.current;
     patchedRef.current.clear();
 
+    // Tier 1: In-memory cache (5min TTL, instant)
     const cached = getBusinessCache(bId);
     if (cached) {
       setData(cached);
       setIsLoading(false);
       setError(false);
+      setStale(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(false);
+    // Tier 2: IndexedDB read cache (24h TTL, stale data)
+    let servedFromReadCache = false;
+    try {
+      const readCached = await getReadCacheEntry(bId);
+      if (readCached && fetchIdRef.current === id) {
+        setData({
+          isFavorite: readCached.isFavorite,
+          ratings: readCached.ratings,
+          comments: readCached.comments,
+          userTags: readCached.userTags,
+          customTags: readCached.customTags,
+          userCommentLikes: new Set(readCached.userCommentLikes),
+          priceLevels: readCached.priceLevels,
+          menuPhoto: readCached.menuPhoto,
+        });
+        setStale(true);
+        setIsLoading(false);
+        setError(false);
+        servedFromReadCache = true;
+      }
+    } catch {
+      // IndexedDB read failure is non-critical, continue to Firestore
+    }
 
+    if (!servedFromReadCache) {
+      setIsLoading(true);
+      setIsLoadingComments(true);
+      setError(false);
+      setStale(false);
+    }
+
+    // Tier 3: Firestore (authoritative)
     try {
       const result = await fetchBusinessData(bId, uid);
-      if (fetchIdRef.current !== id) return; // stale
+      if (fetchIdRef.current !== id) return; // stale request
       // Merge: keep fields that were patched by partial refetches during this load
       const patched = patchedRef.current;
       if (patched.size > 0) {
@@ -231,15 +269,22 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       } else {
         setData(result);
       }
+      setStale(false);
       setBusinessCache(bId, result);
+      // Write to IndexedDB read cache (fire-and-forget)
+      setReadCacheEntry(bId, result).catch(() => {});
     } catch (err) {
       if (fetchIdRef.current !== id) return;
       if (import.meta.env.DEV) logger.error('Error loading business data:', err);
-      setError(true);
+      // If we served from read cache, keep showing stale data instead of error
+      if (!servedFromReadCache) {
+        setError(true);
+      }
     }
 
     if (fetchIdRef.current === id) {
       setIsLoading(false);
+      setIsLoadingComments(false);
     }
   }, []);
 
@@ -275,5 +320,5 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
 
   if (!businessId) return EMPTY;
 
-  return { ...data, isLoading, error, refetch };
+  return { ...data, isLoading, isLoadingComments, error, stale, refetch };
 }

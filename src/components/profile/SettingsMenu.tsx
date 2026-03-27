@@ -143,13 +143,13 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         </Button>
       )}
 
-      <Dialog open={confirmOpen} onClose={handleClose} maxWidth="xs">
+      <Dialog open={confirmOpen} onClose={handleClose} maxWidth="xs" role="alertdialog" aria-describedby="logout-warning">
         <DialogTitle>{isAnonymous ? '¿Empezar de cero?' : '¿Cerrar sesión?'}</DialogTitle>
         <DialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>
           )}
-          <Typography variant="body2">
+          <Typography id="logout-warning" variant="body2">
             {isAnonymous
               ? 'Se van a borrar todos tus datos del servidor (favoritos, calificaciones, listas, etc.) y vas a empezar de cero con una cuenta nueva. Esta acción no se puede deshacer.'
               : 'Vas a necesitar tu email y contraseña para volver a entrar.'}

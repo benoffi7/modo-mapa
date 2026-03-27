@@ -78,7 +78,7 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
   const formDisabled = !password || loading || isOffline;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth scroll="paper">
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth scroll="paper" role="alertdialog" aria-describedby="delete-account-warning">
       <DialogTitle>Eliminar cuenta</DialogTitle>
       <DialogContent>
         {success && (
@@ -86,9 +86,9 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
             Cuenta eliminada.
           </Alert>
         )}
-        {(error || authError) && !success && (
+        {authError && !error && !success && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error || authError}
+            {authError}
           </Alert>
         )}
         {isOffline && (
@@ -96,7 +96,7 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
             Necesitás conexión a internet para eliminar tu cuenta.
           </Alert>
         )}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography id="delete-account-warning" variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Esta acción es permanente. Se van a borrar todos tus datos (favoritos,
           calificaciones, comentarios, listas, fotos, etc.) y no se pueden recuperar.
         </Typography>
@@ -108,6 +108,8 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
             autoComplete="current-password"
             autoFocus
             name="delete-account-password"
+            error={!!error}
+            helperText={error || undefined}
           />
         </Box>
       </DialogContent>

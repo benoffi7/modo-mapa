@@ -329,7 +329,7 @@ service cloud.firestore {
             || resource.data.isPublic == true
             || resource.data.get('featured', false) == true);
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['ownerId', 'name', 'description', 'isPublic', 'itemCount', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['ownerId', 'name', 'description', 'isPublic', 'itemCount', 'createdAt', 'updatedAt', 'color', 'icon'])
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
@@ -340,14 +340,14 @@ service cloud.firestore {
         && request.resource.data.itemCount == 0
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
-      // Owner: can update name, description, isPublic, itemCount, updatedAt.
+      // Owner: can update name, description, isPublic, itemCount, updatedAt, color, icon.
       // featured and editorIds are ONLY writable via admin SDK (Cloud Functions).
       allow update: if request.auth != null
         && request.resource.data.ownerId == resource.data.ownerId
         && (
           (isListOwner()
             && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['name', 'description', 'isPublic', 'itemCount', 'updatedAt']))
+               .hasOnly(['name', 'description', 'isPublic', 'itemCount', 'updatedAt', 'color', 'icon']))
           || (isListEditor()
               && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['itemCount', 'updatedAt']))

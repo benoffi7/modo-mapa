@@ -20,6 +20,7 @@ import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
 import CheckInButton from './CheckInButton';
+import StaleBanner from '../ui/StaleBanner';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import SendIcon from '@mui/icons-material/Send';
@@ -152,6 +153,12 @@ export default function BusinessSheet() {
             },
             animation: 'fadeIn 200ms ease-in',
           }}>
+            {data.stale && (
+              <StaleBanner
+                businessId={selectedBusiness.id}
+                onRefresh={() => data.refetch()}
+              />
+            )}
             <BusinessHeader
               business={selectedBusiness}
               isTrending={isTrending}

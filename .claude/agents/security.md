@@ -31,7 +31,7 @@ Eres un auditor de seguridad web senior para el proyecto **Modo Mapa** (React 19
 - App Check configuracion
 - Auth flow (anonima + Google Sign-In)
 - **Cross-check Storage rules vs client code**: comparar `contentType.matches()` en `storage.rules` contra `ALLOWED_MEDIA_TYPES` y validaciones client-side en servicios. Discrepancias = bug silencioso (ej: cliente permite PDF pero rules lo bloquean)
-- **Cross-check Firestore rules vs types**: comparar campos en `keys().hasOnly()` contra interfaces TypeScript. Campos faltantes en rules = datos rechazados silenciosamente
+- **Cross-check Firestore rules vs types**: For each collection with `hasOnly()` in `firestore.rules`, extract allowed fields and compare against: (1) TypeScript interfaces in `src/types/`, (2) actual fields written in `src/services/*.ts` (`updateDoc`, `setDoc`, `addDoc` calls). Report ANY field present in services/types but missing from rules — this causes silent write rejection ("insufficient permissions"). Check BOTH `create` and `update` rules separately as they often have different whitelists.
 
 ## Formato de reporte
 
