@@ -53,7 +53,7 @@ export function getDesignTokens(mode: 'light' | 'dark'): ThemeOptions {
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 12,
             fontWeight: 500,
             fontSize: '0.8rem',
           },
