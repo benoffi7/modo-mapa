@@ -202,6 +202,8 @@
     - [PRD](/feat/security/storage-rules-hardening/prd.md)
     - [Specs](/feat/security/storage-rules-hardening/specs.md)
     - [Plan](/feat/security/storage-rules-hardening/plan.md)
+  - [Eliminacion de Cuenta](/feat/security/eliminacion-cuenta/)
+    - [PRD](/feat/security/eliminacion-cuenta/prd.md)
   - [User Settings](/feat/security/user-settings/)
     - [PRD](/feat/security/user-settings/prd.md)
     - [Specs](/feat/security/user-settings/specs.md)
