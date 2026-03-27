@@ -159,12 +159,16 @@ Fix critical issues. Report all results as summary table before proceeding.
 
 Check what changed and update these files as needed:
 
-| File | Update if... |
-|------|-------------|
-| `docs/reference/features.md` | Any user-visible feature added/changed |
-| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention |
-| `docs/reference/project-reference.md` | Version, date, feature summary, test count |
-| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change |
+| File | Update if... | How to check |
+|------|-------------|-------------|
+| `docs/reference/features.md` | Any user-visible feature added/changed | `git diff origin/main -- 'src/components/**' 'src/pages/**'` |
+| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention | `git diff origin/main -- 'src/hooks/**' 'src/contexts/**'` |
+| `docs/reference/firestore.md` | New collections, types, or rules | `git diff origin/main -- 'src/types/**' 'firestore.rules' 'firestore.indexes.json'` |
+| `docs/reference/project-reference.md` | Version, date, feature summary, test count | Always update on feat/ branches |
+| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change | `git diff origin/main -- 'src/components/**'` |
+| `docs/reference/architecture.md` | New services, major refactors | `git diff origin/main -- 'src/services/**'` |
+
+**Systematic check:** Run `git diff --stat origin/main` and for each changed area, verify the corresponding doc is up to date. Do not rely on memory alone.
 
 ### 3b. Check privacy policy
 

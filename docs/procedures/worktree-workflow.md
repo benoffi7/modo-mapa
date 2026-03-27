@@ -101,6 +101,150 @@ Solo editar `.claude/skills/` o archivos de configuracion en worktrees, nunca en
 
 Los agentes ejecutados en worktrees a menudo carecen de permisos de Bash/Write. Preferir implementacion directa para tareas de codigo. Solo usar worktree agents para exploracion read-only.
 
+### Worktrees branch from main, not from current branch
+
+**Problema:** `isolation: "worktree"` siempre crea el worktree desde `main`, no desde el branch actual. Si estas trabajando en un feature branch (ej: `new-home`), el agente en worktree recibe archivos de `main` — que pueden estar desactualizados o no contener tus cambios recientes.
+
+**Consecuencias observadas:**
+
+- Archivos de constantes sobreescritos (el agente ve las constantes de main, no las del feature branch)
+- Archivos de layout del branch equivocado
+- Necesidad de copiar archivos manualmente en vez de hacer git merge
+
+**Mitigacion:**
+
+1. Para archivos NUEVOS que el agente crea: copiar directamente al feature branch (no existen en ninguna rama)
+2. Para archivos MODIFICADOS que ya existen en el feature branch: NO copiar directamente — restaurar la version del feature branch y aplicar los cambios del agente via Edit
+3. SIEMPRE restaurar archivos de constantes desde el feature branch despues de integrar
+4. Ejecutar `tsc --noEmit` y tests despues de cada integracion
+
+---
+
+## Pre-flight para agentes paralelos
+
+Antes de lanzar multiples agentes en paralelo, seguir este checklist:
+
+### 1. Inventario de archivos
+
+Para cada agente, listar los archivos que va a crear o modificar.
+
+### 2. Deteccion de overlaps
+
+Comparar las listas. Si dos agentes tocan el mismo archivo, hay overlap.
+
+### 3. Resolver overlaps
+
+| Situacion | Accion |
+|-----------|--------|
+| Overlap en archivos existentes | Asignar ownership exclusivo: un solo agente modifica cada archivo |
+| Overlap inevitable | Secuenciar en vez de paralelizar esos agentes |
+| Overlap en constantes/types | Un agente crea, el otro consume — secuenciar |
+
+### 4. Documentar ownership
+
+Incluir en el prompt de cada agente: "Tu eres responsable EXCLUSIVO de estos archivos: [lista]. NO modifiques: [lista de archivos del otro agente]."
+
+**Ejemplo real:** Issues #195 y #196 ambos modificaron `BusinessComments.tsx`. Requirio merge manual. Si se hubiera asignado ownership exclusivo, no habria conflicto.
+
+---
+
+## Integracion de worktrees al feature branch
+
+Procedimiento para integrar el trabajo de worktrees al branch actual.
+
+### Paso 1: Inventariar cambios del worktree
+
+```bash
+# Desde el worktree
+cd <worktree-dir>
+git diff --name-only main..HEAD
+```
+
+Clasificar cada archivo:
+
+- **Nuevo** (no existe en feature branch) — copiar directamente
+- **Modificado** (existe en feature branch) — requiere merge cuidadoso
+
+### Paso 2: Copiar archivos nuevos
+
+```bash
+cp <worktree-dir>/src/components/NewComponent.tsx src/components/NewComponent.tsx
+```
+
+### Paso 3: Integrar archivos modificados
+
+Para cada archivo modificado:
+
+1. NO copiar directamente (perderia los cambios del feature branch)
+2. Revisar el diff del worktree: `git diff main..HEAD -- <archivo>` desde el worktree
+3. Aplicar SOLO los cambios nuevos al archivo del feature branch usando Edit
+
+### Paso 4: Restaurar constantes
+
+**SIEMPRE** despues de integrar, verificar que los archivos de constantes no fueron sobreescritos:
+
+```bash
+git diff -- src/constants/
+git diff -- src/config/
+```
+
+Si fueron sobreescritos, restaurar desde el feature branch:
+
+```bash
+git checkout HEAD -- src/constants/<archivo>
+```
+
+Y luego agregar SOLO las nuevas constantes via Edit.
+
+### Paso 5: Validar integracion
+
+```bash
+npx tsc --noEmit
+npx vitest run --dir src
+npm run lint
+```
+
+---
+
+## Patron aditivo para constantes
+
+**Regla:** Los agentes DEBEN usar Edit (no Write) para archivos existentes. Para archivos de constantes, solo AGREGAR nuevos exports — nunca sobreescribir el archivo completo.
+
+**Problema observado:** Agentes en worktrees ven la version de main de los archivos de constantes. Si usan Write para crear el archivo completo, pierden todas las constantes agregadas en el feature branch.
+
+**Patron correcto:**
+
+```typescript
+// Agregar al final del archivo existente
+export const NEW_CONSTANT = 'value';
+```
+
+**Patron incorrecto:**
+
+```typescript
+// Reescribir todo el archivo — PIERDE constantes del feature branch
+export const OLD_CONSTANT = 'old';
+export const NEW_CONSTANT = 'value';
+```
+
+**Incluir en el prompt de agentes:** "Para archivos de constantes (`src/constants/*`, `src/config/*`), usa SOLO la herramienta Edit para agregar nuevos exports al final. NUNCA uses Write para reescribir estos archivos."
+
+---
+
+## Requisitos para prompts de agentes de implementacion
+
+Todo prompt enviado a un agente de implementacion (ya sea en worktree o directo) DEBE incluir estos pasos finales:
+
+```
+Antes de terminar:
+1. Ejecuta `npx tsc --noEmit` y corrige todos los errores de tipo
+2. Ejecuta `npx eslint --fix src/path/to/changed/files`
+3. Corrige manualmente cualquier error de lint restante (Function types, unused vars, spread args)
+4. Haz un commit con mensaje descriptivo
+```
+
+**Justificacion:** Sin estos pasos, cada ronda de agente requiere 5-10 minutos de fixup manual para errores de lint recurrentes (tipos `Function`, variables sin usar, spread args).
+
 ---
 
 ## Branch strategy

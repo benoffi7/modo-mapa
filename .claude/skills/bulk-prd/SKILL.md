@@ -12,14 +12,25 @@ Create PRDs for multiple GitHub issues at once.
 
 Issue numbers: $ARGUMENTS
 
+## Options
+
+- **Default mode:** Creates only PRDs (user reviews before specs/plan)
+- **Full mode:** If `$ARGUMENTS` contains the word "full" or "completo", creates PRD + specs + plan for each issue in one pass. Saves a full round-trip of review.
+
 ## Process
 
-### Step 1: Create PRDs
+### Step 1: Create PRDs (or full docs)
 
 For each issue number, launch a `prd-writer` agent with the prompt:
 
 ```
 Create a PRD for GitHub issue #<number>.
+```
+
+If full mode: append "full" to each prompt so the prd-writer produces PRD + specs + plan in one pass:
+
+```
+Create a PRD for GitHub issue #<number>. full
 ```
 
 Launch all agents in parallel if there are no dependencies between them.
