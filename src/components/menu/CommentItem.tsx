@@ -166,7 +166,7 @@ const CommentItem = memo(function CommentItem({
                     {comment.likeCount > 0 && (
                       <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
                         <FavoriteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                        <Typography component="span" variant="caption" color="text.disabled">
+                        <Typography component="span" variant="caption" color="text.disabled" aria-live="polite" aria-atomic="true">
                           {comment.likeCount}
                         </Typography>
                       </Box>

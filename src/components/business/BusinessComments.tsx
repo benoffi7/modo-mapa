@@ -2,13 +2,18 @@ import { useState, useMemo, useRef, useCallback, useEffect, memo } from 'react';
 import {
   Box,
   Typography,
+  TextField,
   Button,
   List,
   Divider,
+  IconButton,
   Snackbar,
   Chip,
   Collapse,
+  Alert,
 } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
@@ -16,11 +21,13 @@ import { addComment, editComment, deleteComment, likeComment, unlikeComment } fr
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
-import InlineReplyForm from './InlineReplyForm';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
-import { MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { useOptimisticLikes } from '../../hooks/useOptimisticLikes';
+import { useCommentEdit } from '../../hooks/useCommentEdit';
+import { useCommentThreads } from '../../hooks/useCommentThreads';
+import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
@@ -51,10 +58,17 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   // Sort
   const [sortMode, setSortMode] = useState<SortMode>('recent');
 
-  // Edit
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  // Edit (extracted hook)
+  const handleEditSave = useCallback(async (commentId: string, newText: string) => {
+    if (!user) return;
+    await editComment(commentId, user.uid, newText);
+    toast.success('Comentario editado');
+  }, [user, toast]);
+
+  const { editingId, editText, isSavingEdit, setEditText, startEdit, cancelEdit, saveEdit } = useCommentEdit({
+    onSave: handleEditSave,
+    onSaveComplete: onCommentsChange,
+  });
 
   // Undo delete
   const onConfirmDeleteComment = useCallback(
@@ -70,9 +84,32 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     message: 'Comentario eliminado',
   });
 
-  // Optimistic likes
-  const [optimisticLikeToggle, setOptimisticLikeToggle] = useState<Map<string, boolean>>(new Map());
-  const [optimisticLikeDelta, setOptimisticLikeDelta] = useState<Map<string, number>>(new Map());
+  // Optimistic likes (extracted hook)
+  const toggleAction = useCallback(async (commentId: string, currentlyLiked: boolean) => {
+    if (!user) return;
+    if (currentlyLiked) {
+      await withOfflineSupport(
+        isOffline, 'comment_unlike',
+        { userId: user.uid, businessId, businessName },
+        { commentId },
+        () => unlikeComment(user.uid, commentId),
+        toast,
+      );
+    } else {
+      await withOfflineSupport(
+        isOffline, 'comment_like',
+        { userId: user.uid, businessId, businessName },
+        { commentId },
+        () => likeComment(user.uid, commentId),
+        toast,
+      );
+    }
+  }, [user, isOffline, businessId, businessName, toast]);
+
+  const { isLiked, getLikeCount, toggleLike } = useOptimisticLikes({
+    userLikes: userCommentLikes,
+    toggleAction,
+  });
 
   // Track input text for dirty detection
   const [commentInputText, setCommentInputText] = useState('');
@@ -80,8 +117,10 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   // Reply state
   const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const replyInputRef = useRef<HTMLInputElement>(null);
+
+  // Threads (extracted hook)
+  const { topLevelComments, repliesByParent, expandedThreads, toggleThread, expandThread } = useCommentThreads(comments);
 
   // Notify parent of dirty state
   useEffect(() => {
@@ -92,29 +131,6 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     onDirtyChange?.(isDirty);
   }, [commentInputText, replyText, editText, onDirtyChange]);
 
-  // Group comments: top-level and replies
-  const { topLevelComments, repliesByParent } = useMemo(() => {
-    const topLevel: Comment[] = [];
-    const replies = new Map<string, Comment[]>();
-
-    for (const c of comments) {
-      if (c.parentId) {
-        const existing = replies.get(c.parentId) ?? [];
-        existing.push(c);
-        replies.set(c.parentId, existing);
-      } else {
-        topLevel.push(c);
-      }
-    }
-
-    // Sort replies chronologically
-    for (const [key, arr] of replies) {
-      replies.set(key, arr.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()));
-    }
-
-    return { topLevelComments: topLevel, repliesByParent: replies };
-  }, [comments]);
-
   const userCommentsToday = comments.filter((c) => {
     if (c.userId !== user?.uid) return false;
     const today = new Date();
@@ -124,7 +140,6 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   // Sorted top-level comments only
   const sortedTopLevel = useMemo(() => {
     const visible = topLevelComments.filter((c) => !isPendingDelete(c.id));
-
     return [...visible].sort((a, b) => {
       switch (sortMode) {
         case 'recent': return b.createdAt.getTime() - a.createdAt.getTime();
@@ -133,18 +148,6 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       }
     });
   }, [topLevelComments, sortMode, isPendingDelete]);
-
-  // Helpers for optimistic likes
-  const isLiked = useCallback((commentId: string) => {
-    const toggled = optimisticLikeToggle.get(commentId);
-    if (toggled !== undefined) return toggled;
-    return userCommentLikes.has(commentId);
-  }, [userCommentLikes, optimisticLikeToggle]);
-
-  const getLikeCount = useCallback((comment: Comment) => {
-    const delta = optimisticLikeDelta.get(comment.id) ?? 0;
-    return Math.max(0, comment.likeCount + delta);
-  }, [optimisticLikeDelta]);
 
   // Handlers
   const handleSubmitText = async (text: string) => {
@@ -172,78 +175,16 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     setIsSubmitting(false);
   };
 
-  const handleStartEdit = useCallback((comment: Comment) => {
-    setEditingId(comment.id);
-    setEditText(comment.text);
-  }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingId(null);
-    setEditText('');
-  }, []);
-
-  const handleSaveEdit = async () => {
-    if (!editingId || !user || !editText.trim()) return;
-    setIsSavingEdit(true);
-    try {
-      await editComment(editingId, user.uid, editText.trim());
-      setEditingId(null);
-      setEditText('');
-      onCommentsChange();
-      toast.success('Comentario editado');
-    } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error editing comment:', error);
-      toast.error('No se pudo editar el comentario');
-    }
-    setIsSavingEdit(false);
-  };
-
   const handleDelete = useCallback((comment: Comment) => {
     markCommentForDelete(comment.id, comment);
   }, [markCommentForDelete]);
 
   const handleToggleLike = async (commentId: string) => {
     if (!user) return;
-    const currentlyLiked = isLiked(commentId);
-
-    // Optimistic update
-    setOptimisticLikeToggle((prev) => new Map(prev).set(commentId, !currentlyLiked));
-    setOptimisticLikeDelta((prev) => {
-      const current = prev.get(commentId) ?? 0;
-      return new Map(prev).set(commentId, currentlyLiked ? current - 1 : current + 1);
-    });
-
     try {
-      if (currentlyLiked) {
-        await withOfflineSupport(
-          isOffline, 'comment_unlike',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => unlikeComment(user.uid, commentId),
-          toast,
-        );
-      } else {
-        await withOfflineSupport(
-          isOffline, 'comment_like',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => likeComment(user.uid, commentId),
-          toast,
-        );
-      }
-    } catch (error) {
-      // Revert optimistic update
-      setOptimisticLikeToggle((prev) => {
-        const next = new Map(prev);
-        next.delete(commentId);
-        return next;
-      });
-      setOptimisticLikeDelta((prev) => {
-        const next = new Map(prev);
-        next.delete(commentId);
-        return next;
-      });
-      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
+      await toggleLike(commentId);
+    } catch {
+      if (import.meta.env.DEV) logger.error('Error toggling like');
       toast.error('No se pudo actualizar el like');
     }
   };
@@ -252,10 +193,9 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   const handleStartReply = useCallback((comment: Comment) => {
     setReplyingTo({ id: comment.id, userName: comment.userName });
     setReplyText('');
-    // Auto-expand thread when replying
-    setExpandedThreads((prev) => new Set(prev).add(comment.id));
+    expandThread(comment.id);
     setTimeout(() => replyInputRef.current?.focus(), 100);
-  }, []);
+  }, [expandThread]);
 
   const handleCancelReply = () => {
     setReplyingTo(null);
@@ -286,28 +226,15 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     setIsSubmitting(false);
   };
 
-  const toggleThread = (commentId: string) => {
-    setExpandedThreads((prev) => {
-      const next = new Set(prev);
-      if (next.has(commentId)) {
-        next.delete(commentId);
-      } else {
-        next.add(commentId);
-      }
-      return next;
-    });
-  };
-
   const handleShowProfile = useCallback((userId: string, userName: string) => {
     setProfileUser({ id: userId, name: userName });
   }, []);
 
   const handleEditTextChange = useCallback((text: string) => {
     setEditText(text);
-  }, []);
+  }, [setEditText]);
 
   const getReplyCount = (comment: Comment): number => {
-    // Use denormalized count, but fall back to actual replies in local data
     const localReplies = repliesByParent.get(comment.id);
     return comment.replyCount ?? localReplies?.length ?? 0;
   };
@@ -320,7 +247,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         comment={comment}
         isOwn={comment.userId === user?.uid}
         isLiked={isLiked(comment.id)}
-        likeCount={getLikeCount(comment)}
+        likeCount={getLikeCount(comment.id, comment.likeCount)}
         replyCount={isReply ? 0 : getReplyCount(comment)}
         isReply={isReply}
         isEditing={editingId === comment.id}
@@ -328,9 +255,9 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         isSavingEdit={isSavingEdit}
         isProfilePublic={profileVisibility.get(comment.userId) ?? false}
         onToggleLike={handleToggleLike}
-        onStartEdit={handleStartEdit}
-        onSaveEdit={handleSaveEdit}
-        onCancelEdit={handleCancelEdit}
+        onStartEdit={startEdit}
+        onSaveEdit={saveEdit}
+        onCancelEdit={cancelEdit}
         onEditTextChange={handleEditTextChange}
         onDelete={handleDelete}
         onReply={isReply ? undefined : handleStartReply}
@@ -339,13 +266,12 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     );
   };
 
-  // Count only top-level comments for the header
   const topLevelCount = topLevelComments.length;
 
   return (
     <Box sx={{ py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }} aria-live="polite" aria-atomic="true">
           Comentarios ({isLoading ? '...' : topLevelCount})
         </Typography>
         {topLevelCount > 1 && (
@@ -386,7 +312,6 @@ export default memo(function BusinessComments({ businessId, businessName, commen
             <Box key={comment.id}>
               {renderCommentRow(comment, false)}
 
-              {/* Thread: "Ver N respuestas" toggle + replies */}
               {replyCount > 0 && (
                 <Box sx={{ pl: 5.5, mt: 0.5 }}>
                   <Button
@@ -424,18 +349,69 @@ export default memo(function BusinessComments({ businessId, businessName, commen
                 </Box>
               )}
 
-              {/* Inline reply form */}
-              {replyingTo?.id === comment.id && (
-                <InlineReplyForm
-                  replyingToName={replyingTo.userName}
-                  replyText={replyText}
-                  onReplyTextChange={setReplyText}
-                  onSubmit={handleSubmitReply}
-                  onCancel={handleCancelReply}
-                  isSubmitting={isSubmitting}
-                  isOverDailyLimit={userCommentsToday >= MAX_COMMENTS_PER_DAY}
-                  inputRef={replyInputRef}
-                />
+              {replyingTo?.id === comment.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
+                    Alcanzaste el límite diario de comentarios.
+                  </Alert>
+                </Box>
+              )}
+              {replyingTo?.id === comment.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
+                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Respondiendo a {replyingTo.userName}...
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <TextField
+                      inputRef={replyInputRef}
+                      fullWidth
+                      size="small"
+                      placeholder="Escribí tu respuesta..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmitReply();
+                        }
+                        if (e.key === 'Escape') {
+                          handleCancelReply();
+                        }
+                      }}
+                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '16px',
+                        },
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={handleSubmitReply}
+                      disabled={isSubmitting || !replyText.trim()}
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        width: 32,
+                        height: 32,
+                        flexShrink: 0,
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+                      }}
+                    >
+                      <SendIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleCancelReply}
+                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
+                      aria-label="Cancelar respuesta"
+                    >
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                </Box>
               )}
 
               {index < sortedTopLevel.length - 1 && <Divider />}

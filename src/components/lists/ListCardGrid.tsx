@@ -3,6 +3,7 @@ import AddIcon from '@mui/icons-material/Add';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { getListIconById } from '../../constants/listIcons';
 import { sanitizeListColor } from './ColorPicker';
+import { getContrastText } from '../../utils/contrast';
 import { cardSx, iconCircleSx, dashedButtonSx } from '../../theme/cards';
 import type { SharedList } from '../../types';
 
@@ -28,7 +29,7 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
             >
               <Box sx={iconCircleSx(color)}>
                 <Typography fontSize={22}>
-                  {iconData ? iconData.emoji : <FolderOutlinedIcon sx={{ color: 'common.white', fontSize: 22 }} />}
+                  {iconData ? iconData.emoji : <FolderOutlinedIcon sx={{ color: getContrastText(color), fontSize: 22 }} />}
                 </Typography>
               </Box>
               <Typography variant="subtitle2" fontWeight={600} sx={{ mt: 0.5 }} noWrap>

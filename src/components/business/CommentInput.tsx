@@ -54,6 +54,7 @@ export default memo(function CommentInput({ userCommentsToday, isSubmitting, onS
               : undefined
         }
         FormHelperTextProps={{
+          'aria-live': 'polite' as const,
           sx: remaining <= 3 && userCommentsToday > 0 ? { color: 'warning.main' } : undefined,
         }}
         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px' } }}

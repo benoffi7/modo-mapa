@@ -15,10 +15,10 @@ interface DiscardDialogProps {
 
 export default function DiscardDialog({ open, onKeepEditing, onDiscard }: DiscardDialogProps) {
   return (
-    <Dialog open={open} onClose={onKeepEditing}>
+    <Dialog open={open} onClose={onKeepEditing} role="alertdialog" aria-describedby="discard-dialog-description">
       <DialogTitle>Descartar borrador?</DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <DialogContentText id="discard-dialog-description">
           Tenes texto sin enviar. Si cerras, se va a perder.
         </DialogContentText>
       </DialogContent>

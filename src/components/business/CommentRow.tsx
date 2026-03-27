@@ -164,7 +164,7 @@ const CommentRow = memo(function CommentRow({
                   {isLiked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
                 </IconButton>
                 {likeCount > 0 && (
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 0.25 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ ml: 0.25 }} aria-live="polite" aria-atomic="true">
                     {likeCount}
                   </Typography>
                 )}
@@ -174,7 +174,7 @@ const CommentRow = memo(function CommentRow({
             {isOwn && likeCount > 0 && (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <FavoriteIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                <Typography variant="caption" color="text.disabled" sx={{ ml: 0.25 }}>
+                <Typography variant="caption" color="text.disabled" sx={{ ml: 0.25 }} aria-live="polite" aria-atomic="true">
                   {likeCount}
                 </Typography>
               </Box>

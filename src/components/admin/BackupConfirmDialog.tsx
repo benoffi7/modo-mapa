@@ -19,6 +19,7 @@ function BackupConfirmDialog({ confirmAction, onClose, onConfirm }: BackupConfir
     <Dialog
       open={confirmAction !== null}
       onClose={onClose}
+      role="alertdialog"
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
     >
