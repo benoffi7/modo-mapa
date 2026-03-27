@@ -43,3 +43,4 @@ export { toggleFeaturedList, getPublicLists, getFeaturedLists } from './admin/fe
 export { inviteListEditor } from './callable/inviteListEditor';
 export { removeListEditor } from './callable/removeListEditor';
 export { deleteUserAccount } from './callable/deleteUserAccount';
+export { cleanAnonymousData } from './callable/cleanAnonymousData';

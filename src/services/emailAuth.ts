@@ -150,3 +150,22 @@ export async function deleteAccount(
   // Sign out — triggers onAuthStateChanged which auto-creates new anonymous account
   await firebaseSignOut(auth);
 }
+
+/**
+ * Limpia todos los datos del servidor para un usuario anónimo.
+ * No requiere re-autenticación (no tiene contraseña).
+ */
+export async function cleanAnonymousData(): Promise<void> {
+  const { httpsCallable } = await import('firebase/functions');
+  const { functions } = await import('../config/firebase');
+  const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
+  const fn = httpsCallable<{ databaseId?: string }, { success: boolean }>(functions, 'cleanAnonymousData');
+  await fn({ databaseId });
+
+  // Clear local data
+  for (const key of USER_STORAGE_KEYS) {
+    localStorage.removeItem(key);
+  }
+  invalidateAllQueryCache();
+  clearAllBusinessCache();
+}
