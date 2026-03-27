@@ -7,7 +7,18 @@
 
 ## Modelo de datos
 
-### Nuevos tipos (`src/config/collections.ts`)
+### Nuevos tipos (`shared/userOwnedCollections.ts`)
+
+Archivo compartido entre frontend y functions via path aliases `@shared/*`. Vive en `shared/` en la raiz del proyecto, sin dependencias externas.
+
+### Path aliases
+
+**Frontend (`tsconfig.app.json`):** `"paths": { "@shared/*": ["../shared/*"] }`
+**Frontend (`vite.config.ts`):** `resolve.alias: { '@shared': path.resolve(__dirname, 'shared') }`
+**Functions (`functions/tsconfig.json`):** `"baseUrl": "."`, `"paths": { "@shared/*": ["../shared/*"] }`, include `"../shared"`
+**Functions build:** `tsc-alias` como devDep, build script: `"build": "tsc && tsc-alias"`
+
+### Tipo e interface
 
 ```typescript
 export interface UserOwnedCollection {
@@ -80,7 +91,7 @@ onCall({ enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => { ... })
 
 1. Validate `request.auth` exists and `request.auth.token.email` is truthy (reject anonymous users)
 2. Rate limit: check `_rateLimits` collection with key `delete_{uid}`, limit 1 per minute
-3. Iterate `USER_OWNED_COLLECTIONS` (duplicated array in functions, validated by test for parity with `src/config/collections.ts`):
+3. Iterate `USER_OWNED_COLLECTIONS` (imported from `@shared/userOwnedCollections`):
    - `doc-by-uid`: delete `db.doc(collection/uid)`
    - `query`: `db.collection(c).where(field, '==', uid)` then batch delete (500 per batch, same pattern as `fanOut.ts`)
    - `query` + `biField`: two queries (one per field), combined results, batch delete
@@ -237,9 +248,18 @@ Simple helper to clear the entire module-level `Map`.
 
 - Add `export { deleteUserAccount } from './callable/deleteUserAccount'`
 
-### `src/config/collections.ts`
+### `shared/userOwnedCollections.ts` (nuevo)
 
-- Add `UserOwnedCollection` interface and `USER_OWNED_COLLECTIONS` array after the existing `COLLECTIONS` const
+- Crear carpeta `shared/` en raiz
+- `UserOwnedCollection` interface + `USER_OWNED_COLLECTIONS` array (zero deps)
+
+### `tsconfig.app.json` / `vite.config.ts`
+
+- Path alias `@shared/*` para frontend
+
+### `functions/tsconfig.json` / `functions/package.json`
+
+- Path alias `@shared/*` + `tsc-alias` devDep + build script ajustado
 
 ---
 
@@ -247,15 +267,14 @@ Simple helper to clear the entire module-level `Map`.
 
 | Archivo test | Que testear | Tipo |
 |---|---|---|
-| `src/config/collections.test.ts` | Registry validation: grep services/ for `where('userId'`, `where('ownerId'`, etc. and verify each collection+field pair exists in `USER_OWNED_COLLECTIONS`. Also validates array structure (no duplicates, valid types). | Validacion |
+| `shared/userOwnedCollections.test.ts` | Registry validation: grep `src/services/*.ts` for `where('userId'`, `where('ownerId'`, etc. and verify each collection+field pair exists in `USER_OWNED_COLLECTIONS`. Also validates array structure (no duplicates, valid types). | Validacion |
 | `src/services/emailAuth.test.ts` | Extend existing test file: `deleteAccount()` -- re-auth success/failure, callable invocation, cache cleanup calls, signOut call, error propagation (wrong password, network error, callable error) | Service |
 | `src/components/auth/DeleteAccountDialog.test.tsx` | Render with password field, submit disabled when empty, submit flow with loading state, error display on wrong password, error display on callable failure, cancel closes dialog, success flow with toast, offline state disables submit | Component |
 | `functions/src/callable/deleteUserAccount.test.ts` | Unauthenticated rejection, anonymous user rejection, rate limit enforcement, iteration over all collection types (doc-by-uid, query, query+biField, subcollection), Storage cleanup, auth deletion, idempotency (re-run after partial deletion), `user-not-found` graceful handling | Callable |
-| `functions/src/callable/deleteUserAccount.parity.test.ts` | Validates that the `USER_OWNED_COLLECTIONS` array in `functions/` matches the one in `src/config/collections.ts` exactly. Fails if either array is modified without updating the other. | Parity |
 
 ### Test details
 
-**`src/config/collections.test.ts`** -- Registry validation test:
+**`shared/userOwnedCollections.test.ts`** -- Registry validation test:
 
 - Uses `fs.readFileSync` + regex to scan `src/services/*.ts` for patterns like `where('userId'`, `where('ownerId'`, `where('followerId'`, `where('followedId'`, `where('fromUserId'`, `where('toUserId'`, `where('addedBy'`
 - For each match, extracts the collection name from the surrounding `collection(COLLECTIONS.X)` or string literal
@@ -355,11 +374,14 @@ export const EVT_ACCOUNT_DELETED = 'account_deleted';
 
 ## Decisiones tecnicas
 
-### Duplicated registry in functions/
+### Shared registry via `shared/` folder + path aliases
 
-The `USER_OWNED_COLLECTIONS` array is duplicated in `functions/src/config/userOwnedCollections.ts` instead of sharing the file from `src/config/collections.ts`. This is because Cloud Functions use CommonJS/Node.js imports and the frontend uses ES modules with Vite. A parity test (`deleteUserAccount.parity.test.ts`) ensures both arrays stay synchronized.
+El array `USER_OWNED_COLLECTIONS` vive en `shared/userOwnedCollections.ts` en la raiz del proyecto. Ambos lados (frontend Vite y Cloud Functions CommonJS) lo importan via el alias `@shared/*`.
 
-**Alternative considered:** Sharing via a symlink or shared package. Rejected because the project does not use a monorepo tool, and the overhead of setting up a shared package is not justified for a single array.
+- **Frontend:** Vite resuelve el alias en build time (zero runtime cost)
+- **Functions:** `tsc-alias` resuelve los paths en el JS emitido post-compilacion
+
+**Alternativa descartada:** Duplicar el array en ambos lados con test de paridad. Rechazada porque agrega riesgo de drift y un test extra innecesario.
 
 ### Re-auth in service layer, not in dialog
 
