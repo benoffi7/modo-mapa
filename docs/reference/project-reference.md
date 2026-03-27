@@ -1,9 +1,9 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.28.0
+**Version:** 2.30.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-25
+**Ultima actualizacion:** 2026-03-27
 
 ---
 
@@ -65,14 +65,14 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Menu lateral**: recientes (localStorage), **seguidos** (lista + busqueda de usuarios), **actividad** (feed de seguidos), sugeridos para vos (con distancia al usuario), **sorpréndeme** (random cercano), **mis listas** (compartidas, deep link, público/privado), favoritos (con distancia, pull-to-refresh), comentarios (busqueda, sorting, filtro por comercio, edit inline, stats, swipe actions, skeleton loader, preview enriquecido, pull-to-refresh, rate limit precheck), calificaciones (pull-to-refresh), rankings (pull-to-refresh), feedback (enviar + mis envios), ayuda, estadisticas. Onboarding gamificado (checklist 5 tareas). Toast global de exito/error. Todas las secciones lazy-loaded via `React.lazy()`
 - **Notificaciones**: campana con badge, drawer, polling 60s (visibility-aware), triggers automaticos (likes, fotos, rankings, respuestas a feedback, nuevos seguidores, recomendaciones)
 - **Perfil publico**: click en nombre de usuario → drawer con stats, ranking badge (top 3) y comentarios recientes
-- **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
-- **Configuracion de usuario**: panel lateral con seccion Cuenta (auth), perfil publico/privado, notificaciones (master + granulares incl. nuevos seguidores y recomendaciones), datos de uso (analytics)
+- **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout, **eliminacion de cuenta** (#192, permanente con re-auth, Cloud Function `deleteUserAccount` borra 19 colecciones). "Empezar de cero" para anonimos. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
+- **Configuracion de usuario**: panel lateral con seccion Cuenta (auth, eliminar cuenta), perfil publico/privado, notificaciones (master + granulares incl. nuevos seguidores y recomendaciones), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
 - **Admin** (`/admin`): 11 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (métricas por funcionalidad con gráficos 30 días)
 - **Seguir usuarios** (#129): seguir a otros usuarios, feed de actividad de seguidos (ratings, comentarios, favoritos), busqueda de usuarios por nombre, FollowButton en perfil, secciones Seguidos y Actividad en SideMenu, notificacion `new_follower`, configuracion `notifyFollowers`
 - **Recomendaciones** (#135): recomendar comercios a otros usuarios con mensaje opcional (max 200 chars). Rate limit 20/dia. Lista de recibidas con badge de no leidas. Notificacion `recommendation`. Soporte offline. Configuracion `notifyRecommendations`
-- **Cloud Functions**: 12 callable + 17 triggers + 6 scheduled
-- **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
+- **Cloud Functions**: 14 callable + 17 triggers + 6 scheduled
+- **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones + `_rateLimits` in COLLECTIONS #193), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave
 
@@ -94,4 +94,10 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
-- **Tests**: 699 tests (555 frontend + 144 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **3-tier read cache**: memory → IndexedDB → Firestore en `useBusinessData`, con `StaleBanner` y incremental loading
+- **`shared/` folder**: codigo compartido entre frontend y functions (ej: `shared/userOwnedCollections.ts`)
+- **Extracted hooks** (#195): 8 hooks extraidos de componentes grandes — `useOptimisticLikes`, `useCommentSort`, `useCommentEdit`, `useCommentThreads`, `useVerificationCooldown`, `useQuestionThreads`, `useCommentsListFilters`, `useVirtualizedList`
+- **Offline read caching** (#197): IndexedDB `readCache.ts` con LRU eviction (20 entries). 3-tier lookup en `useBusinessData`: memory → IndexedDB → Firestore. `StaleBanner` para datos stale. Incremental loading (`isLoadingComments`, `stale` fields)
+- **Accesibilidad** (#196): `contrast.ts` (WCAG 2.0), `aria-live` en contadores dinamicos, `role=alertdialog` en dialogs destructivos, `PasswordField` con `helperText` nativo (auto `aria-describedby`)
+- **Rating prompt** (#199): `useRatingPrompt` hook detecta check-ins recientes (2-8h) sin calificar. `RatingPromptBanner` en HomeScreen. 3/dia cap. 4 analytics events
+- **Tests**: 1131 tests (839 frontend + 292 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useOptimisticLikes, useCommentSort, useCommentEdit, useCommentThreads, useVerificationCooldown, 20 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)

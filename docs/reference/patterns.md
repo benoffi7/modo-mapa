@@ -33,7 +33,9 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Parallel query batching** | `useBusinessData` ejecuta las 7 queries de Firestore del business view en un solo `Promise.all` para reducir latencia y facilitar cache. |
+| **Parallel query batching** | `useBusinessData` ejecuta las 7 queries de Firestore del business view en un solo `Promise.all` para reducir latencia y facilitar cache. Desde #197, integra 3-tier lookup: memory cache → IndexedDB (`readCache.ts`) → Firestore. |
+| **readCache 3-tier lookup** | `services/readCache.ts` — IndexedDB cache (`modo-mapa-read-cache`) con LRU eviction a 20 entries. `useBusinessData` intenta memory cache, luego IndexedDB (devuelve datos con `stale: true`), luego Firestore. `StaleBanner` componente muestra aviso visual cuando datos son stale. Cleanup en signOut/deleteAccount. |
+| **Incremental loading** | `useBusinessData` expone `isLoadingComments` y `stale` ademas de `isLoading`. BusinessSheet renderiza header/rating/tags inmediatamente mientras comentarios cargan en background. Reduce tiempo percibido de carga. |
 | **Selective refetch** | `refetch(collectionName)` recarga solo la coleccion afectada (1 query) en vez de las 7. `patchBusinessCache` mergea updates parciales en cache. |
 | **patchedRef race condition fix** | En `useBusinessData`, `patchedRef` trackea colecciones actualizadas por refetches parciales. Al completar full load, preserva esas colecciones del state actual en vez de sobreescribir. Refetches parciales no incrementan `fetchIdRef`. |
 | **Business data cache** | `useBusinessDataCache.ts` — cache module-level (`Map`) con TTL de 5 min para las 7 queries del business view. Se invalida en cada write. |
@@ -45,7 +47,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count. Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. `useFollow` usa optimistic toggle con revert on error + offline support. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count via `useOptimisticLikes` hook compartido (extraido de BusinessComments en #195, reutilizado en BusinessQuestions). Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. `useFollow` usa optimistic toggle con revert on error + offline support. |
 | **Toast global (`useToast`)** | Context provider en `ToastContext.tsx` con `useMemo` para valor estable. Metodos `success/error/warning/info`. Auto-dismiss 4s. Un toast a la vez. Integrado en ratings (error), comments (exito+error), favorites (exito+error). |
 | **Pull-to-refresh (`usePullToRefresh`)** | Hook custom para gesto touch vertical. Solo activa si `scrollTop === 0`. Threshold 80px. `PullToRefreshWrapper` component con CircularProgress. Integrado en FavoritesList, CommentsList, RatingsList, RankingsView. |
 | **Rate limit precheck (UI)** | En BusinessComments, si `userCommentsToday >= MAX_COMMENTS_PER_DAY`, se reemplaza el input por Alert informativo. Contador "X/20 hoy" en helperText con color warning cuando quedan ≤3. Evita que el usuario escriba un comentario que no podra publicar. |
@@ -164,3 +166,26 @@
 |--------|-------------|
 | **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes de menu (ej: `RecentVisits` usaba una copia local de `formatRelativeTime`). |
 | **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `SuggestionsView`, `FavoritesList`. |
+| **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
+
+## Codigo compartido frontend/functions
+
+| Patron | Descripcion |
+|--------|-------------|
+| **shared/ folder** | Directorio `shared/` en la raiz del proyecto para codigo que se importa tanto desde `src/` (frontend) como desde `functions/src/` (Cloud Functions). Cada archivo exporta constantes o tipos puros (sin dependencias de framework). Ejemplo: `shared/userOwnedCollections.ts` define `USER_OWNED_COLLECTIONS` registry usado por `deleteUserAccount` (functions) y `deleteAllUserData` helper. |
+| **userOwnedCollections registry** | `shared/userOwnedCollections.ts` — lista centralizada de las 19 colecciones que contienen datos de usuario. Cada entrada tiene `collection`, `field` (campo que contiene el userId) y `type` ('doc-id' o 'field'). Usado por `deleteUserAccount` para iterar y borrar todos los datos. Cross-validated con test que verifica consistencia con `COLLECTIONS` config. |
+
+## Accesibilidad
+
+| Patron | Descripcion |
+|--------|-------------|
+| **aria-live en contadores dinamicos** | Contadores que cambian en respuesta a acciones del usuario (ej: "X/20 comentarios hoy", like counts) usan `aria-live="polite"` para que screen readers anuncien los cambios sin interrumpir al usuario. |
+| **role=alertdialog** | Dialogs destructivos (`DeleteAccountDialog`, `DiscardDialog`) usan `role="alertdialog"` en vez del default `role="dialog"` para comunicar urgencia a tecnologias asistivas. |
+| **PasswordField helperText nativo** | `PasswordField` usa la prop `helperText` de MUI TextField que genera automaticamente `aria-describedby` vinculando el campo con su texto de ayuda, en vez de texto externo sin vinculacion semantica. |
+
+## Component decomposition (#195)
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 8 hooks extraidos: `useOptimisticLikes` (likes con Maps), `useCommentSort` (sorting logic), `useCommentEdit` (edit state + handlers), `useCommentThreads` (thread expand/collapse), `useVerificationCooldown` (60s cooldown timer), `useQuestionThreads` (Q&A thread logic), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). |
+| **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). `QuestionInput` extraido de BusinessQuestions (formulario de pregunta con rate limit). |

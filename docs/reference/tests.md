@@ -6,11 +6,11 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 30 (27 React + 12 Functions, algunos complementados) |
-| **Total test cases** | 465 (369 React + 96 Functions) |
+| **Total test files** | 63 (40 React + 32 Functions, algunos complementados) |
+| **Total test cases** | 1131 (839 React + 292 Functions) |
 | **Cobertura minima requerida** | 80% global (enforced en CI) |
 
-### Cobertura actual (2026-03-18)
+### Cobertura actual (2026-03-27)
 
 **Frontend (src/):**
 
