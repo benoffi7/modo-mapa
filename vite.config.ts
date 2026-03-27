@@ -4,6 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { readFileSync } from 'fs'
+import path from 'path'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
@@ -104,6 +105,11 @@ export default defineConfig({
         })
       : null,
   ],
+  resolve: {
+    alias: {
+      '@shared': path.resolve(__dirname, 'shared'),
+    },
+  },
   build: {
     sourcemap: true,
     rollupOptions: {

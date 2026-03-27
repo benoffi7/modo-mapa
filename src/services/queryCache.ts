@@ -31,3 +31,8 @@ export function getQueryCache(collectionPath: string, userId: string): CacheEntr
 export function setQueryCache(collectionPath: string, userId: string, entry: CacheEntry): void {
   queryCache.set(getCacheKey(collectionPath, userId), entry);
 }
+
+/** Clear all cached queries (used during account deletion). */
+export function invalidateAllQueryCache(): void {
+  queryCache.clear();
+}

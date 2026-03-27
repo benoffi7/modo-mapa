@@ -6,6 +6,7 @@
     "node": "22"
   },
   "scripts": {
+    "prebuild": "cp -r ../shared src/shared",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "vitest",
