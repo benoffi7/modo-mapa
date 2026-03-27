@@ -114,12 +114,14 @@ export default function PrivacyPolicy() {
             favoritos, calificaciones, comentarios, etiquetas, listas, fotos de menú y
             filtros). También se registran
             eventos relacionados con la autenticación (account_created, email_sign_in,
-            sign_out, password_changed), eventos de preguntas y respuestas (question_created,
+            sign_out, password_changed, account_deleted), eventos de preguntas y respuestas (question_created,
             question_answered, question_viewed), eventos de check-ins (checkin_created,
             checkin_deleted), eventos de recomendaciones (recommendation_sent,
             recommendation_opened, recommendation_list_viewed),
             eventos de sincronizacion offline (offline_action_queued,
-            offline_sync_completed, offline_sync_failed, offline_action_discarded)
+            offline_sync_completed, offline_sync_failed, offline_action_discarded),
+            eventos de seguimiento de usuarios y feed de actividad,
+            navegación entre secciones y progreso de onboarding,
             y la propiedad de usuario auth_type. Estos eventos
             se asocian al UID, no al email, y no identifican a personas individuales.
           </Li>
@@ -249,6 +251,14 @@ export default function PrivacyPolicy() {
           <Li>
             <strong>Cerrar sesión:</strong> podés cerrar tu sesión en cualquier momento.
             Al hacerlo, se genera una nueva cuenta anónima en el dispositivo.
+          </Li>
+          <Li>
+            <strong>Eliminar tu cuenta:</strong> si tenés una cuenta con email, podés
+            eliminar permanentemente tu cuenta y todos tus datos desde Configuración.
+            Esto borra tu perfil, todo tu contenido, tus archivos almacenados y
+            tu cuenta de autenticación. Esta acción es irreversible. Se registra un
+            identificador anonimizado (hash parcial) de la operación con fines de
+            auditoría.
           </Li>
         </Box>
       </Section>

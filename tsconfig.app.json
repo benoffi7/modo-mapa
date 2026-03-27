@@ -27,5 +27,6 @@
     "baseUrl": ".",
     "paths": { "@shared/*": ["shared/*"] }
   },
-  "include": ["src", "shared"]
+  "include": ["src", "shared"],
+  "exclude": ["shared/**/*.test.ts"]
 }

@@ -49,7 +49,11 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
   const isAnonymous = authMethod === 'anonymous';
 
   const handleConfirm = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch {
+      // signOut error handled silently — new anonymous session still created
+    }
     setConfirmOpen(false);
   };
 
@@ -97,7 +101,7 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
           onClick={() => setConfirmOpen(true)}
           sx={{ mt: 1 }}
         >
-          Limpiar mis datos
+          Empezar de cero
         </Button>
       ) : (
         <Button
@@ -113,18 +117,18 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
       )}
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs">
-        <DialogTitle>{isAnonymous ? '¿Limpiar datos?' : '¿Cerrar sesión?'}</DialogTitle>
+        <DialogTitle>{isAnonymous ? '¿Empezar de cero?' : '¿Cerrar sesión?'}</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
             {isAnonymous
-              ? 'Se van a borrar todos tus datos (favoritos, calificaciones, listas, etc.) y vas a empezar de cero. Esta acción no se puede deshacer.'
+              ? 'Vas a empezar de cero con una cuenta nueva. Tus datos anteriores ya no van a estar vinculados a tu cuenta.'
               : 'Vas a necesitar tu email y contraseña para volver a entrar.'}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
           <Button onClick={handleConfirm} color="error" variant="contained">
-            {isAnonymous ? 'Limpiar datos' : 'Cerrar sesión'}
+            {isAnonymous ? 'Empezar de cero' : 'Cerrar sesión'}
           </Button>
         </DialogActions>
       </Dialog>

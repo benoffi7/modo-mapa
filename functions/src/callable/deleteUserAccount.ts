@@ -50,41 +50,48 @@ async function processCollection(
     }
 
     case 'query': {
-      // Handle subcollections before deleting parent docs
-      if (entry.subcollections) {
+      // Single query for pre-processing (subcollections, storage, cascade)
+      const needsPreQuery = entry.subcollections || entry.hasStorage || entry.cascade;
+      if (needsPreQuery) {
         const snap = await db.collection(entry.collection).where(entry.field!, '==', uid).get();
-        for (const doc of snap.docs) {
-          for (const sub of entry.subcollections) {
-            const subSnap = await doc.ref.collection(sub).get();
-            if (!subSnap.empty) {
-              await batchDeleteDocs(db, subSnap.docs.map((d) => d.ref));
+        if (!snap.empty) {
+          // Handle subcollections before deleting parent docs
+          if (entry.subcollections) {
+            for (const doc of snap.docs) {
+              for (const sub of entry.subcollections) {
+                const subSnap = await doc.ref.collection(sub).get();
+                if (!subSnap.empty) {
+                  await batchDeleteDocs(db, subSnap.docs.map((d) => d.ref));
+                }
+              }
             }
           }
-        }
-      }
 
-      // Collect storage paths before deletion
-      if (entry.hasStorage) {
-        const snap = await db.collection(entry.collection).where(entry.field!, '==', uid).get();
-        for (const doc of snap.docs) {
-          const data = doc.data();
-          if (data.storagePath) storagePaths.push(data.storagePath);
-          if (data.thumbnailPath) storagePaths.push(data.thumbnailPath);
-        }
-      }
-
-      // Handle cascade (e.g. delete listItems when sharedLists are deleted)
-      if (entry.cascade) {
-        const snap = await db.collection(entry.collection).where(entry.field!, '==', uid).get();
-        for (const doc of snap.docs) {
-          for (const cascadeCol of entry.cascade) {
-            await deleteByQuery(db, cascadeCol, 'listId', doc.id);
+          // Collect storage paths before deletion
+          if (entry.hasStorage) {
+            for (const doc of snap.docs) {
+              const data = doc.data();
+              if (data.storagePath) storagePaths.push(data.storagePath);
+              if (data.thumbnailPath) storagePaths.push(data.thumbnailPath);
+            }
           }
-        }
-      }
 
-      // Delete primary docs
-      await deleteByQuery(db, entry.collection, entry.field!, uid);
+          // Handle cascade (e.g. delete listItems when sharedLists are deleted)
+          if (entry.cascade) {
+            for (const doc of snap.docs) {
+              for (const cascadeCol of entry.cascade) {
+                await deleteByQuery(db, cascadeCol, 'listId', doc.id);
+              }
+            }
+          }
+
+          // Delete the docs we already fetched
+          await batchDeleteDocs(db, snap.docs.map((d) => d.ref));
+        }
+      } else {
+        // Simple query-delete (no pre-processing needed)
+        await deleteByQuery(db, entry.collection, entry.field!, uid);
+      }
 
       // Delete biField docs (bidirectional relations)
       if (entry.biField) {
@@ -133,21 +140,30 @@ export const deleteUserAccount = onCall(
     // Collect storage paths for cleanup
     const storagePaths: string[] = [];
 
-    // Process all user-owned collections
-    for (const entry of USER_OWNED_COLLECTIONS) {
+    // Process cascade collections first (they delete from other collections)
+    const cascadeEntries = USER_OWNED_COLLECTIONS.filter((e) => e.cascade);
+    const otherEntries = USER_OWNED_COLLECTIONS.filter((e) => !e.cascade);
+
+    for (const entry of cascadeEntries) {
       await processCollection(db, entry, uid, storagePaths);
     }
 
-    // Delete storage files by prefix
+    // Process remaining collections in parallel (max 5 concurrent)
+    const CONCURRENCY = 5;
+    for (let i = 0; i < otherEntries.length; i += CONCURRENCY) {
+      const chunk = otherEntries.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map((entry) => processCollection(db, entry, uid, storagePaths)));
+    }
+
+    // Delete storage files (best-effort, parallel)
     try {
       const bucket = getStorage().bucket();
-      await bucket.deleteFiles({ prefix: `feedback-media/${uid}/` }).catch(() => {});
-      await bucket.deleteFiles({ prefix: `menu-photos/${uid}/` }).catch(() => {});
-
-      // Delete any individually collected paths
-      for (const p of storagePaths) {
-        await bucket.file(p).delete().catch(() => {});
-      }
+      await Promise.all([
+        bucket.deleteFiles({ prefix: `feedback-media/${uid}/` }).catch(() => {}),
+        // Menu photos are stored under menus/{businessId}/ (not by uid prefix).
+        // Individual paths are collected via hasStorage and deleted below.
+        ...storagePaths.map((p) => bucket.file(p).delete().catch(() => {})),
+      ]);
     } catch {
       // Storage cleanup is best-effort
     }

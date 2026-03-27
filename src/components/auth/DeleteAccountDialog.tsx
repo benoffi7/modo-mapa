@@ -100,7 +100,7 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
           Esta acción es permanente. Se van a borrar todos tus datos (favoritos,
           calificaciones, comentarios, listas, fotos, etc.) y no se pueden recuperar.
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <PasswordField
             label="Confirmá tu contraseña"
             value={password}

@@ -31,9 +31,9 @@ vi.mock('../config/firebase', () => ({
 }));
 
 const mockCallableFn = vi.fn();
-const mockHttpsCallable = vi.fn(() => mockCallableFn);
+const mockHttpsCallable = vi.fn<(f: unknown, n: string) => typeof mockCallableFn>(() => mockCallableFn);
 vi.mock('firebase/functions', () => ({
-  httpsCallable: (...args: unknown[]) => mockHttpsCallable(...args),
+  httpsCallable: (functions: unknown, name: string) => mockHttpsCallable(functions, name),
 }));
 
 const mockInvalidateAllQueryCache = vi.fn();
