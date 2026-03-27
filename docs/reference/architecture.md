@@ -92,14 +92,14 @@ ListsScreen
 
 ### Design System
 
+Ver [design-system.md](design-system.md) para tokens completos.
+
 ```text
-src/theme/cards.ts — Estilos reutilizables:
-  ├─ cardSx (borde + radius + hover)
-  ├─ iconCardSx (card con icono de color)
-  ├─ iconCircleSx (circulo de icono)
-  ├─ chipTabSx (chips de sub-tabs)
-  ├─ sectionTitleSx (titulo de seccion)
-  └─ dashedButtonSx (boton con borde dashed)
+src/theme/cards.ts — cardSx, iconCircleSx, dashedButtonSx
+src/constants/ui.ts — NAV_CHIP_SX (chips de sub-tabs)
+src/constants/avatars.ts — 20 avatares
+src/constants/listIcons.ts — 30 iconos + validacion
+src/components/lists/ColorPicker.tsx — 8 colores + sanitizeListColor
 ```
 
 ## Tab: Perfil (ProfileScreen)

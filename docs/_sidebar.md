@@ -345,6 +345,9 @@
     - [Specs](/prd/158-specs.md)
     - [Plan](/prd/158-plan.md)
   - [#167 Office Marker](/prd/167-office-marker.md)
+  - [#191 Force App Update](/prd/191-force-app-update.md)
+    - [Specs](/prd/191-specs.md)
+    - [Plan](/prd/191-plan.md)
 
 - **[Issues](/issues/)**
   - [Issue #80 — Email Auth](/issues/issue-80-email-password-auth.md)

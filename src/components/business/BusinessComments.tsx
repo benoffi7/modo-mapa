@@ -2,18 +2,13 @@ import { useState, useMemo, useRef, useCallback, useEffect, memo } from 'react';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   List,
   Divider,
-  IconButton,
   Snackbar,
   Chip,
   Collapse,
-  Alert,
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
@@ -21,10 +16,11 @@ import { addComment, editComment, deleteComment, likeComment, unlikeComment } fr
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
+import InlineReplyForm from './InlineReplyForm';
 import UserProfileSheet from '../user/UserProfileSheet';
 import { useProfileVisibility } from '../../hooks/useProfileVisibility';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
-import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
@@ -429,69 +425,17 @@ export default memo(function BusinessComments({ businessId, businessName, commen
               )}
 
               {/* Inline reply form */}
-              {replyingTo?.id === comment.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
-                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
-                    Alcanzaste el límite diario de comentarios.
-                  </Alert>
-                </Box>
-              )}
-              {replyingTo?.id === comment.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                    Respondiendo a {replyingTo.userName}...
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                      inputRef={replyInputRef}
-                      fullWidth
-                      size="small"
-                      placeholder="Escribí tu respuesta..."
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmitReply();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelReply();
-                        }
-                      }}
-                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '16px',
-                        },
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={handleSubmitReply}
-                      disabled={isSubmitting || !replyText.trim()}
-                      sx={{
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        width: 32,
-                        height: 32,
-                        flexShrink: 0,
-                        '&:hover': { bgcolor: 'primary.dark' },
-                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-                      }}
-                    >
-                      <SendIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={handleCancelReply}
-                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
-                      aria-label="Cancelar respuesta"
-                    >
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
+              {replyingTo?.id === comment.id && (
+                <InlineReplyForm
+                  replyingToName={replyingTo.userName}
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSubmit={handleSubmitReply}
+                  onCancel={handleCancelReply}
+                  isSubmitting={isSubmitting}
+                  isOverDailyLimit={userCommentsToday >= MAX_COMMENTS_PER_DAY}
+                  inputRef={replyInputRef}
+                />
               )}
 
               {index < sortedTopLevel.length - 1 && <Divider />}
