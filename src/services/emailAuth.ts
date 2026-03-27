@@ -30,6 +30,7 @@ import {
 } from '../constants/storage';
 import { invalidateAllQueryCache } from './queryCache';
 import { clearAllBusinessCache } from '../hooks/useBusinessDataCache';
+import { clearReadCache } from './readCache';
 
 /** Traduce un error de Firebase Auth a un mensaje en español */
 export function getAuthErrorMessage(error: unknown): string {
@@ -101,6 +102,7 @@ export async function changePassword(
 export async function signOutAndReset(): Promise<void> {
   await firebaseSignOut(auth);
   localStorage.removeItem(STORAGE_KEY_VISITS);
+  clearReadCache();
 }
 
 const USER_STORAGE_KEYS = [
@@ -146,6 +148,7 @@ export async function deleteAccount(
   }
   invalidateAllQueryCache();
   clearAllBusinessCache();
+  clearReadCache();
 
   // Sign out — triggers onAuthStateChanged which auto-creates new anonymous account
   await firebaseSignOut(auth);
@@ -168,4 +171,5 @@ export async function cleanAnonymousData(): Promise<void> {
   }
   invalidateAllQueryCache();
   clearAllBusinessCache();
+  clearReadCache();
 }

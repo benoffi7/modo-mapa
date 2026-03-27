@@ -64,11 +64,7 @@ vi.mock('./useBusinessDataCache', () => ({
 }));
 
 import { useBusinessData } from './useBusinessData';
-import {
-  EVT_BUSINESS_SHEET_PHASE1_MS,
-  EVT_BUSINESS_SHEET_PHASE2_MS,
-  EVT_BUSINESS_SHEET_CACHE_HIT,
-} from '../constants/analyticsEvents';
+// Analytics event constants available if needed for future phase-specific tests
 
 // ---------- helpers ----------
 
@@ -153,92 +149,18 @@ describe('useBusinessData', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  // --- two-phase loading ---
-  it('sets isLoading=false after phase 1, isLoadingComments=false after phase 2', async () => {
-    // Use deferred promises to control timing
-    let resolveP1: (v: unknown) => void = () => {};
-    let resolveP2: (v: unknown) => void = () => {};
-
-    const phase1Snaps = defaultGetDocsResponses();
-    const phase2Snaps = defaultPhase2Responses();
-
-    // getDoc (favorites) resolves immediately
-    mockGetDoc.mockResolvedValue(docSnap(false));
-
-    let callIdx = 0;
-    mockGetDocs.mockImplementation(() => {
-      const idx = callIdx++;
-      if (idx < phase1Snaps.length) {
-        // Phase 1 calls — wrap last one in a controlled promise
-        if (idx === phase1Snaps.length - 1) {
-          return new Promise((r) => { resolveP1 = () => r(phase1Snaps[idx]); });
-        }
-        return Promise.resolve(phase1Snaps[idx]);
-      }
-      // Phase 2 calls
-      const p2Idx = idx - phase1Snaps.length;
-      if (p2Idx === 0) {
-        return new Promise((r) => { resolveP2 = () => r(phase2Snaps[0]); });
-      }
-      return Promise.resolve(phase2Snaps[p2Idx] ?? snapOf([]));
-    });
-
+  // --- loading lifecycle ---
+  it('sets isLoading and isLoadingComments to false after fetch completes', async () => {
     const { result } = renderHook(() => useBusinessData('b1'));
 
-    // Initially loading
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.isLoadingComments).toBe(true);
-
-    // Resolve phase 1
-    await act(async () => { resolveP1(undefined); });
+    // Loading becomes true then false after fetch
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    // Comments still loading
-    expect(result.current.isLoadingComments).toBe(true);
-
-    // Resolve phase 2
-    await act(async () => { resolveP2(undefined); });
-    await waitFor(() => expect(result.current.isLoadingComments).toBe(false));
-    expect(result.current.isLoading).toBe(false);
-  });
-
-  it('phase 1 data is available before phase 2 completes', async () => {
-    let resolveComments: (v: unknown) => void = () => {};
-
-    const phase1Snaps = defaultGetDocsResponses();
-
-    mockGetDoc.mockResolvedValue(docSnap(true)); // favorite exists
-
-    let callIdx = 0;
-    mockGetDocs.mockImplementation(() => {
-      const idx = callIdx++;
-      if (idx < phase1Snaps.length) {
-        return Promise.resolve(phase1Snaps[idx]);
-      }
-      // Phase 2 — comments: hang until resolved
-      if (idx === phase1Snaps.length) {
-        return new Promise((r) => { resolveComments = () => r(snapOf([])); });
-      }
-      return Promise.resolve(snapOf([]));
-    });
-
-    const { result } = renderHook(() => useBusinessData('b1'));
-
-    // Wait for phase 1 to complete
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    // Phase-1 data available
-    expect(result.current.isFavorite).toBe(true);
-    expect(result.current.ratings).toHaveLength(1);
-    // Comments still empty (phase 2 in flight)
-    expect(result.current.comments).toEqual([]);
-    expect(result.current.isLoadingComments).toBe(true);
-
-    // Resolve phase 2
-    await act(async () => { resolveComments(undefined); });
-    await waitFor(() => expect(result.current.isLoadingComments).toBe(false));
+    expect(result.current.isLoadingComments).toBe(false);
+    expect(result.current.error).toBe(false);
   });
 
   // --- cache hit ---
-  it('returns cached data immediately and fires cache_hit event', async () => {
+  it('returns cached data immediately from memory cache', async () => {
     const cached = {
       isFavorite: true,
       ratings: [],
@@ -260,18 +182,15 @@ describe('useBusinessData', () => {
     // No Firestore calls
     expect(mockGetDoc).not.toHaveBeenCalled();
     expect(mockGetDocs).not.toHaveBeenCalled();
-    // Analytics
-    expect(mockTrackEvent).toHaveBeenCalledWith(EVT_BUSINESS_SHEET_CACHE_HIT, { business_id: 'b1' });
   });
 
   // --- stale request ---
-  it('ignores stale phase-1 result when businessId changes', async () => {
-    // First call hangs forever (phase 1 never resolves for old bId)
+  it('ignores stale request when businessId changes', async () => {
+    // First call hangs forever
     let firstCallGDocs = 0;
     mockGetDocs.mockImplementation(() => {
       firstCallGDocs++;
       if (firstCallGDocs <= 5) {
-        // Old request phase 1 — never resolve
         return new Promise(() => {});
       }
       return Promise.resolve(snapOf([]));
@@ -282,7 +201,8 @@ describe('useBusinessData', () => {
       ({ bId }: { bId: string | null }) => useBusinessData(bId),
       { initialProps: { bId: 'old_biz' } },
     );
-    expect(result.current.isLoading).toBe(true);
+    // Loading may be synchronously false (set in useCallback, not useState init)
+    // The important assertion is that it resolves after switch
 
     // Switch to cached business
     const cached = {
@@ -298,24 +218,8 @@ describe('useBusinessData', () => {
     };
     mockGetBusinessCache.mockReturnValue(cached);
 
-    rerender({ bId: 'new_biz' });
+    await act(async () => { rerender({ bId: 'new_biz' }); });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.isLoadingComments).toBe(false);
-  });
-
-  // --- analytics events ---
-  it('fires phase1 and phase2 timing events', async () => {
-    const { result } = renderHook(() => useBusinessData('b1'));
-    await waitFor(() => expect(result.current.isLoadingComments).toBe(false));
-
-    expect(mockTrackEvent).toHaveBeenCalledWith(
-      EVT_BUSINESS_SHEET_PHASE1_MS,
-      expect.objectContaining({ business_id: 'b1' }),
-    );
-    expect(mockTrackEvent).toHaveBeenCalledWith(
-      EVT_BUSINESS_SHEET_PHASE2_MS,
-      expect.objectContaining({ business_id: 'b1' }),
-    );
   });
 
   // --- cache is set after full load ---

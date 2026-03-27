@@ -20,6 +20,7 @@ import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
 import CheckInButton from './CheckInButton';
+import StaleBanner from '../ui/StaleBanner';
 import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import SendIcon from '@mui/icons-material/Send';
@@ -42,7 +43,6 @@ export default function BusinessSheet() {
   const [activeTab, setActiveTab] = useState<'comments' | 'questions'>('comments');
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
-  const isLoadingComments = data.isLoadingComments;
   const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
 
@@ -153,6 +153,12 @@ export default function BusinessSheet() {
             },
             animation: 'fadeIn 200ms ease-in',
           }}>
+            {data.stale && (
+              <StaleBanner
+                businessId={selectedBusiness.id}
+                onRefresh={() => data.refetch()}
+              />
+            )}
             <BusinessHeader
               business={selectedBusiness}
               isTrending={isTrending}
@@ -238,7 +244,7 @@ export default function BusinessSheet() {
                 businessName={selectedBusiness.name}
                 comments={regularComments}
                 userCommentLikes={data.userCommentLikes}
-                isLoading={isLoadingComments}
+                isLoading={data.isLoading}
                 onCommentsChange={() => data.refetch('comments')}
                 onDirtyChange={setCommentsDirty}
               />
@@ -248,7 +254,7 @@ export default function BusinessSheet() {
                 businessName={selectedBusiness.name}
                 comments={data.comments}
                 userCommentLikes={data.userCommentLikes}
-                isLoading={isLoadingComments}
+                isLoading={data.isLoading}
                 onCommentsChange={() => data.refetch('comments')}
               />
             )}
