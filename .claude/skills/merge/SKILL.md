@@ -119,6 +119,19 @@ fi
 
 Single-field indexes cause deploy failures because Firestore creates them automatically. Only composite (2+ fields) indexes belong in `firestore.indexes.json`.
 
+### 1i. Firestore rules field whitelist audit
+
+If `firestore.rules` OR any service file (`src/services/**`) was modified, cross-check that every field written by client code is allowed by the rules' `hasOnly()` whitelist.
+
+**How to check:**
+1. For each collection with `hasOnly()` in `firestore.rules`, extract the allowed field names from both `create` and `update` rules.
+2. In the corresponding service functions (`src/services/*.ts`), find all `updateDoc`, `setDoc`, `addDoc` calls for that collection and extract the field names being written.
+3. Any field written by services but NOT in the rules' `hasOnly()` list = **BLOCKER**. Firestore silently rejects the entire write with "Missing or insufficient permissions".
+
+**Common miss:** Adding a new optional field (e.g. `color`, `icon`) to a type and service without updating the rules whitelist.
+
+If mismatch found, update `firestore.rules` to include the missing fields before proceeding.
+
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 ## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)

@@ -56,6 +56,14 @@ Fill this table — it catches permission errors before implementation.}
 {If any query requires a rule change, document the new rule in the section above.
 If a query reads from a collection the caller doesn't own, this MUST be flagged.}
 
+### Field whitelist check
+
+{For EVERY field added or modified in TypeScript interfaces/services, verify it is included in the corresponding `hasOnly()` whitelist in `firestore.rules` for BOTH create and update rules. Firestore silently rejects entire writes when an unlisted field is present.}
+
+| Collection | New/modified field | In create `hasOnly()`? | In update `affectedKeys().hasOnly()`? | Rule change needed? |
+|-----------|-------------------|----------------------|--------------------------------------|-------------------|
+| {e.g. sharedLists} | {e.g. color} | {NO} | {NO} | {YES — add to both} |
+
 ## Cloud Functions
 
 {Any triggers, scheduled functions, or callable functions needed.
