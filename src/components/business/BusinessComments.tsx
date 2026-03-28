@@ -1,8 +1,7 @@
-import { useState, useMemo, useRef, useCallback, useEffect, memo } from 'react';
+import { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   List,
   Divider,
@@ -11,22 +10,17 @@ import {
   Chip,
   Collapse,
   Alert,
+  TextField,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
-import { addComment, editComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
+import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
 import UserProfileSheet from '../user/UserProfileSheet';
-import { useProfileVisibility } from '../../hooks/useProfileVisibility';
-import { useUndoDelete } from '../../hooks/useUndoDelete';
-import { useOptimisticLikes } from '../../hooks/useOptimisticLikes';
-import { useCommentEdit } from '../../hooks/useCommentEdit';
-import { useCommentThreads } from '../../hooks/useCommentThreads';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import { MSG_COMMENT } from '../../constants/messages';
@@ -46,82 +40,42 @@ interface Props {
 }
 
 export default memo(function BusinessComments({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
-  const { user, displayName } = useAuth();
-  const toast = useToast();
-  const { isOffline } = useConnectivity();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
+  // Thread state (needed by useCommentListBase for expandThread)
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const expandThread = useCallback((id: string) => {
+    setExpandedThreads((prev) => new Set(prev).add(id));
+  }, []);
 
-  // Profile visibility
-  const commentUserIds = useMemo(() => comments.map((c) => c.userId), [comments]);
-  const profileVisibility = useProfileVisibility(commentUserIds);
+  const base = useCommentListBase({
+    businessId,
+    businessName,
+    comments,
+    userCommentLikes,
+    onCommentsChange,
+    deleteMessage: 'Comentario eliminado',
+    expandThread,
+  });
+
+  const {
+    user, displayName, isOffline,
+    profileVisibility, isPendingDelete, handleDelete, deleteSnackbarProps,
+    isLiked, getLikeCount, handleToggleLike,
+    replyingTo, replyText, replyInputRef, setReplyText,
+    handleStartReply, handleCancelReply, handleSubmitReply,
+    isSubmitting, profileUser, handleShowProfile, closeProfile,
+    userCommentsToday,
+  } = base;
 
   // Sort
   const [sortMode, setSortMode] = useState<SortMode>('recent');
 
-  // Edit (extracted hook)
-  const handleEditSave = useCallback(async (commentId: string, newText: string) => {
-    if (!user) return;
-    await editComment(commentId, user.uid, newText);
-    toast.success(MSG_COMMENT.editSuccess);
-  }, [user, toast]);
-
-  const { editingId, editText, isSavingEdit, setEditText, startEdit, cancelEdit, saveEdit } = useCommentEdit({
-    onSave: handleEditSave,
-    onSaveComplete: onCommentsChange,
-  });
-
-  // Undo delete
-  const onConfirmDeleteComment = useCallback(
-    async (comment: Comment) => {
-      if (!user) return;
-      await deleteComment(comment.id, user.uid);
-    },
-    [user],
-  );
-  const { isPendingDelete, markForDelete: markCommentForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
-    onConfirmDelete: onConfirmDeleteComment,
-    onDeleteComplete: onCommentsChange,
-    message: 'Comentario eliminado',
-  });
-
-  // Optimistic likes (extracted hook)
-  const toggleAction = useCallback(async (commentId: string, currentlyLiked: boolean) => {
-    if (!user) return;
-    if (currentlyLiked) {
-      await withOfflineSupport(
-        isOffline, 'comment_unlike',
-        { userId: user.uid, businessId, businessName },
-        { commentId },
-        () => unlikeComment(user.uid, commentId),
-        toast,
-      );
-    } else {
-      await withOfflineSupport(
-        isOffline, 'comment_like',
-        { userId: user.uid, businessId, businessName },
-        { commentId },
-        () => likeComment(user.uid, commentId),
-        toast,
-      );
-    }
-  }, [user, isOffline, businessId, businessName, toast]);
-
-  const { isLiked, getLikeCount, toggleLike } = useOptimisticLikes({
-    userLikes: userCommentLikes,
-    toggleAction,
-  });
+  // Edit
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Track input text for dirty detection
   const [commentInputText, setCommentInputText] = useState('');
-
-  // Reply state
-  const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const replyInputRef = useRef<HTMLInputElement>(null);
-
-  // Threads (extracted hook)
-  const { topLevelComments, repliesByParent, expandedThreads, toggleThread, expandThread } = useCommentThreads(comments);
 
   // Notify parent of dirty state
   useEffect(() => {
@@ -132,15 +86,32 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     onDirtyChange?.(isDirty);
   }, [commentInputText, replyText, editText, onDirtyChange]);
 
-  const userCommentsToday = comments.filter((c) => {
-    if (c.userId !== user?.uid) return false;
-    const today = new Date();
-    return c.createdAt.toDateString() === today.toDateString();
-  }).length;
+  // Group comments: top-level and replies
+  const { topLevelComments, repliesByParent } = useMemo(() => {
+    const topLevel: Comment[] = [];
+    const replies = new Map<string, Comment[]>();
+
+    for (const c of comments) {
+      if (c.parentId) {
+        const existing = replies.get(c.parentId) ?? [];
+        existing.push(c);
+        replies.set(c.parentId, existing);
+      } else {
+        topLevel.push(c);
+      }
+    }
+
+    for (const [key, arr] of replies) {
+      replies.set(key, arr.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()));
+    }
+
+    return { topLevelComments: topLevel, repliesByParent: replies };
+  }, [comments]);
 
   // Sorted top-level comments only
   const sortedTopLevel = useMemo(() => {
     const visible = topLevelComments.filter((c) => !isPendingDelete(c.id));
+
     return [...visible].sort((a, b) => {
       switch (sortMode) {
         case 'recent': return b.createdAt.getTime() - a.createdAt.getTime();
@@ -150,11 +121,12 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     });
   }, [topLevelComments, sortMode, isPendingDelete]);
 
-  // Handlers
+  // Toast for component-specific messages (submit comment, edit)
+  const toast = useToast();
+
   const handleSubmitText = async (text: string) => {
     if (!user) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
-    setIsSubmitting(true);
     try {
       await withOfflineSupport(
         isOffline, 'comment_create',
@@ -173,67 +145,49 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       if (import.meta.env.DEV) logger.error('Error adding comment:', error);
       toast.error(MSG_COMMENT.publishError);
     }
-    setIsSubmitting(false);
   };
 
-  const handleDelete = useCallback((comment: Comment) => {
-    markCommentForDelete(comment.id, comment);
-  }, [markCommentForDelete]);
-
-  const handleToggleLike = async (commentId: string) => {
-    if (!user) return;
-    try {
-      await toggleLike(commentId);
-    } catch {
-      if (import.meta.env.DEV) logger.error('Error toggling like');
-      toast.error(MSG_COMMENT.likeError);
-    }
-  };
-
-  // Reply handlers
-  const handleStartReply = useCallback((comment: Comment) => {
-    setReplyingTo({ id: comment.id, userName: comment.userName });
-    setReplyText('');
-    expandThread(comment.id);
-    setTimeout(() => replyInputRef.current?.focus(), 100);
-  }, [expandThread]);
-
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-    setReplyText('');
-  };
-
-  const handleSubmitReply = async () => {
-    if (!user || !replyingTo || !replyText.trim()) return;
-    if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
-    setIsSubmitting(true);
-    try {
-      const trimmedReply = replyText.trim();
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
-        toast,
-      );
-      setReplyingTo(null);
-      setReplyText('');
-      onCommentsChange();
-      if (!isOffline) toast.success(MSG_COMMENT.replySuccess);
-    } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error adding reply:', error);
-      toast.error(MSG_COMMENT.replyError);
-    }
-    setIsSubmitting(false);
-  };
-
-  const handleShowProfile = useCallback((userId: string, userName: string) => {
-    setProfileUser({ id: userId, name: userName });
+  const handleStartEdit = useCallback((comment: Comment) => {
+    setEditingId(comment.id);
+    setEditText(comment.text);
   }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingId(null);
+    setEditText('');
+  }, []);
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !user || !editText.trim()) return;
+    setIsSavingEdit(true);
+    try {
+      await editComment(editingId, user.uid, editText.trim());
+      setEditingId(null);
+      setEditText('');
+      onCommentsChange();
+      toast.success(MSG_COMMENT.editSuccess);
+    } catch (error) {
+      if (import.meta.env.DEV) logger.error('Error editing comment:', error);
+      toast.error(MSG_COMMENT.publishError);
+    }
+    setIsSavingEdit(false);
+  };
 
   const handleEditTextChange = useCallback((text: string) => {
     setEditText(text);
-  }, [setEditText]);
+  }, []);
+
+  const toggleThread = (commentId: string) => {
+    setExpandedThreads((prev) => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
+  };
 
   const getReplyCount = (comment: Comment): number => {
     const localReplies = repliesByParent.get(comment.id);
@@ -248,7 +202,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         comment={comment}
         isOwn={comment.userId === user?.uid}
         isLiked={isLiked(comment.id)}
-        likeCount={getLikeCount(comment.id, comment.likeCount)}
+        likeCount={getLikeCount(comment)}
         replyCount={isReply ? 0 : getReplyCount(comment)}
         isReply={isReply}
         isEditing={editingId === comment.id}
@@ -256,9 +210,9 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         isSavingEdit={isSavingEdit}
         isProfilePublic={profileVisibility.get(comment.userId) ?? false}
         onToggleLike={handleToggleLike}
-        onStartEdit={startEdit}
-        onSaveEdit={saveEdit}
-        onCancelEdit={cancelEdit}
+        onStartEdit={handleStartEdit}
+        onSaveEdit={handleSaveEdit}
+        onCancelEdit={handleCancelEdit}
         onEditTextChange={handleEditTextChange}
         onDelete={handleDelete}
         onReply={isReply ? undefined : handleStartReply}
@@ -272,7 +226,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   return (
     <Box sx={{ py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }} aria-live="polite" aria-atomic="true">
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
           Comentarios ({isLoading ? '...' : topLevelCount})
         </Typography>
         {topLevelCount > 1 && (
@@ -382,7 +336,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
                       slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
+                          borderRadius: '16px',
                         },
                       }}
                     />
@@ -438,7 +392,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         }
       />
 
-      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={() => setProfileUser(null)} />
+      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={closeProfile} />
     </Box>
   );
 });

@@ -18,7 +18,6 @@
  * La versión TSX no funciona porque firebase-admin no está en el root node_modules.
  */
 
-/* eslint-disable @typescript-eslint/no-var-requires */
 const admin = require('firebase-admin');
 const sa = require('../sa-key.json');
 

@@ -5,7 +5,7 @@
  * Run with: npx ts-node scripts/migrateDisplayNameLower.ts
  * Or via Firebase Admin SDK in production.
  */
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Initialize with default credentials (uses GOOGLE_APPLICATION_CREDENTIALS env var)
