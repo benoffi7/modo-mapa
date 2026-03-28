@@ -52,7 +52,7 @@ const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
 ];
 
 const DEFAULT_IDS = ['restaurant', 'cafe', 'bar', 'pizza', 'fastfood', 'bakery', 'icecream', 'sorprendeme'];
-const STORAGE_KEY = 'quick_actions_config';
+import { STORAGE_KEY_QUICK_ACTIONS as STORAGE_KEY } from '../../constants/storage';
 
 const VALID_SLOT_IDS = new Set(ALL_AVAILABLE_SLOTS.map((s) => s.id));
 

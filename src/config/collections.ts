@@ -23,5 +23,7 @@ export const COLLECTIONS = {
   FOLLOWS: 'follows',
   ACTIVITY_FEED: 'activityFeed',
   RECOMMENDATIONS: 'recommendations',
+  SPECIALS: 'specials',
+  ACHIEVEMENTS: 'achievements',
   RATE_LIMITS: '_rateLimits',
 } as const;

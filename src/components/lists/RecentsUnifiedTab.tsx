@@ -1,8 +1,8 @@
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Box, List, ListItemButton, ListItemText, ListItemIcon,
-  Typography, CircularProgress, Button,
+  Typography, CircularProgress, Button, Dialog, DialogTitle, DialogActions,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import PlaceIcon from '@mui/icons-material/Place';
@@ -24,6 +24,7 @@ interface UnifiedEntry {
 
 export default function RecentsUnifiedTab() {
   const { visits, clearHistory } = useVisitHistory();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const { checkIns, isLoading, refresh } = useMyCheckIns();
   const { navigateToBusiness } = useNavigateToBusiness();
 
@@ -83,6 +84,7 @@ export default function RecentsUnifiedTab() {
   }
 
   return (
+    <>
     <PullToRefreshWrapper onRefresh={refresh}>
       <List disablePadding>
         {entries.map((entry) => (
@@ -115,12 +117,21 @@ export default function RecentsUnifiedTab() {
         <Button
           size="small"
           startIcon={<DeleteOutlineIcon />}
-          onClick={clearHistory}
+          onClick={() => setConfirmClearOpen(true)}
           color="inherit"
         >
           Limpiar historial
         </Button>
       </Box>
     </PullToRefreshWrapper>
+
+    <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
+      <DialogTitle>Limpiar todo el historial?</DialogTitle>
+      <DialogActions>
+        <Button onClick={() => setConfirmClearOpen(false)}>Cancelar</Button>
+        <Button onClick={() => { clearHistory(); setConfirmClearOpen(false); }} color="error" variant="contained">Limpiar</Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }

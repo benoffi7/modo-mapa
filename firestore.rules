@@ -393,6 +393,20 @@ service cloud.firestore {
         && isItemDeleteListOwnerOrEditor();
     }
 
+    // Specials — tarjetas especiales en la pantalla Inicio.
+    // Cualquier usuario autenticado puede leer. Solo admin puede escribir.
+    match /specials/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Achievements — definiciones de logros.
+    // Cualquier usuario autenticado puede leer. Solo admin puede escribir.
+    match /achievements/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // Trending businesses — cualquier usuario autenticado puede leer.
     // Cloud Functions escribe con admin SDK.
     match /trendingBusinesses/{docId} {

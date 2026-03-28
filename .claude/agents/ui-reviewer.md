@@ -25,6 +25,7 @@ Eres un revisor experto en UI para el proyecto **Modo Mapa** — app mobile-firs
 - Uso correcto de componentes existentes vs componentes ad-hoc
 - Bottom sheet (BusinessSheet): estados de carga, datos vacios, errores
 - Mapa: marcadores, FAB de geolocalizacion, interacciones
+- **Stale prop pattern**: if a component receives data as props AND writes to Firestore (updateDoc, toggleX, deleteX), check that mutable fields use local state. Reading `props.field` after a mutation = stale UI. Flag as critical.
 
 ## Formato de reporte
 
