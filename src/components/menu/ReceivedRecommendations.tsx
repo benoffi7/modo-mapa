@@ -15,6 +15,7 @@ import { getRecommendationsCollection, markRecommendationAsRead, markAllRecommen
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { MSG_SOCIAL } from '../../constants/messages';
 
 
 import { trackEvent } from '../../utils/analytics';
@@ -91,7 +92,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           emptyIcon={<SendIcon sx={{ fontSize: 48 }} />}
-          emptyMessage="Todavia no recibiste recomendaciones"
+          emptyMessage={MSG_SOCIAL.emptyRecommendations}
           emptySubtext="Segui a otros usuarios para empezar!"
           onRetry={reload}
           onLoadMore={loadMore}

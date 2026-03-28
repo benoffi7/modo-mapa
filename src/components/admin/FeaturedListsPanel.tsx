@@ -16,6 +16,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useToast } from '../../context/ToastContext';
+import { MSG_ADMIN } from '../../constants/messages';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
@@ -58,10 +59,10 @@ export default function FeaturedListsPanel() {
     setToggling(list.id);
     try {
       await toggleFeatured({ listId: list.id, featured: !list.featured, databaseId });
-      toast.success(list.featured ? 'Quitada de destacadas' : 'Marcada como destacada');
+      toast.success(MSG_ADMIN.featuredToggleSuccess(list.featured));
       refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado');
+      toast.error(err instanceof Error ? err.message : MSG_ADMIN.featuredToggleError);
     }
     setToggling(null);
   };

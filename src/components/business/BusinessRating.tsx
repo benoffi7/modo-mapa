@@ -15,6 +15,7 @@ import { upsertRating, deleteRating, upsertCriteriaRating } from '../../services
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { RATING_CRITERIA } from '../../constants/criteria';
 import { STORAGE_KEY_HINT_POST_FIRST_RATING, STORAGE_KEY_ONBOARDING_COMPLETED } from '../../constants/storage';
+import { MSG_BUSINESS } from '../../constants/messages';
 import { incrementAnonRatingCount } from '../../hooks/useActivityReminder';
 import type { Rating as RatingType, RatingCriteria, RatingCriterionId } from '../../types';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -112,11 +113,11 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
       if (user.isAnonymous) incrementAnonRatingCount();
       if (serverMyRating === null && localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_RATING) !== 'true') {
         localStorage.setItem(STORAGE_KEY_HINT_POST_FIRST_RATING, 'true');
-        toast.info('¡Genial! También podés dejar un comentario.');
+        toast.info(MSG_BUSINESS.ratingSuccess);
       }
     } catch {
       setPendingRating(null);
-      toast.error('No se pudo guardar la calificación');
+      toast.error(MSG_BUSINESS.ratingError);
     }
   };
 
@@ -136,7 +137,7 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
       onRatingChange();
     } catch {
       setPendingRating(null);
-      toast.error('No se pudo borrar la calificación');
+      toast.error(MSG_BUSINESS.ratingDeleteError);
     }
   };
 
@@ -153,7 +154,7 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
         delete next[criterionId];
         return Object.keys(next).length > 0 ? next : null;
       });
-      toast.error('No se pudo guardar el criterio');
+      toast.error(MSG_BUSINESS.criteriaError);
     }
   }, [user, businessId, onRatingChange, toast]);
 
@@ -162,7 +163,7 @@ export default memo(function BusinessRating({ businessId, businessName, ratings,
   if (!isLoading && ratings.length === 0 && !user) {
     return (
       <Box sx={{ py: 1 }}>
-        <Typography variant="body2" color="text.secondary">Sin calificaciones aún</Typography>
+        <Typography variant="body2" color="text.secondary">{MSG_BUSINESS.emptyRatings}</Typography>
       </Box>
     );
   }

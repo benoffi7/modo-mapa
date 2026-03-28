@@ -29,6 +29,7 @@ import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { useCommentThreads } from '../../hooks/useCommentThreads';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
+import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -62,7 +63,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
   const handleEditSave = useCallback(async (commentId: string, newText: string) => {
     if (!user) return;
     await editComment(commentId, user.uid, newText);
-    toast.success('Comentario editado');
+    toast.success(MSG_COMMENT.editSuccess);
   }, [user, toast]);
 
   const { editingId, editText, isSavingEdit, setEditText, startEdit, cancelEdit, saveEdit } = useCommentEdit({
@@ -163,14 +164,14 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         toast,
       );
       onCommentsChange();
-      if (!isOffline) toast.success('Comentario publicado');
+      if (!isOffline) toast.success(MSG_COMMENT.publishSuccess);
       if (localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT) !== 'true') {
         localStorage.setItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT, 'true');
-        toast.info('Guarda tus favoritos tocando el corazon.');
+        toast.info(MSG_COMMENT.favoriteHint);
       }
     } catch (error) {
       if (import.meta.env.DEV) logger.error('Error adding comment:', error);
-      toast.error('No se pudo publicar el comentario');
+      toast.error(MSG_COMMENT.publishError);
     }
     setIsSubmitting(false);
   };
@@ -185,7 +186,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       await toggleLike(commentId);
     } catch {
       if (import.meta.env.DEV) logger.error('Error toggling like');
-      toast.error('No se pudo actualizar el like');
+      toast.error(MSG_COMMENT.likeError);
     }
   };
 
@@ -218,10 +219,10 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
-      if (!isOffline) toast.success('Respuesta publicada');
+      if (!isOffline) toast.success(MSG_COMMENT.replySuccess);
     } catch (error) {
       if (import.meta.env.DEV) logger.error('Error adding reply:', error);
-      toast.error('No se pudo publicar la respuesta');
+      toast.error(MSG_COMMENT.replyError);
     }
     setIsSubmitting(false);
   };

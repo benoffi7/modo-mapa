@@ -11,6 +11,7 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { MSG_AUTH } from '../../constants/messages';
 import { trackEvent } from '../../utils/analytics';
 import { STORAGE_KEY_VERIFICATION_NUDGE_DISMISSED } from '../../constants/storage';
 import {
@@ -55,10 +56,10 @@ export default function VerificationNudge() {
     setSending(true);
     try {
       await resendVerification();
-      toast.success('Email de verificación enviado');
+      toast.success(MSG_AUTH.verificationSent);
       trackEvent(EVT_VERIFICATION_NUDGE_RESEND);
     } catch {
-      toast.error('No se pudo enviar el email');
+      toast.error(MSG_AUTH.verificationError);
     } finally {
       setSending(false);
     }
@@ -69,10 +70,10 @@ export default function VerificationNudge() {
     try {
       const verified = await refreshEmailVerified();
       if (verified) {
-        toast.success('¡Email verificado!');
+        toast.success(MSG_AUTH.verificationSuccess);
         // Will auto-hide because emailVerified becomes true
       } else {
-        toast.info('Todavía no verificado. Revisá tu bandeja de entrada.');
+        toast.info(MSG_AUTH.verificationPending);
       }
     } finally {
       setChecking(false);

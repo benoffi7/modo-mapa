@@ -2,6 +2,7 @@ import { Chip } from '@mui/material';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import SyncIcon from '@mui/icons-material/Sync';
 import { useConnectivity } from '../../hooks/useConnectivity';
+import { MSG_OFFLINE } from '../../constants/messages';
 
 export function OfflineIndicator() {
   const { isOffline, isSyncing, pendingActionsCount } = useConnectivity();
@@ -11,8 +12,8 @@ export function OfflineIndicator() {
   const label = isSyncing
     ? 'Sincronizando...'
     : pendingActionsCount > 0
-      ? `Sin conexion - ${pendingActionsCount} pendiente${pendingActionsCount > 1 ? 's' : ''}`
-      : 'Sin conexion';
+      ? MSG_OFFLINE.noConnectionPending(pendingActionsCount)
+      : MSG_OFFLINE.noConnection;
 
   return (
     <Chip

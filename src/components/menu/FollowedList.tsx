@@ -10,6 +10,7 @@ import { fetchFollowing } from '../../services/follows';
 import { fetchUserDisplayNames } from '../../services/users';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { MSG_SOCIAL } from '../../constants/messages';
 import type { Follow } from '../../types';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
@@ -91,7 +92,7 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           emptyIcon={<PeopleIcon sx={{ fontSize: 48 }} />}
-          emptyMessage="No seguis a nadie todavia"
+          emptyMessage={MSG_SOCIAL.emptyFollowed}
           emptySubtext="Busca usuarios arriba para empezar"
           onRetry={handleRefresh}
           onLoadMore={() => loadPage(lastDoc)}

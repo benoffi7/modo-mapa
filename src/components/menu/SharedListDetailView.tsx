@@ -15,6 +15,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { MSG_LIST } from '../../constants/messages';
 import { copyList } from '../../services/sharedLists';
 import { addFavoritesBatch, addFavorite, removeFavorite, fetchUserFavoriteIds } from '../../services/favorites';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -59,7 +60,7 @@ export default function SharedListDetailView({ list, items, loading, sharedListI
         setUserFavIds((prev) => new Set(prev).add(businessId));
       }
     } catch {
-      toast.error('Error al actualizar favorito');
+      toast.error(MSG_LIST.favoriteUpdateError);
     }
   };
 
@@ -68,10 +69,10 @@ export default function SharedListDetailView({ list, items, loading, sharedListI
     setIsCopying(true);
     try {
       await copyList(list.id, user.uid);
-      toast.success('Lista copiada a Mis Listas');
+      toast.success(MSG_LIST.copySuccess);
       onCopyComplete();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo copiar');
+      toast.error(err instanceof Error ? err.message : MSG_LIST.copyError);
     }
     setIsCopying(false);
   };
@@ -82,11 +83,9 @@ export default function SharedListDetailView({ list, items, loading, sharedListI
     try {
       const bizIds = items.map((i) => i.businessId);
       const added = await addFavoritesBatch(user.uid, bizIds);
-      toast.success(added > 0
-        ? `${added} favorito${added !== 1 ? 's' : ''} agregado${added !== 1 ? 's' : ''}`
-        : 'Ya tenés todos como favoritos');
+      toast.success(MSG_LIST.favoritesAdded(added));
     } catch {
-      toast.error('Error al agregar favoritos');
+      toast.error(MSG_LIST.addFavoritesError);
     }
     setIsAddingFavs(false);
   };

@@ -13,7 +13,7 @@
 
 | Patron | Descripcion |
 | ------ | ----------- |
-| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
+| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Textos user-facing en subdirectorio `constants/messages/` (ver Copywriting). Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
 | **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
 | **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
@@ -205,3 +205,4 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Espanol argentino consistente** | Todos los textos user-facing usan tildes correctas (`vacía`, `pública`, `categoría`), signos de apertura (`¿Estás seguro?`), y espanol argentino informal (vos en vez de tu). Agente `copy-auditor` disponible para auditar archivos `.ts`/`.tsx` en busca de tildes faltantes y signos de apertura omitidos. |
+| **Textos centralizados en `src/constants/messages/`** | Toasts y mensajes de error/exito centralizados por dominio: `lists.ts`, `auth.ts`, `business.ts`, `common.ts`, `social.ts`, `checkin.ts`, `feedback.ts`, `admin.ts`, `onboarding.ts`. Barrel export en `messages/index.ts` como `MSG_LIST`, `MSG_AUTH`, `MSG_BIZ`, etc. Componentes importan `import { MSG_LIST } from '../../constants/messages'` en vez de usar string literals. Textos con variables usan funciones: `export const itemRemoved = (name: string) => \`${name} removido\``. Nunca agregar toasts como strings inline — siempre en el archivo de mensajes del dominio correspondiente. |

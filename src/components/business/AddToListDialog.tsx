@@ -28,6 +28,7 @@ import {
   fetchUserLists,
 } from '../../services/sharedLists';
 import type { SharedList } from '../../types';
+import { MSG_LIST } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 
 interface Props {
@@ -97,7 +98,7 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
       }
     } catch (err) {
       logger.error('[AddToListDialog] toggle failed:', err);
-      toast.error('No se pudo actualizar la lista');
+      toast.error(MSG_LIST.updateError);
     }
     setActionInProgress(null);
   };
@@ -111,14 +112,14 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
       await addBusinessToList(listId, businessId);
       setNewName('');
       setShowCreate(false);
-      toast.success('Lista creada y comercio agregado');
+      toast.success(MSG_LIST.createAndAddSuccess);
       // Reload lists
       const refreshed = await fetchUserLists(user.uid);
       setLists(refreshed);
       setCheckedIds((prev) => new Set(prev).add(listId));
     } catch (err) {
       logger.error('[AddToListDialog] create failed:', err);
-      toast.error('No se pudo crear la lista');
+      toast.error(MSG_LIST.createError);
     }
     setIsCreating(false);
   };
@@ -140,7 +141,7 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
           <>
             {lists.length === 0 && !showCreate && (
               <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 2 }}>
-                No tenés listas. Creá una para empezar.
+                {MSG_LIST.emptyNoLists}
               </Typography>
             )}
             <List disablePadding>

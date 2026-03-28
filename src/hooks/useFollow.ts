@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { MSG_SOCIAL } from '../constants/messages';
 import { useConnectivity } from './useConnectivity';
 import { isFollowing as checkIsFollowing, followUser, unfollowUser } from '../services/follows';
 import { withOfflineSupport } from '../services/offlineInterceptor';
@@ -66,7 +67,7 @@ export function useFollow(targetUserId: string | undefined) {
     } catch (err) {
       setFollowing(wasFollowing);
       if (import.meta.env.DEV) logger.error('Follow toggle failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Error al actualizar seguimiento');
+      toast.error(err instanceof Error ? err.message : MSG_SOCIAL.followError);
     } finally {
       setToggling(false);
     }

@@ -155,6 +155,14 @@
 - Cada constante muestra: nombre (monospace), tipo (badge), valor (formateado)
 - Edicion inline con validacion: JSON format, hex colors, numeros, booleanos
 - Color swatches para valores hex, ms→human-readable hints para tiempos
+
+## Textos centralizados (`src/constants/messages/`)
+
+- Toasts y mensajes user-facing centralizados por dominio: `lists.ts`, `auth.ts`, `business.ts`, `common.ts`, `social.ts`, `checkin.ts`, `feedback.ts`, `admin.ts`, `onboarding.ts`
+- Barrel export en `messages/index.ts` como `MSG_LIST`, `MSG_AUTH`, `MSG_BIZ`, `MSG_COMMON`, `MSG_SOCIAL`, `MSG_CHECKIN`, `MSG_FEEDBACK`, `MSG_ADMIN`, `MSG_ONBOARDING`
+- Componentes importan `import { MSG_LIST } from '../../constants/messages'`
+- Textos con variables usan funciones template
+- Todos los textos con tildes correctas y signos de apertura
 - Botones separados: copiar nombre (gris) y copiar valor (morado)
 - Deteccion automatica de valores duplicados entre modulos (banner warning)
 - Stats footer: N de M constantes visibles, total modulos, duplicados

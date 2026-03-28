@@ -31,6 +31,7 @@ import { BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { trackEvent } from '../../utils/analytics';
 import type { Comment } from '../../types';
+import { MSG_QUESTION } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 
 interface Props {
@@ -124,10 +125,10 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       );
       setQuestionText('');
       onCommentsChange();
-      if (!isOffline) toast.success('Pregunta publicada');
+      if (!isOffline) toast.success(MSG_QUESTION.publishSuccess);
     } catch (error) {
       if (import.meta.env.DEV) logger.error('Error creating question:', error);
-      toast.error('No se pudo publicar la pregunta');
+      toast.error(MSG_QUESTION.publishError);
     }
     setIsSubmitting(false);
   };
@@ -138,7 +139,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       await toggleLike(commentId);
     } catch {
       if (import.meta.env.DEV) logger.error('Error toggling like');
-      toast.error('No se pudo actualizar el like');
+      toast.error(MSG_QUESTION.likeError);
     }
   };
 
@@ -173,11 +174,11 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();
-      if (!isOffline) toast.success('Respuesta publicada');
+      if (!isOffline) toast.success(MSG_QUESTION.replySuccess);
       trackEvent('question_answered', { business_id: businessId, question_id: replyingTo.id });
     } catch (error) {
       if (import.meta.env.DEV) logger.error('Error adding answer:', error);
-      toast.error('No se pudo publicar la respuesta');
+      toast.error(MSG_QUESTION.replyError);
     }
     setIsSubmitting(false);
   };

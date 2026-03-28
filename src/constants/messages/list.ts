@@ -1,0 +1,29 @@
+export const MSG_LIST = {
+  createSuccess: 'Lista creada',
+  createError: 'No se pudo crear la lista',
+  createAndAddSuccess: 'Lista creada y comercio agregado',
+  deleteSuccess: 'Lista eliminada',
+  deleteError: 'Error al eliminar lista',
+  updateError: 'No se pudo actualizar la lista',
+  colorError: 'Error al cambiar color',
+  visibilityPublic: 'Lista pública',
+  visibilityPrivate: 'Lista privada',
+  visibilityError: 'Error al cambiar visibilidad',
+  linkCopied: 'Link copiado',
+  itemRemoved: 'Comercio removido',
+  copySuccess: 'Lista copiada a Mis Listas',
+  copyError: 'No se pudo copiar',
+  addFavoritesError: 'Error al agregar favoritos',
+  favoriteUpdateError: 'Error al actualizar favorito',
+  emptyLists: 'No tenés listas todavía',
+  emptyCollaborative: 'No participás en listas colaborativas todavía',
+  emptyNoLists: 'No tenés listas. Creá una para empezar.',
+  editorInvited: (email: string) => `Editor invitado: ${email}` as const,
+  editorRemoved: 'Editor removido',
+  editorInviteError: 'No se pudo invitar',
+  editorRemoveError: 'No se pudo remover',
+  favoritesAdded: (count: number) =>
+    count > 0
+      ? `${count} favorito${count !== 1 ? 's' : ''} agregado${count !== 1 ? 's' : ''}`
+      : 'Ya tenés todos como favoritos',
+} as const;

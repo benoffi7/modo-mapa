@@ -15,6 +15,7 @@ export * from './suggestions';
 export * from './auth';
 export * from './offline';
 export * from './achievements';
+export * from './messages';
 
 // Re-export from existing location (already centralized)
 export { COLLECTIONS } from '../config/collections';

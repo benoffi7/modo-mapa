@@ -8,6 +8,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import PlaceIcon from '@mui/icons-material/Place';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
+import { MSG_CHECKIN } from '../../constants/messages';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { formatRelativeTime } from '../../utils/formatDate';
@@ -77,7 +78,7 @@ export default function RecentsUnifiedTab() {
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <HistoryIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
         <Typography color="text.secondary">
-          No visitaste comercios todavia
+          {MSG_CHECKIN.emptyVisits}
         </Typography>
       </Box>
     );

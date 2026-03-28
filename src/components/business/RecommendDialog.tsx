@@ -10,6 +10,7 @@ import { UserSearchField } from '../UserSearchField';
 import { createRecommendation, countRecommendationsSentToday } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { MAX_RECOMMENDATION_MESSAGE_LENGTH, MAX_RECOMMENDATIONS_PER_DAY } from '../../constants/validation';
+import { MSG_SOCIAL } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { useEffect } from 'react';
 
@@ -60,13 +61,13 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
         toast,
       );
       setSentToday((prev) => prev + 1);
-      toast.success('Recomendacion enviada');
+      toast.success(MSG_SOCIAL.recommendSuccess);
       onClose();
       setSelectedUser(null);
       setMessage('');
     } catch (err) {
       if (import.meta.env.DEV) logger.error('Recommend failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Error al enviar recomendacion');
+      toast.error(err instanceof Error ? err.message : MSG_SOCIAL.recommendError);
     } finally {
       setSubmitting(false);
     }

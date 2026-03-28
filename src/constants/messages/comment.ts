@@ -1,0 +1,11 @@
+export const MSG_COMMENT = {
+  publishSuccess: 'Comentario publicado',
+  editSuccess: 'Comentario editado',
+  publishError: 'No se pudo publicar el comentario',
+  likeError: 'No se pudo actualizar el like',
+  replySuccess: 'Respuesta publicada',
+  replyError: 'No se pudo publicar la respuesta',
+  favoriteHint: 'Guarda tus favoritos tocando el corazon.',
+  emptyOwn: 'No dejaste comentarios todavía',
+  emptyBusiness: 'No hay comentarios para este comercio',
+} as const;

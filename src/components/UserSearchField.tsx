@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useUserSearch } from '../hooks/useUserSearch';
+import { MSG_COMMON } from '../constants/messages';
 
 interface UserSearchFieldProps {
   onSelect: (userId: string, displayName: string) => void;
@@ -76,10 +77,10 @@ export const UserSearchField = memo(function UserSearchField({
           ) : (
             <Box sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                No se encontraron usuarios
+                {MSG_COMMON.noUsersFound}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Quizas el usuario no tenga el perfil publico
+                {MSG_COMMON.publicProfileHint}
               </Typography>
             </Box>
           )}
