@@ -24,7 +24,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
         .jpeg({ quality: 80 })
         .toBuffer();
 
-      const thumbPath = `menus/${data.businessId}/${photoId}_thumb.jpg`;
+      const thumbPath = `menus/${data.userId}/${data.businessId}/${photoId}_thumb.jpg`;
       const thumbFile = bucket.file(thumbPath);
       await thumbFile.save(thumbBuffer, {
         metadata: { contentType: 'image/jpeg' },
