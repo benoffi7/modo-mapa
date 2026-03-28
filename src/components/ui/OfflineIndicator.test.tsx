@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 import * as useConnectivityModule from '../../hooks/useConnectivity';
+import { MSG_OFFLINE } from '../../constants/messages';
 import { vi } from 'vitest';
 
 function mockConnectivity(overrides: Partial<ReturnType<typeof useConnectivityModule.useConnectivity>> = {}) {
@@ -24,22 +25,22 @@ describe('OfflineIndicator', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows "Sin conexion" when offline with no pending', () => {
+  it('shows "Sin conexión" when offline with no pending', () => {
     mockConnectivity({ isOffline: true });
     render(<OfflineIndicator />);
-    expect(screen.getByText('Sin conexion')).toBeInTheDocument();
+    expect(screen.getByText(MSG_OFFLINE.noConnection)).toBeInTheDocument();
   });
 
   it('shows pending count when offline with actions', () => {
     mockConnectivity({ isOffline: true, pendingActionsCount: 3 });
     render(<OfflineIndicator />);
-    expect(screen.getByText('Sin conexion - 3 pendientes')).toBeInTheDocument();
+    expect(screen.getByText(MSG_OFFLINE.noConnectionPending(3))).toBeInTheDocument();
   });
 
   it('shows singular form for 1 pending', () => {
     mockConnectivity({ isOffline: true, pendingActionsCount: 1 });
     render(<OfflineIndicator />);
-    expect(screen.getByText('Sin conexion - 1 pendiente')).toBeInTheDocument();
+    expect(screen.getByText(MSG_OFFLINE.noConnectionPending(1))).toBeInTheDocument();
   });
 
   it('shows "Sincronizando..." when syncing', () => {
