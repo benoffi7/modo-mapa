@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-27 (post #192-#199 merge: account deletion, test coverage, component split, accessibility, offline read cache, rating prompt)*
+*Actualizado: 2026-03-27 (post new-home session: list fixes, specials navigation, avatar persistence, copy audit, field whitelist audit)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -13,9 +13,19 @@
 
 ### v3.0.0 — 19 may – 25 may
 
-| Issue | Título | Etiqueta |
-|-------|--------|----------|
-| [#158](https://github.com/benoffi7/modo-mapa/issues/158) | Rediseño del home: evaluar alternativas al mapa central | arquitectura |
+| Issue | Título | Etiqueta | Estado |
+|-------|--------|----------|--------|
+| [#158](https://github.com/benoffi7/modo-mapa/issues/158) | Rediseño del home: evaluar alternativas al mapa central | arquitectura | **En progreso** (branch `new-home`: specials section, list improvements, avatar persistence) |
+
+---
+
+## Deuda tecnica identificada (new-home session)
+
+| Item | Estado |
+|------|--------|
+| Firestore rules field whitelist: auditar todas las colecciones (no solo `sharedLists`) | Pendiente — agregar a merge Phase 1i |
+| Mutable prop audit: componentes que reciben datos como props y los modifican | Pendiente — agregar a specs template |
+| Copy audit: tildes y signos de apertura en todos los archivos `.ts`/`.tsx` | Parcial — corregidos los dialogos de confirmacion y listas |
 
 ---
 

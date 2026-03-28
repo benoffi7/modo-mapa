@@ -70,7 +70,7 @@ Combinar un header compacto sticky con tabs que agrupen TODO el contenido debajo
 | Rating compacto: promedio +      |
 |   estrellas del usuario          |
 +-- sticky boundary ---------------+
-| [Info] [Opiniones] [Fotos]       |
+| [Info]       [Opiniones]         |
 +----------------------------------+
 | (contenido del tab activo)       |
 |                                  |
@@ -81,35 +81,31 @@ Combinar un header compacto sticky con tabs que agrupen TODO el contenido debajo
 - Criterios de rating (expandible, ya existe)
 - Nivel de gasto
 - Tags (predefinidos + custom)
+- Foto de menu (MenuPhotoSection)
 
 **Tab "Opiniones"**:
 - Sub-tabs existentes: Comentarios / Preguntas (reutilizar logica actual)
 
-**Tab "Fotos"**:
-- MenuPhotoSection (foto de menu actual)
-- Espacio preparado para futuras fotos del local (#fotos-local)
-
 **Ventajas de este enfoque**:
 - El header + rating (la info mas consultada) siempre visible sin scroll
-- 3 tabs reducen el scroll dentro de cada tab a ~1/3 del actual
+- 2 tabs reducen el scroll dentro de cada tab a ~1/2 del actual
 - Los sub-tabs de Comentarios/Preguntas se mantienen intactos (no se rompe logica existente)
-- El tab "Fotos" prepara la arquitectura para la feature de fotos del local (issue pendiente)
 - Patron `Tabs` de MUI ya usado en el proyecto (BusinessSheet ya tiene tabs para comentarios/preguntas)
 - Sticky header usa CSS puro (`position: sticky`), sin librerias adicionales
 
 **Consideraciones UX**:
 - El rating compacto en el header muestra solo promedio + estrellas del usuario (1 linea). El desglose por criterios se mueve al tab Info
 - Los action buttons se compactan en una fila horizontal con `IconButton` (ya son iconos, solo se reorganizan)
-- Deep linking: `?business={id}&tab=opiniones` para abrir directamente en un tab (extension del deep link existente)
+- Deep linking: `?business={id}&tab=opiniones` para abrir directamente en el tab de opiniones (extension del deep link existente)
 - Animacion: fade transition entre tabs (200ms, consistente con el fadeIn actual del sheet)
 
 ### S1: Refactor de estructura (tabs + sticky header)
 
 1. Crear componente `BusinessSheetHeader` que encapsule: header, acciones, rating compacto
 2. Hacer el header sticky dentro del scroll container del `SwipeableDrawer`
-3. Reemplazar la seccion lineal actual por `Tabs` de MUI con 3 tabs: Info, Opiniones, Fotos
+3. Reemplazar la seccion lineal actual por `Tabs` de MUI con 2 tabs: Info, Opiniones
 4. Mover las secciones existentes a sus respectivos tabs sin cambiar su logica interna
-5. Agregar soporte para deep link con tab (`?business={id}&tab=info|opiniones|fotos`)
+5. Agregar soporte para deep link con tab (`?business={id}&tab=info|opiniones`)
 
 ### S2: Refactor de codigo — Extraer base comun de comentarios/preguntas
 
@@ -134,7 +130,7 @@ Combinar un header compacto sticky con tabs que agrupen TODO el contenido debajo
 | Item | Prioridad | Esfuerzo |
 |------|-----------|----------|
 | `BusinessSheetHeader` — componente sticky con header + acciones + rating compacto | Must | M |
-| 3 tabs (Info / Opiniones / Fotos) en BusinessSheet | Must | M |
+| 2 tabs (Info / Opiniones) en BusinessSheet | Must | M |
 | Mover secciones existentes a sus tabs respectivos | Must | S |
 | Deep link con tab parameter (`&tab=`) | Should | S |
 | `useCommentListBase` hook — logica compartida comments/questions | Must | M |
@@ -152,7 +148,7 @@ Combinar un header compacto sticky con tabs que agrupen TODO el contenido debajo
 ## Out of Scope
 
 - Cambiar el componente `SwipeableDrawer` por una libreria con snap points (ej. react-spring-bottom-sheet)
-- Agregar fotos del local (feature separada, #fotos-local). El tab "Fotos" solo muestra la foto de menu existente
+- Agregar fotos del local (feature separada). Cuando se implemente, se podra agregar un tercer tab "Fotos"
 - Redisenar el rating UI (solo se reorganiza, no se cambia la interaccion)
 - Virtualizar listas de comentarios dentro del sheet (ya existe `useVirtualizedList` en CommentsList del menu lateral, pero no aplica al sheet donde los comentarios son pocos por comercio)
 - Cambiar la mecanica de carga de datos (`useBusinessData` se mantiene intacto)
@@ -168,7 +164,7 @@ Combinar un header compacto sticky con tabs que agrupen TODO el contenido debajo
 | `src/hooks/useCommentListBase.ts` | Hook | Inicializacion, handlers de like/delete/submit, integracion con useOptimisticLikes y useUndoDelete, error handling |
 | `src/components/business/BusinessSheetHeader.tsx` | Component | Render con/sin trending, render con/sin usuario autenticado (botones condicionales), rating compacto |
 | `src/components/business/CriteriaSection.tsx` | Component | Expand/collapse, render de promedios, interaccion con estrellas de criterio |
-| `src/components/business/BusinessSheet.tsx` | Component | Tab switching, deep link parsing, default tab, skeleton while loading |
+| `src/components/business/BusinessSheet.tsx` | Component | Tab switching (2 tabs), deep link parsing, default tab, skeleton while loading |
 
 ### Criterios de testing
 
@@ -185,7 +181,7 @@ Este refactor es puramente de UI/UX frontend. No agrega nuevas colecciones, escr
 
 - [ ] No se introduce `dangerouslySetInnerHTML` en componentes nuevos
 - [ ] Los action buttons mantienen sus guards de autenticacion existentes (recommend/addToList solo para no-anonimos)
-- [ ] El deep link parameter `tab` se valida contra valores permitidos (`info|opiniones|fotos`), no se interpreta como HTML/JS
+- [ ] El deep link parameter `tab` se valida contra valores permitidos (`info|opiniones`), no se interpreta como HTML/JS
 - [ ] No se exponen datos nuevos que no estuvieran ya visibles
 
 ---

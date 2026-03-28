@@ -189,3 +189,16 @@
 |--------|-------------|
 | **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 8 hooks extraidos: `useOptimisticLikes` (likes con Maps), `useCommentSort` (sorting logic), `useCommentEdit` (edit state + handlers), `useCommentThreads` (thread expand/collapse), `useVerificationCooldown` (60s cooldown timer), `useQuestionThreads` (Q&A thread logic), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). |
 | **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). `QuestionInput` extraido de BusinessQuestions (formulario de pregunta con rate limit). |
+
+## Integridad de datos
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Mutable prop audit** | Componentes que reciben datos como props Y los modifican deben usar state local + notificar al parent (callback o refetch). Si el parent mantiene la fuente de verdad, el componente hijo debe hacer optimistic update local y propagar el cambio hacia arriba. Ejemplo: `ListDetailScreen` recibe la lista como prop, modifica color/isPublic localmente y notifica al parent para que actualice su estado. Auditar en specs template. |
+| **Firestore rules field whitelist** | Toda escritura a Firestore debe tener sus campos validados con `hasOnly()` en las rules. Cada vez que un servicio agrega un campo nuevo a un `updateDoc`/`setDoc`, verificar que el campo este en la lista `hasOnly()` de la regla correspondiente. Ejemplo: agregar `color` e `icon` a la regla de update de `sharedLists`. Auditar en merge Phase 1i. |
+
+## Copywriting y localizacion
+
+| Patron | Descripcion |
+|--------|-------------|
+| **Espanol argentino consistente** | Todos los textos user-facing usan tildes correctas (`vacía`, `pública`, `categoría`), signos de apertura (`¿Estás seguro?`), y espanol argentino informal (vos en vez de tu). Agente `copy-auditor` disponible para auditar archivos `.ts`/`.tsx` en busca de tildes faltantes y signos de apertura omitidos. |
