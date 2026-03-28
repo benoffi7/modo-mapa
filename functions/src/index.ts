@@ -18,6 +18,7 @@ export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
 export { onFollowCreated, onFollowDeleted } from './triggers/follows';
 export { onUserSettingsWritten } from './triggers/userSettings';
 export { onRecommendationCreated } from './triggers/recommendations';
+export { onBeforeUserCreated } from './triggers/authBlocking';
 
 // Scheduled
 export { dailyMetrics } from './scheduled/dailyMetrics';

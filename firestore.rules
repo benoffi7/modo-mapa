@@ -518,5 +518,10 @@ service cloud.firestore {
     match /_rateLimits/{docId} {
       allow read, write: if false;
     }
+
+    // IP rate limits — solo Cloud Functions (admin SDK) lee/escribe.
+    match /_ipRateLimits/{docId} {
+      allow read, write: if false;
+    }
   }
 }
