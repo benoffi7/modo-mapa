@@ -29,7 +29,7 @@ export default function DirectionsButton({ business }: Props) {
       startIcon={<DirectionsIcon />}
       onClick={handleClick}
       sx={{
-        borderRadius: '20px',
+        borderRadius: '12px',
         textTransform: 'none',
         fontWeight: 500,
         px: 3,
