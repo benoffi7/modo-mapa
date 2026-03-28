@@ -111,6 +111,16 @@ For each: name, params, return type, Firestore operations.}
 {How this feature connects to existing code.
 Which existing components/hooks need modifications.}
 
+### Preventive checklist
+
+{Check each item. If any applies, document the mitigation:}
+
+- [ ] **Service layer**: Do any components import `firebase/firestore` for writes? → Must use `src/services/`
+- [ ] **Duplicated constants**: Are any arrays/objects defined that already exist elsewhere? → Extract to `src/constants/`
+- [ ] **Context-first data**: Does any component `getDoc` for data already in a Context? → Use context instead
+- [ ] **Silent .catch**: Any `.catch(() => {})` in the code? → Use `logger.warn` minimum
+- [ ] **Stale props**: Any component receiving props AND mutating that data? → Needs local state + parent callback
+
 ## Tests
 
 {Specific test files to create/modify.
@@ -213,6 +223,8 @@ Before finishing, verify:
 - [ ] No orphan specs — every component/hook/service in specs appears in the plan
 - [ ] Offline section specifies concrete cache strategies and conflict resolution per data flow
 - [ ] No placeholder props in integration — every component action prop (onClick, onSelect, onNavigate) must have a real handler specified in the plan. If the integration phase connects a component, the plan must include wiring its interactive props to actual state/logic. Never leave noop callbacks like `() => {}`
+- [ ] UI scroll complexity — if the plan adds sections to an existing Screen/Sheet/Panel, count total vertically-stacked sections (separated by Dividers). If >5 sections, the plan MUST include a reorganization strategy (tabs, accordion, or sticky header). Reference: the BusinessSheet sabana incident
+- [ ] File size estimation — every plan must include a table estimating resulting file sizes. If any file would exceed 400 lines, include decomposition strategy. Reference: `docs/reference/file-size-directive.md`
 
 ## After creating
 

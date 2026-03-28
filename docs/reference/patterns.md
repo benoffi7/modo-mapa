@@ -13,7 +13,7 @@
 
 | Patron | Descripcion |
 | ------ | ----------- |
-| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents). Barrel re-export en `constants/index.ts`. |
+| **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
 | **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
 | **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
@@ -23,7 +23,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
-| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. |
+| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. Solo `src/services/`, `src/config/`, `src/context/` y `src/hooks/` pueden importar de `firebase/firestore`. Enforced por architecture agent y PR reviewer. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
@@ -60,6 +60,7 @@
 | **Swipe actions (`useSwipeActions`)** | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
+| **Anti-sabana (max 5 secciones)** | Un componente orquestador (Sheet, Screen, Panel) no debe renderizar mas de 5 secciones verticales con Dividers. Si crece mas, reorganizar con tabs, accordion, o sticky header + section navigation. Enforcement: architecture agent + specs-plan-writer checklist + merge Phase 1i. Caso de estudio: BusinessSheet crecia a 8 secciones antes del refactor a sticky header + 2 tabs (Info/Opiniones). |
 | **Admin panel pattern** | Todos los paneles admin usan `useAsyncData` + `AdminPanelWrapper` para estados loading/error. |
 | **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
 | **Hook generico de filtros** | `useListFilters<T>` acepta cualquier item con `business` asociado. Reutilizado en favoritos y ratings. |
@@ -140,6 +141,8 @@
 | **Lazy loading admin** | `/admin` usa `lazy()` + `Suspense`. No carga MapProvider/APIProvider. |
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
 | **Logger centralizado** | `src/utils/logger.ts` — `logger.error()`, `.warn()`, `.log()`. En DEV: console. En PROD: errors a Sentry, warn/log silenciados. Nunca usar `console.*` directamente. |
+| **No silent .catch(() => {})** | ESLint rule `@typescript-eslint/no-empty-function: error` previene `.catch(() => {})`. Usar `.catch((e) => logger.warn(...))` como minimo. `pre-staging-check.sh` lo valida tambien en CI. PR reviewer lo flaggea como cambio solicitado. |
+| **Context-first data access** | Si un dato ya esta disponible en un Context (AuthContext, SelectionContext, etc.), consumirlo de ahi. NO hacer `getDoc` para leer datos que el context ya carga al montar. Ejemplo: `avatarId` debe venir de AuthContext, no de un getDoc extra en ProfileScreen. Architecture agent lo detecta. |
 
 ## Dark mode
 

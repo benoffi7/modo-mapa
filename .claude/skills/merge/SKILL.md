@@ -119,7 +119,24 @@ fi
 
 Single-field indexes cause deploy failures because Firestore creates them automatically. Only composite (2+ fields) indexes belong in `firestore.indexes.json`.
 
-### 1i. Firestore rules field whitelist audit
+### 1i. File size check (400 lines directive)
+
+**BLOCKER:** Check all modified/new `.ts`/`.tsx` files in `src/` for the 400-line limit:
+
+```bash
+for f in $(git diff --name-only origin/main -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.'); do
+  if [ -f "$f" ]; then
+    lines=$(wc -l < "$f")
+    if [ "$lines" -gt 400 ]; then
+      echo "OVER LIMIT: $f ($lines lines)"
+    fi
+  fi
+done
+```
+
+If any file exceeds 400 lines, it MUST be decomposed before merging (extract subcomponents, hooks, or utils). Reference: `docs/reference/file-size-directive.md`. Exceptions: test files, DEV-only files (ConstantsDashboard, ThemePlayground), config files (converters.ts, admin services).
+
+### 1j. Firestore rules field whitelist audit
 
 If `firestore.rules` OR any service file (`src/services/**`) was modified, cross-check that every field written by client code is allowed by the rules' `hasOnly()` whitelist.
 
