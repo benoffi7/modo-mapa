@@ -17,7 +17,7 @@ interface Props {
 export default function ListCardGrid({ lists, onListClick, onCreateClick, readOnly }: Props) {
   return (
     <Box sx={{ px: 2, py: 1 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 1.5 }}>
         {lists.map((list) => {
           const iconData = getListIconById(list.icon);
           const color = sanitizeListColor(list.color);
@@ -25,7 +25,7 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
             <Box
               key={list.id}
               onClick={() => onListClick(list)}
-              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', gap: 0.5 }}
+              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', gap: 0.5, aspectRatio: '1 / 1' }}
             >
               <Box sx={iconCircleSx(color)}>
                 <Typography fontSize={22}>

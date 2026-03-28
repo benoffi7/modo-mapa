@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import GroupIcon from '@mui/icons-material/Group';
 import { useAuth } from '../../context/AuthContext';
@@ -8,13 +8,28 @@ import ListCardGrid from './ListCardGrid';
 import ListDetailScreen from './ListDetailScreen';
 import type { SharedList } from '../../types';
 
-export default function CollaborativeTab() {
+interface Props {
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
+}
+
+export default function CollaborativeTab({ onRegisterBackHandler }: Props = {}) {
   const { user } = useAuth();
   const [lists, setLists] = useState<SharedList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedList, setSelectedList] = useState<SharedList | null>(null);
 
-  const load = async () => {
+  useEffect(() => {
+    onRegisterBackHandler?.(() => {
+      if (selectedList) {
+        setSelectedList(null);
+        return true;
+      }
+      return false;
+    });
+    return () => onRegisterBackHandler?.(null);
+  }, [selectedList, onRegisterBackHandler]);
+
+  const load = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
     try {
@@ -22,9 +37,9 @@ export default function CollaborativeTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  useEffect(() => { load(); }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
 
   if (selectedList) {
     return (

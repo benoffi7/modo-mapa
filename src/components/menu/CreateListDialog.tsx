@@ -15,7 +15,7 @@ import { createList } from '../../services/sharedLists';
 interface Props {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (listId: string, name: string, description: string) => void;
 }
 
 export default function CreateListDialog({ open, onClose, onCreated }: Props) {
@@ -29,12 +29,14 @@ export default function CreateListDialog({ open, onClose, onCreated }: Props) {
     if (!user || !name.trim()) return;
     setIsCreating(true);
     try {
-      await createList(user.uid, name, desc);
+      const listId = await createList(user.uid, name, desc);
+      const createdName = name.trim();
+      const createdDesc = desc.trim();
       setName('');
       setDesc('');
       toast.success('Lista creada');
       onClose();
-      onCreated();
+      onCreated(listId, createdName, createdDesc);
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }

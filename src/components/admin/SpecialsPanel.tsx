@@ -10,6 +10,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { collection, getDocs, doc, setDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 
 interface Special {
   id: string;
@@ -45,7 +46,7 @@ export default function SpecialsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(query(collection(db, 'specials'), orderBy('order')));
+      const snap = await getDocs(query(collection(db, COLLECTIONS.SPECIALS), orderBy('order')));
       setSpecials(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special)));
     } catch {
       setError('Error al cargar especiales');
@@ -96,7 +97,7 @@ export default function SpecialsPanel() {
     setError(null);
     try {
       // Delete removed specials
-      const existingSnap = await getDocs(collection(db, 'specials'));
+      const existingSnap = await getDocs(collection(db, COLLECTIONS.SPECIALS));
       const currentIds = new Set(specials.map((s) => s.id));
       for (const d of existingSnap.docs) {
         if (!currentIds.has(d.id)) await deleteDoc(d.ref);
@@ -104,7 +105,7 @@ export default function SpecialsPanel() {
       // Upsert all current specials
       for (const s of specials) {
         const { id, ...data } = s;
-        await setDoc(doc(db, 'specials', id), { ...data, updatedAt: new Date() });
+        await setDoc(doc(db, COLLECTIONS.SPECIALS, id), { ...data, updatedAt: new Date() });
       }
       await load();
     } catch {

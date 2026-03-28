@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Box, Typography, Avatar, Divider, IconButton, CircularProgress, Toolbar } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,6 +8,9 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { getAvatarById } from '../../constants/avatars';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import StatsCards from './StatsCards';
 import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
@@ -57,6 +60,23 @@ export default function ProfileScreen() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(undefined);
+
+  // Load avatar from Firestore on mount
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, COLLECTIONS.USERS, user.uid)).then((snap) => {
+      const data = snap.data() as { avatarId?: string } | undefined;
+      if (data?.avatarId) setSelectedAvatarId(data.avatarId);
+    }).catch(() => {});
+  }, [user]);
+
+  const handleAvatarSelect = (avatarId: string) => {
+    setSelectedAvatarId(avatarId);
+    if (user) {
+      updateDoc(doc(db, COLLECTIONS.USERS, user.uid), { avatarId }).catch(() => {});
+    }
+  };
+
   const avatar = getAvatarById(selectedAvatarId);
 
   const userName = displayName || 'Anonimo';
@@ -124,7 +144,7 @@ export default function ProfileScreen() {
           <AvatarPicker
             open
             onClose={() => setAvatarPickerOpen(false)}
-            onSelect={(a) => setSelectedAvatarId(a.id)}
+            onSelect={(a) => handleAvatarSelect(a.id)}
             selectedId={selectedAvatarId}
           />
         )}

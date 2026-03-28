@@ -12,7 +12,9 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { trackEvent } from '../../utils/analytics';
+import { useTabNavigation } from '../../hooks/useTabNavigation';
 
 interface Special {
   id: string;
@@ -44,8 +46,19 @@ const FALLBACK_SPECIALS: Special[] = [
 
 export default function SpecialsSection() {
   const [specials, setSpecials] = useState<Special[]>(FALLBACK_SPECIALS);
+  const { navigateToListsSubTab } = useTabNavigation();
+
+  const handleClick = (item: Special) => {
+    trackEvent('special_tapped', { special_id: item.id, type: item.type });
+    if (item.type === 'featured_list' && item.referenceId) {
+      navigateToListsSubTab('listas');
+    } else if (item.type === 'trending') {
+      navigateToListsSubTab('recientes');
+    }
+  };
+
   useEffect(() => {
-    getDocs(query(collection(db, 'specials'), where('active', '==', true), orderBy('order')))
+    getDocs(query(collection(db, COLLECTIONS.SPECIALS), where('active', '==', true), orderBy('order')))
       .then((snap) => {
         if (snap.size > 0) {
           setSpecials(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special)));
@@ -63,7 +76,7 @@ export default function SpecialsSection() {
         {specials.slice(0, 3).map((item) => (
           <Box
             key={item.id}
-            onClick={() => trackEvent('special_tapped', { special_id: item.id, type: item.type })}
+            onClick={() => handleClick(item)}
             sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
           >
             <Box sx={iconCircleSx('action.selected')}>

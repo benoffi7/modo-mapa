@@ -75,6 +75,19 @@ Specify the trigger path, logic, and output.}
 For each: name, props interface, where it renders, key behaviors.
 Reference existing patterns (BottomSheet, SkeletonLoader, etc.).}
 
+### Mutable prop audit
+
+{If a component receives data as props AND allows the user to modify that data (edit, toggle, delete items), it MUST:
+1. Copy mutable fields to local state (`useState(prop.field)`)
+2. Update local state optimistically on user action
+3. Notify the parent via callback with the changes (e.g. `onBack(updatedFields)`)
+
+Fill this table for every editable detail/form screen:}
+
+| Component | Prop | Editable fields | Local state needed? | Parent callback |
+|-----------|------|----------------|-------------------|-----------------|
+| {e.g. ListDetailScreen} | {list: SharedList} | {color, isPublic, itemCount} | {YES} | {onBack(updated)} |
+
 ## Hooks
 
 {New or modified hooks.

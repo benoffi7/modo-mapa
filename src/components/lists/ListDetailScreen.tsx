@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider, List, ListItemButton,
-  ListItemText, CircularProgress, Chip,
+  ListItemText, CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -20,7 +20,7 @@ import type { SharedList, ListItem, BusinessCategory } from '../../types';
 
 interface Props {
   list: SharedList;
-  onBack: () => void;
+  onBack: (updated?: Partial<SharedList>) => void;
   onDeleted: () => void;
   readOnly?: boolean;
 }
@@ -35,6 +35,8 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const [loading, setLoading] = useState(true);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [currentColor, setCurrentColor] = useState(() => sanitizeListColor(list.color));
+  const [isPublic, setIsPublic] = useState(list.isPublic);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,8 +59,16 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleTogglePublic = async () => {
-    await toggleListPublic(list.id, !list.isPublic);
-    toast.success(list.isPublic ? 'Lista privada' : 'Lista publica');
+    const prev = isPublic;
+    const newValue = !prev;
+    setIsPublic(newValue);
+    try {
+      await toggleListPublic(list.id, newValue);
+      toast.success(newValue ? 'Lista publica' : 'Lista privada');
+    } catch {
+      setIsPublic(prev);
+      toast.error('Error al cambiar visibilidad');
+    }
   };
 
   const handleShare = () => {
@@ -72,13 +82,18 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleDelete = async () => {
-    await deleteList(list.id, list.ownerId);
-    toast.success('Lista eliminada');
-    onDeleted();
+    try {
+      await deleteList(list.id, list.ownerId);
+      toast.success('Lista eliminada');
+      onDeleted();
+    } catch {
+      toast.error('Error al eliminar lista');
+    }
+    setConfirmDeleteOpen(false);
   };
 
   const handleRemoveItem = async (item: ListItem) => {
-    await removeBusinessFromList(list.id, item.id);
+    await removeBusinessFromList(list.id, item.businessId);
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     toast.success('Comercio removido');
   };
@@ -86,7 +101,9 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <IconButton edge="start" onClick={onBack}><ArrowBackIcon /></IconButton>
+        <IconButton edge="start" onClick={() => onBack({
+          id: list.id, color: currentColor, itemCount: items.length, isPublic,
+        })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEdit && (
           <>
@@ -94,12 +111,12 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
               <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
             </IconButton>
             <IconButton size="small" onClick={handleTogglePublic}>
-              {list.isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
+              {isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
             </IconButton>
-            {list.isPublic && (
+            {isPublic && (
               <IconButton size="small" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
             )}
-            <IconButton size="small" color="error" onClick={handleDelete}><DeleteOutlineIcon fontSize="small" /></IconButton>
+            <IconButton size="small" color="error" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
           </>
         )}
       </Toolbar>
@@ -114,8 +131,8 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       <Box sx={{ px: 2, py: 0.5 }}>
         <Chip
           size="small"
-          label={list.isPublic ? 'Publica' : 'Privada'}
-          icon={list.isPublic ? <PublicIcon /> : <LockIcon />}
+          label={isPublic ? 'Publica' : 'Privada'}
+          icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
         />
       </Box>
@@ -165,6 +182,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         onSelect={handleColorChange}
         selectedHex={currentColor}
       />
+
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle>Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

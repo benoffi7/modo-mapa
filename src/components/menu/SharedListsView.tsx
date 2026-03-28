@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
-  Box, Typography, CircularProgress, Card, CardActionArea, CardContent, Chip,
+  Box, Typography, CircularProgress, CardActionArea, CardContent, Chip,
 } from '@mui/material';
+import { cardSx } from '../../theme/cards';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import CreateListDialog from './CreateListDialog';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -15,12 +16,10 @@ import {
   fetchUserLists,
 } from '../../services/sharedLists';
 import { MAX_LISTS } from '../../constants/lists';
-import { NAV_CHIP_SX } from '../../constants/ui';
-import type { SharedList, Business } from '../../types';
+import type { SharedList } from '../../types';
 import { logger } from '../../utils/logger';
 
 interface Props {
-  onSelectBusiness: (business: Business) => void;
   sharedListId?: string | undefined;
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
@@ -51,7 +50,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       return false;
     });
     return () => onRegisterBackHandler?.(null);
-  });
+  }, [selectedList, onRegisterBackHandler]);
 
   const loadLists = useCallback(async () => {
     if (!user) return;
@@ -87,8 +86,17 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
     return (
       <ListDetailScreen
         list={selectedList}
-        onBack={() => { setSelectedList(null); loadLists(); }}
-        onDeleted={() => { setSelectedList(null); loadLists(); }}
+        onBack={(updated?: Partial<SharedList>) => {
+          setSelectedList(null);
+          if (updated?.id) {
+            setLists((prev) => prev.map((l) => l.id === updated.id ? { ...l, ...updated } : l));
+          }
+        }}
+        onDeleted={() => {
+          const deletedId = selectedList.id;
+          setSelectedList(null);
+          setLists((prev) => prev.filter((l) => l.id !== deletedId));
+        }}
       />
     );
   }
@@ -109,17 +117,17 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
           <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>Destacadas</Typography>
           <Box sx={{ display: 'flex', gap: 1.5, px: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
             {featuredLists.map((fl) => (
-              <Card key={fl.id} variant="outlined" sx={{ minWidth: 170, flexShrink: 0 }}>
+              <Box key={fl.id} sx={{ ...cardSx, minWidth: 170, flexShrink: 0, p: 0 }}>
                 <CardActionArea onClick={() => setSelectedList(fl)}>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Chip label="Destacada" size="small" color="primary" sx={{ ...NAV_CHIP_SX, mb: 0.5, height: 22, fontSize: '0.65rem' }} />
+                    <Chip label="Destacada" size="small" color="primary" sx={{ borderRadius: 1, mb: 0.5, height: 22, fontSize: '0.65rem' }} />
                     <Typography variant="subtitle2" noWrap>{fl.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {fl.itemCount} comercio{fl.itemCount !== 1 ? 's' : ''}
                     </Typography>
                   </CardContent>
                 </CardActionArea>
-              </Card>
+              </Box>
             ))}
           </Box>
         </Box>
@@ -163,7 +171,16 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       <CreateListDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => { setCreateOpen(false); loadLists(); }}
+        onCreated={(listId, name, description) => {
+          setCreateOpen(false);
+          if (user) {
+            setLists((prev) => [{
+              id: listId, ownerId: user.uid, name, description,
+              isPublic: false, featured: false, editorIds: [], itemCount: 0,
+              createdAt: new Date(), updatedAt: new Date(),
+            }, ...prev]);
+          }
+        }}
       />
     </PullToRefreshWrapper>
   );

@@ -76,7 +76,7 @@ export default function ListsScreen() {
             <FavoritesList onSelectBusiness={(biz) => navigateToBusiness(biz)} />
           )}
           {listsSubTab === 'listas' && (
-            <SharedListsView onSelectBusiness={(biz) => navigateToBusiness(biz)} />
+            <SharedListsView />
           )}
           {listsSubTab === 'recientes' && <RecentsUnifiedTab />}
           {listsSubTab === 'colaborativas' && <CollaborativeTab />}
@@ -90,6 +90,7 @@ export default function ListsScreen() {
           setListsSubTab('listas');
         }}
       />
+
     </Box>
   );
 }
