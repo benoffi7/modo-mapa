@@ -1,13 +1,19 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Menu photos: authenticated users can upload, anyone authenticated can read approved
-    match /menus/{businessId}/{fileName} {
+    // Menu photos: owner-scoped uploads. Path includes userId for ownership validation.
+    match /menus/{userId}/{businessId}/{fileName} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
       allow delete: if false; // Only Cloud Functions (admin SDK) can delete
+    }
+
+    // Legacy menu photos: read-only for existing photos uploaded before owner-scoping
+    match /menus/{businessId}/{fileName} {
+      allow read: if request.auth != null;
     }
 
     // Feedback media: owner can upload/delete (max 10MB). Path includes userId for ownership.
