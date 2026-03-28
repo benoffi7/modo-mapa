@@ -133,7 +133,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       <Box sx={{ px: 2, py: 0.5, mt: 0.5 }}>
         <Chip
           size="small"
-          label={isPublic ? 'P\u00fablica' : 'Privada'}
+          label={isPublic ? 'Pública' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
           sx={{ borderRadius: 1, px: 0.5 }}
