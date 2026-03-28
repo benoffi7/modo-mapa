@@ -84,14 +84,14 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 
 | Colección | Read | Create | Update | Delete |
 |-----------|------|--------|--------|--------|
-| `users` | owner + admin | owner | owner (displayName only) | — |
+| `users` | auth | owner, `keys().hasOnly(['displayName','displayNameLower','avatarId','createdAt'])` | owner, `affectedKeys().hasOnly(['displayName','displayNameLower','avatarId'])` | — |
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
 | `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner (userId immutability, score + updatedAt + criteria) | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
 | `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner (userId immutability) | owner |
-| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000 | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser only) | owner |
+| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
 | `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner (userId immutability, level + updatedAt) | owner |
 | `config` | admin | Functions | Functions | — |
@@ -247,6 +247,9 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
 | Custom tag label | 30 chars | Client + Server |
 | Feedback message | 1000 chars | Server |
 | Rating score | 1-5 | Server |
+| Feedback rating | 1-5 (int, optional) | Server |
+| Feedback mediaUrl | Firebase Storage URL only | Server + Client |
+| Feedback mediaType | image, pdf | Server |
 | Custom tags por comercio | 10 | Client |
 | Comentarios por usuario/día | 20 | Client |
 
