@@ -157,6 +157,7 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 5. **performance** — bundle impact, re-render efficiency, memoization in changed files
 6. **privacy-policy** — check for new logEvent/addDoc/setDoc/collection/localStorage in diff
 7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
+8. **copy-auditor** — scan changed `.tsx` files for spelling errors, missing tildes, inconsistent tone in user-facing strings (toasts, labels, Typography text, placeholders, dialog titles)
 
 Get changed files with: `git diff --name-only origin/main -- 'src/**/*.tsx' 'src/**/*.ts'`
 
