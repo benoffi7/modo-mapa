@@ -20,6 +20,7 @@ import { MSG_FEEDBACK } from '../../constants/messages';
 import { formatDateMedium } from '../../utils/formatDate';
 import type { Feedback, FeedbackStatus, FeedbackCategory } from '../../types';
 import { logger } from '../../utils/logger';
+import { isValidStorageUrl } from '../../utils/media';
 
 function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'info' | 'warning' | 'default' {
   if (cat === 'bug') return 'error';
@@ -113,18 +114,20 @@ export default function MyFeedbackList() {
           </ListItemButton>
           <Collapse in={expandedId === fb.id}>
             <Box sx={{ px: 2, pb: 2 }}>
-              {fb.mediaUrl && fb.mediaType === 'pdf' ? (
+              {isValidStorageUrl(fb.mediaUrl) && fb.mediaType === 'pdf' ? (
                 <Link href={fb.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
                   <PictureAsPdfIcon color="error" fontSize="small" />
                   <Typography variant="body2">Ver PDF adjunto</Typography>
                 </Link>
-              ) : fb.mediaUrl ? (
+              ) : isValidStorageUrl(fb.mediaUrl) ? (
                 <Box
                   component="img"
                   src={fb.mediaUrl}
                   alt="Adjunto"
                   sx={{ maxHeight: 150, maxWidth: '100%', borderRadius: 1, objectFit: 'cover', mb: 1, display: 'block' }}
                 />
+              ) : fb.mediaUrl ? (
+                <Typography variant="caption" color="error">Adjunto no disponible</Typography>
               ) : null}
               {fb.adminResponse && (
                 <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5, mt: 1 }}>

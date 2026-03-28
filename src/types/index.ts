@@ -125,7 +125,7 @@ export interface Feedback {
   respondedBy?: string;
   viewedByUser?: boolean;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'pdf';
+  mediaType?: 'image' | 'pdf';
   githubIssueUrl?: string;
   businessId?: string;
   businessName?: string;
