@@ -5,6 +5,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useAuth } from '../../context/AuthContext';
 import { useCheckIn } from '../../hooks/useCheckIn';
 import { useToast } from '../../context/ToastContext';
+import { MSG_CHECKIN, MSG_AUTH } from '../../constants/messages';
 
 interface Props {
   businessId: string;
@@ -26,24 +27,24 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
 
   const handleClick = useCallback(async () => {
     if (!user || user.isAnonymous) {
-      toast.info('Iniciá sesión para registrar visitas');
+      toast.info(MSG_AUTH.loginRequired);
       return;
     }
 
     if (isSuccess && recentCheckInId) {
       await undoCheckIn();
-      toast.info('Visita desmarcada');
+      toast.info(MSG_CHECKIN.removed);
       return;
     }
 
     if (!isNearby) {
-      toast.info('Parece que no estás cerca de este comercio');
+      toast.info(MSG_CHECKIN.tooFar);
     }
 
     await performCheckIn();
 
     if (status !== 'error') {
-      toast.success('Visita registrada');
+      toast.success(MSG_CHECKIN.success);
     }
   }, [user, isNearby, isSuccess, recentCheckInId, performCheckIn, undoCheckIn, status, toast]);
 

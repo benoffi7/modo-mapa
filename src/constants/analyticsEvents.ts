@@ -30,6 +30,9 @@ export const EVT_FEED_ITEM_CLICKED = 'feed_item_clicked';
 export const EVT_TAB_SWITCHED = 'tab_switched';
 export const EVT_SUB_TAB_SWITCHED = 'sub_tab_switched';
 
+// Business Sheet events
+export const EVT_BUSINESS_SHEET_TAB_CHANGED = 'business_sheet_tab_changed';
+
 // Recommendations events (#135)
 export const EVT_RECOMMENDATION_SENT = 'recommendation_sent';
 export const EVT_RECOMMENDATION_OPENED = 'recommendation_opened';
@@ -37,6 +40,7 @@ export const EVT_RECOMMENDATION_LIST_VIEWED = 'recommendation_list_viewed';
 
 // Force update events (#191)
 export const EVT_FORCE_UPDATE_TRIGGERED = 'force_update_triggered';
+export const EVT_FORCE_UPDATE_LIMIT_REACHED = 'force_update_limit_reached';
 
 // Account deletion events (#192)
 export const EVT_ACCOUNT_DELETED = 'account_deleted';

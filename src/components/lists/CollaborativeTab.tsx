@@ -6,6 +6,7 @@ import { fetchSharedWithMe } from '../../services/sharedLists';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import ListCardGrid from './ListCardGrid';
 import ListDetailScreen from './ListDetailScreen';
+import { MSG_LIST } from '../../constants/messages';
 import type { SharedList } from '../../types';
 
 interface Props {
@@ -65,7 +66,7 @@ export default function CollaborativeTab({ onRegisterBackHandler }: Props = {}) 
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <GroupIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
         <Typography color="text.secondary">
-          No participas en listas colaborativas todavia
+          {MSG_LIST.emptyCollaborative}
         </Typography>
       </Box>
     );

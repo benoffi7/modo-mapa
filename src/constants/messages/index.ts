@@ -1,0 +1,12 @@
+export { MSG_BUSINESS } from './business';
+export { MSG_COMMENT } from './comment';
+export { MSG_QUESTION } from './question';
+export { MSG_LIST } from './list';
+export { MSG_AUTH } from './auth';
+export { MSG_SOCIAL } from './social';
+export { MSG_CHECKIN } from './checkin';
+export { MSG_FEEDBACK } from './feedback';
+export { MSG_OFFLINE } from './offline';
+export { MSG_ADMIN } from './admin';
+export { MSG_ONBOARDING } from './onboarding';
+export { MSG_COMMON } from './common';

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useActivityFeed } from '../../hooks/useActivityFeed';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { MSG_SOCIAL } from '../../constants/messages';
 import { ActivityFeedItemRow } from './ActivityFeedItem';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_FEED_VIEWED, EVT_FEED_ITEM_CLICKED } from '../../constants/analyticsEvents';
@@ -42,7 +43,7 @@ export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           emptyIcon={<RssFeedIcon sx={{ fontSize: 48 }} />}
-          emptyMessage="No hay actividad reciente"
+          emptyMessage={MSG_SOCIAL.emptyActivity}
           emptySubtext="Segui a otros usuarios para ver su actividad aca"
           onRetry={reload}
           onLoadMore={loadMore}

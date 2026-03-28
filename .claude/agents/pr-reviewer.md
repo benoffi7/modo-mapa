@@ -26,6 +26,11 @@ Eres el revisor oficial de Pull Requests del proyecto **Modo Mapa**.
 8. **Markdown**: archivos `.md` cumplen markdownlint?
 9. **TypeScript**: `import type` para tipos, `exactOptionalPropertyTypes`?
 10. **Firestore rules**: si se modifican rules en `firestore.rules`, verificar que el CI/CD las despliega (ver `deploy.yml`). Si se agregan colecciones o cambian permisos, asegurar que las rules estan en sync con el codigo.
+11. **Service layer**: si un componente en `src/components/` importa `firebase/firestore` para escrituras (`setDoc`, `updateDoc`, `deleteDoc`, `addDoc`), es un **cambio solicitado**. Todas las escrituras deben ir por `src/services/`.
+12. **Duplicated constants**: si el diff introduce un array/objeto que ya existe en otro archivo (achievements, colors, labels), flaggear como candidato a centralizar.
+13. **Context data re-fetch**: si un componente hace `getDoc` para leer datos que ya estan en un Context (AuthContext, etc.), flaggear como ineficiencia.
+14. **Silent error swallowing**: `.catch(() => {})` o `catch {}` sin logging es **cambio solicitado**. Usar `logger.warn` como minimo.
+15. **Stale prop pattern**: si un componente recibe datos como props Y modifica esos datos en Firestore, verificar que usa estado local + notifica al padre. Si lee de `props.field` despues de mutar, es bug.
 
 ## Comandos git permitidos (solo lectura)
 

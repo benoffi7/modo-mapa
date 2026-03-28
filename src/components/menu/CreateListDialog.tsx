@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { MSG_LIST } from '../../constants/messages';
 import { createList } from '../../services/sharedLists';
 
 interface Props {
@@ -34,11 +35,11 @@ export default function CreateListDialog({ open, onClose, onCreated }: Props) {
       const createdDesc = desc.trim();
       setName('');
       setDesc('');
-      toast.success('Lista creada');
+      toast.success(MSG_LIST.createSuccess);
       onClose();
       onCreated(listId, createdName, createdDesc);
     } catch (err) {
-      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(err instanceof Error ? err.message : MSG_LIST.createError);
     }
     setIsCreating(false);
   };

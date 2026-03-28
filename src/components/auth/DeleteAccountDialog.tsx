@@ -16,6 +16,7 @@ import { useToast } from '../../context/ToastContext';
 import { deleteAccount } from '../../services/emailAuth';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_ACCOUNT_DELETED } from '../../constants/analyticsEvents';
+import { MSG_AUTH } from '../../constants/messages';
 import PasswordField from './PasswordField';
 
 interface DeleteAccountDialogProps {
@@ -55,7 +56,7 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
       await deleteAccount(user, password);
       trackEvent(EVT_ACCOUNT_DELETED, { method: 'email' });
       setSuccess(true);
-      toast.success('Tu cuenta y datos fueron eliminados permanentemente');
+      toast.success(MSG_AUTH.deleteSuccess);
       closeTimerRef.current = setTimeout(handleClose, 1500);
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err) {

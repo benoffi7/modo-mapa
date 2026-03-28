@@ -17,6 +17,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { cardSx } from '../../theme/cards';
+import { MSG_LIST } from '../../constants/messages';
 import type { SharedList, ListItem, BusinessCategory } from '../../types';
 
 interface Props {
@@ -55,7 +56,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     try {
       await updateList(list.id, list.name, list.description, hex);
     } catch {
-      toast.error('Error al cambiar color');
+      toast.error(MSG_LIST.colorError);
     }
   };
 
@@ -65,10 +66,10 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     setIsPublic(newValue);
     try {
       await toggleListPublic(list.id, newValue);
-      toast.success(newValue ? 'Lista p\u00fablica' : 'Lista privada');
+      toast.success(newValue ? MSG_LIST.visibilityPublic : MSG_LIST.visibilityPrivate);
     } catch {
       setIsPublic(prev);
-      toast.error('Error al cambiar visibilidad');
+      toast.error(MSG_LIST.visibilityError);
     }
   };
 
@@ -78,17 +79,17 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       navigator.share({ title: list.name, url });
     } else {
       navigator.clipboard.writeText(url);
-      toast.success('Link copiado');
+      toast.success(MSG_LIST.linkCopied);
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteList(list.id, list.ownerId);
-      toast.success('Lista eliminada');
+      toast.success(MSG_LIST.deleteSuccess);
       onDeleted();
     } catch {
-      toast.error('Error al eliminar lista');
+      toast.error(MSG_LIST.deleteError);
     }
     setConfirmDeleteOpen(false);
   };
@@ -96,7 +97,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const handleRemoveItem = async (item: ListItem) => {
     await removeBusinessFromList(list.id, item.businessId);
     setItems((prev) => prev.filter((i) => i.id !== item.id));
-    toast.success('Comercio removido');
+    toast.success(MSG_LIST.itemRemoved);
   };
 
   return (

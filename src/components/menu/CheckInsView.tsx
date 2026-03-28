@@ -13,6 +13,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { trackEvent } from '../../utils/analytics';
 import { formatRelativeTime } from '../../utils/formatDate';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
+import { MSG_CHECKIN } from '../../constants/messages';
 import type { Business } from '../../types';
 
 interface Props {
@@ -52,7 +53,7 @@ export default function CheckInsView({ onSelectBusiness }: Props) {
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, px: 2 }}>
           <PlaceIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
           <Typography color="text.secondary" align="center">
-            Todavía no registraste visitas
+            {MSG_CHECKIN.emptyVisits}
           </Typography>
           <Typography variant="body2" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
             Usá el botón "Hacer check-in" en un comercio para empezar

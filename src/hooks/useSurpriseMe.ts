@@ -3,6 +3,7 @@ import type { Business } from '../types';
 import { useVisitHistory } from './useVisitHistory';
 import { useSortLocation } from './useSortLocation';
 import { useToast } from '../context/ToastContext';
+import { MSG_ONBOARDING } from '../constants/messages';
 import { allBusinesses } from './useBusinesses';
 import { distanceKm } from '../utils/distance';
 import { trackEvent } from '../utils/analytics';
@@ -38,9 +39,9 @@ export function useSurpriseMe({ onSelect, onClose }: UseSurpriseMeParams): UseSu
     onSelect(pick);
     onClose();
     if (candidates.length === 0) {
-      toast.info('¡Ya visitaste todos! Te sorprendemos con uno al azar.');
+      toast.info(MSG_ONBOARDING.surpriseAllVisited);
     } else {
-      toast.success(`¡Sorpresa! Descubrí ${pick.name}`);
+      toast.success(MSG_ONBOARDING.surpriseSuccess(pick.name));
     }
     trackEvent('surprise_me', { business_id: pick.id });
   }, [sortLocation, visits, onClose, onSelect, toast]);

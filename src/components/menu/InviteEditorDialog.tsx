@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
+import { MSG_LIST } from '../../constants/messages';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import { inviteEditor } from '../../services/sharedLists';
 
@@ -30,12 +31,12 @@ export default function InviteEditorDialog({ listId, onClose, onInvited }: Props
     setIsInviting(true);
     try {
       await inviteEditor(listId, email.trim());
-      toast.success(`Editor invitado: ${email.trim()}`);
+      toast.success(MSG_LIST.editorInvited(email.trim()));
       setEmail('');
       onClose();
       onInvited();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo invitar');
+      toast.error(err instanceof Error ? err.message : MSG_LIST.editorInviteError);
     }
     setIsInviting(false);
   };

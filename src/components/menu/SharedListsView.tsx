@@ -16,6 +16,7 @@ import {
   fetchUserLists,
 } from '../../services/sharedLists';
 import { MAX_LISTS } from '../../constants/lists';
+import { MSG_LIST } from '../../constants/messages';
 import type { SharedList } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -137,7 +138,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       {lists.length === 0 ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <BookmarkBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
-          <Typography variant="body2" color="text.secondary">No tenes listas todavia</Typography>
+          <Typography variant="body2" color="text.secondary">{MSG_LIST.emptyLists}</Typography>
           <Typography variant="caption" color="text.secondary">Crea una para organizar tus comercios favoritos</Typography>
         </Box>
       ) : (

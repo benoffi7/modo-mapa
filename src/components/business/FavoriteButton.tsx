@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import { addFavorite, removeFavorite } from '../../services/favorites';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { MSG_BUSINESS } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 
 interface Props {
@@ -47,7 +48,7 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
           () => removeFavorite(user.uid, businessId),
           toast,
         );
-        if (!isOffline) toast.info('Removido de favoritos');
+        if (!isOffline) toast.info(MSG_BUSINESS.favoriteRemoved);
       } else {
         await withOfflineSupport(
           isOffline, 'favorite_add',
@@ -56,13 +57,13 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
           () => addFavorite(user.uid, businessId),
           toast,
         );
-        if (!isOffline) toast.success('Agregado a favoritos');
+        if (!isOffline) toast.success(MSG_BUSINESS.favoriteAdded);
       }
       onToggle();
     } catch (error) {
       setOptimistic(null);
       if (import.meta.env.DEV) logger.error('Error toggling favorite:', error);
-      toast.error('No se pudo actualizar favoritos');
+      toast.error(MSG_BUSINESS.favoriteError);
     }
     setIsToggling(false);
   }, [user, businessId, businessName, isFavorite, isOffline, onToggle, toast]);

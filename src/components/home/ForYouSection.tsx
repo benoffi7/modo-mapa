@@ -8,19 +8,9 @@ import IcecreamIcon from '@mui/icons-material/Icecream';
 import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
-import { CATEGORY_LABELS } from '../../constants/business';
+import { CATEGORY_LABELS, CATEGORY_COLORS } from '../../constants/business';
 import { trackEvent } from '../../utils/analytics';
 import type { BusinessCategory } from '../../types';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  restaurant: '#e65100',
-  cafe: '#4e342e',
-  bakery: '#f9a825',
-  bar: '#1565c0',
-  fastfood: '#d32f2f',
-  icecream: '#ec407a',
-  pizza: '#ff6f00',
-};
 
 const CATEGORY_ICONS: Record<string, React.ReactElement> = {
   restaurant: <RestaurantIcon sx={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }} />,

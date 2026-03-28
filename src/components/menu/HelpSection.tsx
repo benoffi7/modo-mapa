@@ -65,7 +65,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <StorefrontOutlinedIcon color="primary" />,
         title: 'Detalle de comercio',
         description:
-          'Toca un pin en el mapa o un comercio en cualquier lista para ver el detalle. Podes calificar (global + multi-criterio), comentar o hacer preguntas (con respuestas, likes y mejor respuesta destacada, maximo 20 por dia), marcar favorito, compartir con deep link, ver o subir foto de menu, abrir en Google Maps, votar tags y nivel de gasto, y crear tags personalizados. Si no tenes conexion, tus acciones se guardan y se sincronizan automaticamente al reconectar.',
+          'Toca un pin o un comercio en cualquier lista para ver el detalle. El header queda fijo con nombre, botones de accion y tu calificacion. Dos pestanas organizan el contenido: Info (criterios de rating, tags, nivel de gasto, foto de menu) y Opiniones (comentarios y preguntas con respuestas, likes y mejor respuesta destacada, maximo 20 por dia). Podes calificar (global + multi-criterio), marcar favorito, compartir con deep link, hacer check-in, abrir en Google Maps y crear tags personalizados. Sin conexion, tus acciones se sincronizan automaticamente al reconectar.',
       },
       {
         id: 'checkin',

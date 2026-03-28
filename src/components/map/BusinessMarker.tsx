@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-import { CATEGORY_COLORS } from '../../constants/map';
+import { CATEGORY_COLORS } from '../../constants/business';
 import type { Business } from '../../types';
 
 interface Props {

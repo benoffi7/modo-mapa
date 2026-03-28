@@ -20,6 +20,7 @@ export type BusinessCategory =
 
 export interface UserProfile {
   displayName: string;
+  avatarId?: string | undefined;
   createdAt: Date;
 }
 
@@ -320,3 +321,5 @@ export type {
   RecommendationPayload,
   EmptyPayload,
 } from './offline';
+
+export type { Special, AchievementCondition, Achievement } from './admin';

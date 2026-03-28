@@ -16,6 +16,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
 import { fetchUserFeedback, markFeedbackViewed } from '../../services/feedback';
 import { FEEDBACK_STATUSES } from '../../constants/feedback';
+import { MSG_FEEDBACK } from '../../constants/messages';
 import { formatDateMedium } from '../../utils/formatDate';
 import type { Feedback, FeedbackStatus, FeedbackCategory } from '../../types';
 import { logger } from '../../utils/logger';
@@ -77,7 +78,7 @@ export default function MyFeedbackList() {
       <Box sx={{ textAlign: 'center', py: 4, px: 2 }}>
         <InboxOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
-          No enviaste feedback todavía
+          {MSG_FEEDBACK.emptyFeedback}
         </Typography>
       </Box>
     );

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { useToast } from '../../context/ToastContext';
+import { MSG_LIST } from '../../constants/messages';
 import { removeEditor, fetchEditorName } from '../../services/sharedLists';
 
 interface Props {
@@ -62,10 +63,10 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
     try {
       await removeEditor(listId, targetUid);
       setEditors((prev) => prev.filter((e) => e.uid !== targetUid));
-      toast.success('Editor removido');
+      toast.success(MSG_LIST.editorRemoved);
       onEditorRemoved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo remover');
+      toast.error(err instanceof Error ? err.message : MSG_LIST.editorRemoveError);
     }
     setRemoving(null);
   };

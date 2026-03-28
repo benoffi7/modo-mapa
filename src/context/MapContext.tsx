@@ -1,29 +1,119 @@
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { SelectionProvider, useSelection, SelectionContext } from './SelectionContext';
-import { FiltersProvider, useFilters, FiltersContext } from './FiltersContext';
+import type { Business } from '../types';
 
-/**
- * Combined provider — wraps SelectionProvider + FiltersProvider.
- * Used by SearchScreen (tab Buscar) where both contexts are needed.
- * Other tabs only need SelectionProvider.
- */
+/* ─── Selection context (changes on marker click) ─── */
+
+export type BusinessSheetTab = 'info' | 'opiniones';
+
+interface SelectionContextType {
+  selectedBusiness: Business | null;
+  setSelectedBusiness: (business: Business | null) => void;
+  activeSharedListId: string | null;
+  setActiveSharedListId: (id: string | null) => void;
+  selectedBusinessTab: BusinessSheetTab | null;
+  setSelectedBusinessTab: (tab: BusinessSheetTab | null) => void;
+}
+
+const SelectionContext = createContext<SelectionContextType>({
+  selectedBusiness: null,
+  setSelectedBusiness: () => {},
+  activeSharedListId: null,
+  setActiveSharedListId: () => {},
+  selectedBusinessTab: null,
+  setSelectedBusinessTab: () => {},
+});
+
+/* ─── Filters context (changes on search/filter/location) ─── */
+
+interface FiltersContextType {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  activeFilters: string[];
+  toggleFilter: (tagId: string) => void;
+  activePriceFilter: number | null;
+  setPriceFilter: (level: number | null) => void;
+  userLocation: { lat: number; lng: number } | null;
+  setUserLocation: (location: { lat: number; lng: number } | null) => void;
+}
+
+const FiltersContext = createContext<FiltersContextType>({
+  searchQuery: '',
+  setSearchQuery: () => {},
+  activeFilters: [],
+  toggleFilter: () => {},
+  activePriceFilter: null,
+  setPriceFilter: () => {},
+  userLocation: null,
+  setUserLocation: () => {},
+});
+
+/* ─── Combined provider ─── */
+
 export function MapProvider({ children }: { children: ReactNode }) {
+  const [selectedBusiness, setSelectedBusinessRaw] = useState<Business | null>(null);
+  const [activeSharedListId, setActiveSharedListId] = useState<string | null>(null);
+  const [selectedBusinessTab, setSelectedBusinessTab] = useState<BusinessSheetTab | null>(null);
+
+  // Reset tab when business is deselected
+  const setSelectedBusiness = useCallback((business: Business | null) => {
+    setSelectedBusinessRaw(business);
+    if (!business) setSelectedBusinessTab(null);
+  }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [activePriceFilter, setActivePriceFilter] = useState<number | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const toggleFilter = useCallback((tagId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(tagId) ? prev.filter((f) => f !== tagId) : [...prev, tagId]
+    );
+  }, []);
+
+  const setPriceFilter = useCallback((level: number | null) => {
+    setActivePriceFilter((prev) => prev === level ? null : level);
+  }, []);
+
+  const selectionValue = useMemo<SelectionContextType>(() => ({
+    selectedBusiness,
+    setSelectedBusiness,
+    activeSharedListId,
+    setActiveSharedListId,
+    selectedBusinessTab,
+    setSelectedBusinessTab,
+  }), [selectedBusiness, setSelectedBusiness, activeSharedListId, selectedBusinessTab]);
+
+  const filtersValue = useMemo<FiltersContextType>(() => ({
+    searchQuery,
+    setSearchQuery,
+    activeFilters,
+    toggleFilter,
+    activePriceFilter,
+    setPriceFilter,
+    userLocation,
+    setUserLocation,
+  }), [searchQuery, activeFilters, toggleFilter, activePriceFilter, setPriceFilter, userLocation]);
+
   return (
-    <SelectionProvider>
-      <FiltersProvider>
+    <SelectionContext.Provider value={selectionValue}>
+      <FiltersContext.Provider value={filtersValue}>
         {children}
-      </FiltersProvider>
-    </SelectionProvider>
+      </FiltersContext.Provider>
+    </SelectionContext.Provider>
   );
 }
 
+/* ─── Hooks ─── */
+
+export const useSelection = () => useContext(SelectionContext);
+export const useFilters = () => useContext(FiltersContext);
+
 /** @deprecated Use useSelection() or useFilters() directly */
 export function useMapContext() {
-  const selection = useSelection();
-  const filters = useFilters();
+  const selection = useContext(SelectionContext);
+  const filters = useContext(FiltersContext);
   return { ...selection, ...filters };
 }
 
-// Re-exports for backward compatibility
-export { SelectionProvider, useSelection, SelectionContext };
-export { FiltersProvider, useFilters, FiltersContext };
+export { SelectionContext, FiltersContext };

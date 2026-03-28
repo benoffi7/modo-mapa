@@ -22,6 +22,7 @@ import { useConnectivity } from '../../hooks/useConnectivity';
 import { sendFeedback } from '../../services/feedback';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
+import { MSG_FEEDBACK } from '../../constants/messages';
 import type { FeedbackCategory, Business } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -60,7 +61,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
     if (!file) return;
 
     if (file.size > MAX_FEEDBACK_MEDIA_SIZE) {
-      toast.error('La imagen es muy grande. Máximo 10 MB.');
+      toast.error(MSG_FEEDBACK.mediaTooBig);
       return;
     }
 

@@ -11,6 +11,7 @@ import {
   EVT_OFFLINE_ACTION_DISCARDED,
 } from '../constants/analyticsEvents';
 import { CONNECTIVITY_CHECK_URL, CONNECTIVITY_CHECK_TIMEOUT_MS } from '../constants/offline';
+import { MSG_OFFLINE } from '../constants/messages';
 
 interface ConnectivityContextValue {
   isOffline: boolean;
@@ -65,7 +66,7 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
 
     const queueCount = await offlineQueue.count();
     if (queueCount > 0) {
-      toast.info(`Sincronizando ${queueCount} ${queueCount === 1 ? 'accion' : 'acciones'}...`);
+      toast.info(MSG_OFFLINE.syncing(queueCount));
     }
 
     await processQueue(
@@ -79,10 +80,10 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       },
       (syncedCount, failedCount) => {
         if (syncedCount > 0) {
-          toast.success(`${syncedCount} ${syncedCount === 1 ? 'accion sincronizada' : 'acciones sincronizadas'}`);
+          toast.success(MSG_OFFLINE.syncSuccess(syncedCount));
         }
         if (failedCount > 0) {
-          toast.warning(`${failedCount} ${failedCount === 1 ? 'accion fallo' : 'acciones fallaron'}`);
+          toast.warning(MSG_OFFLINE.syncFailed(failedCount));
         }
         if (syncedCount > 0 || failedCount > 0) {
           trackEvent(EVT_OFFLINE_SYNC_COMPLETED, {

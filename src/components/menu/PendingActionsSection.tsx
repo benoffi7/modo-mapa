@@ -21,6 +21,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useConnectivity } from '../../hooks/useConnectivity';
+import { MSG_OFFLINE } from '../../constants/messages';
 import type { OfflineActionType } from '../../types/offline';
 
 const ACTION_LABELS: Record<OfflineActionType, string> = {
@@ -83,7 +84,7 @@ export default memo(function PendingActionsSection() {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="body2" color="text.secondary">
-          No hay acciones pendientes
+          {MSG_OFFLINE.emptyPending}
         </Typography>
       </Box>
     );

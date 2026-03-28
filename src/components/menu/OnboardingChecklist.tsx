@@ -31,6 +31,7 @@ import {
   STORAGE_KEY_ONBOARDING_CELEBRATED,
   STORAGE_KEY_ONBOARDING_EXPANDED,
 } from '../../constants/storage';
+import { MSG_ONBOARDING } from '../../constants/messages';
 import type { SvgIconComponent } from '@mui/icons-material';
 
 interface Task {
@@ -102,7 +103,7 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time celebration on completion
       setCelebrated(true);
       localStorage.setItem(STORAGE_KEY_ONBOARDING_CELEBRATED, 'true');
-      toast.success('\u00a1Completaste todos los primeros pasos!');
+      toast.success(MSG_ONBOARDING.checklistComplete);
     }
   }, [allDone, celebrated, toast]);
 
