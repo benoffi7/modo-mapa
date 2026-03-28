@@ -65,7 +65,9 @@ Check for `plan.md` in the same directory as the PRD.
 - If missing: **BLOCK** — report that plan must be created first
 - If present: verify it has implementation phases with specific file paths
 
-### 4. Branch is clean and based on latest main
+### 4. Branch is clean and based on latest base branch
+
+**Base branch: `new-home`** (replaces `main` which is deprecated).
 
 ```bash
 # Current branch
@@ -73,9 +75,9 @@ BRANCH=$(git branch --show-current)
 echo "Branch: $BRANCH"
 
 # Protected branches — NEVER implement features directly on these
-# main: production branch, only receives merges
+# new-home: base branch, only receives merges (replaces main)
+# main: deprecated, do not use
 # staging: deploy target, not for direct work
-# new-home: long-lived integration branch, not for direct feature work
 PROTECTED="main staging new-home"
 
 for b in $PROTECTED; do
@@ -89,15 +91,15 @@ if ! echo "$BRANCH" | grep -qE '^(feat|fix|chore|docs)/'; then
   echo "WARN: branch '$BRANCH' does not follow naming convention (feat/fix/chore/docs)"
 fi
 
-# Check if branch is based on recent main
-git fetch origin main
-git merge-base --is-ancestor origin/main HEAD
-echo $?  # 0 = good, 1 = branch is behind main
+# Check if branch is based on recent new-home (base branch)
+git fetch origin new-home
+git merge-base --is-ancestor origin/new-home HEAD
+echo $?  # 0 = good, 1 = branch is behind new-home
 ```
 
 - If on a protected branch (main, staging, new-home): **BLOCK** — must create a dedicated feature branch first via `/start`
 - If branch doesn't follow naming convention: **WARN** — recommend renaming
-- If branch is behind main: **WARN** — recommend rebasing/merging main
+- If branch is behind new-home: **WARN** — recommend rebasing/merging new-home
 
 ### 5. No uncommitted changes from previous work
 

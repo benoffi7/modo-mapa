@@ -37,13 +37,13 @@ Run these sequentially — any failure aborts the merge:
 ### 1a. Sync with main
 
 ```bash
-git fetch origin main
-git merge origin/main --no-edit
+git fetch origin new-home
+git merge origin/new-home --no-edit
 ```
 
 Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
 
-**IMPORTANT:** When creating feature branches, always branch from latest `main` HEAD. Never reuse branches that merged other feature branches (e.g., unified staging branches). This prevents duplicate commit conflicts during rebase/merge. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
+**IMPORTANT:** The base branch is `new-home` (not `main`, which is deprecated). Always branch from latest `new-home` HEAD. Never reuse branches that merged other feature branches. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
 
 ### 1b. Lint
 
@@ -77,7 +77,7 @@ npx vite build
 
 ```bash
 # List new service/hook files without tests
-for f in $(git diff --name-only --diff-filter=A origin/main -- 'src/services/*.ts' 'src/hooks/*.ts' | grep -v '.test.'); do
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/services/*.ts' 'src/hooks/*.ts' | grep -v '.test.'); do
   test_file="${f%.ts}.test.ts"
   if [ ! -f "$test_file" ]; then
     echo "MISSING TEST: $f → $test_file"
@@ -102,7 +102,7 @@ If `does not meet` appears, write more tests before proceeding. Common gap: `syn
 If `firestore.indexes.json` was modified, validate indexes locally:
 
 ```bash
-if git diff --name-only origin/main | grep -q 'firestore.indexes.json'; then
+if git diff --name-only origin/new-home | grep -q 'firestore.indexes.json'; then
   # Check for single-field indexes (Firestore rejects these — they're automatic)
   node -e "
     const idx = require('./firestore.indexes.json').indexes;
@@ -124,7 +124,7 @@ Single-field indexes cause deploy failures because Firestore creates them automa
 **BLOCKER:** Check all modified/new `.ts`/`.tsx` files in `src/` for the 400-line limit:
 
 ```bash
-for f in $(git diff --name-only origin/main -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.'); do
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.'); do
   if [ -f "$f" ]; then
     lines=$(wc -l < "$f")
     if [ "$lines" -gt 400 ]; then
@@ -157,7 +157,7 @@ If any step fails, stop and fix. Do NOT proceed to Phase 1k.
 
 ```bash
 # Check for firebase/firestore imports in components
-for f in $(git diff --name-only origin/main -- 'src/components/**/*.ts' 'src/components/**/*.tsx'); do
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.ts' 'src/components/**/*.tsx'); do
   if [ -f "$f" ]; then
     if grep -q "from 'firebase/firestore'" "$f" 2>/dev/null; then
       echo "BOUNDARY VIOLATION: $f imports firebase/firestore"
@@ -174,10 +174,10 @@ If violations found: move the Firestore query/write to a hook or service. Compon
 
 ```bash
 # New triggers
-git diff origin/main -- 'functions/src/triggers/**' | grep -E '^\+.*on(Document|Call)' | head -20
+git diff origin/new-home -- 'functions/src/triggers/**' | grep -E '^\+.*on(Document|Call)' | head -20
 
 # New collections written by client
-git diff origin/main -- 'src/services/**' | grep -E '^\+.*(addDoc|setDoc|updateDoc|deleteDoc)' | head -20
+git diff origin/new-home -- 'src/services/**' | grep -E '^\+.*(addDoc|setDoc|updateDoc|deleteDoc)' | head -20
 ```
 
 For each new trigger/write:
@@ -193,7 +193,7 @@ Report findings in the audit summary. Not a blocker unless the impact is clearly
 
 ```bash
 # Detect new collection matches in rules
-git diff origin/main -- 'firestore.rules' | grep -E '^\+.*match /' | grep -v '^\+\+\+' | head -10
+git diff origin/new-home -- 'firestore.rules' | grep -E '^\+.*match /' | grep -v '^\+\+\+' | head -10
 ```
 
 For each new collection, verify ALL of these exist:
@@ -236,7 +236,7 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
 8. **copy-auditor** — scan changed `.tsx` files for spelling errors, missing tildes, inconsistent tone in user-facing strings (toasts, labels, Typography text, placeholders, dialog titles)
 
-Get changed files with: `git diff --name-only origin/main -- 'src/**/*.tsx' 'src/**/*.ts'`
+Get changed files with: `git diff --name-only origin/new-home -- 'src/**/*.tsx' 'src/**/*.ts'`
 
 **IMPORTANT:** When running from a worktree, pass the full worktree path (`$WORKDIR`) as "Working directory" in every agent prompt. Agents that receive only a relative path or no path will default to the main repo and read stale files.
 
@@ -252,19 +252,19 @@ Check what changed and update these files as needed:
 
 | File | Update if... | How to check |
 |------|-------------|-------------|
-| `docs/reference/features.md` | Any user-visible feature added/changed | `git diff origin/main -- 'src/components/**' 'src/pages/**'` |
-| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention | `git diff origin/main -- 'src/hooks/**' 'src/contexts/**'` |
-| `docs/reference/firestore.md` | New collections, types, or rules | `git diff origin/main -- 'src/types/**' 'firestore.rules' 'firestore.indexes.json'` |
+| `docs/reference/features.md` | Any user-visible feature added/changed | `git diff origin/new-home -- 'src/components/**' 'src/pages/**'` |
+| `docs/reference/patterns.md` | New hook, context, UI pattern, or convention | `git diff origin/new-home -- 'src/hooks/**' 'src/contexts/**'` |
+| `docs/reference/firestore.md` | New collections, types, or rules | `git diff origin/new-home -- 'src/types/**' 'firestore.rules' 'firestore.indexes.json'` |
 | `docs/reference/project-reference.md` | Version, date, feature summary, test count | Always update on feat/ branches |
-| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change | `git diff origin/main -- 'src/components/**'` |
-| `docs/reference/architecture.md` | New services, major refactors | `git diff origin/main -- 'src/services/**'` |
+| `src/components/menu/HelpSection.tsx` | Any user-facing behavior change | `git diff origin/new-home -- 'src/components/**'` |
+| `docs/reference/architecture.md` | New services, major refactors | `git diff origin/new-home -- 'src/services/**'` |
 
-**Systematic check:** Run `git diff --stat origin/main` and for each changed area, verify the corresponding doc is up to date. Do not rely on memory alone.
+**Systematic check:** Run `git diff --stat origin/new-home` and for each changed area, verify the corresponding doc is up to date. Do not rely on memory alone.
 
 ### 3b. Check privacy policy
 
 ```bash
-git diff origin/main -- 'src/services/**' 'src/constants/**' 'functions/src/**' | grep -E '(logEvent|addDoc|setDoc|collection\()'
+git diff origin/new-home -- 'src/services/**' 'src/constants/**' 'functions/src/**' | grep -E '(logEvent|addDoc|setDoc|collection\()'
 ```
 
 If new data collection → warn user and update privacy policy if needed.
@@ -272,7 +272,7 @@ If new data collection → warn user and update privacy policy if needed.
 ### 3c. Check seed data (if schema changed)
 
 ```bash
-git diff --name-only origin/main -- 'src/types/**' 'src/config/adminConverters.ts' 'functions/src/**'
+git diff --name-only origin/new-home -- 'src/types/**' 'src/config/adminConverters.ts' 'functions/src/**'
 ```
 
 If types/converters changed → run the **seed-manager** agent to verify and update seed data automatically. Do NOT just check manually — delegate to the agent.
@@ -280,7 +280,7 @@ If types/converters changed → run the **seed-manager** agent to verify and upd
 ### 3d. Update docs site (if docs changed)
 
 ```bash
-git diff --name-only origin/main -- 'docs/**/*.md'
+git diff --name-only origin/new-home -- 'docs/**/*.md'
 ```
 
 If any docs changed → run the **docs-site-maintainer** agent to regenerate README.md index files and update `_sidebar.md`. This ensures new PRDs, specs, plans, and changelogs are properly linked.
@@ -293,9 +293,9 @@ If any docs were updated in this phase, commit them now before merging.
 
 ```bash
 # If merging from a worktree, switch to the main repo directory first.
-# Stash any uncommitted WIP on main before merging to avoid conflicts:
+# Stash any uncommitted WIP on new-home before merging to avoid conflicts:
 git stash --include-untracked 2>/dev/null
-git checkout main
+git checkout new-home
 git merge <branch-name> --no-ff -m "merge message summarizing the feature/fix"
 git stash pop 2>/dev/null
 ```
@@ -328,12 +328,12 @@ git tag vX.Y.Z
 
 ### 5b. Push
 
-**IMPORTANT:** If there are uncommitted WIP files on main (from another in-progress feature), the pre-push hook (`tsc`) will fail because those files may reference types/modules that don't exist yet. Always stash before pushing:
+**IMPORTANT:** If there are uncommitted WIP files on new-home (from another in-progress feature), the pre-push hook (`tsc`) will fail because those files may reference types/modules that don't exist yet. Always stash before pushing:
 
 ```bash
 # Stash any uncommitted/untracked WIP to avoid pre-push hook failures
 git stash --include-untracked 2>/dev/null
-git push origin main
+git push origin new-home
 git push origin --tags
 git stash pop 2>/dev/null
 ```
