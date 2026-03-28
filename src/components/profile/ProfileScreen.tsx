@@ -163,7 +163,7 @@ export default function ProfileScreen() {
       <Divider />
 
       {/* Settings */}
-      <Box sx={{ px: 2, pt: 1.5, pb: 0.5 }}>
+      <Box sx={{ px: 2, pt: 1.5, pb: 1.5 }}>
         <Typography variant="subtitle2" color="text.secondary">Ajustes</Typography>
       </Box>
       <SettingsMenu onNavigate={setActiveSection} hasPendingActions={hasPendingActions} />

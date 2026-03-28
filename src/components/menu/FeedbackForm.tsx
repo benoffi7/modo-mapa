@@ -123,6 +123,14 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
             onClick={() => setCategory(value)}
             variant={category === value ? 'filled' : 'outlined'}
             color={category === value ? 'primary' : 'default'}
+            sx={{
+              bgcolor: category === value ? undefined : 'background.paper',
+              boxShadow: 1,
+              '&:hover, &.MuiChip-clickable:hover': {
+                boxShadow: 2,
+                bgcolor: category === value ? undefined : 'background.paper',
+              },
+            }}
           />
         ))}
       </Box>

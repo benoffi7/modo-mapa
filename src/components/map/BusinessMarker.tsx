@@ -40,8 +40,9 @@ const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onCl
         tabIndex={0}
         role="button"
         aria-label={ariaLabel}
+        onClick={handleClick}
         onKeyDown={handleKeyDown}
-        style={{ outline: 'none' }}
+        style={{ outline: 'none', cursor: 'pointer' }}
         className={`marker-focus ${isSelected ? 'marker-selected' : ''}`}
       >
         <Pin

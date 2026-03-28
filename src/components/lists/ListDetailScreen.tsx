@@ -133,7 +133,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       <Box sx={{ px: 2, py: 0.5, mt: 0.5 }}>
         <Chip
           size="small"
-          label={isPublic ? 'P\u00fablica' : 'Privada'}
+          label={isPublic ? 'Pública' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
           sx={{ borderRadius: 1, px: 0.5 }}
@@ -145,7 +145,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
         ) : items.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">Lista vac\u00eda</Typography>
+            <Typography variant="body2" color="text.secondary">Lista vacía</Typography>
             <Typography variant="caption" color="text.disabled">Agrega comercios desde el mapa</Typography>
           </Box>
         ) : (
