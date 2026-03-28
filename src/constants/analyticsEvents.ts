@@ -26,6 +26,9 @@ export const EVT_UNFOLLOW = 'unfollow';
 export const EVT_FEED_VIEWED = 'feed_viewed';
 export const EVT_FEED_ITEM_CLICKED = 'feed_item_clicked';
 
+// Business Sheet events (#158)
+export const EVT_BUSINESS_SHEET_TAB_CHANGED = 'business_sheet_tab_changed';
+
 // Recommendations events (#135)
 export const EVT_RECOMMENDATION_SENT = 'recommendation_sent';
 export const EVT_RECOMMENDATION_OPENED = 'recommendation_opened';

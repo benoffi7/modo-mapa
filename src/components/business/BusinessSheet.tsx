@@ -1,20 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
-import { SwipeableDrawer, Box, Divider, IconButton, Tooltip, Tabs, Tab } from '@mui/material';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { SwipeableDrawer, Box, Tabs, Tab, IconButton, Tooltip } from '@mui/material';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/MapContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
+import { useBusinessRating } from '../../hooks/useBusinessRating';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
-import BusinessHeader from './BusinessHeader';
-import BusinessRating from './BusinessRating';
-import BusinessPriceLevel from './BusinessPriceLevel';
-import BusinessTags from './BusinessTags';
-import MenuPhotoSection from './MenuPhotoSection';
-import BusinessComments from './BusinessComments';
-import BusinessQuestions from './BusinessQuestions';
+import { EVT_BUSINESS_SHEET_TAB_CHANGED } from '../../constants/analyticsEvents';
+import BusinessSheetHeader from './BusinessSheetHeader';
+import InfoTab from './InfoTab';
+import OpinionesTab from './OpinionesTab';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
@@ -27,9 +25,11 @@ import { lazy, Suspense } from 'react';
 
 const RecommendDialog = lazy(() => import('./RecommendDialog'));
 
+type BusinessSheetTab = 'info' | 'opiniones';
+
 export default function BusinessSheet() {
   const { user } = useAuth();
-  const { selectedBusiness, setSelectedBusiness } = useSelection();
+  const { selectedBusiness, setSelectedBusiness, selectedBusinessTab, setSelectedBusinessTab } = useSelection();
   const isOpen = selectedBusiness !== null;
   const businessId = selectedBusiness?.id ?? null;
   const data = useBusinessData(businessId);
@@ -39,11 +39,49 @@ export default function BusinessSheet() {
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const [commentsDirty, setCommentsDirty] = useState(false);
-  const [activeTab, setActiveTab] = useState<'comments' | 'questions'>('comments');
+  const prevBusinessIdRef = useRef<string | null>(null);
+  const [activeTab, setActiveTab] = useState<BusinessSheetTab>(() => selectedBusinessTab ?? 'info');
+
+  // Consume deep-link tab + reset tab on business change (synchronous, no effect needed)
+  if (selectedBusinessTab) {
+    setSelectedBusinessTab(null);
+    if (activeTab !== selectedBusinessTab) {
+      setActiveTab(selectedBusinessTab);
+    }
+  }
+  if (businessId !== prevBusinessIdRef.current) {
+    prevBusinessIdRef.current = businessId;
+    if (activeTab !== 'info' && businessId !== null) {
+      setActiveTab('info');
+    }
+  }
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
   const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  // Measure header height for sticky tabs positioning
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setHeaderHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, [showSkeleton]);
+
+  // Rating hook - instantiated once, shared between header and InfoTab
+  const ratingData = useBusinessRating({
+    businessId: selectedBusiness?.id ?? '',
+    businessName: selectedBusiness?.name,
+    ratings: data.ratings,
+    isLoading: data.isLoading,
+    onRatingChange: () => data.refetch('ratings'),
+  });
 
   useEffect(() => {
     if (showTooltip && isOpen) {
@@ -70,6 +108,18 @@ export default function BusinessSheet() {
     confirmClose(() => setSelectedBusiness(null));
   };
   const handleOpen = () => {};
+
+  const handleTabChange = (_: unknown, newTab: BusinessSheetTab) => {
+    const previousTab = activeTab;
+    setActiveTab(newTab);
+    if (selectedBusiness) {
+      trackEvent(EVT_BUSINESS_SHEET_TAB_CHANGED, {
+        business_id: selectedBusiness.id,
+        tab: newTab,
+        previous_tab: previousTab,
+      });
+    }
+  };
 
   return (
     <>
@@ -144,7 +194,6 @@ export default function BusinessSheet() {
             <BusinessSheetSkeleton />
           ) : (
           <Box sx={{
-            px: 2,
             pb: 'calc(24px + env(safe-area-inset-bottom))',
             '@keyframes fadeIn': {
               from: { opacity: 0 },
@@ -152,9 +201,13 @@ export default function BusinessSheet() {
             },
             animation: 'fadeIn 200ms ease-in',
           }}>
-            <BusinessHeader
+            <BusinessSheetHeader
+              ref={headerRef}
               business={selectedBusiness}
               isTrending={isTrending}
+              ratings={data.ratings}
+              isLoading={data.isLoading}
+              ratingData={ratingData}
               favoriteButton={
                 <FavoriteButton
                   businessId={selectedBusiness.id}
@@ -179,78 +232,64 @@ export default function BusinessSheet() {
                   </IconButton>
                 ) : undefined
               }
+              checkInButton={
+                <CheckInButton
+                  businessId={selectedBusiness.id}
+                  businessName={selectedBusiness.name}
+                  businessLocation={{ lat: selectedBusiness.lat, lng: selectedBusiness.lng }}
+                />
+              }
             />
-            <Box sx={{ my: 1, display: 'flex', justifyContent: 'center' }}>
-              <CheckInButton
-                businessId={selectedBusiness.id}
-                businessName={selectedBusiness.name}
-                businessLocation={{ lat: selectedBusiness.lat, lng: selectedBusiness.lng }}
+
+            {/* Sticky tabs */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: headerHeight,
+                zIndex: 2,
+                bgcolor: 'background.paper',
+                px: 2,
+              }}
+            >
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                variant="fullWidth"
+                sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36, textTransform: 'none', fontSize: '0.9rem', fontWeight: 600 } }}
+              >
+                <Tab label="Info" value="info" />
+                <Tab label="Opiniones" value="opiniones" />
+              </Tabs>
+            </Box>
+
+            {/* Tab content — display:none preserves internal state */}
+            <Box sx={{ display: activeTab === 'info' ? 'block' : 'none' }}>
+              <InfoTab
+                business={selectedBusiness}
+                ratingData={ratingData}
+                priceLevels={data.priceLevels}
+                onPriceLevelChange={() => data.refetch('priceLevels')}
+                seedTags={selectedBusiness.tags}
+                userTags={data.userTags}
+                customTags={data.customTags}
+                onTagsChange={() => { data.refetch('userTags'); data.refetch('customTags'); }}
+                menuPhoto={data.menuPhoto}
+                onPhotoChange={() => data.refetch('menuPhotos')}
+                isLoading={data.isLoading}
               />
             </Box>
-            <Divider sx={{ my: 1.5 }} />
-            <BusinessRating
-              businessId={selectedBusiness.id}
-              businessName={selectedBusiness.name}
-              ratings={data.ratings}
-              isLoading={data.isLoading}
-              onRatingChange={() => data.refetch('ratings')}
-            />
-            <Divider sx={{ my: 1.5 }} />
-            <BusinessPriceLevel
-              key={selectedBusiness.id}
-              businessId={selectedBusiness.id}
-              businessName={selectedBusiness.name}
-              priceLevels={data.priceLevels}
-              isLoading={data.isLoading}
-              onPriceLevelChange={() => data.refetch('priceLevels')}
-            />
-            <Divider sx={{ my: 1.5 }} />
-            <BusinessTags
-              businessId={selectedBusiness.id}
-              businessName={selectedBusiness.name}
-              seedTags={selectedBusiness.tags}
-              userTags={data.userTags}
-              customTags={data.customTags}
-              isLoading={data.isLoading}
-              onTagsChange={() => { data.refetch('userTags'); data.refetch('customTags'); }}
-            />
-            <Divider sx={{ my: 1.5 }} />
-            <MenuPhotoSection
-              menuPhoto={data.menuPhoto}
-              businessId={selectedBusiness.id}
-              isLoading={data.isLoading}
-              onPhotoChange={() => data.refetch('menuPhotos')}
-            />
-            <Divider sx={{ my: 1.5 }} />
-            <Tabs
-              value={activeTab}
-              onChange={(_, v) => setActiveTab(v)}
-              variant="fullWidth"
-              sx={{ minHeight: 36, mb: 1, '& .MuiTab-root': { minHeight: 36, textTransform: 'none', fontSize: '0.85rem' } }}
-            >
-              <Tab label="Comentarios" value="comments" />
-              <Tab label="Preguntas" value="questions" />
-            </Tabs>
-            {activeTab === 'comments' ? (
-              <BusinessComments
+            <Box sx={{ display: activeTab === 'opiniones' ? 'block' : 'none' }}>
+              <OpinionesTab
                 businessId={selectedBusiness.id}
                 businessName={selectedBusiness.name}
-                comments={regularComments}
+                comments={data.comments}
+                regularComments={regularComments}
                 userCommentLikes={data.userCommentLikes}
                 isLoading={data.isLoading}
                 onCommentsChange={() => data.refetch('comments')}
                 onDirtyChange={setCommentsDirty}
               />
-            ) : (
-              <BusinessQuestions
-                businessId={selectedBusiness.id}
-                businessName={selectedBusiness.name}
-                comments={data.comments}
-                userCommentLikes={data.userCommentLikes}
-                isLoading={data.isLoading}
-                onCommentsChange={() => data.refetch('comments')}
-              />
-            )}
+            </Box>
           </Box>
           )}
         </Box>

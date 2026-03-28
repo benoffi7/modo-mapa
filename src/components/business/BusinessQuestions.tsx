@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import {
   Box,
   Typography,
@@ -15,15 +15,12 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
-import { createQuestion, addComment, deleteComment, likeComment, unlikeComment } from '../../services/comments';
+import { createQuestion } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
 import UserProfileSheet from '../user/UserProfileSheet';
-import { useProfileVisibility } from '../../hooks/useProfileVisibility';
-import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { MAX_QUESTION_LENGTH, BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { trackEvent } from '../../utils/analytics';
@@ -40,39 +37,33 @@ interface Props {
 }
 
 export default memo(function BusinessQuestions({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
-  const { user, displayName } = useAuth();
   const toast = useToast();
-  const { isOffline } = useConnectivity();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [questionText, setQuestionText] = useState('');
-  const [profileUser, setProfileUser] = useState<{ id: string; name: string } | null>(null);
-
-  // Reply state
-  const [replyingTo, setReplyingTo] = useState<{ id: string; userName: string } | null>(null);
-  const [replyText, setReplyText] = useState('');
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
-  const replyInputRef = useRef<HTMLInputElement>(null);
 
-  // Profile visibility
-  const commentUserIds = useMemo(() => comments.map((c) => c.userId), [comments]);
-  const profileVisibility = useProfileVisibility(commentUserIds);
+  const expandThread = useCallback((id: string) => {
+    setExpandedQuestions((prev) => new Set(prev).add(id));
+  }, []);
 
-  // Undo delete
-  const onConfirmDelete = useCallback(
-    async (comment: Comment) => {
-      if (!user) return;
-      await deleteComment(comment.id, user.uid);
-    },
-    [user],
-  );
-  const { isPendingDelete, markForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
-    onConfirmDelete,
-    onDeleteComplete: onCommentsChange,
-    message: 'Pregunta eliminada',
+  const base = useCommentListBase({
+    businessId,
+    businessName,
+    comments,
+    userCommentLikes,
+    onCommentsChange,
+    deleteMessage: 'Pregunta eliminada',
+    expandThread,
   });
 
-  // Optimistic likes — single Map storing both toggle state and delta
-  const [optimisticLikes, setOptimisticLikes] = useState<Map<string, { toggled: boolean; delta: number }>>(new Map());
+  const {
+    user, displayName, isOffline,
+    profileVisibility, isPendingDelete, handleDelete, deleteSnackbarProps,
+    isLiked, getLikeCount, handleToggleLike,
+    replyingTo, replyText, replyInputRef, setReplyText,
+    handleStartReply, handleCancelReply, handleSubmitReply,
+    isSubmitting, profileUser, handleShowProfile, closeProfile,
+    userCommentsToday,
+  } = base;
 
   // Separate questions and answers from all comments
   const { questions, answersByQuestion } = useMemo(() => {
@@ -83,25 +74,21 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       if (c.type === 'question' && !c.parentId) {
         qs.push(c);
       } else if (c.parentId) {
-        // Check if parent is a question
         const existing = answers.get(c.parentId) ?? [];
         existing.push(c);
         answers.set(c.parentId, existing);
       }
     }
 
-    // Sort answers by likeCount desc (best answer first)
     for (const [key, arr] of answers) {
       answers.set(key, arr.sort((a, b) => b.likeCount - a.likeCount));
     }
 
-    // Sort questions by date desc
     qs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return { questions: qs, answersByQuestion: answers };
   }, [comments]);
 
-  // Filter answers to only those belonging to questions (not regular comments)
   const questionIds = useMemo(() => new Set(questions.map((q) => q.id)), [questions]);
   const filteredAnswersByQuestion = useMemo(() => {
     const filtered = new Map<string, Comment[]>();
@@ -113,28 +100,10 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     return filtered;
   }, [answersByQuestion, questionIds]);
 
-  const userCommentsToday = useMemo(() => {
-    const today = new Date().toDateString();
-    return comments.filter((c) => c.userId === user?.uid && c.createdAt.toDateString() === today).length;
-  }, [comments, user?.uid]);
-
-  // Like helpers
-  const isLiked = useCallback((commentId: string) => {
-    const entry = optimisticLikes.get(commentId);
-    if (entry) return entry.toggled;
-    return userCommentLikes.has(commentId);
-  }, [userCommentLikes, optimisticLikes]);
-
-  const getLikeCount = useCallback((comment: Comment) => {
-    const delta = optimisticLikes.get(comment.id)?.delta ?? 0;
-    return Math.max(0, comment.likeCount + delta);
-  }, [optimisticLikes]);
-
   // Handlers
   const handleSubmitQuestion = async () => {
     if (!user || !questionText.trim()) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
-    setIsSubmitting(true);
     try {
       await withOfflineSupport(
         isOffline, 'comment_create',
@@ -150,84 +119,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       if (import.meta.env.DEV) logger.error('Error creating question:', error);
       toast.error('No se pudo publicar la pregunta');
     }
-    setIsSubmitting(false);
-  };
-
-  const handleToggleLike = async (commentId: string) => {
-    if (!user) return;
-    const currentlyLiked = isLiked(commentId);
-
-    setOptimisticLikes((prev) => {
-      const current = prev.get(commentId)?.delta ?? 0;
-      return new Map(prev).set(commentId, {
-        toggled: !currentlyLiked,
-        delta: currentlyLiked ? current - 1 : current + 1,
-      });
-    });
-
-    try {
-      if (currentlyLiked) {
-        await withOfflineSupport(
-          isOffline, 'comment_unlike',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => unlikeComment(user.uid, commentId),
-          toast,
-        );
-      } else {
-        await withOfflineSupport(
-          isOffline, 'comment_like',
-          { userId: user.uid, businessId, businessName },
-          { commentId },
-          () => likeComment(user.uid, commentId),
-          toast,
-        );
-      }
-    } catch (error) {
-      setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
-      toast.error('No se pudo actualizar el like');
-    }
-  };
-
-  const handleDelete = useCallback((comment: Comment) => {
-    markForDelete(comment.id, comment);
-  }, [markForDelete]);
-
-  const handleStartReply = useCallback((comment: Comment) => {
-    setReplyingTo({ id: comment.id, userName: comment.userName });
-    setReplyText('');
-    setExpandedQuestions((prev) => new Set(prev).add(comment.id));
-    setTimeout(() => replyInputRef.current?.focus(), 100);
-  }, []);
-
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-    setReplyText('');
-  };
-
-  const handleSubmitReply = async () => {
-    if (!user || !replyingTo || !replyText.trim()) return;
-    if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
-    setIsSubmitting(true);
-    try {
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text: replyText.trim(), parentId: replyingTo.id },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, replyText.trim(), replyingTo.id),
-        toast,
-      );
-      setReplyingTo(null);
-      setReplyText('');
-      onCommentsChange();
-      if (!isOffline) toast.success('Respuesta publicada');
-      trackEvent('question_answered', { business_id: businessId, question_id: replyingTo.id });
-    } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error adding answer:', error);
-      toast.error('No se pudo publicar la respuesta');
-    }
-    setIsSubmitting(false);
   };
 
   const toggleQuestion = (questionId: string) => {
@@ -242,10 +133,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       return next;
     });
   };
-
-  const handleShowProfile = useCallback((userId: string, userName: string) => {
-    setProfileUser({ id: userId, name: userName });
-  }, []);
 
   // No-op handlers for CommentRow edit props (questions don't support inline edit)
   const noopEdit = useCallback(() => {}, []);
@@ -270,7 +157,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
         </Typography>
       </Box>
 
-      {/* Question input */}
       {user && userCommentsToday < MAX_COMMENTS_PER_DAY && (
         <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <TextField
@@ -342,7 +228,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 onShowProfile={handleShowProfile}
               />
 
-              {/* Answers */}
               {answerCount > 0 && (
                 <Box sx={{ pl: { xs: 3, sm: 5.5 }, mt: 0.5 }}>
                   <Button
@@ -416,7 +301,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 </Box>
               )}
 
-              {/* Inline reply form */}
               {replyingTo?.id === question.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
                 <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
                   <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
@@ -501,7 +385,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
         }
       />
 
-      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={() => setProfileUser(null)} />
+      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={closeProfile} />
     </Box>
   );
 });

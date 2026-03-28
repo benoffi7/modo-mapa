@@ -4,11 +4,15 @@ import type { Business } from '../types';
 
 /* ─── Selection context (changes on marker click) ─── */
 
+export type BusinessSheetTab = 'info' | 'opiniones';
+
 interface SelectionContextType {
   selectedBusiness: Business | null;
   setSelectedBusiness: (business: Business | null) => void;
   activeSharedListId: string | null;
   setActiveSharedListId: (id: string | null) => void;
+  selectedBusinessTab: BusinessSheetTab | null;
+  setSelectedBusinessTab: (tab: BusinessSheetTab | null) => void;
 }
 
 const SelectionContext = createContext<SelectionContextType>({
@@ -16,6 +20,8 @@ const SelectionContext = createContext<SelectionContextType>({
   setSelectedBusiness: () => {},
   activeSharedListId: null,
   setActiveSharedListId: () => {},
+  selectedBusinessTab: null,
+  setSelectedBusinessTab: () => {},
 });
 
 /* ─── Filters context (changes on search/filter/location) ─── */
@@ -45,8 +51,15 @@ const FiltersContext = createContext<FiltersContextType>({
 /* ─── Combined provider ─── */
 
 export function MapProvider({ children }: { children: ReactNode }) {
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [selectedBusiness, setSelectedBusinessRaw] = useState<Business | null>(null);
   const [activeSharedListId, setActiveSharedListId] = useState<string | null>(null);
+  const [selectedBusinessTab, setSelectedBusinessTab] = useState<BusinessSheetTab | null>(null);
+
+  // Reset tab when business is deselected
+  const setSelectedBusiness = useCallback((business: Business | null) => {
+    setSelectedBusinessRaw(business);
+    if (!business) setSelectedBusinessTab(null);
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [activePriceFilter, setActivePriceFilter] = useState<number | null>(null);
@@ -67,7 +80,9 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setSelectedBusiness,
     activeSharedListId,
     setActiveSharedListId,
-  }), [selectedBusiness, activeSharedListId]);
+    selectedBusinessTab,
+    setSelectedBusinessTab,
+  }), [selectedBusiness, setSelectedBusiness, activeSharedListId, selectedBusinessTab]);
 
   const filtersValue = useMemo<FiltersContextType>(() => ({
     searchQuery,
