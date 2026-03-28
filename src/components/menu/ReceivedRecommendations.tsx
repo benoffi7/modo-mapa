@@ -6,12 +6,10 @@ import {
 import { cardSx } from '../../theme/cards';
 import SendIcon from '@mui/icons-material/Send';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import { where } from 'firebase/firestore';
-import type { QueryConstraint } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../hooks/useConnectivity';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
-import { getRecommendationsCollection, markRecommendationAsRead, markAllRecommendationsAsRead } from '../../services/recommendations';
+import { getRecommendationsCollection, getReceivedRecommendationsConstraints, markRecommendationAsRead, markAllRecommendationsAsRead } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PaginatedListShell } from './PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -39,7 +37,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
 
   const collectionRef = useMemo(() => getRecommendationsCollection(), []);
   const constraints = useMemo(
-    (): QueryConstraint[] => (userId ? [where('recipientId', '==', userId)] : []),
+    () => (userId ? getReceivedRecommendationsConstraints(userId) : []),
     [userId],
   );
 

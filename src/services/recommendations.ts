@@ -5,7 +5,7 @@ import {
   collection, addDoc, getDocs, updateDoc, doc, writeBatch,
   query, where, serverTimestamp, getCountFromServer,
 } from 'firebase/firestore';
-import type { CollectionReference } from 'firebase/firestore';
+import type { CollectionReference, QueryConstraint } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { recommendationConverter } from '../config/converters';
@@ -18,6 +18,10 @@ import type { Recommendation } from '../types';
 export function getRecommendationsCollection(): CollectionReference<Recommendation> {
   return collection(db, COLLECTIONS.RECOMMENDATIONS)
     .withConverter(recommendationConverter) as CollectionReference<Recommendation>;
+}
+
+export function getReceivedRecommendationsConstraints(userId: string): QueryConstraint[] {
+  return [where('recipientId', '==', userId)];
 }
 
 export async function createRecommendation(
