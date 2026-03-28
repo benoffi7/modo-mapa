@@ -381,5 +381,28 @@
     - [Specs](/prd/191-specs.md)
     - [Plan](/prd/191-plan.md)
 
+- **[Tech Debt: New Home](/prd/tech-debt-new-home/)**
+  - [1 - Admin Service Layer](/prd/tech-debt-new-home/1-admin-service-layer.md)
+    - [Specs](/prd/tech-debt-new-home/1-admin-service-layer-specs.md)
+    - [Plan](/prd/tech-debt-new-home/1-admin-service-layer-plan.md)
+  - [2 - Achievements Constants](/prd/tech-debt-new-home/2-achievements-constants.md)
+    - [Specs](/prd/tech-debt-new-home/2-achievements-constants-specs.md)
+    - [Plan](/prd/tech-debt-new-home/2-achievements-constants-plan.md)
+  - [3 - Category Colors](/prd/tech-debt-new-home/3-category-colors.md)
+    - [Specs](/prd/tech-debt-new-home/3-category-colors-specs.md)
+    - [Plan](/prd/tech-debt-new-home/3-category-colors-plan.md)
+  - [4 - Force Update Loop](/prd/tech-debt-new-home/4-force-update-loop.md)
+    - [Specs](/prd/tech-debt-new-home/4-force-update-loop-specs.md)
+    - [Plan](/prd/tech-debt-new-home/4-force-update-loop-plan.md)
+  - [5 - Centralize Texts](/prd/tech-debt-new-home/5-centralize-texts.md)
+    - [Specs](/prd/tech-debt-new-home/5-centralize-texts-specs.md)
+    - [Plan](/prd/tech-debt-new-home/5-centralize-texts-plan.md)
+  - [6 - Avatar AuthContext](/prd/tech-debt-new-home/6-avatar-authcontext.md)
+    - [Specs](/prd/tech-debt-new-home/6-avatar-authcontext-specs.md)
+    - [Plan](/prd/tech-debt-new-home/6-avatar-authcontext-plan.md)
+  - [7 - Silent Catch Lint](/prd/tech-debt-new-home/7-silent-catch-lint.md)
+    - [Specs](/prd/tech-debt-new-home/7-silent-catch-lint-specs.md)
+    - [Plan](/prd/tech-debt-new-home/7-silent-catch-lint-plan.md)
+
 - **[Issues](/issues/)**
   - [Issue #80 — Email Auth](/issues/issue-80-email-password-auth.md)
