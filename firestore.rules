@@ -128,7 +128,8 @@ service cloud.firestore {
     // Likes en comentarios — cualquier usuario autenticado puede leer.
     // Owner puede crear (con timestamp validado) o eliminar su like.
     match /commentLikes/{docId} {
-      allow read: if request.auth != null;
+      allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
+                  || isAdmin();
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['userId', 'commentId', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
