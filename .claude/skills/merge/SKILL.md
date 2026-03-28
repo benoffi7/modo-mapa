@@ -12,7 +12,7 @@ Issue numbers (optional): $ARGUMENTS
 
 ## Pre-flight checks
 
-1. Verify you are NOT on main: `git branch --show-current` — abort if on main
+1. Verify you are NOT on a protected branch: `git branch --show-current` — abort if on `main`, `staging`, or `new-home`. These branches should never be merged directly; only dedicated feature branches (`feat/`, `fix/`, `chore/`, `docs/`) are mergeable.
 2. Verify working tree is clean: `git status --short` — commit or stash if dirty
 3. Store the branch name and issue number (parse from branch name or $ARGUMENTS)
 
@@ -148,6 +148,66 @@ If `firestore.rules` OR any service file (`src/services/**`) was modified, cross
 **Common miss:** Adding a new optional field (e.g. `color`, `icon`) to a type and service without updating the rules whitelist.
 
 If mismatch found, update `firestore.rules` to include the missing fields before proceeding.
+
+If any step fails, stop and fix. Do NOT proceed to Phase 1k.
+
+### 1k. Import boundary guard
+
+**BLOCKER:** No component file may import `firebase/firestore` for write operations. Read-type imports are a WARN.
+
+```bash
+# Check for firebase/firestore imports in components
+for f in $(git diff --name-only origin/main -- 'src/components/**/*.ts' 'src/components/**/*.tsx'); do
+  if [ -f "$f" ]; then
+    if grep -q "from 'firebase/firestore'" "$f" 2>/dev/null; then
+      echo "BOUNDARY VIOLATION: $f imports firebase/firestore"
+    fi
+  fi
+done
+```
+
+If violations found: move the Firestore query/write to a hook or service. Components must stay Firebase-agnostic to keep the monolith % low.
+
+### 1l. Billing impact guard
+
+**WARN:** If the branch adds new Cloud Function triggers or new writable Firestore collections, evaluate billing impact.
+
+```bash
+# New triggers
+git diff origin/main -- 'functions/src/triggers/**' | grep -E '^\+.*on(Document|Call)' | head -20
+
+# New collections written by client
+git diff origin/main -- 'src/services/**' | grep -E '^\+.*(addDoc|setDoc|updateDoc|deleteDoc)' | head -20
+```
+
+For each new trigger/write:
+- Does it have a rate limit? If not → **WARN**: create/delete loops can generate unbounded Cloud Function invocations
+- Does it fan out writes (e.g., update N docs per trigger)? If so → estimate worst-case invocations per user per day
+- Is there a toggle pattern (create/delete same entity)? If so → **WARN**: rapid toggling amplifies costs
+
+Report findings in the audit summary. Not a blocker unless the impact is clearly unbounded.
+
+### 1m. New collection checklist guard
+
+**BLOCKER if collection is new:** If `firestore.rules` was modified to add a new collection match, verify the implementation is complete:
+
+```bash
+# Detect new collection matches in rules
+git diff origin/main -- 'firestore.rules' | grep -E '^\+.*match /' | grep -v '^\+\+\+' | head -10
+```
+
+For each new collection, verify ALL of these exist:
+- [ ] `hasOnly()` on create rule (prevents field injection)
+- [ ] `hasOnly()` or `affectedKeys().hasOnly()` on update rule
+- [ ] Type/range validation on every field
+- [ ] `createdAt == request.time` on create
+- [ ] Ownership check (`userId == request.auth.uid`) on writes
+- [ ] Rate limit in Cloud Function trigger (if user-facing writes)
+- [ ] Content moderation via `checkModeration()` (if collection has text fields)
+- [ ] Seed data entry (check with seed-manager agent in Phase 3c)
+- [ ] Privacy policy mention (if collection stores user data)
+
+If any item is missing → **BLOCKER**: the collection is not hardened. Fix before merging.
 
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
