@@ -16,21 +16,39 @@ export const onCustomTagCreated = onDocumentCreated(
     const userId = data.userId as string;
     const businessId = data.businessId as string;
 
-    // 1. Rate limit: 10 custom tags per business per user
-    const exceeded = await checkRateLimit(
+    // 1a. Rate limit: 10 custom tags per business per user
+    const exceededPerEntity = await checkRateLimit(
       db,
       { collection: 'customTags', limit: 10, windowType: 'per_entity' },
       userId,
       businessId,
     );
 
-    if (exceeded) {
+    if (exceededPerEntity) {
       await snap.ref.delete();
       await logAbuse(db, {
         userId,
         type: 'rate_limit',
         collection: 'customTags',
         detail: `Exceeded 10 customTags for business ${businessId}`,
+      });
+      return;
+    }
+
+    // 1b. Rate limit: 50 custom tags per day per user (across all businesses)
+    const exceededDaily = await checkRateLimit(
+      db,
+      { collection: 'customTags', limit: 50, windowType: 'daily' },
+      userId,
+    );
+
+    if (exceededDaily) {
+      await snap.ref.delete();
+      await logAbuse(db, {
+        userId,
+        type: 'rate_limit',
+        collection: 'customTags',
+        detail: 'Exceeded 50 customTags/day',
       });
       return;
     }
