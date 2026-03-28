@@ -145,7 +145,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
         ) : items.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">Lista vac\u00eda</Typography>
+            <Typography variant="body2" color="text.secondary">Lista vacía</Typography>
             <Typography variant="caption" color="text.disabled">Agrega comercios desde el mapa</Typography>
           </Box>
         ) : (
