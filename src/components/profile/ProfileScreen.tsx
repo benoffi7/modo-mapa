@@ -8,6 +8,7 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { getAvatarById } from '../../constants/avatars';
+import { logger } from '../../utils/logger';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
@@ -67,13 +68,13 @@ export default function ProfileScreen() {
     getDoc(doc(db, COLLECTIONS.USERS, user.uid)).then((snap) => {
       const data = snap.data() as { avatarId?: string } | undefined;
       if (data?.avatarId) setSelectedAvatarId(data.avatarId);
-    }).catch(() => {});
+    }).catch((e) => logger.warn('[ProfileScreen] avatar load failed', e));
   }, [user]);
 
   const handleAvatarSelect = (avatarId: string) => {
     setSelectedAvatarId(avatarId);
     if (user) {
-      updateDoc(doc(db, COLLECTIONS.USERS, user.uid), { avatarId }).catch(() => {});
+      updateDoc(doc(db, COLLECTIONS.USERS, user.uid), { avatarId }).catch((e) => logger.warn('[ProfileScreen] avatar save failed', e));
     }
   };
 
