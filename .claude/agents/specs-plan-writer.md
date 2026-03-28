@@ -257,6 +257,21 @@ Which files must be created/modified first.}
 - [ ] Si se toca un archivo con deuda tecnica, se incluye el fix en el plan
 - [ ] Ningun archivo resultante supera 400 lineas
 
+## Fase final: Documentacion (OBLIGATORIA)
+
+{Toda implementacion DEBE incluir una fase final de actualizacion de docs. No se acumula deuda de documentacion.}
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `docs/reference/security.md` | {Actualizar si se modificaron rules, rate limits, auth, o storage rules} |
+| 2 | `docs/reference/firestore.md` | {Actualizar si se agregaron/modificaron colecciones, campos, o rules} |
+| 3 | `docs/reference/features.md` | {Actualizar si se agrego/cambio funcionalidad visible al usuario} |
+| 4 | `docs/reference/patterns.md` | {Actualizar si se agrego un nuevo hook, servicio, o patron} |
+| 5 | `docs/reference/project-reference.md` | {Actualizar version, fecha, resumen de features} |
+| 6 | `src/components/menu/HelpSection.tsx` | {Actualizar si cambio comportamiento visible al usuario} |
+
+{Eliminar filas que no aplican a este issue. Agregar filas si otros docs se ven afectados.}
+
 ## Criterios de done
 
 - [ ] All items from PRD scope implemented
@@ -265,6 +280,7 @@ Which files must be created/modified first.}
 - [ ] Build succeeds
 - [ ] Seed data updated (if schema changed)
 - [ ] Privacy policy reviewed (if new data collection)
+- [ ] Reference docs updated (security.md, firestore.md, features.md, patterns.md as applicable)
 ```
 
 ## Quality checklist
