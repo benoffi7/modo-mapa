@@ -342,6 +342,8 @@
     - [PRD](/feat/ux/sugerencias-contextuales/prd.md)
     - [Specs](/feat/ux/sugerencias-contextuales/specs.md)
     - [Plan](/feat/ux/sugerencias-contextuales/plan.md)
+  - [Refactor BusinessSheet](/feat/ux/refactor-business-sheet/)
+    - [PRD](/feat/ux/refactor-business-sheet/prd.md)
   - [UI/UX Tech Debt](/feat/ux/ui-ux-tech-debt/)
     - [PRD](/feat/ux/ui-ux-tech-debt/prd.md)
   - [Swipe Cerrar Menu](/feat/ux/swipe-cerrar-menu/)

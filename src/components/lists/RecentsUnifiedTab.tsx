@@ -126,7 +126,7 @@ export default function RecentsUnifiedTab() {
     </PullToRefreshWrapper>
 
     <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
-      <DialogTitle>Limpiar todo el historial?</DialogTitle>
+      <DialogTitle>&iquest;Limpiar todo el historial?</DialogTitle>
       <DialogActions>
         <Button onClick={() => setConfirmClearOpen(false)}>Cancelar</Button>
         <Button onClick={() => { clearHistory(); setConfirmClearOpen(false); }} color="error" variant="contained">Limpiar</Button>
