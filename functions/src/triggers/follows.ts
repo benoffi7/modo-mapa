@@ -75,19 +75,31 @@ export const onFollowCreated = onDocumentCreated(
       );
     });
 
-    // Notify the followed user
-    const followerSnap = await db.doc(`users/${followerId}`).get();
-    const followerName = followerSnap.exists
-      ? (followerSnap.data()!.displayName as string)
-      : 'Alguien';
+    // Notify the followed user (with dedup: skip if same actor notified in last 24h)
+    const dayAgo = new Date();
+    dayAgo.setDate(dayAgo.getDate() - 1);
+    const existingNotif = await db.collection('notifications')
+      .where('userId', '==', followedId)
+      .where('type', '==', 'new_follower')
+      .where('actorId', '==', followerId)
+      .where('createdAt', '>=', dayAgo)
+      .limit(1)
+      .get();
 
-    await createNotification(db, {
-      userId: followedId,
-      type: 'new_follower',
-      message: `${followerName} empezo a seguirte`,
-      actorId: followerId,
-      actorName: followerName,
-    });
+    if (existingNotif.empty) {
+      const followerSnap = await db.doc(`users/${followerId}`).get();
+      const followerName = followerSnap.exists
+        ? (followerSnap.data()!.displayName as string)
+        : 'Alguien';
+
+      await createNotification(db, {
+        userId: followedId,
+        type: 'new_follower',
+        message: `${followerName} empezo a seguirte`,
+        actorId: followerId,
+        actorName: followerName,
+      });
+    }
 
     await incrementCounter(db, 'follows', 1);
     await trackWrite(db, 'follows');

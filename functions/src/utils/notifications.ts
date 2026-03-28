@@ -44,6 +44,13 @@ const DEFAULT_SETTINGS: Record<string, boolean> = {
 // master notifications toggle (as long as the per-type toggle is on).
 const BYPASS_MASTER_TOGGLE: Set<NotificationType> = new Set(['feedback_response']);
 
+// Types exempt from per-recipient rate limiting (admin/system notifications)
+const EXEMPT_FROM_RECIPIENT_LIMIT: Set<NotificationType> = new Set([
+  'feedback_response', 'photo_approved', 'photo_rejected', 'ranking',
+]);
+
+const MAX_NOTIFICATIONS_PER_RECIPIENT_PER_DAY = 50;
+
 async function shouldNotify(
   db: Firestore,
   userId: string,
@@ -72,6 +79,28 @@ export async function createNotification(
   // Check user notification preferences
   const allowed = await shouldNotify(db, data.userId, data.type);
   if (!allowed) return;
+
+  // Per-recipient daily rate limit (exempt admin/system types)
+  if (!EXEMPT_FROM_RECIPIENT_LIMIT.has(data.type)) {
+    const dayAgo = new Date();
+    dayAgo.setDate(dayAgo.getDate() - 1);
+    const recentCount = await db.collection('notifications')
+      .where('userId', '==', data.userId)
+      .where('createdAt', '>=', dayAgo)
+      .count()
+      .get();
+    if (recentCount.data().count >= MAX_NOTIFICATIONS_PER_RECIPIENT_PER_DAY) {
+      // Silently suppress — don't leak rate limit to attacker
+      const { logAbuse } = await import('./abuseLogger');
+      await logAbuse(db, {
+        userId: data.actorId ?? 'unknown',
+        type: 'recipient_flood',
+        detail: `Recipient ${data.userId} exceeded ${MAX_NOTIFICATIONS_PER_RECIPIENT_PER_DAY} notifications/day. Suppressed ${data.type} from ${data.actorId ?? 'unknown'}.`,
+        severity: 'medium',
+      });
+      return;
+    }
+  }
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + EXPIRY_DAYS);
