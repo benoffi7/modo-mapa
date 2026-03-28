@@ -25,7 +25,7 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
             <Box
               key={list.id}
               onClick={() => onListClick(list)}
-              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', gap: 0.5, aspectRatio: '1 / 1' }}
+              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.5, aspectRatio: '1 / 1', textAlign: 'center' }}
             >
               <Box sx={iconCircleSx(color)}>
                 <Typography fontSize={22}>

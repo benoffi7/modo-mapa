@@ -64,7 +64,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     setIsPublic(newValue);
     try {
       await toggleListPublic(list.id, newValue);
-      toast.success(newValue ? 'Lista publica' : 'Lista privada');
+      toast.success(newValue ? 'Lista p\u00fablica' : 'Lista privada');
     } catch {
       setIsPublic(prev);
       toast.error('Error al cambiar visibilidad');
@@ -122,18 +122,19 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       </Toolbar>
       <Divider />
 
-      {list.description && (
+      {list.description && list.description !== list.name && (
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="body2" color="text.secondary">{list.description}</Typography>
         </Box>
       )}
 
-      <Box sx={{ px: 2, py: 0.5 }}>
+      <Box sx={{ px: 2, py: 0.5, mt: 0.5 }}>
         <Chip
           size="small"
-          label={isPublic ? 'Publica' : 'Privada'}
+          label={isPublic ? 'P\u00fablica' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
+          sx={{ borderRadius: 1 }}
         />
       </Box>
 

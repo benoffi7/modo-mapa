@@ -88,6 +88,14 @@ Fill this table for every editable detail/form screen:}
 |-----------|------|----------------|-------------------|-----------------|
 | {e.g. ListDetailScreen} | {list: SharedList} | {color, isPublic, itemCount} | {YES} | {onBack(updated)} |
 
+## Textos de usuario
+
+{Si el feature incluye textos visibles al usuario (toasts, labels, placeholders, titulos de dialogo, mensajes de error/exito), listarlos aca con ortografia correcta (tildes incluidas). El copy-auditor verificara en merge que no haya errores.}
+
+| Texto | Donde se usa | Notas |
+|-------|-------------|-------|
+| {e.g. "Lista publica"} | {toast en ListDetailScreen} | {tilde en publica} |
+
 ## Hooks
 
 {New or modified hooks.
