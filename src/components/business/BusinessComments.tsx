@@ -381,7 +381,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
                       slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: '16px',
+                          borderRadius: '12px',
                         },
                       }}
                     />

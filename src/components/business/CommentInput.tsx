@@ -57,7 +57,7 @@ export default memo(function CommentInput({ userCommentsToday, isSubmitting, onS
           'aria-live': 'polite' as const,
           sx: remaining <= 3 && userCommentsToday > 0 ? { color: 'warning.main' } : undefined,
         }}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px' } }}
+        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
       />
       <IconButton
         color="primary"

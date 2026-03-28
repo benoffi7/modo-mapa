@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Typography, IconButton, Toolbar, Divider, List, ListItemButton,
-  ListItemText, CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
+  Box, Typography, IconButton, Toolbar, Divider,
+  CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -16,6 +16,7 @@ import { fetchListItems, removeBusinessFromList, toggleListPublic, deleteList, u
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { cardSx } from '../../theme/cards';
 import type { SharedList, ListItem, BusinessCategory } from '../../types';
 
 interface Props {
@@ -134,7 +135,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           label={isPublic ? 'P\u00fablica' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
-          sx={{ borderRadius: 1 }}
+          sx={{ borderRadius: 1, px: 0.5 }}
         />
       </Box>
 
@@ -143,37 +144,40 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
         ) : items.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">Lista vacia</Typography>
+            <Typography variant="body2" color="text.secondary">Lista vac\u00eda</Typography>
             <Typography variant="caption" color="text.disabled">Agrega comercios desde el mapa</Typography>
           </Box>
         ) : (
-          <List disablePadding>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
             {items.map((item) => {
               const biz = allBusinesses.find((b) => b.id === item.businessId);
               if (!biz) return null;
               return (
-                <ListItemButton
+                <Box
                   key={item.id}
                   onClick={() => navigateToBusiness(biz)}
-                  sx={{ py: 1 }}
+                  sx={cardSx}
                 >
-                  <ListItemText
-                    primary={biz.name}
-                    secondary={CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
-                    primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
-                  />
-                  {canEdit && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </ListItemButton>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={600} noWrap>{biz.name}</Typography>
+                      <Typography variant="caption" color="primary.main">
+                        {CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
+                      </Typography>
+                    </Box>
+                    {canEdit && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                </Box>
               );
             })}
-          </List>
+          </Box>
         )}
       </Box>
 
@@ -185,7 +189,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
       />
 
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-        <DialogTitle>Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
+        <DialogTitle>&iquest;Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)}>Cancelar</Button>
           <Button onClick={handleDelete} color="error" variant="contained">Eliminar</Button>
