@@ -6,24 +6,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { collection, getDocs, doc, setDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-
-interface AchievementCondition {
-  metric: string;
-  threshold: number;
-}
-
-interface Achievement {
-  id: string;
-  label: string;
-  description: string;
-  icon: string;
-  condition: AchievementCondition;
-  order: number;
-  active: boolean;
-}
+import type { Achievement } from '../../types';
+import { fetchAchievements, saveAllAchievements } from '../../services/achievements';
 
 const METRIC_OPTIONS = [
   { value: 'checkins_unique', label: 'Check-ins unicos' },
@@ -60,8 +44,8 @@ export default function AchievementsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.ACHIEVEMENTS), orderBy('order')));
-      setAchievements(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Achievement)));
+      const data = await fetchAchievements();
+      setAchievements(data);
     } catch {
       setError('Error al cargar logros');
     } finally {
@@ -97,15 +81,7 @@ export default function AchievementsPanel() {
     setSaving(true);
     setError(null);
     try {
-      const existingSnap = await getDocs(collection(db, COLLECTIONS.ACHIEVEMENTS));
-      const currentIds = new Set(achievements.map((a) => a.id));
-      for (const d of existingSnap.docs) {
-        if (!currentIds.has(d.id)) await deleteDoc(d.ref);
-      }
-      for (const a of achievements) {
-        const { id, ...data } = a;
-        await setDoc(doc(db, COLLECTIONS.ACHIEVEMENTS, id), { ...data, updatedAt: new Date() });
-      }
+      await saveAllAchievements(achievements);
       await load();
     } catch {
       setError('Error al guardar');

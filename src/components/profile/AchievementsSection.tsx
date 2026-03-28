@@ -1,9 +1,18 @@
 import { Box, Card, CardActionArea, Typography, LinearProgress } from '@mui/material';
+import type { SvgIconProps } from '@mui/material';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import FlightOutlinedIcon from '@mui/icons-material/FlightOutlined';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
+import { ACHIEVEMENT_DEFINITIONS } from '../../constants/achievements';
+
+const ACHIEVEMENT_ICONS: Record<string, React.ComponentType<SvgIconProps>> = {
+  ExploreOutlined: ExploreOutlinedIcon,
+  PeopleOutlined: PeopleOutlinedIcon,
+  RateReviewOutlined: RateReviewOutlinedIcon,
+  FlightOutlined: FlightOutlinedIcon,
+};
 
 interface Achievement {
   id: string;
@@ -20,13 +29,20 @@ interface Props {
 export default function AchievementsSection({ onViewAll }: Props) {
   const { stats } = useMyCheckIns();
 
-  // Hardcoded default achievements — will be replaced by Firestore data
-  const achievements: Achievement[] = [
-    { id: 'explorador', label: 'Explorador', icon: <ExploreOutlinedIcon color="success" />, current: stats.uniqueBusinesses, target: 10 },
-    { id: 'social', label: 'Social', icon: <PeopleOutlinedIcon color="info" />, current: 0, target: 5 },
-    { id: 'critico', label: 'Critico', icon: <RateReviewOutlinedIcon color="warning" />, current: 0, target: 10 },
-    { id: 'viajero', label: 'Viajero', icon: <FlightOutlinedIcon color="secondary" />, current: 0, target: 3 },
-  ];
+  const resolveProgress = (id: string): number => {
+    if (id === 'explorador') return stats.uniqueBusinesses;
+    return 0;
+  };
+
+  // First 4 achievements — will be replaced by Firestore data
+  const achievements: Achievement[] = ACHIEVEMENT_DEFINITIONS.slice(0, 4).map((def) => {
+    const Icon = ACHIEVEMENT_ICONS[def.icon];
+    return {
+      ...def,
+      icon: <Icon color={def.iconColor} />,
+      current: resolveProgress(def.id),
+    };
+  });
 
   const sorted = [...achievements].sort((a, b) => (b.current / b.target) - (a.current / a.target));
 

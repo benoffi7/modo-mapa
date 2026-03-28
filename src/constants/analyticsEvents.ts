@@ -37,6 +37,7 @@ export const EVT_RECOMMENDATION_LIST_VIEWED = 'recommendation_list_viewed';
 
 // Force update events (#191)
 export const EVT_FORCE_UPDATE_TRIGGERED = 'force_update_triggered';
+export const EVT_FORCE_UPDATE_LIMIT_REACHED = 'force_update_limit_reached';
 
 // Account deletion events (#192)
 export const EVT_ACCOUNT_DELETED = 'account_deleted';

@@ -15,6 +15,7 @@ import { userProfileConverter } from '../config/converters';
 import { setUserProperty, trackEvent } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import { logger } from '../utils/logger';
+import { getAvatarById } from '../constants/avatars';
 import {
   linkAnonymousWithEmail,
   signInWithEmail as signInWithEmailService,
@@ -38,6 +39,8 @@ interface AuthContextType {
   user: User | null;
   displayName: string | null;
   setDisplayName: (name: string) => Promise<void>;
+  avatarId: string | null;
+  setAvatarId: (id: string) => Promise<void>;
   isLoading: boolean;
   authError: string | null;
   clearAuthError: () => void;
@@ -56,6 +59,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   displayName: null,
   setDisplayName: async () => {},
+  avatarId: null,
+  setAvatarId: async () => {},
   isLoading: true,
   authError: null,
   clearAuthError: () => {},
@@ -73,6 +78,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayNameState] = useState<string | null>(null);
+  const [avatarId, setAvatarIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMethod, setAuthMethod] = useState<AuthMethod>('anonymous');
@@ -91,7 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProperty('auth_type', method);
         const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
         if (userDoc.exists()) {
-          setDisplayNameState(userDoc.data().displayName || null);
+          const data = userDoc.data();
+          setDisplayNameState(data.displayName || null);
+          setAvatarIdState(data.avatarId ?? null);
         }
       } else {
         const isAdminRoute = pathnameRef.current.startsWith('/admin');
@@ -127,6 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setDisplayNameState(trimmed);
   }, [user]);
+
+  const setAvatarId = useCallback(async (id: string) => {
+    if (!user) return;
+    if (!getAvatarById(id)) return;
+    const prev = avatarId;
+    setAvatarIdState(id);
+    try {
+      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+      await updateDoc(userRef, { avatarId: id });
+    } catch (error) {
+      setAvatarIdState(prev);
+      if (import.meta.env.DEV) logger.error('Error setting avatar:', error);
+    }
+  }, [user, avatarId]);
 
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
@@ -220,10 +242,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authMethod]);
 
   const value = useMemo<AuthContextType>(() => ({
-    user, displayName, setDisplayName, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
+    user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
     authMethod, emailVerified, linkEmailPassword, signInWithEmail,
     resendVerification, refreshEmailVerified, changePassword,
-  }), [user, displayName, setDisplayName, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
+  }), [user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
     authMethod, emailVerified, linkEmailPassword, signInWithEmail,
     resendVerification, refreshEmailVerified, changePassword]);
 

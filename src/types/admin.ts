@@ -107,3 +107,29 @@ export interface ListStats {
   totalItems: number;
   avgItemsPerList: number;
 }
+
+export interface Special {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  type: 'featured_list' | 'trending' | 'custom_link';
+  referenceId: string;
+  order: number;
+  active: boolean;
+}
+
+export interface AchievementCondition {
+  metric: string;
+  threshold: number;
+}
+
+export interface Achievement {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  condition: AchievementCondition;
+  order: number;
+  active: boolean;
+}

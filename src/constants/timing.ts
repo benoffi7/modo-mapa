@@ -15,3 +15,6 @@ export const FORCE_UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 
 /** Minimum time between forced refreshes to prevent loops (5 minutes) */
 export const FORCE_UPDATE_COOLDOWN_MS = 5 * 60 * 1000;
+
+/** Maximum number of forced refreshes allowed within the cooldown window */
+export const MAX_FORCE_UPDATE_RELOADS = 3;

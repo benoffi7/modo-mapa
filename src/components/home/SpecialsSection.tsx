@@ -10,22 +10,11 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
 import { trackEvent } from '../../utils/analytics';
+import { logger } from '../../utils/logger';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
-
-interface Special {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  type: string;
-  referenceId: string;
-  order: number;
-  active: boolean;
-}
+import type { Special } from '../../types';
+import { fetchActiveSpecials } from '../../services/specials';
 
 const ICON_MAP: Record<string, React.ReactElement> = {
   LocalFireDepartment: <LocalFireDepartmentIcon color="error" />,
@@ -58,13 +47,13 @@ export default function SpecialsSection() {
   };
 
   useEffect(() => {
-    getDocs(query(collection(db, COLLECTIONS.SPECIALS), where('active', '==', true), orderBy('order')))
-      .then((snap) => {
-        if (snap.size > 0) {
-          setSpecials(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special)));
+    fetchActiveSpecials()
+      .then((data) => {
+        if (data.length > 0) {
+          setSpecials(data);
         }
       })
-      .catch((err) => { console.warn('[SpecialsSection] Failed to load from Firestore, using fallback:', err); });
+      .catch((err) => { logger.warn('[SpecialsSection] Failed to load from Firestore, using fallback:', err); });
   }, []);
 
   return (

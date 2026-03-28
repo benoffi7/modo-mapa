@@ -8,20 +8,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { collection, getDocs, doc, setDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { COLLECTIONS } from '../../config/collections';
-
-interface Special {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  type: 'featured_list' | 'trending' | 'custom_link';
-  referenceId: string;
-  order: number;
-  active: boolean;
-}
+import type { Special } from '../../types';
+import { fetchSpecials, saveAllSpecials } from '../../services/specials';
 
 const EMPTY_SPECIAL: Omit<Special, 'id' | 'order'> = {
   title: '',
@@ -46,8 +34,8 @@ export default function SpecialsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.SPECIALS), orderBy('order')));
-      setSpecials(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special)));
+      const data = await fetchSpecials();
+      setSpecials(data);
     } catch {
       setError('Error al cargar especiales');
     } finally {
@@ -96,17 +84,7 @@ export default function SpecialsPanel() {
     setSaving(true);
     setError(null);
     try {
-      // Delete removed specials
-      const existingSnap = await getDocs(collection(db, COLLECTIONS.SPECIALS));
-      const currentIds = new Set(specials.map((s) => s.id));
-      for (const d of existingSnap.docs) {
-        if (!currentIds.has(d.id)) await deleteDoc(d.ref);
-      }
-      // Upsert all current specials
-      for (const s of specials) {
-        const { id, ...data } = s;
-        await setDoc(doc(db, COLLECTIONS.SPECIALS, id), { ...data, updatedAt: new Date() });
-      }
+      await saveAllSpecials(specials);
       await load();
     } catch {
       setError('Error al guardar');

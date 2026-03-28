@@ -8,11 +8,11 @@ import { toDate } from '../utils/formatDate';
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
   toFirestore(profile: UserProfile) {
-    return { displayName: profile.displayName, createdAt: profile.createdAt };
+    return { displayName: profile.displayName, avatarId: profile.avatarId, createdAt: profile.createdAt };
   },
   fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): UserProfile {
     const d = snapshot.data(options);
-    return { displayName: d.displayName, createdAt: toDate(d.createdAt) };
+    return { displayName: d.displayName, avatarId: d.avatarId, createdAt: toDate(d.createdAt) };
   },
 };
 

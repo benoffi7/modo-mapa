@@ -14,6 +14,7 @@ export * from './criteria';
 export * from './suggestions';
 export * from './auth';
 export * from './offline';
+export * from './achievements';
 
 // Re-export from existing location (already centralized)
 export { COLLECTIONS } from '../config/collections';
