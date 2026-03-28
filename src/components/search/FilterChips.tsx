@@ -1,5 +1,5 @@
 import { Box, Chip, Divider } from '@mui/material';
-import { useFilters } from '../../context/MapContext';
+import { useFilters } from '../../context/FiltersContext';
 import { trackEvent } from '../../utils/analytics';
 import { PREDEFINED_TAGS } from '../../types';
 import { PRICE_CHIPS } from '../../constants/business';

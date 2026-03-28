@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
-import { FiltersContext } from '../context/MapContext';
+import { FiltersContext } from '../context/FiltersContext';
 
 vi.mock('./usePriceLevelFilter', () => ({
   usePriceLevelFilter: () => new Map(),

@@ -2,7 +2,7 @@ import { Button } from '@mui/material';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import { trackEvent } from '../../utils/analytics';
 import type { Business } from '../../types';
-import { useFilters } from '../../context/MapContext';
+import { useFilters } from '../../context/FiltersContext';
 
 interface Props {
   business: Business;

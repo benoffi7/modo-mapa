@@ -15,8 +15,8 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn().mockReturnValue({ user: { uid: 'u1' } }),
 }));
 
-vi.mock('../context/MapContext', () => ({
-  useFilters: vi.fn().mockReturnValue({ userLocation: null }),
+vi.mock('./useSortLocation', () => ({
+  useSortLocation: vi.fn().mockReturnValue({ lat: -34.60, lng: -58.38 }),
 }));
 
 vi.mock('../services/suggestions', () => ({
@@ -27,7 +27,7 @@ vi.mock('../services/suggestions', () => ({
 import { useSuggestions } from './useSuggestions';
 import { allBusinesses } from './useBusinesses';
 import { useAuth } from '../context/AuthContext';
-import { useFilters } from '../context/MapContext';
+import { useSortLocation } from './useSortLocation';
 import { fetchUserSuggestionData } from '../services/suggestions';
 import { SUGGESTION_WEIGHTS, MAX_SUGGESTIONS } from '../constants/suggestions';
 
@@ -48,10 +48,10 @@ describe('useSuggestions — scoring algorithm', () => {
     allBusinesses.length = 0;
     allBusinesses.push(...mockBusinesses);
     (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({ user: { uid: 'u1' } });
-    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({ userLocation: null });
+    (useSortLocation as ReturnType<typeof vi.fn>).mockReturnValue({ lat: -34.60, lng: -58.38 });
   });
 
-  it('returns empty suggestions when user has no activity', async () => {
+  it('returns nearby fallback when user has no activity', async () => {
     (fetchUserSuggestionData as ReturnType<typeof vi.fn>).mockResolvedValue({
       favorites: [], ratings: [], userTags: [],
     });
@@ -59,7 +59,9 @@ describe('useSuggestions — scoring algorithm', () => {
     const { result } = renderHook(() => useSuggestions());
     // Wait for async effect
     await vi.waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.suggestions).toEqual([]);
+    // With location fallback, returns 3 nearest businesses
+    expect(result.current.suggestions.length).toBe(3);
+    expect(result.current.suggestions.every((s) => s.reasons.includes('nearby'))).toBe(true);
   });
 
   it('scores category match with correct weight', async () => {
@@ -120,18 +122,14 @@ describe('useSuggestions — scoring algorithm', () => {
     const { result } = renderHook(() => useSuggestions());
     await vi.waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // b4 has tag 'barato' → tagMatch
+    // b4 has tag 'barato' + nearby → tagMatch + nearbyBonus
     const b4 = result.current.suggestions.find((s) => s.business.id === 'b4');
     expect(b4).toBeDefined();
     expect(b4!.reasons).toContain('tags');
-    expect(b4!.score).toBe(SUGGESTION_WEIGHTS.tagMatch);
+    expect(b4!.score).toBe(SUGGESTION_WEIGHTS.tagMatch + SUGGESTION_WEIGHTS.nearbyBonus);
   });
 
   it('adds nearby bonus when user has location', async () => {
-    // b1 is at -34.60, -58.38
-    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({
-      userLocation: { lat: -34.60, lng: -58.38 },
-    });
     (fetchUserSuggestionData as ReturnType<typeof vi.fn>).mockResolvedValue({
       favorites: [{ businessId: 'b2', userId: 'u1', createdAt: new Date() }], // cafe
       ratings: [],
@@ -154,9 +152,6 @@ describe('useSuggestions — scoring algorithm', () => {
   });
 
   it('combines multiple scoring factors', async () => {
-    (useFilters as ReturnType<typeof vi.fn>).mockReturnValue({
-      userLocation: { lat: -34.60, lng: -58.38 },
-    });
     (fetchUserSuggestionData as ReturnType<typeof vi.fn>).mockResolvedValue({
       favorites: [{ businessId: 'b1', userId: 'u1', createdAt: new Date() }],
       ratings: [],
@@ -210,11 +205,12 @@ describe('useSuggestions — scoring algorithm', () => {
     expect(result.current.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS);
   });
 
-  it('returns empty when user is null', async () => {
+  it('returns nearby fallback when user is null', async () => {
     (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({ user: null });
 
     const { result } = renderHook(() => useSuggestions());
-    expect(result.current.suggestions).toEqual([]);
+    // No user → no fetch, but location fallback still returns nearby
+    expect(result.current.suggestions.length).toBe(3);
     expect(result.current.isLoading).toBe(false);
   });
 });

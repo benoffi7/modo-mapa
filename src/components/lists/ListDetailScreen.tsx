@@ -136,7 +136,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           label={isPublic ? 'Pública' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
-          sx={{ borderRadius: 1, px: 0.5 }}
+          sx={{ borderRadius: 1, px: 1 }}
         />
       </Box>
 

@@ -2,7 +2,7 @@ import { Drawer, Box, Typography, Button, List, Divider, CircularProgress, IconB
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NotificationItem from './NotificationItem';
-import { useSelection } from '../../context/MapContext';
+import { useSelection } from '../../context/SelectionContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import type { AppNotification } from '../../types';
 

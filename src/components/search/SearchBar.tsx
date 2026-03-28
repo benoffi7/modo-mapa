@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Paper, InputBase, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useFilters } from '../../context/MapContext';
+import { useFilters } from '../../context/FiltersContext';
 import { trackEvent } from '../../utils/analytics';
 
 export default function SearchBar() {

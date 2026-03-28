@@ -1,4 +1,4 @@
-import { useFilters } from '../context/MapContext';
+import { useFilters } from '../context/FiltersContext';
 import { useUserSettings } from './useUserSettings';
 import { OFFICE_LOCATION } from '../constants/map';
 

@@ -3,7 +3,7 @@ import { SwipeableDrawer, Box, Tabs, Tab, IconButton, Tooltip } from '@mui/mater
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAuth } from '../../context/AuthContext';
-import { useSelection } from '../../context/MapContext';
+import { useSelection } from '../../context/SelectionContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useBusinessRating } from '../../hooks/useBusinessRating';
 import { useVisitHistory } from '../../hooks/useVisitHistory';

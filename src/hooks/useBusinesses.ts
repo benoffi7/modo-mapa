@@ -1,5 +1,5 @@
 import { useMemo, useDeferredValue } from 'react';
-import { useFilters } from '../context/MapContext';
+import { useFilters } from '../context/FiltersContext';
 import { usePriceLevelFilter } from './usePriceLevelFilter';
 import type { Business } from '../types';
 import businessesData from '../data/businesses.json';

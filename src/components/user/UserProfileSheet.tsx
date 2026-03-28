@@ -7,7 +7,7 @@ import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { useSelection } from '../../context/MapContext';
+import { useSelection } from '../../context/SelectionContext';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateMedium } from '../../utils/formatDate';
 import { MEDALS } from '../../constants/rankings';

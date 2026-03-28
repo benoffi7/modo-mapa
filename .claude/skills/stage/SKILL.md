@@ -63,6 +63,21 @@ bash scripts/dev-env.sh stop
 
 If any flow is broken locally, fix before deploying. Do NOT deploy untested features.
 
+### Step 1c: Bump patch version
+
+Bump the patch version in package.json to test the force-update system on staging:
+
+```bash
+npm version patch --no-git-tag-version
+```
+
+Commit the version bump:
+
+```bash
+git add package.json package-lock.json
+git commit -m "chore: bump version to $(node -p 'require(\"./package.json\").version')"
+```
+
 ### Step 2: Push feature branch
 
 ```bash

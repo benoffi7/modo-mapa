@@ -175,6 +175,8 @@ const HELP_GROUPS: HelpGroup[] = [
   },
 ];
 
+declare const __APP_VERSION__: string;
+
 export default function HelpSection() {
   const [expanded, setExpanded] = useState<string | false>(false);
 
@@ -184,6 +186,9 @@ export default function HelpSection() {
 
   return (
     <Box sx={{ pb: 2 }}>
+      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center', pt: 1 }}>
+        Modo Mapa v{__APP_VERSION__}
+      </Typography>
       {HELP_GROUPS.map((group) => (
         <Box key={group.label}>
           <Chip
