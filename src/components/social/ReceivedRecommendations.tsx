@@ -11,7 +11,7 @@ import { useConnectivity } from '../../hooks/useConnectivity';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { getRecommendationsCollection, getReceivedRecommendationsConstraints, markRecommendationAsRead, markAllRecommendationsAsRead } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
-import { PaginatedListShell } from './PaginatedListShell';
+import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MSG_SOCIAL } from '../../constants/messages';
 

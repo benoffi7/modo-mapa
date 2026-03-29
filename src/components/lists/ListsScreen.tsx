@@ -6,7 +6,7 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import CreateListDialog from '../menu/CreateListDialog';
+import CreateListDialog from './CreateListDialog';
 import { useTab } from '../../context/TabContext';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { trackEvent } from '../../utils/analytics';
@@ -14,8 +14,8 @@ import { EVT_SUB_TAB_SWITCHED } from '../../constants/analyticsEvents';
 import { NAV_CHIP_SX } from '../../constants/ui';
 import type { ListsSubTab } from '../../types';
 
-const FavoritesList = lazy(() => import('../menu/FavoritesList'));
-const SharedListsView = lazy(() => import('../menu/SharedListsView'));
+const FavoritesList = lazy(() => import('./FavoritesList'));
+const SharedListsView = lazy(() => import('./SharedListsView'));
 const RecentsUnifiedTab = lazy(() => import('./RecentsUnifiedTab'));
 const CollaborativeTab = lazy(() => import('./CollaborativeTab'));
 

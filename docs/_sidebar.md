@@ -276,6 +276,8 @@
     - [PRD](/feat/security/feedback-rating-validation/prd.md)
     - [Specs](/feat/security/feedback-rating-validation/specs.md)
     - [Plan](/feat/security/feedback-rating-validation/plan.md)
+  - [Ratings Rate Limit](/feat/security/ratings-rate-limit/)
+    - [PRD](/feat/security/ratings-rate-limit/prd.md)
   - [Rate Limit Toggle Abuse](/feat/security/rate-limit-toggle-abuse/)
     - [PRD](/feat/security/rate-limit-toggle-abuse/prd.md)
     - [Specs](/feat/security/rate-limit-toggle-abuse/specs.md)
@@ -284,6 +286,8 @@
     - [PRD](/feat/security/revocar-telegram-bot-token/prd.md)
     - [Specs](/feat/security/revocar-telegram-bot-token/specs.md)
     - [Plan](/feat/security/revocar-telegram-bot-token/plan.md)
+  - [UserTags Rate Limit Trigger](/feat/security/usertags-rate-limit-trigger/)
+    - [PRD](/feat/security/usertags-rate-limit-trigger/prd.md)
 
 - **[Social](/feat/social/)**
   - [Check-in](/feat/social/check-in/)

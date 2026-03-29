@@ -27,7 +27,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
 import { trackEvent } from '../../utils/analytics';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
-import ListFilters from './ListFilters';
+import ListFilters from '../common/ListFilters';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Favorite } from '../../types';
 

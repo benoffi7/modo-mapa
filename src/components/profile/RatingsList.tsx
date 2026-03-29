@@ -18,7 +18,7 @@ import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateMedium } from '../../utils/formatDate';
-import ListFilters from './ListFilters';
+import ListFilters from '../common/ListFilters';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, Rating as RatingType } from '../../types';
 
