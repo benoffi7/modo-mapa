@@ -54,7 +54,7 @@ Borrar `src/context/MapContext.tsx` (marcado `@deprecated`, reemplazado por `Sel
 
 ### S5. Actualizar documentacion de referencia
 
-Actualizar `docs/reference/tests.md` para reflejar la reduccion en el total de tests y archivos de test. Actualizar `docs/reference/patterns.md` para remover referencias a hooks eliminados (seccion "Extracted hooks (#195)"). Actualizar `docs/reference/project-reference.md` con el nuevo conteo de tests.
+Actualizar `docs/reference/tests.md` para reflejar la reduccion en el total de tests y archivos de test. Actualizar `docs/reference/patterns.md` para: (a) remover referencias a hooks eliminados (seccion "Extracted hooks (#195)"), (b) corregir referencias a `SideMenu` que ya no existe en `new-home` (reemplazado por `TabShell`/`MapAppShell`), (c) remover referencia a `QuestionInput` como componente extraido (es codigo muerto). Actualizar `docs/reference/project-reference.md` con el nuevo conteo de tests.
 
 ---
 

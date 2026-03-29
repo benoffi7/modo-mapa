@@ -10,7 +10,7 @@
 
 ## Contexto
 
-La infraestructura de dark mode esta completa desde hace varias versiones: `ColorModeContext` con provider, `useColorMode` hook, `getDesignTokens(mode)` en `src/theme/index.ts`, persistencia en localStorage, respeto de `prefers-color-scheme`, y tracking de analytics via `setUserProperty('theme', mode)`. Sin embargo, no existe ningun punto de entrada en la UI para que el usuario active o desactive el modo oscuro manualmente. El patterns.md ya documenta que el toggle deberia estar en "SideMenu footer".
+La infraestructura de dark mode esta completa desde hace varias versiones: `ColorModeContext` con provider, `useColorMode` hook, `getDesignTokens(mode)` en `src/theme/index.ts`, persistencia en localStorage, respeto de `prefers-color-scheme`, y tracking de analytics via `setUserProperty('theme', mode)`. Sin embargo, no existe ningun punto de entrada en la UI para que el usuario active o desactive el modo oscuro manualmente. Nota: `patterns.md` aun referencia "Toggle en SideMenu footer", pero `SideMenu` fue eliminado en el rediseno v3 (`new-home`). La ubicacion correcta es `SettingsPanel`.
 
 ## Problema
 
