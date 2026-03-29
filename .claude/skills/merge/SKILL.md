@@ -62,13 +62,15 @@ npx vitest run --dir src
 ### 1d. Functions tests
 
 ```bash
-cd functions && npm run test:run
+cd $WORKDIR/functions && npm run test:run
 ```
+
+**IMPORTANT:** Always use `$WORKDIR/functions` (absolute path), not `cd functions`. The latter changes cwd permanently, causing subsequent commands like `npx vite build` to fail because they run from `functions/` instead of the project root.
 
 ### 1e. Build check
 
 ```bash
-npx vite build
+cd $WORKDIR && npx vite build
 ```
 
 ### 1f. Test coverage for new files
