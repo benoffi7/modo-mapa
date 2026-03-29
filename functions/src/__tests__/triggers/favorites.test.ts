@@ -8,6 +8,8 @@ const {
   mockTrackDelete,
   mockIncrementBusinessCount,
   mockFanOutToFollowers,
+  mockCheckRateLimit,
+  mockLogAbuse,
 } = vi.hoisted(() => ({
   handlers: {} as Record<string, (event: unknown) => Promise<void>>,
   mockGetFirestore: vi.fn(),
@@ -16,6 +18,8 @@ const {
   mockTrackDelete: vi.fn().mockResolvedValue(undefined),
   mockIncrementBusinessCount: vi.fn().mockResolvedValue(undefined),
   mockFanOutToFollowers: vi.fn().mockResolvedValue(undefined),
+  mockCheckRateLimit: vi.fn().mockResolvedValue(false),
+  mockLogAbuse: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-admin/firestore', () => ({
@@ -45,6 +49,14 @@ vi.mock('../../utils/aggregates', () => ({
 
 vi.mock('../../utils/fanOut', () => ({
   fanOutToFollowers: (...args: unknown[]) => mockFanOutToFollowers(...args),
+}));
+
+vi.mock('../../utils/rateLimiter', () => ({
+  checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+}));
+
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: (...args: unknown[]) => mockLogAbuse(...args),
 }));
 
 function createMockDb(overrides?: {
@@ -87,7 +99,7 @@ describe('onFavoriteCreated', () => {
     createMockDb();
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ businessId: 'biz1', userId: 'u1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1', userId: 'u1' }) },
     });
 
     expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'favorites', 1);
@@ -98,7 +110,7 @@ describe('onFavoriteCreated', () => {
     createMockDb();
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ businessId: 'biz1', userId: 'u1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1', userId: 'u1' }) },
     });
 
     expect(mockIncrementBusinessCount).toHaveBeenCalledWith(
@@ -113,7 +125,7 @@ describe('onFavoriteCreated', () => {
     createMockDb();
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ userId: 'u1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ userId: 'u1' }) },
     });
 
     expect(mockIncrementBusinessCount).not.toHaveBeenCalled();
@@ -123,7 +135,7 @@ describe('onFavoriteCreated', () => {
     createMockDb({ userName: 'Gonzalo', businessName: 'Cafe Mapa' });
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ businessId: 'biz1', userId: 'u1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1', userId: 'u1' }) },
     });
 
     expect(mockFanOutToFollowers).toHaveBeenCalledWith(
@@ -143,7 +155,7 @@ describe('onFavoriteCreated', () => {
     createMockDb();
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ businessId: 'biz1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1' }) },
     });
 
     expect(mockFanOutToFollowers).not.toHaveBeenCalled();
@@ -158,7 +170,7 @@ describe('onFavoriteCreated', () => {
 
     await onCreated()({
       params: { favoriteId: 'fav1' },
-      data: { data: () => ({ businessId: 'biz1', userId: 'u1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1', userId: 'u1' }) },
     });
 
     expect(mockFanOutToFollowers).toHaveBeenCalledWith(
@@ -187,7 +199,7 @@ describe('onFavoriteDeleted', () => {
   it('decrements counter and tracks delete', async () => {
     createMockDb();
     await onDeleted()({
-      data: { data: () => ({ businessId: 'biz1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1' }) },
     });
 
     expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'favorites', -1);
@@ -197,7 +209,7 @@ describe('onFavoriteDeleted', () => {
   it('decrements business count when businessId present', async () => {
     createMockDb();
     await onDeleted()({
-      data: { data: () => ({ businessId: 'biz1' }) },
+      data: { ref: { delete: vi.fn() }, data: () => ({ businessId: 'biz1' }) },
     });
 
     expect(mockIncrementBusinessCount).toHaveBeenCalledWith(
@@ -211,7 +223,7 @@ describe('onFavoriteDeleted', () => {
   it('does NOT decrement business count when businessId is missing', async () => {
     createMockDb();
     await onDeleted()({
-      data: { data: () => ({}) },
+      data: { ref: { delete: vi.fn() }, data: () => ({}) },
     });
 
     expect(mockIncrementBusinessCount).not.toHaveBeenCalled();

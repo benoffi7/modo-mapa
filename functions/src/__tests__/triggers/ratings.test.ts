@@ -31,6 +31,14 @@ vi.mock('../../utils/fanOut', () => ({
   fanOutToFollowers: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../utils/rateLimiter', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue(false),
+}));
+
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Import the raw handler — we'll call it directly instead of going through onDocumentWritten
 vi.mock('firebase-functions/v2/firestore', () => ({
   onDocumentWritten: (_path: string, handler: (...args: unknown[]) => unknown) => handler,
@@ -51,7 +59,7 @@ function makeEvent(
         ? { exists: true, data: () => beforeData }
         : { exists: false, data: () => null },
       after: afterData
-        ? { exists: true, data: () => afterData }
+        ? { exists: true, data: () => afterData, ref: { delete: vi.fn() } }
         : { exists: false, data: () => null },
     },
   };

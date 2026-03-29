@@ -170,6 +170,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `customTags` | 10/business por usuario + 50/día por usuario |
 | `favorites` | 100/día por usuario |
 | `priceLevels` | 50/día por usuario |
+| `ratings` | 30/día por usuario |
+| `userTags` | 100/día por usuario |
 | `feedback` | 5/día por usuario |
 | `notifications` | 50/día por destinatario (admin types exempt) |
 

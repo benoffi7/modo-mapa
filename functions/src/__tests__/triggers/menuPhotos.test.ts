@@ -86,14 +86,14 @@ describe('onMenuPhotoCreated', () => {
     await onCreated()({
       params: { photoId: 'photo123' },
       data: {
-        data: () => ({ storagePath: 'menus/biz1/photo123.jpg', businessId: 'biz1' }),
+        data: () => ({ storagePath: 'menus/u1/biz1/photo123.jpg', businessId: 'biz1', userId: 'u1' }),
         ref: { update: mockUpdate },
       },
     });
 
     expect(mockSharp).toHaveBeenCalled();
     expect(mockUpdate).toHaveBeenCalledWith({
-      thumbnailPath: 'menus/biz1/photo123_thumb.jpg',
+      thumbnailPath: 'menus/u1/biz1/photo123_thumb.jpg',
     });
   });
 
@@ -103,7 +103,7 @@ describe('onMenuPhotoCreated', () => {
     await onCreated()({
       params: { photoId: 'photo123' },
       data: {
-        data: () => ({ storagePath: 'menus/biz1/photo123.jpg', businessId: 'biz1' }),
+        data: () => ({ storagePath: 'menus/u1/biz1/photo123.jpg', businessId: 'biz1', userId: 'u1' }),
         ref: { update: vi.fn().mockResolvedValue(undefined) },
       },
     });
@@ -123,7 +123,7 @@ describe('onMenuPhotoCreated', () => {
     await onCreated()({
       params: { photoId: 'photo123' },
       data: {
-        data: () => ({ storagePath: 'menus/biz1/photo123.jpg', businessId: 'biz1' }),
+        data: () => ({ storagePath: 'menus/u1/biz1/photo123.jpg', businessId: 'biz1', userId: 'u1' }),
         ref: { update: vi.fn() },
       },
     });
@@ -139,13 +139,13 @@ describe('onMenuPhotoCreated', () => {
     await onCreated()({
       params: { photoId: 'myPhotoId' },
       data: {
-        data: () => ({ storagePath: 'menus/bizABC/original.jpg', businessId: 'bizABC' }),
+        data: () => ({ storagePath: 'menus/u2/bizABC/original.jpg', businessId: 'bizABC', userId: 'u2' }),
         ref: { update: mockUpdate },
       },
     });
 
     expect(mockUpdate).toHaveBeenCalledWith({
-      thumbnailPath: 'menus/bizABC/myPhotoId_thumb.jpg',
+      thumbnailPath: 'menus/u2/bizABC/myPhotoId_thumb.jpg',
     });
   });
 });

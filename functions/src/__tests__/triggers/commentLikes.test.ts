@@ -44,6 +44,7 @@ vi.mock('../../utils/counters', () => ({
   trackDelete: (...args: unknown[]) => mockTrackDelete(...args),
 }));
 vi.mock('../../utils/notifications', () => ({ createNotification: (...args: unknown[]) => mockCreateNotification(...args) }));
+vi.mock('../../utils/abuseLogger', () => ({ logAbuse: vi.fn().mockResolvedValue(undefined) }));
 
 // --- Mock DB helper ---
 
