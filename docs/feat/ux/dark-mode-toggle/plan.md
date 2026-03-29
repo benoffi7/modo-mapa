@@ -26,12 +26,14 @@ Esta fase es manual (QA). No genera commits de codigo a menos que se detecten pr
 | Paso | Componente | Que verificar |
 |------|-----------|---------------|
 | 1 | BusinessSheet (tabs Info/Opiniones) | Contraste de texto, bordes de tabs, fondos de cards |
-| 2 | ProfileScreen + SettingsPanel | Contraste de labels, switches, dividers |
+| 2 | ProfileScreen + SettingsPanel + SettingsMenu | Contraste de labels, switches, dividers |
 | 3 | Dialogs (EmailPasswordDialog, ChangePasswordDialog, DeleteAccountDialog) | Fondos de dialog, inputs, botones |
 | 4 | SearchScreen (mapa, marcadores, SearchBar) | Fondo del mapa (Google Maps tiene su propio dark mode), SearchBar contraste |
-| 5 | NotificationsSection (drawer, badges) | Badges visibles, texto legible |
+| 5 | NotificationsSection (badges) | Badges visibles, texto legible |
 | 6 | OnboardingChecklist + BenefitsDialog | Cards de progreso, fondos de dialog |
 | 7 | SocialScreen (tabs, ActivityFeed, UserProfileSheet) | Cards de actividad, avatares, botones follow |
+| 8 | TabBar (bottom navigation) | Iconos y labels visibles, indicador activo |
+| 9 | HomeScreen (GreetingHeader, QuickActions, ForYouSection) | Cards, fondos, texto |
 
 **Si se detectan problemas de contraste:** Crear fixes en `src/theme/index.ts` (ajustar `getDesignTokens`) o en los `sx` props de componentes especificos. Usar `relativeLuminance` y `getContrastText` de `src/utils/contrast.ts` para validar combinaciones criticas contra WCAG 2.0 AA (ratio >= 4.5:1 para texto normal).
 
@@ -39,7 +41,7 @@ Esta fase es manual (QA). No genera commits de codigo a menos que se detecten pr
 
 | Paso | Archivo | Cambio |
 |------|---------|--------|
-| 1 | `docs/reference/patterns.md` | Actualizar la entrada de Dark mode: cambiar "Toggle en SideMenu footer" a "Toggle en SettingsPanel seccion Apariencia" |
+| 1 | `docs/reference/patterns.md` | Actualizar la entrada de Dark mode: cambiar "Toggle en SideMenu footer" a "Toggle en SettingsPanel seccion Apariencia" (nota: SideMenu fue reemplazado por TabShell/TabBar en new-home) |
 | 2 | `docs/reference/tests.md` | Mover `ColorModeContext.tsx` de pending a completado en el inventario, agregar `SettingsPanel.test.tsx` al inventario de componentes |
 | 3 | `docs/reference/features.md` | Agregar "Toggle de dark mode en SettingsPanel" al listado de features UX |
 

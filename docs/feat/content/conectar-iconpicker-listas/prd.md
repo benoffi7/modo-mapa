@@ -154,7 +154,7 @@ No se requiere esfuerzo adicional. El patron existente de Firestore persistent c
 
 - [x] Logica de negocio en hooks/services: la persistencia va en `services/sharedLists.ts`
 - [x] Componentes nuevos son reutilizables: no se crean componentes nuevos, se usa `IconPicker` existente
-- [x] No se agregan useState de logica de negocio a AppShell o SideMenu
+- [x] No se agregan useState de logica de negocio a TabShell o MapAppShell
 - [x] Props explicitas: `IconPicker` ya usa props explicitas (`open`, `onClose`, `onSelect`, `selectedId`)
 - [x] Cada prop de accion tiene handler real: `onSelect` conectara a `updateList`/`createList`
 - [x] Ningun componente nuevo importa directamente de `firebase/firestore`
