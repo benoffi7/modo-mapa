@@ -135,9 +135,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     });
   };
 
-  // No-op handlers for CommentRow edit props (questions don't support inline edit)
-  const noopEdit = useCallback(() => {}, []);
-  const noopEditText = useCallback(() => {}, []);
 
   const getAnswerCount = (question: Comment): number => {
     const localAnswers = filteredAnswersByQuestion.get(question.id);
@@ -215,15 +212,8 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 isLiked={isLiked(question.id)}
                 likeCount={getLikeCount(question)}
                 replyCount={answerCount}
-                isEditing={false}
-                editText=""
-                isSavingEdit={false}
                 isProfilePublic={profileVisibility.get(question.userId) ?? false}
                 onToggleLike={handleToggleLike}
-                onStartEdit={noopEdit}
-                onSaveEdit={noopEdit}
-                onCancelEdit={noopEdit}
-                onEditTextChange={noopEditText}
                 onDelete={handleDelete}
                 onReply={handleStartReply}
                 onShowProfile={handleShowProfile}
@@ -282,15 +272,8 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                               likeCount={getLikeCount(answer)}
                               replyCount={0}
                               isReply
-                              isEditing={false}
-                              editText=""
-                              isSavingEdit={false}
                               isProfilePublic={profileVisibility.get(answer.userId) ?? false}
                               onToggleLike={handleToggleLike}
-                              onStartEdit={noopEdit}
-                              onSaveEdit={noopEdit}
-                              onCancelEdit={noopEdit}
-                              onEditTextChange={noopEditText}
                               onDelete={handleDelete}
                               onShowProfile={handleShowProfile}
                             />

@@ -29,15 +29,15 @@ export interface CommentRowProps {
   likeCount: number;
   replyCount: number;
   isReply?: boolean;
-  isEditing: boolean;
-  editText: string;
-  isSavingEdit: boolean;
+  isEditing?: boolean;
+  editText?: string;
+  isSavingEdit?: boolean;
   isProfilePublic: boolean;
   onToggleLike: (commentId: string) => void;
-  onStartEdit: (comment: Comment) => void;
-  onSaveEdit: () => void;
-  onCancelEdit: () => void;
-  onEditTextChange: (text: string) => void;
+  onStartEdit?: (comment: Comment) => void;
+  onSaveEdit?: () => void;
+  onCancelEdit?: () => void;
+  onEditTextChange?: (text: string) => void;
   onDelete: (comment: Comment) => void;
   onReply?: ((comment: Comment) => void) | undefined;
   onShowProfile?: ((userId: string, userName: string) => void) | undefined;
@@ -50,9 +50,9 @@ const CommentRow = memo(function CommentRow({
   likeCount,
   replyCount,
   isReply = false,
-  isEditing,
-  editText,
-  isSavingEdit,
+  isEditing = false,
+  editText = '',
+  isSavingEdit = false,
   isProfilePublic,
   onToggleLike,
   onStartEdit,
@@ -121,7 +121,7 @@ const CommentRow = memo(function CommentRow({
               multiline
               maxRows={4}
               value={editText}
-              onChange={(e) => onEditTextChange(e.target.value)}
+              onChange={(e) => onEditTextChange?.(e.target.value)}
               disabled={isSavingEdit}
               slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
               helperText={`${editText.length}/${MAX_COMMENT_LENGTH}`}
@@ -130,13 +130,13 @@ const CommentRow = memo(function CommentRow({
               <IconButton
                 size="small"
                 color="primary"
-                onClick={onSaveEdit}
+                onClick={() => onSaveEdit?.()}
                 disabled={isSavingEdit || !editText.trim()}
                 aria-label="Guardar edición"
               >
                 <CheckIcon fontSize="small" />
               </IconButton>
-              <IconButton size="small" onClick={onCancelEdit} disabled={isSavingEdit} aria-label="Cancelar edición">
+              <IconButton size="small" onClick={() => onCancelEdit?.()} disabled={isSavingEdit} aria-label="Cancelar edición">
                 <CloseIcon fontSize="small" />
               </IconButton>
             </Box>
@@ -214,14 +214,16 @@ const CommentRow = memo(function CommentRow({
       {/* Edit + Delete buttons for own comments */}
       {isOwn && !isEditing && (
         <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>
-          <IconButton
-            size="small"
-            onClick={() => onStartEdit(comment)}
-            sx={{ color: 'text.secondary' }}
-            aria-label="Editar comentario"
-          >
-            <EditOutlinedIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+          {onStartEdit && (
+            <IconButton
+              size="small"
+              onClick={() => onStartEdit(comment)}
+              sx={{ color: 'text.secondary' }}
+              aria-label="Editar comentario"
+            >
+              <EditOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          )}
           <IconButton
             size="small"
             onClick={() => onDelete(comment)}

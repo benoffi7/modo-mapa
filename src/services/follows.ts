@@ -17,6 +17,8 @@ import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';
 
+export type FollowCursor = QueryDocumentSnapshot<Follow>;
+
 const MAX_FOLLOWS = 200;
 const PAGE_SIZE = 20;
 
@@ -65,8 +67,8 @@ export async function isFollowing(followerId: string, followedId: string): Promi
 export async function fetchFollowing(
   userId: string,
   pageSize = PAGE_SIZE,
-  afterDoc?: QueryDocumentSnapshot,
-): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean }> {
+  afterDoc?: FollowCursor,
+): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean; cursor: FollowCursor | null }> {
   const constraints: QueryConstraint[] = [
     where('followerId', '==', userId),
     orderBy('createdAt', 'desc'),
@@ -77,14 +79,14 @@ export async function fetchFollowing(
   const snap = await getDocs(query(getFollowsCollection(), ...constraints));
   const hasMore = snap.docs.length > pageSize;
   const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
-  return { docs, hasMore };
+  return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };
 }
 
 export async function fetchFollowers(
   userId: string,
   pageSize = PAGE_SIZE,
-  afterDoc?: QueryDocumentSnapshot,
-): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean }> {
+  afterDoc?: FollowCursor,
+): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean; cursor: FollowCursor | null }> {
   const constraints: QueryConstraint[] = [
     where('followedId', '==', userId),
     orderBy('createdAt', 'desc'),
@@ -95,7 +97,7 @@ export async function fetchFollowers(
   const snap = await getDocs(query(getFollowsCollection(), ...constraints));
   const hasMore = snap.docs.length > pageSize;
   const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
-  return { docs, hasMore };
+  return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };
 }
 
 // searchUsers moved to src/services/users.ts
