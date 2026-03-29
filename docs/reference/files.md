@@ -164,27 +164,58 @@ src/
 │   ├── ui/
 │   │   ├── OfflineIndicator.tsx     # Chip MUI offline (PWA)
 │   │   └── OfflineIndicator.test.tsx
-│   └── menu/
-│       ├── EditDisplayNameDialog.tsx # Dialog para editar nombre de usuario (extraido de SideMenu)
-│       ├── FavoritesList.tsx
-│       ├── SharedListsView.tsx       # Orquestador de listas compartidas (398 lineas, 0 imports firebase directos en componente)
-│       ├── SharedListDetailView.tsx  # Vista detalle de una lista compartida (items, share, edit, invite editors)
-│       ├── CreateListDialog.tsx      # Dialog para crear nueva lista compartida
-│       ├── InviteEditorDialog.tsx    # Dialog para invitar editores por nombre de usuario
-│       ├── CommentsList.tsx          # Mis comentarios: busqueda, sorting, filtro, edit, stats, swipe, virtualizacion condicional (@tanstack/react-virtual >= 20 items)
-│       ├── CommentItem.tsx           # Item individual de comentario (React.memo), extraido de CommentsList. Blue dot para unread replies
-│       ├── PaginatedListShell.tsx   # Shell reutilizable: skeleton/error/empty/no-results/pagination
-│       ├── RatingsList.tsx
-│       ├── RecentVisits.tsx         # Lista de comercios visitados recientemente (localStorage)
-│       ├── SuggestionsView.tsx       # Sugerencias personalizadas (useSuggestions)
-│       ├── FeedbackForm.tsx          # Tabs: Enviar (form + media upload) / Mis envíos (MyFeedbackList)
-│       ├── MyFeedbackList.tsx       # Lista de feedback del usuario con status chips, respuestas admin, indicador nueva respuesta
-│       ├── HelpSection.tsx          # 7 topics de ayuda en Accordion colapsable (mapa, comercio, menu, notificaciones, perfil, config, feedback)
-│       ├── StatsView.tsx            # Vista publica de estadisticas (usePublicMetrics)
-│       ├── RankingsView.tsx         # Rankings semanal/mensual con medallas
-│       ├── SettingsPanel.tsx        # Configuracion de usuario (privacidad, notificaciones)
-│       ├── PrivacyPolicy.tsx        # Politica de privacidad
-│       └── ListFilters.tsx
+│   ├── common/
+│   │   ├── PaginatedListShell.tsx   # Shell reutilizable: skeleton/error/empty/no-results/pagination
+│   │   ├── ListFilters.tsx          # Filtros compartidos entre listas
+│   │   └── PullToRefreshWrapper.tsx # Wrapper pull-to-refresh
+│   ├── home/
+│   │   ├── HomeScreen.tsx           # Pantalla principal: mapa, specials, trending, sugerencias
+│   │   ├── SuggestionsView.tsx      # Sugerencias personalizadas (useSuggestions)
+│   │   ├── TrendingList.tsx         # Lista de comercios trending
+│   │   ├── TrendingBusinessCard.tsx # Card individual trending
+│   │   └── RecentVisits.tsx         # Lista de comercios visitados recientemente
+│   ├── social/
+│   │   ├── SocialScreen.tsx         # Pantalla social: actividad, seguidos, recomendaciones, rankings
+│   │   ├── ActivityFeedView.tsx     # Feed de actividad de seguidos
+│   │   ├── ActivityFeedItem.tsx     # Item individual del feed
+│   │   ├── FollowedList.tsx         # Lista de usuarios seguidos
+│   │   ├── ReceivedRecommendations.tsx # Recomendaciones recibidas
+│   │   ├── RankingsView.tsx         # Rankings semanal/mensual con medallas
+│   │   ├── RankingItem.tsx          # Fila individual del ranking
+│   │   ├── RankingsEmptyState.tsx   # Estado vacio del ranking
+│   │   ├── UserProfileModal.tsx     # Modal perfil de usuario
+│   │   ├── UserScoreCard.tsx        # Card de puntaje del usuario
+│   │   ├── BadgesList.tsx           # Lista de badges/medallas
+│   │   └── ScoreSparkline.tsx       # Mini grafico de puntaje
+│   ├── profile/
+│   │   ├── ProfileScreen.tsx        # Pantalla perfil: settings, stats, comments, ratings
+│   │   ├── SettingsPanel.tsx        # Configuracion de usuario (privacidad, notificaciones)
+│   │   ├── AccountSection.tsx       # Seccion de cuenta (email, password)
+│   │   ├── EditDisplayNameDialog.tsx # Dialog editar nombre de usuario
+│   │   ├── LocalityPicker.tsx       # Selector de localidad
+│   │   ├── OnboardingChecklist.tsx  # Checklist de onboarding
+│   │   ├── PendingActionsSection.tsx # Acciones pendientes
+│   │   ├── CommentsList.tsx         # Mis comentarios: orquestador (227 lineas)
+│   │   ├── CommentsListItem.tsx     # Item individual de comentario (memo, 226 lineas)
+│   │   ├── CommentsStats.tsx        # Estadisticas de comentarios
+│   │   ├── CommentsToolbar.tsx      # Toolbar de filtros/sort para comentarios
+│   │   ├── useCommentsListFilters.ts # Hook para filtros de CommentsList
+│   │   ├── useVirtualizedList.ts    # Hook para virtualizacion condicional
+│   │   ├── RatingsList.tsx          # Lista de ratings del usuario
+│   │   ├── StatsView.tsx            # Vista publica de estadisticas
+│   │   ├── CheckInsView.tsx         # Vista de check-ins
+│   │   ├── FeedbackForm.tsx         # Tabs: Enviar + Mis envios
+│   │   ├── MyFeedbackList.tsx       # Lista de feedback del usuario
+│   │   ├── HelpSection.tsx          # 7 topics de ayuda en Accordion
+│   │   └── PrivacyPolicy.tsx        # Politica de privacidad
+│   └── lists/
+│       ├── ListsScreen.tsx          # Pantalla listas: favoritos, compartidas, recientes, colaborativas
+│       ├── FavoritesList.tsx         # Lista de favoritos
+│       ├── SharedListsView.tsx      # Orquestador de listas compartidas
+│       ├── SharedListDetailView.tsx # Vista detalle de lista compartida
+│       ├── CreateListDialog.tsx     # Dialog crear nueva lista
+│       ├── EditorsDialog.tsx        # Dialog gestionar editores
+│       └── InviteEditorDialog.tsx   # Dialog invitar editores
 ```
 
 ## Otros archivos clave
