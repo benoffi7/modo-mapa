@@ -227,6 +227,8 @@
     - [Plan](/feat/infra/toast-global/plan.md)
   - [Tech Debt: Reply, Pagination, Boilerplate](/feat/infra/tech-debt-reply-pagination-boilerplate/)
     - [PRD](/feat/infra/tech-debt-reply-pagination-boilerplate/prd.md)
+    - [Specs](/feat/infra/tech-debt-reply-pagination-boilerplate/specs.md)
+    - [Plan](/feat/infra/tech-debt-reply-pagination-boilerplate/plan.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
