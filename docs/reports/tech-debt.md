@@ -1,6 +1,6 @@
 # Deuda Técnica — Backlog
 
-**Última actualización:** 2026-03-25
+**Última actualización:** 2026-03-29
 **Consolidado de:** audit-phase4-v1, pre-launch-audit, security-audit-v1.4
 
 ---

@@ -79,14 +79,20 @@ if (!Number.isInteger(score) || score < 1 || score > 5) throw new Error('Score m
 | Category | Location | Responsibility |
 |----------|----------|---------------|
 | Pages | `src/pages/` | Route-level entry points (lazy loaded) |
-| Layout | `src/components/layout/` | App shell, side menu, error boundary |
-| Business | `src/components/business/` | Business detail bottom sheet |
-| Menu | `src/components/menu/` | Side menu sections (favorites, comments, etc.) |
-| Admin | `src/components/admin/` | Admin dashboard panels |
-| Map | `src/components/map/` | Google Maps integration |
-| Search | `src/components/search/` | Search bar and filter chips |
-| Stats | `src/components/stats/` | Shared chart/list components |
-| Auth | `src/components/auth/` | Authentication dialogs |
+| Layout | `src/components/layout/` | App shell, tab bar, error boundary |
+| Home | `src/components/home/` | Home screen (greeting, specials, trending, suggestions) |
+| Search | `src/components/search/` | Search bar, filter chips, list view |
+| Business | `src/components/business/` | Business detail bottom sheet and sub-components |
+| Social | `src/components/social/` | Activity feed, rankings, followed list, recommendations |
+| Lists | `src/components/lists/` | Favorites, shared lists, collaborative lists, recents |
+| Profile | `src/components/profile/` | Profile screen, settings, stats, achievements, feedback |
+| Map | `src/components/map/` | Google Maps integration, markers, FABs |
+| Admin | `src/components/admin/` | Admin dashboard panels (15+ tabs) |
+| Admin/Perf | `src/components/admin/perf/` | Performance monitoring sub-components |
+| Admin/Alerts | `src/components/admin/alerts/` | Abuse alerts and reincidentes |
+| Auth | `src/components/auth/` | Authentication dialogs (email/password, change password) |
+| Common | `src/components/common/` | Shared UI (DiscardDialog, PaginatedListShell, PullToRefreshWrapper) |
+| UI | `src/components/ui/` | Indicators and banners (offline, stale, rating prompt) |
 
 ### Admin Panel Pattern
 
@@ -278,19 +284,164 @@ try {
 |---------|-------|
 | `AuthContext` | user, displayName, signInWithGoogle, signOut, setDisplayName |
 | `MapContext` | selectedBusiness, searchQuery, activeFilters, userLocation |
+| `SelectionContext` | Selected business ID (split from MapContext to reduce re-renders) |
+| `FiltersContext` | Active search filters (split from MapContext) |
+| `ConnectivityContext` | Online/offline status, consumed via `useConnectivity` |
+| `OnboardingContext` | Onboarding flow state and checklist progress |
+| `NotificationsContext` | Unread notification count and polling |
 
 ### Local State
 
 Each component manages its own UI state (dialogs, form inputs, loading spinners).
 
-### Caching
+### Caching (3 tiers)
 
-Two client-side cache layers reduce Firestore reads:
+Three client-side cache layers reduce Firestore reads:
 
-1. **Business view cache** (`useBusinessDataCache`): 5-min TTL for business detail queries.
-2. **First-page query cache** (`usePaginatedQuery`): 2-min TTL for paginated list first pages.
+1. **Business view cache** (`useBusinessDataCache`): In-memory `Map` with 5-min TTL for business detail queries.
+2. **First-page query cache** (`queryCache.ts`): In-memory cache with 2-min TTL for paginated list first pages.
+3. **Read cache** (`readCache.ts`): IndexedDB-backed LRU cache (20 entries) for offline reading of business data.
 
-Both caches are invalidated on write operations via `invalidateBusinessCache()` and `invalidateQueryCache()`.
+Data flow: `useBusinessData` checks memory cache → IndexedDB (`readCache`) → Firestore. When data comes from IndexedDB, it is marked `stale: true` and `StaleBanner` is shown.
+
+All caches are invalidated on write operations via `invalidateBusinessCache()` and `invalidateQueryCache()`.
+
+**Decision rule:** Use memory cache for re-render performance, IndexedDB for persistence between sessions, Firestore as source of truth.
+
+### Offline Support
+
+The project implements an offline-first pattern for write operations:
+
+1. **Detection**: `ConnectivityContext` tracks online/offline via `navigator.onLine` + `online`/`offline` events.
+2. **Interception**: `withOfflineSupport<T>(fn, offlineAction)` wraps service calls. If offline, enqueues the action instead of executing.
+3. **Queue**: `offlineQueue.ts` uses IndexedDB to persist pending actions across sessions. Supports `enqueue`, `getPending`, `subscribe`.
+4. **Sync**: `syncEngine.ts` processes the queue on reconnect. `executeAction` maps action types back to service functions. `processQueue` handles retries and error logging.
+5. **UI**: `OfflineIndicator` shows a banner. `PendingActionsSection` in Profile shows queued actions count.
+
+**Pattern for wrapping a service call:**
+
+```typescript
+await withOfflineSupport(
+  () => addComment(userId, userName, businessId, text),
+  { type: 'addComment', payload: { userId, userName, businessId, text } }
+);
+```
+
+### Deep Linking
+
+**Location:** `src/hooks/useDeepLinks.ts`, called from `TabShell.tsx`.
+
+URL-based navigation via `useDeepLinks()` hook:
+
+- `?business={id}` — opens BusinessSheet for the given business (validated with `BUSINESS_ID_RE = /^biz_\d{1,6}$/`)
+- `?business={id}&sheetTab=opiniones` — opens specific tab in BusinessSheet
+- `?list={id}` — navigates to Lists tab and opens the specified list
+
+The hook reads `window.location.search` on mount, dispatches navigation actions via context, then removes consumed params from the URL (`replace: true`).
+
+**Decision rule:** To add a new deep link, add a case in `useDeepLinks.ts`, validate input with regex, and clean the param after consuming it.
+
+### Optimistic Updates
+
+Six variants of optimistic UI, choose based on the interaction:
+
+| Variant | Pattern | When to use | Example |
+|---------|---------|-------------|---------|
+| **Map-based toggle** | `useOptimisticLikes` — Map of toggled IDs + delta count | N items that can be independently toggled | Comment likes |
+| **Pending state** | `pendingRating` / `pendingLevel` local state | Single value being updated | Rating, price level |
+| **Derived state** | `prevIsFavorite` + `optimistic` flag | Parent re-renders could overwrite optimistic value | `FavoriteButton` |
+| **Undo delete** | `useUndoDelete` — Map of pending deletes + timer + Snackbar | Destructive but reversible action | Delete comment |
+| **Revert on error** | `useFollow` — toggle immediately, catch + revert | No undo UI, just silent rollback | Follow/unfollow |
+| **Settings revert** | `useUserSettings` — update immediately, revert full object on error | Object with multiple fields | User settings |
+
+**Rule:** Always use optimistic updates for user-facing actions. Choose variant from the table above.
+
+### Cursor-Based Pagination
+
+`usePaginatedQuery<T>` handles Firestore cursor pagination:
+
+- **API**: `usePaginatedQuery<T>(collectionRef, constraints, orderByField, pageSize, cacheKey)`
+- Stores `QueryDocumentSnapshot` as cursor for `startAfter()`
+- `cacheKey` is mandatory for cache compatibility with `queryCache.ts`
+- First page is cached (2-min TTL)
+- `loadAll(maxItems)` fetches all pages async with `hasMoreRef` safety
+- Backward compat: `constraints` accepts `string` (userId) or `QueryConstraint[]`
+- Components should NOT import `QueryDocumentSnapshot` directly — keep cursor management inside hooks
+- Used in: `FavoritesList`, `CommentsList`, `RatingsList`, `FollowedList`
+
+**Rule:** Always provide a unique `cacheKey` per query. For user lists, use `userId` as key.
+
+### Converter Layers
+
+Three converter files handle Firestore ↔ TypeScript transformations:
+
+| File | Purpose | Who reads |
+|------|---------|-----------|
+| `config/converters.ts` | Standard entity converters (Rating, Comment, Favorite, etc.) | User-facing reads |
+| `config/adminConverters.ts` | Admin-specific converters (DailyMetrics, AbuseLog, PerfMetrics) | Admin panel reads |
+| `config/metricsConverter.ts` | Public metrics transformation | Public metrics (no auth) |
+
+**Rules:**
+- Reads always use `withConverter<T>()`. Writes never use converters (because of `serverTimestamp()`).
+- All converters use `toDate()` from `src/utils/formatDate.ts` for timestamps.
+- Never duplicate conversion logic across converter files.
+
+### Persistence Decision Guide
+
+| Storage | When to use | Examples in codebase | Survives reload |
+|---------|------------|---------------------|-----------------|
+| React state | UI-only state (dialogs, form inputs) | Dialog open, loading spinners | No |
+| Context | Shared app state across components | Auth user, selected business, active tab, connectivity | No (unless backed by localStorage) |
+| In-memory cache | Query results, business data (2-5 min TTL) | `useBusinessDataCache` Map, `queryCache.ts` Map | No |
+| `localStorage` | Preferences, flags, small data (<10KB) | Color mode, remembered email, onboarding flags, visit history, quick actions order | Yes |
+| IndexedDB | Cache of large data, offline queue | `readCache.ts` (business data), `offlineQueue.ts` (pending writes) | Yes |
+| Firestore | User data, content | Ratings, comments, settings, follows | Yes |
+
+**Quick decision:**
+1. UI preference or boolean flag? → `localStorage`
+2. Shared across components in same session? → Context
+3. Large data cache or offline write queue? → IndexedDB
+
+### Screen Tracking
+
+**Location:** `src/hooks/useScreenTracking.ts`
+
+- Tracks `screen_view` event on every route change via `trackEvent('screen_view', { screen_name })`
+- Naming: path `/` → `map`, `/admin/users` → `admin_users`
+- Called once in `App.tsx` — no per-component integration needed
+- **Rule:** Never add manual screen tracking; the hook handles all routes automatically
+
+### Analytics Events
+
+**Location:** `src/utils/analytics.ts` (wrapper), event constants in components/hooks.
+
+Track user interactions via `trackEvent(name, params?)`:
+
+- Only active in production when `analyticsEnabled` is true
+- Events use `snake_case` naming: `{feature}_{action}` (e.g., `business_view`, `rating_submit`, `offline_action_queued`)
+- Always include relevant IDs in params (e.g., `{ businessId }`)
+- **Rule:** Never use string literals for event names in `trackEvent`. Define constants with `EVT_` prefix in `SCREAMING_SNAKE_CASE`
+
+### Component Sub-folder Organization
+
+**Decision rule:** Create a sub-folder when a component has 3+ related files (main component + subcomponents/types/utils).
+
+Standard sub-folder structure:
+
+```text
+ComponentName/
+  ComponentName.tsx      # Main orchestrator
+  SubComponent.tsx       # Subcomponents with React.memo
+  componentHelpers.ts    # Pure utility functions
+  componentTypes.ts      # Types/interfaces (optional)
+```
+
+If a component has 1-2 files, keep it flat in the parent folder.
+
+**Examples:**
+- `admin/perf/` — 5 files (SemaphoreCard, QueryLatencyTable, FunctionTimingTable, StorageCard, perfHelpers) → sub-folder
+- `admin/alerts/` — 3 files (KpiCard, alertsHelpers, ReincidentesView) → sub-folder
+- `business/CustomTagDialog.tsx` — 1 file → flat
 
 ---
 
