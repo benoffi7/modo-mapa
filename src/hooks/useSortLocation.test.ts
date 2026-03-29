@@ -21,7 +21,7 @@ const MOCK_SETTINGS: UserSettings = {
   updatedAt: new Date(),
 };
 
-vi.mock('../context/MapContext', () => ({
+vi.mock('../context/FiltersContext', () => ({
   useFilters: vi.fn(() => ({ userLocation: null })),
 }));
 
@@ -29,7 +29,7 @@ vi.mock('./useUserSettings', () => ({
   useUserSettings: vi.fn(() => ({ settings: { ...MOCK_SETTINGS } })),
 }));
 
-import { useFilters } from '../context/MapContext';
+import { useFilters } from '../context/FiltersContext';
 import { useUserSettings } from './useUserSettings';
 
 const mockReturn = (overrides: Partial<UserSettings> = {}) => ({

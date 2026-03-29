@@ -78,7 +78,11 @@ function createMockDb(overrides?: {
     data: () => ({ count: followCount }),
   });
   const mockCount = vi.fn().mockReturnValue({ get: mockCountGet });
-  const mockWhere = vi.fn().mockReturnValue({ count: mockCount });
+  const mockLimitGet = vi.fn().mockResolvedValue({ empty: true });
+  const mockLimit = vi.fn().mockReturnValue({ get: mockLimitGet });
+  const mockWhereObj: Record<string, unknown> = { count: mockCount, limit: mockLimit };
+  const mockWhere = vi.fn().mockReturnValue(mockWhereObj);
+  mockWhereObj.where = mockWhere; // self-referencing for chained .where() calls
   const mockCollection = vi.fn().mockReturnValue({ where: mockWhere });
 
   const mockDocFn = vi.fn().mockImplementation((path: string) => {

@@ -58,8 +58,21 @@ export function useSuggestions(): {
   const { favorites, ratings, userTags, isLoading, error } = state;
 
   const suggestions = useMemo(() => {
-    if (favorites.length === 0 && ratings.length === 0 && userTags.length === 0) {
-      return [];
+    const hasUserData = favorites.length > 0 || ratings.length > 0 || userTags.length > 0;
+
+    // Fallback: return nearest businesses by location
+    if (!hasUserData) {
+      if (!userLocation) return [];
+      const withDist = allBusinesses.map((b) => ({
+        business: b,
+        dist: distanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng),
+      }));
+      withDist.sort((a, b) => a.dist - b.dist);
+      return withDist.slice(0, 3).map(({ business }) => ({
+        business,
+        score: 1,
+        reasons: ['nearby' as SuggestionReason],
+      }));
     }
 
     // Build category preference map from favorites

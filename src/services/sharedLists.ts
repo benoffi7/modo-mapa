@@ -22,6 +22,7 @@ import { sharedListConverter, listItemConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import { MAX_LISTS } from '../constants/lists';
+import { getListIconById } from '../constants/listIcons';
 import type { SharedList, ListItem } from '../types';
 
 export function getSharedListsCollection(): CollectionReference<SharedList> {
@@ -32,8 +33,8 @@ export function getListItemsCollection(): CollectionReference<ListItem> {
   return collection(db, COLLECTIONS.LIST_ITEMS).withConverter(listItemConverter) as CollectionReference<ListItem>;
 }
 
-export async function createList(userId: string, name: string, description: string = ''): Promise<string> {
-  const ref = await addDoc(collection(db, COLLECTIONS.SHARED_LISTS), {
+export async function createList(userId: string, name: string, description: string = '', icon?: string): Promise<string> {
+  const docData: Record<string, unknown> = {
     ownerId: userId,
     name: name.trim(),
     description: description.trim(),
@@ -41,7 +42,9 @@ export async function createList(userId: string, name: string, description: stri
     itemCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
+  if (icon && getListIconById(icon)) docData.icon = icon;
+  const ref = await addDoc(collection(db, COLLECTIONS.SHARED_LISTS), docData);
   invalidateQueryCache(COLLECTIONS.SHARED_LISTS, userId);
   trackEvent('list_created', { list_id: ref.id });
   return ref.id;
@@ -54,13 +57,14 @@ export async function toggleListPublic(listId: string, isPublic: boolean): Promi
   });
 }
 
-export async function updateList(listId: string, name: string, description: string, color?: string): Promise<void> {
+export async function updateList(listId: string, name: string, description: string, color?: string, icon?: string): Promise<void> {
   const data: Record<string, unknown> = {
     name: name.trim(),
     description: description.trim(),
     updatedAt: serverTimestamp(),
   };
   if (color !== undefined) data.color = color;
+  if (icon !== undefined) data.icon = icon;
   await updateDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), data);
 }
 

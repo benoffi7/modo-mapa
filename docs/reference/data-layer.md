@@ -32,23 +32,60 @@ Todos los valores magicos, configuraciones, labels y opciones estan centralizado
 
 Capa de abstraccion entre componentes y Firestore. Los componentes nunca importan `firebase/firestore` directamente para escrituras.
 
+### Servicios CRUD por coleccion
+
 | Modulo | Coleccion | Operaciones |
 |--------|-----------|-------------|
 | `favorites.ts` | `favorites` | `addFavorite`, `removeFavorite`, `getFavoritesCollection`, `fetchUserFavoriteIds` |
 | `ratings.ts` | `ratings` | `upsertRating`, `deleteRating`, `getRatingsCollection` |
 | `comments.ts` | `comments`, `commentLikes` | `addComment`, `editComment`, `deleteComment`, `likeComment`, `unlikeComment`, `getCommentsCollection` |
 | `tags.ts` | `userTags`, `customTags` | `addUserTag`, `removeUserTag`, `createCustomTag`, `updateCustomTag`, `deleteCustomTag` |
-| `feedback.ts` | `feedback` + `feedback-media` (Storage) | `sendFeedback` (with optional media upload to Firebase Storage), `fetchUserFeedback`, `markFeedbackViewed` |
-| `adminFeedback.ts` | `feedback` (via callable) | `respondToFeedback`, `resolveFeedback`, `createGithubIssueFromFeedback` (wrappers for Cloud Functions callable) |
-| `menuPhotos.ts` | `menuPhotos` | `uploadMenuPhoto` (con AbortSignal + progress callback), `getUserPendingPhotos` |
-| `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getBusinessPriceLevels` |
+| `feedback.ts` | `feedback` + `feedback-media` (Storage) | `sendFeedback` (with optional media upload), `fetchUserFeedback`, `markFeedbackViewed` |
+| `adminFeedback.ts` | `feedback` (via callable) | `respondToFeedback`, `resolveFeedback`, `createGithubIssueFromFeedback` |
+| `menuPhotos.ts` | `menuPhotos` | `uploadMenuPhoto` (con AbortSignal + progress), `getUserPendingPhotos` |
+| `priceLevels.ts` | `priceLevels` | `upsertPriceLevel`, `deletePriceLevel`, `getPriceLevelsCollection` |
 | `userSettings.ts` | `userSettings` | `fetchUserSettings`, `updateUserSettings`, `DEFAULT_SETTINGS` |
-| `suggestions.ts` | `favorites`, `ratings`, `userTags` | `fetchUserSuggestionData` (datos para scoring de sugerencias) |
-| `trending.ts` | `trendingBusinesses` | `fetchTrending` (lee `trendingBusinesses/current`, convierte Timestamps a Dates) |
-| `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
-| `admin.ts` | Todas (read-only) + callable | `fetchCounters`, `fetchRecent*` (6 colecciones), `fetchAllCustomTags`, `fetchUsersPanelData` (incl. commentLikes/likesGiven), `fetchDailyMetrics`, `fetchAbuseLogs`, `fetchAllPhotos`, `fetchAuthStats` (callable → `getAuthStats`), `fetchNotificationStats`, `fetchSettingsAggregates`, `fetchPriceLevelStats`, `fetchCommentLikeStats`, `fetchCommentStats` (editados + respuestas counts), `fetchPerfMetrics` (ultimos N docs de `perfMetrics`), `fetchStorageStats` (callable → `getStorageStats`) |
+| `checkins.ts` | `checkins` | `createCheckIn`, `deleteCheckIn`, `fetchMyCheckIns`, `fetchCheckInsForBusiness`, `getCheckinsCollection` |
+| `follows.ts` | `follows` | `followUser`, `unfollowUser`, `isFollowing`, `fetchFollowing`, `fetchFollowers`, `getFollowsCollection` |
+| `notifications.ts` | `notifications` | `fetchUserNotifications`, `markNotificationRead`, `markAllNotificationsRead`, `getUnreadCount` |
+| `recommendations.ts` | `recommendations` | `createRecommendation`, `markRecommendationAsRead`, `markAllRecommendationsAsRead`, `countUnreadRecommendations`, `countRecommendationsSentToday`, `getRecommendationsCollection`, `getReceivedRecommendationsConstraints` |
+| `rankings.ts` | `userRankings` | `fetchRanking`, `fetchLatestRanking`, `getCurrentPeriodKey`, `getPreviousPeriodKey`, `fetchUserScoreHistory`, `fetchUserLiveScore` |
+| `achievements.ts` | `achievements` | `fetchAchievements`, `saveAllAchievements`, `deleteAchievement` |
+| `specials.ts` | `specials` (config) | `fetchSpecials`, `fetchActiveSpecials`, `saveAllSpecials`, `deleteSpecial` |
+| `users.ts` | `users` | `searchUsers`, `fetchUserDisplayNames` |
+| `userProfile.ts` | `users` + aggregados | `fetchUserProfile` (read-only aggregate con stats) |
 | `sharedLists.ts` | `sharedLists`, `listItems` | `fetchSharedList`, `fetchUserLists`, `fetchEditorName`, `inviteEditor` + operaciones CRUD de listas y items |
-| `index.ts` | — | Barrel export de todas las operaciones CRUD |
+| `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
+
+### Servicios de datos agregados
+
+| Modulo | Descripcion |
+|--------|-------------|
+| `businessData.ts` | Batch fetch de todos los datos de un comercio: `fetchBusinessData` (7 colecciones en paralelo), `fetchSingleCollection`, `fetchUserLikes` |
+| `suggestions.ts` | `fetchUserSuggestionData` (agrega favorites, ratings, userTags para scoring) |
+| `trending.ts` | `fetchTrending` (lee `trendingBusinesses/current`, convierte Timestamps a Dates) |
+| `activityFeed.ts` | `getActivityFeedCollection` (CollectionReference tipada) |
+
+### Servicios de offline y cache
+
+| Modulo | Descripcion |
+|--------|-------------|
+| `offlineInterceptor.ts` | `withOfflineSupport<T>` — wrapper que detecta offline y encola en IndexedDB. Exporta `OFFLINE_ENQUEUED_MSG` |
+| `offlineQueue.ts` | IndexedDB CRUD para la cola offline: `enqueue`, `getAll`, `getPending`, `updateStatus`, `bulkUpdateStatus`, `remove`, `cleanup`, `count`, `subscribe` |
+| `syncEngine.ts` | `executeAction` (ejecuta una accion encolada), `processQueue` (procesa toda la cola con retry) |
+| `queryCache.ts` | Cache en memoria para queries paginadas: `getQueryCache`, `setQueryCache`, `invalidateQueryCache`, `invalidateAllQueryCache`, `getCacheKey` |
+| `readCache.ts` | Cache en IndexedDB para lectura offline: `getReadCacheEntry`, `setReadCacheEntry`, `clearReadCache`, `openReadCacheDb` |
+
+### Admin services (`src/services/admin/`)
+
+| Modulo | Operaciones |
+|--------|-------------|
+| `counters.ts` | `fetchCounters`, `fetchDailyMetrics` |
+| `activity.ts` | `fetchRecentComments`, `fetchRecentRatings`, `fetchRecentFavorites`, `fetchRecentUserTags`, `fetchRecentCustomTags`, `fetchAllCustomTags`, `fetchRecentCommentLikes`, `fetchRecentPriceLevels`, `fetchRecentCheckins` |
+| `content.ts` | `fetchRecentFeedback`, `fetchPendingPhotos`, `fetchAllPhotos`, `fetchAbuseLogs`, `reviewAbuseLog`, `dismissAbuseLog`, `fetchLatestRanking`, `fetchTrendingCurrent`, `fetchNotificationDetails`, `fetchListStats`, `fetchTopLists`, `fetchPerfMetrics`, `fetchStorageStats`, `fetchAnalyticsReport` |
+| `social.ts` | `fetchRecentFollows`, `fetchRecentRecommendations`, `fetchFollowStats`, `fetchRecommendationStats` |
+| `users.ts` | `fetchUsersPanelData`, `fetchCommentStats`, `fetchAuthStats`, `fetchSettingsAggregates` |
+| `index.ts` | Barrel re-export de todos los modulos admin |
 
 ### Reglas del service layer
 
@@ -72,29 +109,87 @@ El upload soporta cancelacion completa a traves de `AbortSignal`:
 
 ## Hooks compartidos
 
+### Hooks de datos y fetch
+
 | Hook | Descripcion |
 |------|-------------|
 | `useAsyncData<T>` | Hook generico para fetch async. Retorna `{ data, loading, error }`. Usado por todos los paneles admin via `AdminPanelWrapper`. |
 | `useBusinessData` | Orquesta 7 queries Firestore del business view con `Promise.all` + cache (5 min TTL). Incluye `patchedRef` para prevenir race conditions entre full loads y refetches parciales. Tambien fetchea user likes por comentario. |
 | `useBusinessDataCache` | Cache module-level (`Map`) para datos del business view. TTL 5 min. Se invalida en cada write. Soporta `patchBusinessCache` para updates parciales. |
-| `useColorMode` | Hook para dark/light mode. Consume `ColorModeContext`. Retorna `{ mode, toggleColorMode }`. |
 | `useBusinesses` | Filtra `businesses.json` por searchQuery + activeFilters + activePriceFilter con `useDeferredValue`. |
-| `useListFilters<T>` | Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento. Usado en FavoritesList y RatingsList. |
-| `usePaginatedQuery<T>` | Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL). Acepta `QueryConstraint[]` o `string` (backward compat). `cacheKey` obligatorio. Incluye `loadAll(maxItems)` para fetch completo async. Exporta `invalidateQueryCache()`. |
-| `usePriceLevelFilter` | Cache global de promedios de precio por comercio. Fetch unico con `fetchPromise` singleton. Exporta `invalidatePriceLevelCache()`. |
-| `useVisitHistory` | Historial de visitas en localStorage (ultimos 20 comercios). Retorna `{ visits, recordVisit }`. Se usa en BusinessSheet para registrar y en RecentVisits para mostrar. |
-| `useUserLocation` | Geolocalizacion del navegador. |
-| `usePublicMetrics` | Hook para metricas publicas de dailyMetrics (estadisticas en menu lateral). |
+| `useBusinessRating` | Estado de rating del usuario para un comercio: score, criterios, promedios. Retorna `CriteriaAverages` y acciones. |
+| `useProfileStats` | Estadisticas del perfil del usuario (comments, ratings, checkins, etc.). |
+| `useUserProfile` | Perfil de otro usuario con stats agregadas. Recibe `userId` y `fallbackName`. |
 | `useUserSettings` | Settings del usuario (perfil publico, notificaciones). Optimistic UI con revert on error. Retorna `{ settings, loading, updateSetting }`. |
-| `useProfileVisibility` | Cache module-level con TTL 60s para `profilePublic` de otros usuarios. Batch fetch con `documentId() in`. Retorna `Map<string, boolean>`. Usa `useSyncExternalStore`. |
+| `useUserSearch` | Busqueda de usuarios por nombre con debounce 300ms. Prefix search en `displayNameLower`. |
+| `useMyCheckIns` | Historial de check-ins del usuario con paginacion. |
+| `useRankings` | Rankings semanales/mensuales/anuales/alltime. Retorna `PositionChangeMap` para deltas. |
+| `useActivityFeed` | Feed de actividad de usuarios seguidos. |
 | `useNotifications` | Polling cada 60s de notificaciones no leidas. Retorna `{ notifications, unreadCount, loading, markRead, markAllRead, refresh }`. |
-| `useUndoDelete` | Hook para undo-delete con `Map` de pending deletes, timer cleanup en unmount, `lastDeletedIdRef` para evitar stale closures, `snackbarProps` con `autoHideDuration`. Usado en BusinessComments y CommentsList. |
-| `useSwipeActions` | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
-| `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags del usuario via `services/suggestions.ts`, scoring client-side con Haversine para cercania. Retorna `{ suggestions, isLoading, error }`. Max 10 resultados. |
-| `useTrending` | Trending businesses. Wrapper sobre `useAsyncData` + `fetchTrending`. Retorna `{ data: TrendingData \| null, loading, error, refetch }`. Lee `trendingBusinesses/current` (pre-computed by Cloud Function). |
-| `useOnboardingHint` | Encapsula logica de cuándo mostrar el hint de onboarding al usuario. Extraido de AppShell para reducir estado local en el componente raiz. |
-| `useOnboardingFlow` | Maneja los pasos y transiciones del flujo de onboarding. Extraido de AppShell. |
-| `useSurpriseMe` | Encapsula la logica de seleccion aleatoria de comercio ("sorprendeme"). Extraido de SideMenu. |
+| `useUnreadRecommendations` | Cuenta de recomendaciones no leidas. |
+| `useTrending` | Trending businesses. Wrapper sobre `useAsyncData` + `fetchTrending`. |
+| `useSuggestions` | Sugerencias personalizadas. Fetch de favoritos/ratings/tags, scoring client-side con Haversine. Max 10 resultados. |
+| `usePublicMetrics` | Metricas publicas de dailyMetrics (estadisticas en menu lateral). |
+| `useProfileVisibility` | Cache module-level con TTL 60s para `profilePublic` de otros usuarios. Batch fetch con `documentId() in`. Usa `useSyncExternalStore`. |
+| `useAbuseLogsRealtime` | Suscripcion realtime a abuse logs para panel admin. Max 200 docs. |
+| `useVisitHistory` | Historial de visitas en localStorage (ultimos 20 comercios). |
+| `useUserLocation` | Geolocalizacion del navegador. |
+
+### Hooks de interaccion
+
+| Hook | Descripcion |
+|------|-------------|
+| `useCheckIn` | Check-in/check-out en comercio. Valida cooldown 4h y limite 10/dia. |
+| `useFollow` | Follow/unfollow de usuarios. Estado optimistico. |
+| `useOptimisticLikes` | Likes optimisticos en comentarios. Toggle con delta local. |
+| `useCommentEdit` | Estado de edicion de comentario: `editingId`, `editText`, `startEdit`, `saveEdit`, `cancelEdit`. |
+| `useCommentSort` | Ordena comentarios por `recent`, `oldest`, `useful`. |
+| `useCommentThreads` | Agrupa comentarios por `parentId`. Retorna `topLevelComments` + mapa de respuestas. |
+| `useCommentListBase` | Logica base compartida entre BusinessComments y BusinessQuestions (paginacion, likes, threads). |
+| `useUndoDelete` | Undo-delete con `Map` de pending deletes, timer cleanup, `snackbarProps`. |
+| `useSwipeActions` | Gestos swipe-to-reveal en mobile. Threshold 80px. Solo en `pointer: coarse`. |
+| `useNavigateToBusiness` | Helper centralizado para navegar al detalle de un comercio. |
+| `useTabNavigation` | Cross-tab navigation helpers. |
+
+### Hooks de UI y estado
+
+| Hook | Descripcion |
+|------|-------------|
+| `useColorMode` | Dark/light mode. Consume `ColorModeContext`. Retorna `{ mode, toggleColorMode }`. |
+| `useConnectivity` | Estado online/offline. Re-exporta desde `ConnectivityContext`. |
+| `usePullToRefresh` | Gesto pull-to-refresh. Threshold 80px, invoca `onRefresh` async. |
+| `useTabRefresh` | Refresh al activar un tab. Variantes: `useSocialSubTabRefresh`, `useListsSubTabRefresh`. |
+| `useUnsavedChanges` | Detecta cambios no guardados en formularios. `isDirty`, `confirmClose`. |
+| `useForceUpdate` | Compara version del cliente con Firestore `config/app.minVersion`. Fuerza recarga si es necesario. |
+| `useDeepLinks` | Deep linking por URL: `?business={id}&sheetTab=`, `?list={id}`. |
+| `useScreenTracking` | Track automatico de pathname para analytics. |
+
+### Hooks de filtrado y paginacion
+
+| Hook | Descripcion |
+|------|-------------|
+| `useListFilters<T>` | Filtrado generico: busqueda (debounced), categoria, estrellas, ordenamiento. |
+| `usePaginatedQuery<T>` | Paginacion generica con cursores Firestore + cache primera pagina (2 min TTL). `cacheKey` obligatorio. |
+| `usePriceLevelFilter` | Cache global de promedios de precio por comercio. Fetch unico con singleton. |
+| `useSortLocation` | Ubicacion para ordenar por distancia. Fallback chain: GPS → localidad → oficina. |
+
+### Hooks de features
+
+| Hook | Descripcion |
+|------|-------------|
+| `useRatingPrompt` | Prompt contextual de rating. Detecta check-ins recientes, ventana 2-8h, cap 3/dia. |
+| `useActivityReminder` | Recordatorio de actividad para usuarios anonimos. `incrementAnonRatingCount`. |
+| `useOnboardingHint` | Logica de cuando mostrar hint de onboarding. |
+| `useOnboardingFlow` | Pasos y transiciones del flujo de onboarding. |
+| `useSurpriseMe` | Seleccion aleatoria de comercio ("sorprendeme"). |
+
+### Hooks de auth
+
+| Hook | Descripcion |
+|------|-------------|
+| `usePasswordConfirmation` | Validacion de confirmacion de password. `isValid`, `error`, `helperText`. |
+| `useRememberedEmail` | Recuerda ultimo email en localStorage. |
+| `useVerificationCooldown` | Cooldown de verificacion de email. `verificationSent`, `verificationLoading`. |
 
 ### `useBusinessData` — Race condition fix
 
@@ -137,7 +232,7 @@ Utilidad centralizada para Firebase Analytics (GA4). Solo activa en produccion, 
 
 | Funcion | Descripcion |
 |---------|-------------|
-| `truncate(text, maxLength)` | Trunca texto y agrega `...` si excede `maxLength`. Compartido entre CommentsList y UserProfileSheet |
+| `truncate(text, maxLength)` | Trunca texto y agrega `...` si excede `maxLength` |
 
 ### `perfMetrics.ts`
 
@@ -158,6 +253,45 @@ Flush: una unica escritura por sesion (al ocultar tab o tras 30s) via `writePerf
 |---------|-------------|
 | `getBusinessName(id)` | Obtiene nombre del comercio por ID desde `businesses.json` |
 | `getTagLabel(tagId)` | Obtiene label en espanol de un tag predefinido |
+
+### `contrast.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `relativeLuminance(hex)` | Calcula luminancia relativa de un color hex |
+| `getContrastText(backgroundHex)` | Retorna `#fff` o `#000` segun contraste con el fondo |
+
+### `distance.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `distanceKm(lat1, lng1, lat2, lng2)` | Calcula distancia en km entre dos puntos (Haversine) |
+| `formatDistance(km)` | Formatea distancia a string legible (ej: `1.2 km`, `500 m`) |
+
+### `getCountOfflineSafe.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `getCountOfflineSafe(query)` | `getCountFromServer` con fallback a 0 si offline |
+
+### `logger.ts`
+
+| Export | Descripcion |
+|--------|-------------|
+| `logger` | Objeto con metodos `log`, `warn`, `error`, `debug`. Solo activo en dev mode |
+
+### `media.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `isValidStorageUrl(url)` | Valida que una URL sea de Firebase Storage |
+
+### `version.ts`
+
+| Funcion | Descripcion |
+|---------|-------------|
+| `compareSemver(a, b)` | Compara dos versiones semver. Retorna -1, 0, o 1 |
+| `isUpdateRequired(required, current)` | Determina si la version actual necesita update forzado |
 
 ---
 

@@ -7,22 +7,21 @@ import {
   List,
   Divider,
   IconButton,
-  Snackbar,
   Collapse,
   Alert,
   Chip,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useToast } from '../../context/ToastContext';
 import { createQuestion } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
-import UserProfileSheet from '../user/UserProfileSheet';
+import InlineReplyForm from './InlineReplyForm';
+import CommentListFooter from '../common/CommentListFooter';
 import { MAX_QUESTION_LENGTH, BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
-import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import { MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { MSG_QUESTION } from '../../constants/messages';
 import { trackEvent } from '../../utils/analytics';
 import type { Comment } from '../../types';
@@ -135,9 +134,6 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
     });
   };
 
-  // No-op handlers for CommentRow edit props (questions don't support inline edit)
-  const noopEdit = useCallback(() => {}, []);
-  const noopEditText = useCallback(() => {}, []);
 
   const getAnswerCount = (question: Comment): number => {
     const localAnswers = filteredAnswersByQuestion.get(question.id);
@@ -215,15 +211,8 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 isLiked={isLiked(question.id)}
                 likeCount={getLikeCount(question)}
                 replyCount={answerCount}
-                isEditing={false}
-                editText=""
-                isSavingEdit={false}
                 isProfilePublic={profileVisibility.get(question.userId) ?? false}
                 onToggleLike={handleToggleLike}
-                onStartEdit={noopEdit}
-                onSaveEdit={noopEdit}
-                onCancelEdit={noopEdit}
-                onEditTextChange={noopEditText}
                 onDelete={handleDelete}
                 onReply={handleStartReply}
                 onShowProfile={handleShowProfile}
@@ -282,15 +271,8 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                               likeCount={getLikeCount(answer)}
                               replyCount={0}
                               isReply
-                              isEditing={false}
-                              editText=""
-                              isSavingEdit={false}
                               isProfilePublic={profileVisibility.get(answer.userId) ?? false}
                               onToggleLike={handleToggleLike}
-                              onStartEdit={noopEdit}
-                              onSaveEdit={noopEdit}
-                              onCancelEdit={noopEdit}
-                              onEditTextChange={noopEditText}
                               onDelete={handleDelete}
                               onShowProfile={handleShowProfile}
                             />
@@ -302,65 +284,17 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                 </Box>
               )}
 
-              {replyingTo?.id === question.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
-                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
-                    Alcanzaste el límite diario de publicaciones.
-                  </Alert>
-                </Box>
-              )}
-              {replyingTo?.id === question.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: { xs: 3, sm: 5.5 }, pr: 1, pb: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                    Respondiendo a {replyingTo.userName}...
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                      inputRef={replyInputRef}
-                      fullWidth
-                      size="small"
-                      placeholder="Escribí tu respuesta..."
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmitReply();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelReply();
-                        }
-                      }}
-                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '16px' } }}
-                    />
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={handleSubmitReply}
-                      disabled={isSubmitting || !replyText.trim()}
-                      sx={{
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        width: 32,
-                        height: 32,
-                        flexShrink: 0,
-                        '&:hover': { bgcolor: 'primary.dark' },
-                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-                      }}
-                    >
-                      <SendIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={handleCancelReply}
-                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
-                      aria-label="Cancelar respuesta"
-                    >
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
+              {replyingTo?.id === question.id && (
+                <InlineReplyForm
+                  replyingToName={replyingTo.userName}
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSubmit={handleSubmitReply}
+                  onCancel={handleCancelReply}
+                  isSubmitting={isSubmitting}
+                  isOverDailyLimit={userCommentsToday >= MAX_COMMENTS_PER_DAY}
+                  inputRef={replyInputRef}
+                />
               )}
 
               {index < visibleQuestions.length - 1 && <Divider />}
@@ -374,19 +308,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
         )}
       </List>
 
-      <Snackbar
-        open={deleteSnackbarProps.open}
-        message={deleteSnackbarProps.message}
-        autoHideDuration={deleteSnackbarProps.autoHideDuration}
-        onClose={deleteSnackbarProps.onClose}
-        action={
-          <Button color="primary" size="small" onClick={deleteSnackbarProps.onUndo}>
-            Deshacer
-          </Button>
-        }
-      />
-
-      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={closeProfile} />
+      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} />
     </Box>
   );
 });

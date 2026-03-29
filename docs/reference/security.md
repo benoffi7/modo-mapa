@@ -41,7 +41,7 @@ Antes de cada commit, verificar:
 ## App Check
 
 - **Admin callables**: usan `ENFORCE_APP_CHECK_ADMIN = !IS_EMULATOR` — habilitado en prod, deshabilitado en emuladores. Incluye: backups, claims, feedback admin, menuPhotos admin, authStats, featuredLists, storageStats, analyticsReport.
-- **User-facing callables**: usan `ENFORCE_APP_CHECK = false` — deshabilitado porque staging y produccion comparten el mismo deployment y staging no tiene reCAPTCHA key. Incluye: inviteListEditor, removeListEditor, reportMenuPhoto, writePerfMetrics.
+- **User-facing callables**: usan `ENFORCE_APP_CHECK = !IS_EMULATOR && APP_CHECK_ENFORCEMENT === 'enabled'` — controlado por env var en `functions/.env`. Production: `enabled`. Staging: unset. Incluye: inviteListEditor, removeListEditor, reportMenuPhoto, writePerfMetrics.
 - **Frontend**: se inicializa con `ReCaptchaEnterpriseProvider` solo en producción (`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`).
 - **Emuladores**: no requieren App Check (`IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true'`).
 
@@ -84,14 +84,14 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 
 | Colección | Read | Create | Update | Delete |
 |-----------|------|--------|--------|--------|
-| `users` | owner + admin | owner | owner (displayName only) | — |
+| `users` | auth | owner, `keys().hasOnly(['displayName','displayNameLower','avatarId','createdAt'])` | owner, `affectedKeys().hasOnly(['displayName','displayNameLower','avatarId'])` | — |
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
 | `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner (userId immutability, score + updatedAt + criteria) | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
 | `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner (userId immutability) | owner |
-| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000 | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser only) | owner |
+| `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
 | `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner (userId immutability, level + updatedAt) | owner |
 | `config` | admin | Functions | Functions | — |
@@ -167,8 +167,28 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 |-----------|--------|
 | `comments` | 20/día por usuario |
 | `commentLikes` | 50/día por usuario |
-| `customTags` | 10/business por usuario |
+| `customTags` | 10/business por usuario + 50/día por usuario |
+| `favorites` | 100/día por usuario |
+| `priceLevels` | 50/día por usuario |
+| `ratings` | 30/día por usuario |
+| `userTags` | 100/día por usuario |
 | `feedback` | 5/día por usuario |
+| `notifications` | 50/día por destinatario (admin types exempt) |
+
+### IP-based rate limiting
+
+| Acción | Límite |
+|--------|--------|
+| Creación de cuentas anónimas | 10/día por IP |
+| Alert threshold | 5 creaciones/día (log sin bloquear) |
+
+- IPs hasheadas con SHA-256 (nunca se almacenan raw)
+- Colección `_ipRateLimits` con reset diario
+- `beforeUserCreated` blocking function para cuentas anónimas
+
+### Follow notification dedup
+
+- Skip `new_follower` notification si el mismo actor ya notificó al mismo destinatario en las últimas 24h
 
 ### Server-side data integrity (Cloud Functions)
 
@@ -224,14 +244,17 @@ Configurado en `firebase.json` headers:
 ## Storage rules (`storage.rules`)
 
 ```text
-menus/{businessId}/{fileName}:
+menus/{userId}/{businessId}/{fileName}:
   read:   auth != null
-  create: auth != null && size < 5MB && contentType.matches('image/(jpeg|png|webp)')
+  create: auth != null && auth.uid == userId && size < 5MB && contentType.matches('image/(jpeg|png|webp)')
   delete: false (solo admin SDK desde Cloud Functions)
+
+menus/{businessId}/{fileName}:
+  read:   auth != null (legacy, read-only para fotos existentes)
 
 feedback-media/{userId}/{feedbackId}/{fileName}:
   read:   auth != null
-  create: auth != null && auth.uid == userId && size < 10MB && contentType.matches('image/(jpeg|png|webp)')
+  create: auth != null && auth.uid == userId && size < 10MB && contentType.matches('image/(jpeg|png|webp)|application/pdf')
   delete: auth != null && auth.uid == userId
 ```
 
@@ -247,6 +270,9 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
 | Custom tag label | 30 chars | Client + Server |
 | Feedback message | 1000 chars | Server |
 | Rating score | 1-5 | Server |
+| Feedback rating | 1-5 (int, optional) | Server |
+| Feedback mediaUrl | Firebase Storage URL only | Server + Client |
+| Feedback mediaType | image, pdf | Server |
 | Custom tags por comercio | 10 | Client |
 | Comentarios por usuario/día | 20 | Client |
 

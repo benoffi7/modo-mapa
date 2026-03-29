@@ -35,7 +35,7 @@ vi.mock('../context/AuthContext', () => ({
 }));
 
 let mockUserLocation: { lat: number; lng: number } | null = null;
-vi.mock('../context/MapContext', () => ({
+vi.mock('../context/FiltersContext', () => ({
   useFilters: () => ({ userLocation: mockUserLocation }),
 }));
 

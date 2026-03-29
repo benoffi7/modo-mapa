@@ -48,7 +48,7 @@ export async function uploadMenuPhoto(
 
   // Create Firestore doc ref to get ID
   const docRef: DocumentReference = doc(collection(db, COLLECTIONS.MENU_PHOTOS));
-  const storagePath = `menus/${businessId}/${docRef.id}_original`;
+  const storagePath = `menus/${userId}/${businessId}/${docRef.id}_original`;
 
   // Upload to Storage with explicit content type
   const storageRef = ref(storage, storagePath);

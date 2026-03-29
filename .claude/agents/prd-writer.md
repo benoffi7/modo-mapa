@@ -115,6 +115,42 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 
 - [ ] {relevant security items}
 
+### Vectores de ataque automatizado
+
+{Para cada superficie expuesta por este feature, evaluar que podria hacer un bot/script:}
+
+| Superficie | Ataque posible | Mitigacion requerida |
+|-----------|---------------|---------------------|
+| {ej: nuevo endpoint} | {ej: spam automatizado} | {ej: rate limit + App Check} |
+
+{Si el feature escribe a Firestore: verificar que la coleccion tiene hasOnly(), rate limit server-side, y moderacion si hay texto libre.}
+{Si el feature lee datos: evaluar si permite scraping masivo y si necesita restricciones adicionales en rules.}
+
+---
+
+## Deuda tecnica y seguridad
+
+{Antes de escribir esta seccion, consultar issues abiertos de seguridad y tech debt:}
+```bash
+gh issue list --label security --state open --json number,title
+gh issue list --label "tech debt" --state open --json number,title
+```
+
+{Identificar deuda tecnica y vulnerabilidades existentes que:
+1. Se ven AFECTADAS por este feature (ej: si el feature escribe a users collection y #208 hasOnly() sigue abierto)
+2. Pueden MITIGARSE como parte de este feature (ej: si tocamos el archivo, aprovechamos para fixear)
+3. Podrían EMPEORAR si no se consideran (ej: agregar mas colecciones sin rate limit)}
+
+### Issues relacionados
+
+| Issue | Relacion | Accion |
+|-------|----------|--------|
+| {ej: #208 users hasOnly()} | {afecta/mitiga/empeora} | {fix como parte del feature / considerar en rules / no agravar} |
+
+### Mitigacion incorporada
+
+{Lista de items de deuda tecnica o seguridad que se van a resolver como parte de este feature. Cada item debe tener su paso en el plan de implementacion.}
+
 ---
 
 ## Offline
@@ -138,13 +174,15 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 
 ---
 
-## Modularizacion
+## Modularizacion y % monolitico
 
-{Evaluar como la solucion mantiene la separacion UI/logica. Es un requisito que:}
+{El proyecto esta en 30% monolitico. Cada feature debe mantener o reducir este %. Evaluar:}
 
 - La logica de negocio viva en hooks/services, no en componentes de layout
 - Los componentes nuevos reciban datos via props o hooks propios, no acoplandose a contextos de layout
 - Si se agrega UI al SideMenu/AppShell, la logica se extraiga a un hook dedicado
+- Firebase SDK imports SOLO en services/, hooks/, config/, context/ — NUNCA en components/
+- Componentes nuevos van en la carpeta de su dominio de tab (social/, lists/, profile/, search/, home/, business/) — NUNCA en menu/ (cajón de sastre legacy)
 
 ### Checklist modularizacion
 
@@ -153,6 +191,21 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 - [ ] No se agregan useState de logica de negocio a AppShell o SideMenu
 - [ ] Props explicitas en vez de dependencias implicitas a contextos de layout
 - [ ] Cada prop de accion (onClick, onSelect, onNavigate) tiene un handler real especificado — nunca noop `() => {}`
+- [ ] Ningun componente nuevo importa directamente de `firebase/firestore`
+- [ ] Archivos nuevos van en carpeta de dominio correcta (NO en `components/menu/`)
+- [ ] Si el feature necesita estado global, evaluar si un contexto existente lo cubre antes de crear uno nuevo
+- [ ] Ningun archivo nuevo supera 400 lineas
+
+### Impacto en % monolitico
+
+{Evaluar si este feature aumenta, mantiene o reduce el acoplamiento:}
+
+| Aspecto | Impacto | Justificacion |
+|---------|---------|---------------|
+| Acoplamiento de componentes | {+/-/=} | {ej: componente nuevo aislado, no agrega imports cruzados} |
+| Estado global | {+/-/=} | {ej: usa contexto existente, no crea god-context} |
+| Firebase coupling | {+/-/=} | {ej: queries en hook, no en componente} |
+| Organizacion por dominio | {+/-/=} | {ej: archivos en carpeta correcta de tab} |
 
 ---
 
@@ -169,6 +222,7 @@ Before finishing, verify:
 - [ ] Solucion references existing patterns where applicable
 - [ ] Tests section has specific file predictions, not just generic criteria
 - [ ] Seguridad section is tailored, not copy-pasted boilerplate
+- [ ] Deuda tecnica section identifies related debt and mitigation
 - [ ] Out of Scope is clear and prevents scope creep
 - [ ] Scope table has realistic effort estimates
 - [ ] Offline section has specific data flows, not just generic checklist

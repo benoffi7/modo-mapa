@@ -160,6 +160,52 @@ Mock strategy.}
 
 {Key technical decisions and their rationale.
 Alternatives considered and why they were rejected.}
+
+---
+
+## Hardening de seguridad
+
+{Para cada superficie nueva que introduce el feature, especificar las defensas concretas:}
+
+### Firestore rules requeridas
+
+{Mostrar el codigo exacto de las rules nuevas o modificadas. Incluir hasOnly(), validacion de tipos, rangos, y ownership.}
+
+### Rate limiting
+
+{Para cada coleccion nueva escribible por usuarios, especificar el rate limit server-side:}
+
+| Coleccion | Limite | Implementacion |
+|-----------|--------|---------------|
+| {ej: reactions} | {ej: 30/dia} | {checkRateLimit en onReactionCreated} |
+
+### Vectores de ataque mitigados
+
+{Lista de ataques evaluados y como se mitigan en esta implementacion:}
+
+| Ataque | Mitigacion | Archivo |
+|--------|-----------|---------|
+| {ej: spam via anonymous accounts} | {ej: rate limit + moderacion} | {functions/src/triggers/X.ts} |
+| {ej: field injection} | {ej: hasOnly() en rules} | {firestore.rules} |
+| {ej: data scraping} | {ej: read filtrado por businessId} | {firestore.rules} |
+
+---
+
+## Deuda tecnica: mitigacion incorporada
+
+{Consultar issues abiertos antes de escribir:}
+```bash
+gh issue list --label security --state open --json number,title
+gh issue list --label "tech debt" --state open --json number,title
+```
+
+{Para cada issue de deuda tecnica o seguridad que se puede resolver como parte de este feature:}
+
+| Issue | Que se resuelve | Paso del plan |
+|-------|----------------|---------------|
+| {ej: #221 firebase import en componente} | {mover query a hook} | {Fase 1, paso 3} |
+
+{Si un archivo que vamos a tocar tiene deuda tecnica conocida, incluir el fix en el plan. No agravar deuda existente.}
 ```
 
 ### plan.md
@@ -201,6 +247,31 @@ Which files must be created/modified first.}
 
 {2-3 potential risks and mitigations.}
 
+## Guardrails de modularidad
+
+{Verificar que el plan no aumenta el % monolitico (actualmente ~30%):}
+
+- [ ] Ningun componente nuevo importa `firebase/firestore` directamente
+- [ ] Archivos nuevos en carpeta de dominio correcta (NO en `components/menu/`)
+- [ ] Logica de negocio en hooks/services, no en componentes
+- [ ] Si se toca un archivo con deuda tecnica, se incluye el fix en el plan
+- [ ] Ningun archivo resultante supera 400 lineas
+
+## Fase final: Documentacion (OBLIGATORIA)
+
+{Toda implementacion DEBE incluir una fase final de actualizacion de docs. No se acumula deuda de documentacion.}
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `docs/reference/security.md` | {Actualizar si se modificaron rules, rate limits, auth, o storage rules} |
+| 2 | `docs/reference/firestore.md` | {Actualizar si se agregaron/modificaron colecciones, campos, o rules} |
+| 3 | `docs/reference/features.md` | {Actualizar si se agrego/cambio funcionalidad visible al usuario} |
+| 4 | `docs/reference/patterns.md` | {Actualizar si se agrego un nuevo hook, servicio, o patron} |
+| 5 | `docs/reference/project-reference.md` | {Actualizar version, fecha, resumen de features} |
+| 6 | `src/components/menu/HelpSection.tsx` | {Actualizar si cambio comportamiento visible al usuario} |
+
+{Eliminar filas que no aplican a este issue. Agregar filas si otros docs se ven afectados.}
+
 ## Criterios de done
 
 - [ ] All items from PRD scope implemented
@@ -209,6 +280,7 @@ Which files must be created/modified first.}
 - [ ] Build succeeds
 - [ ] Seed data updated (if schema changed)
 - [ ] Privacy policy reviewed (if new data collection)
+- [ ] Reference docs updated (security.md, firestore.md, features.md, patterns.md as applicable)
 ```
 
 ## Quality checklist
@@ -225,6 +297,9 @@ Before finishing, verify:
 - [ ] No placeholder props in integration — every component action prop (onClick, onSelect, onNavigate) must have a real handler specified in the plan. If the integration phase connects a component, the plan must include wiring its interactive props to actual state/logic. Never leave noop callbacks like `() => {}`
 - [ ] UI scroll complexity — if the plan adds sections to an existing Screen/Sheet/Panel, count total vertically-stacked sections (separated by Dividers). If >5 sections, the plan MUST include a reorganization strategy (tabs, accordion, or sticky header). Reference: the BusinessSheet sabana incident
 - [ ] File size estimation — every plan must include a table estimating resulting file sizes. If any file would exceed 400 lines, include decomposition strategy. Reference: `docs/reference/file-size-directive.md`
+- [ ] Monolith % guard — verify: (1) no component imports `firebase/firestore` directly, (2) new files go in domain-aligned folder (NOT `components/menu/`), (3) no new god-context, (4) business logic in hooks/services not components. If any check fails, add remediation step to the plan
+- [ ] Security hardening — verify: (1) every new writable collection has `hasOnly()` + rate limit + moderation if text, (2) every new readable collection evaluates scraping risk, (3) no new secrets in committed files, (4) `mediaUrl`/`href` fields validated. Reference: open security issues via `gh issue list --label security --state open`
+- [ ] Tech debt non-aggravation — if the plan touches a file with known tech debt (check `gh issue list --label "tech debt" --state open`), include the fix in the plan. Never make existing debt worse
 
 ## After creating
 

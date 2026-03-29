@@ -19,6 +19,7 @@ import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } fro
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
+import { isValidStorageUrl } from '../../utils/media';
 import { FEEDBACK_STATUSES, MAX_ADMIN_RESPONSE_LENGTH } from '../../constants/feedback';
 import type { Feedback, FeedbackCategory, FeedbackStatus, Business } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
@@ -156,12 +157,12 @@ export default function FeedbackList() {
               render: (f) => (
                 <Box>
                   <Typography variant="body2">{f.message}</Typography>
-                  {f.mediaUrl && f.mediaType === 'pdf' ? (
+                  {isValidStorageUrl(f.mediaUrl) && f.mediaType === 'pdf' ? (
                     <Link href={f.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                       <PictureAsPdfIcon color="error" fontSize="small" />
                       <Typography variant="caption">PDF adjunto</Typography>
                     </Link>
-                  ) : f.mediaUrl ? (
+                  ) : isValidStorageUrl(f.mediaUrl) ? (
                     <Box
                       component="img"
                       src={f.mediaUrl}
@@ -169,6 +170,8 @@ export default function FeedbackList() {
                       onClick={() => setMediaOpen(f.mediaUrl!)}
                       sx={{ maxHeight: 60, borderRadius: 0.5, mt: 0.5, cursor: 'pointer', objectFit: 'cover' }}
                     />
+                  ) : f.mediaUrl ? (
+                    <Typography variant="caption" color="error">Adjunto no disponible</Typography>
                   ) : null}
                 </Box>
               ),

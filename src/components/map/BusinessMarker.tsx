@@ -42,15 +42,17 @@ const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onCl
         aria-label={ariaLabel}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        style={{ outline: 'none', cursor: 'pointer' }}
+        style={{ outline: 'none', cursor: 'pointer', position: 'relative' }}
         className={`marker-focus ${isSelected ? 'marker-selected' : ''}`}
       >
-        <Pin
-          background={color}
-          borderColor={isSelected ? '#fff' : color}
-          glyphColor="#fff"
-          scale={isSelected ? 1.3 : 1}
-        />
+        <div style={{ pointerEvents: 'none' }}>
+          <Pin
+            background={color}
+            borderColor={isSelected ? '#fff' : color}
+            glyphColor="#fff"
+            scale={isSelected ? 1.3 : 1}
+          />
+        </div>
       </div>
     </AdvancedMarker>
   );

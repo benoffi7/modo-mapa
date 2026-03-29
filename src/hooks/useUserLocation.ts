@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useFilters } from '../context/MapContext';
+import { useFilters } from '../context/FiltersContext';
 
 export function useUserLocation() {
   const { userLocation, setUserLocation } = useFilters();

@@ -11,10 +11,10 @@ import { EVT_SUB_TAB_SWITCHED } from '../../constants/analyticsEvents';
 import { NAV_CHIP_SX } from '../../constants/ui';
 import type { SocialSubTab, Business } from '../../types';
 
-const ActivityFeedView = lazy(() => import('../menu/ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
-const FollowedList = lazy(() => import('../menu/FollowedList').then((m) => ({ default: m.FollowedList })));
-const ReceivedRecommendations = lazy(() => import('../menu/ReceivedRecommendations'));
-const RankingsView = lazy(() => import('../menu/RankingsView'));
+const ActivityFeedView = lazy(() => import('./ActivityFeedView').then((m) => ({ default: m.ActivityFeedView })));
+const FollowedList = lazy(() => import('./FollowedList').then((m) => ({ default: m.FollowedList })));
+const ReceivedRecommendations = lazy(() => import('./ReceivedRecommendations'));
+const RankingsView = lazy(() => import('./RankingsView'));
 const UserProfileSheet = lazy(() => import('../user/UserProfileSheet'));
 
 const SUB_TABS: { id: SocialSubTab; label: string }[] = [

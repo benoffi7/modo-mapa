@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { Map, useMap } from '@vis.gl/react-google-maps';
-import { useSelection, useFilters } from '../../context/MapContext';
+import { useSelection } from '../../context/SelectionContext';
+import { useFilters } from '../../context/FiltersContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
 import { useUserSettings } from '../../hooks/useUserSettings';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
@@ -27,21 +28,17 @@ export default function MapView() {
     businessesRef.current = businesses;
   }, [businesses]);
 
+  // Pan to user GPS location whenever it changes
   useEffect(() => {
-    if (map && userLocation && !hasInitialLocation.current) {
-      map.panTo(userLocation);
+    if (!map || !userLocation) return;
+    if (!hasInitialLocation.current) {
       map.setZoom(15);
       hasInitialLocation.current = true;
     }
+    map.panTo(userLocation);
   }, [map, userLocation]);
 
-  useEffect(() => {
-    if (map && userLocation && hasInitialLocation.current) {
-      map.panTo(userLocation);
-    }
-  }, [map, userLocation]);
-
-  // Pan to locality if no GPS and locality is set
+  // Pan to locality if no GPS and locality is set (initial only)
   useEffect(() => {
     if (map && !userLocation && !hasInitialLocation.current && settings.localityLat && settings.localityLng) {
       map.panTo({ lat: settings.localityLat, lng: settings.localityLng });

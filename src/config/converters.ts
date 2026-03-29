@@ -146,7 +146,7 @@ export const feedbackConverter: FirestoreDataConverter<Feedback> = {
       ...(d.respondedBy != null && { respondedBy: d.respondedBy as string }),
       ...(d.viewedByUser === true && { viewedByUser: true }),
       ...(d.mediaUrl != null && { mediaUrl: d.mediaUrl as string }),
-      ...(d.mediaType != null && { mediaType: d.mediaType as 'image' | 'video' | 'pdf' }),
+      ...(d.mediaType != null && { mediaType: d.mediaType as 'image' | 'pdf' }),
       ...(d.githubIssueUrl != null && { githubIssueUrl: d.githubIssueUrl as string }),
       ...(d.businessId != null && { businessId: d.businessId as string }),
       ...(d.businessName != null && { businessName: d.businessName as string }),

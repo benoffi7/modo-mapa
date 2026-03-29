@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useFilters } from '../context/MapContext';
+import { useFilters } from '../context/FiltersContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useToast } from '../context/ToastContext';
 import { createCheckIn, deleteCheckIn, fetchCheckInsForBusiness } from '../services/checkins';

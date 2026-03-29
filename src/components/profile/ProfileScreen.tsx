@@ -13,18 +13,18 @@ import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
 
 const AvatarPicker = lazy(() => import('./AvatarPicker'));
-const EditDisplayNameDialog = lazy(() => import('../menu/EditDisplayNameDialog'));
+const EditDisplayNameDialog = lazy(() => import('./EditDisplayNameDialog'));
 
-const OnboardingChecklist = lazy(() => import('../menu/OnboardingChecklist'));
+const OnboardingChecklist = lazy(() => import('./OnboardingChecklist'));
 const NotificationsSection = lazy(() => import('./NotificationsSection'));
-const PendingActionsSection = lazy(() => import('../menu/PendingActionsSection'));
-const SettingsPanel = lazy(() => import('../menu/SettingsPanel'));
-const HelpSection = lazy(() => import('../menu/HelpSection'));
-const FeedbackForm = lazy(() => import('../menu/FeedbackForm'));
-const PrivacyPolicy = lazy(() => import('../menu/PrivacyPolicy'));
-const CommentsList = lazy(() => import('../menu/CommentsList'));
-const RatingsList = lazy(() => import('../menu/RatingsList'));
-const StatsView = lazy(() => import('../menu/StatsView'));
+const PendingActionsSection = lazy(() => import('./PendingActionsSection'));
+const SettingsPanel = lazy(() => import('./SettingsPanel'));
+const HelpSection = lazy(() => import('./HelpSection'));
+const FeedbackForm = lazy(() => import('./FeedbackForm'));
+const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
+const CommentsList = lazy(() => import('./CommentsList'));
+const RatingsList = lazy(() => import('./RatingsList'));
+const StatsView = lazy(() => import('./StatsView'));
 const AchievementsSection = lazy(() => import('./AchievementsSection'));
 const AchievementsGrid = lazy(() => import('./AchievementsGrid'));
 

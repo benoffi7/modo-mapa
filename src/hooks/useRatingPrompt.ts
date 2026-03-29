@@ -3,7 +3,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { useAuth } from '../context/AuthContext';
-import { useSelection } from '../context/MapContext';
+import { useSelection } from '../context/SelectionContext';
 import { fetchMyCheckIns } from '../services/checkins';
 import { allBusinesses } from './useBusinesses';
 import { trackEvent } from '../utils/analytics';

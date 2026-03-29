@@ -2,6 +2,7 @@ import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/fire
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
+import { logAbuse } from '../utils/abuseLogger';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
 
@@ -25,6 +26,7 @@ export const onCommentLikeCreated = onDocumentCreated(
 
     if (exceeded) {
       await snap.ref.delete();
+      await logAbuse(db, { userId, type: 'rate_limit', collection: 'commentLikes', detail: 'Exceeded 50 commentLikes/day' });
       return;
     }
 
