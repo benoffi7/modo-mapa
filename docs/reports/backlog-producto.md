@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-29 (post docs audit: #224-#228 closed, v2.30.5)*
+*Actualizado: 2026-03-29 (post tech debt: #234 closed, v2.30.6)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
