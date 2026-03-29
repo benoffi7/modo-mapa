@@ -5,23 +5,18 @@ import {
   Button,
   List,
   Divider,
-  IconButton,
-  Snackbar,
   Chip,
   Collapse,
-  Alert,
-  TextField,
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import CloseIcon from '@mui/icons-material/Close';
 import { useToast } from '../../context/ToastContext';
 import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
-import UserProfileSheet from '../user/UserProfileSheet';
-import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
+import InlineReplyForm from './InlineReplyForm';
+import CommentListFooter from '../common/CommentListFooter';
+import { MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import { STORAGE_KEY_HINT_POST_FIRST_COMMENT } from '../../constants/storage';
 import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
@@ -304,69 +299,17 @@ export default memo(function BusinessComments({ businessId, businessName, commen
                 </Box>
               )}
 
-              {replyingTo?.id === comment.id && userCommentsToday >= MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
-                  <Alert severity="info" variant="outlined" sx={{ fontSize: '0.8rem', borderRadius: '12px' }}>
-                    Alcanzaste el límite diario de comentarios.
-                  </Alert>
-                </Box>
-              )}
-              {replyingTo?.id === comment.id && userCommentsToday < MAX_COMMENTS_PER_DAY && (
-                <Box sx={{ pl: 5.5, pr: 1, pb: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                    Respondiendo a {replyingTo.userName}...
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                      inputRef={replyInputRef}
-                      fullWidth
-                      size="small"
-                      placeholder="Escribí tu respuesta..."
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmitReply();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelReply();
-                        }
-                      }}
-                      slotProps={{ htmlInput: { maxLength: MAX_COMMENT_LENGTH } }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '16px',
-                        },
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={handleSubmitReply}
-                      disabled={isSubmitting || !replyText.trim()}
-                      sx={{
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        width: 32,
-                        height: 32,
-                        flexShrink: 0,
-                        '&:hover': { bgcolor: 'primary.dark' },
-                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-                      }}
-                    >
-                      <SendIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={handleCancelReply}
-                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
-                      aria-label="Cancelar respuesta"
-                    >
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
+              {replyingTo?.id === comment.id && (
+                <InlineReplyForm
+                  replyingToName={replyingTo.userName}
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSubmit={handleSubmitReply}
+                  onCancel={handleCancelReply}
+                  isSubmitting={isSubmitting}
+                  isOverDailyLimit={userCommentsToday >= MAX_COMMENTS_PER_DAY}
+                  inputRef={replyInputRef}
+                />
               )}
 
               {index < sortedTopLevel.length - 1 && <Divider />}
@@ -380,19 +323,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         )}
       </List>
 
-      <Snackbar
-        open={deleteSnackbarProps.open}
-        message={deleteSnackbarProps.message}
-        autoHideDuration={deleteSnackbarProps.autoHideDuration}
-        onClose={deleteSnackbarProps.onClose}
-        action={
-          <Button color="primary" size="small" onClick={deleteSnackbarProps.onUndo}>
-            Deshacer
-          </Button>
-        }
-      />
-
-      <UserProfileSheet userId={profileUser?.id ?? null} {...(profileUser?.name != null && { userName: profileUser.name })} onClose={closeProfile} />
+      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} />
     </Box>
   );
 });
