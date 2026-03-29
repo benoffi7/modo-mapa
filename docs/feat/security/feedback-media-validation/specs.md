@@ -108,7 +108,7 @@ Cambio en la seccion de renderizado de media (lineas ~159-172):
 
 Tambien aplicar en el Dialog de media fullscreen (si `mediaOpen` tiene una URL invalida, no abrir).
 
-#### `src/components/menu/MyFeedbackList.tsx`
+#### `src/components/profile/MyFeedbackList.tsx`
 
 Mismo patron de guard que `FeedbackList.tsx`. Lineas ~116-128:
 

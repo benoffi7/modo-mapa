@@ -3,7 +3,7 @@
 **Feature:** usertags-rate-limit-trigger
 **Categoria:** security
 **Fecha:** 2026-03-28
-**Issue:** #222
+**Issue:** #223
 **Prioridad:** Alta
 
 ---
@@ -122,8 +122,8 @@ Exportar ambos triggers desde `functions/src/index.ts` junto con los demas trigg
 
 | Issue | Relacion | Accion |
 |-------|----------|--------|
-| #223 ratings trigger sin rate limit | Similar gap (coleccion sin rate limit server-side) | No afecta este feature, pero es el mismo patron a aplicar |
-| #218 reorganizar components/menu/ | No afecta | Ningun cambio frontend en este feature |
+| #222 ratings trigger sin rate limit | Similar gap (coleccion sin rate limit server-side) | No afecta este feature, pero es el mismo patron a aplicar |
+| #218 reorganizar components/menu/ | Completado | menu/ ya redistribuido en domain folders |
 
 ### Mitigacion incorporada
 
