@@ -31,7 +31,7 @@
 | Paso | Archivo | Cambio |
 |------|---------|--------|
 | 8 | `src/components/admin/FeedbackList.tsx` | Importar `isValidStorageUrl` de `../../utils/media` y `MSG_FEEDBACK` de `../../constants/messages`. Wrappear renderizado de media (~linea 159) con guard `isValidStorageUrl(f.mediaUrl)`. Agregar fallback `<Typography variant="caption" color="text.disabled">{MSG_FEEDBACK.mediaNotAvailable}</Typography>` cuando `f.mediaUrl` existe pero no pasa validacion. Tambien proteger el Dialog de media fullscreen: en `setMediaOpen`, solo setear si `isValidStorageUrl`. |
-| 9 | `src/components/menu/MyFeedbackList.tsx` | Importar `isValidStorageUrl` de `../../utils/media` y `MSG_FEEDBACK` de `../../constants/messages`. Wrappear renderizado de media (~linea 116) con guard `isValidStorageUrl(fb.mediaUrl)`. Agregar mismo fallback Typography. |
+| 9 | `src/components/profile/MyFeedbackList.tsx` | Importar `isValidStorageUrl` de `../../utils/media` y `MSG_FEEDBACK` de `../../constants/messages`. Wrappear renderizado de media (~linea 116) con guard `isValidStorageUrl(fb.mediaUrl)`. Agregar mismo fallback Typography. |
 
 ### Fase 4: Tests y verificacion
 
@@ -50,7 +50,7 @@
 3. `src/types/index.ts` + `src/config/converters.ts` — Fase 2 (pasos 5-6): cambio de tipo, debe hacerse antes de tocar componentes
 4. `src/constants/messages/feedback.ts` — Fase 2 (paso 7): texto del fallback
 5. `src/components/admin/FeedbackList.tsx` — Fase 3 (paso 8): depende de pasos 3 y 7
-6. `src/components/menu/MyFeedbackList.tsx` — Fase 3 (paso 9): depende de pasos 3 y 7
+6. `src/components/profile/MyFeedbackList.tsx` — Fase 3 (paso 9): depende de pasos 3 y 7
 7. `src/config/converters.test.ts` — Fase 4 (paso 10): verificar tipo actualizado
 8. Lint + tests — Fase 4 (pasos 11-12)
 
@@ -67,7 +67,7 @@
 | `src/config/converters.ts` | 497 | 497 (cambio in-place) | Archivo ya en zona warning pero es exceptuado (config) |
 | `src/constants/messages/feedback.ts` | 4 | 5 (+1 linea) | OK |
 | `src/components/admin/FeedbackList.tsx` | 317 | ~325 (+8 lineas guard) | OK |
-| `src/components/menu/MyFeedbackList.tsx` | 151 | ~159 (+8 lineas guard) | OK |
+| `src/components/profile/MyFeedbackList.tsx` | 151 | ~159 (+8 lineas guard) | OK |
 
 ---
 

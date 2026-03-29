@@ -3,7 +3,7 @@
 **Feature:** ratings-rate-limit
 **Categoria:** security
 **Fecha:** 2026-03-28
-**Issue:** #223
+**Issue:** #222
 **Prioridad:** Alta
 
 ---
@@ -102,8 +102,8 @@ Los tests existentes en `ratings.test.ts` ya cubren create/update/delete paths c
 
 | Issue | Relacion | Accion |
 |-------|----------|--------|
-| #222 userTags sin trigger | Similar: coleccion sin rate limit server-side | No afecta este fix, pero es el mismo patron de vulnerabilidad |
-| #218 reorganizar components/menu/ | No afecta | Ningun impacto |
+| #223 userTags sin trigger | Similar: coleccion sin rate limit server-side | No afecta este fix, pero es el mismo patron de vulnerabilidad |
+| #218 reorganizar components/menu/ | Completado | menu/ ya redistribuido en domain folders |
 
 ### Mitigacion incorporada
 
