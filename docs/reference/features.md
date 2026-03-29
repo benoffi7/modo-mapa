@@ -377,3 +377,18 @@ Todas las callable admin:
 
 - **SpecialsSection**: seccion de cards en HomeScreen que muestra contenido destacado (trending, listas destacadas, logros). Cada card navega a la seccion correspondiente: `trending` abre la seccion Recientes en SideMenu, `featured_list` abre la seccion Listas en SideMenu
 - **Firestore collections**: `specials` y `achievements` con rules de lectura publica y escritura admin-only
+
+---
+
+## Nota: Badges vs Achievements
+
+La app implementa **dos sistemas separados** de gamificacion:
+
+| Sistema | Archivo | Cantidad | Logica | UI |
+|---------|---------|----------|--------|----|
+| **Badges** | `constants/badges.ts` | 11 tipos | Computados dinamicamente via `evaluateBadges()` basado en breakdown del usuario | `BadgesList.tsx` en `UserProfileModal` (rankings) |
+| **Achievements** | `constants/achievements.ts` | 8 tipos | Almacenados en Firestore `achievements`, gestionados por admin | `AchievementsGrid.tsx` + `AchievementsSection.tsx` en ProfileScreen |
+
+**Badges** (actividad): primera reseña, comentarista, influencer, fotografo, critico, popular, todoterreno, podio, racha 7d, primera foto, primera calificacion.
+
+**Achievements** (progresion): Explorador, Social, Critico, Viajero, Coleccionista, Fotografo, Embajador, Racha. Cada uno tiene niveles de progreso.

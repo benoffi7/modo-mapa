@@ -79,14 +79,20 @@ if (!Number.isInteger(score) || score < 1 || score > 5) throw new Error('Score m
 | Category | Location | Responsibility |
 |----------|----------|---------------|
 | Pages | `src/pages/` | Route-level entry points (lazy loaded) |
-| Layout | `src/components/layout/` | App shell, side menu, error boundary |
-| Business | `src/components/business/` | Business detail bottom sheet |
-| Menu | `src/components/menu/` | Side menu sections (favorites, comments, etc.) |
-| Admin | `src/components/admin/` | Admin dashboard panels |
-| Map | `src/components/map/` | Google Maps integration |
-| Search | `src/components/search/` | Search bar and filter chips |
-| Stats | `src/components/stats/` | Shared chart/list components |
-| Auth | `src/components/auth/` | Authentication dialogs |
+| Layout | `src/components/layout/` | App shell, tab bar, error boundary |
+| Home | `src/components/home/` | Home screen (greeting, specials, trending, suggestions) |
+| Search | `src/components/search/` | Search bar, filter chips, list view |
+| Business | `src/components/business/` | Business detail bottom sheet and sub-components |
+| Social | `src/components/social/` | Activity feed, rankings, followed list, recommendations |
+| Lists | `src/components/lists/` | Favorites, shared lists, collaborative lists, recents |
+| Profile | `src/components/profile/` | Profile screen, settings, stats, achievements, feedback |
+| Map | `src/components/map/` | Google Maps integration, markers, FABs |
+| Admin | `src/components/admin/` | Admin dashboard panels (15+ tabs) |
+| Admin/Perf | `src/components/admin/perf/` | Performance monitoring sub-components |
+| Admin/Alerts | `src/components/admin/alerts/` | Abuse alerts and reincidentes |
+| Auth | `src/components/auth/` | Authentication dialogs (email/password, change password) |
+| Common | `src/components/common/` | Shared UI (DiscardDialog, PaginatedListShell, PullToRefreshWrapper) |
+| UI | `src/components/ui/` | Indicators and banners (offline, stale, rating prompt) |
 
 ### Admin Panel Pattern
 
@@ -278,19 +284,102 @@ try {
 |---------|-------|
 | `AuthContext` | user, displayName, signInWithGoogle, signOut, setDisplayName |
 | `MapContext` | selectedBusiness, searchQuery, activeFilters, userLocation |
+| `SelectionContext` | Selected business ID (split from MapContext to reduce re-renders) |
+| `FiltersContext` | Active search filters (split from MapContext) |
+| `ConnectivityContext` | Online/offline status, consumed via `useConnectivity` |
+| `OnboardingContext` | Onboarding flow state and checklist progress |
+| `NotificationsContext` | Unread notification count and polling |
 
 ### Local State
 
 Each component manages its own UI state (dialogs, form inputs, loading spinners).
 
-### Caching
+### Caching (3 tiers)
 
-Two client-side cache layers reduce Firestore reads:
+Three client-side cache layers reduce Firestore reads:
 
-1. **Business view cache** (`useBusinessDataCache`): 5-min TTL for business detail queries.
-2. **First-page query cache** (`usePaginatedQuery`): 2-min TTL for paginated list first pages.
+1. **Business view cache** (`useBusinessDataCache`): In-memory `Map` with 5-min TTL for business detail queries.
+2. **First-page query cache** (`queryCache.ts`): In-memory cache with 2-min TTL for paginated list first pages.
+3. **Read cache** (`readCache.ts`): IndexedDB-backed LRU cache (20 entries) for offline reading of business data.
 
-Both caches are invalidated on write operations via `invalidateBusinessCache()` and `invalidateQueryCache()`.
+All caches are invalidated on write operations via `invalidateBusinessCache()` and `invalidateQueryCache()`.
+
+### Offline Support
+
+The project implements an offline-first pattern for write operations:
+
+1. **Detection**: `ConnectivityContext` tracks online/offline via `navigator.onLine` + `online`/`offline` events.
+2. **Interception**: `withOfflineSupport<T>(fn, offlineAction)` wraps service calls. If offline, enqueues the action instead of executing.
+3. **Queue**: `offlineQueue.ts` uses IndexedDB to persist pending actions across sessions. Supports `enqueue`, `getPending`, `subscribe`.
+4. **Sync**: `syncEngine.ts` processes the queue on reconnect. `executeAction` maps action types back to service functions. `processQueue` handles retries and error logging.
+5. **UI**: `OfflineIndicator` shows a banner. `PendingActionsSection` in Profile shows queued actions count.
+
+**Pattern for wrapping a service call:**
+
+```typescript
+await withOfflineSupport(
+  () => addComment(userId, userName, businessId, text),
+  { type: 'addComment', payload: { userId, userName, businessId, text } }
+);
+```
+
+### Deep Linking
+
+URL-based navigation via `useDeepLinks()` hook:
+
+- `?business={id}` — opens BusinessSheet for the given business
+- `?business={id}&sheetTab=opiniones` — opens specific tab in BusinessSheet
+- `?list={id}` — navigates to Lists tab and opens the specified list
+
+The hook reads `window.location.search` on mount and dispatches navigation actions via context.
+
+### Optimistic Updates
+
+Two patterns for optimistic UI:
+
+1. **`useOptimisticLikes`**: Maintains a local delta map. On toggle, immediately updates UI, then calls service. On error, reverts delta.
+2. **`useUndoDelete`**: On delete, marks item as "pending delete" with a timer. Shows Snackbar with undo. If not undone within timeout, executes the actual delete.
+
+### Cursor-Based Pagination
+
+`usePaginatedQuery<T>` handles Firestore cursor pagination:
+
+- Stores `QueryDocumentSnapshot` as cursor for `startAfter()`
+- First page is cached (2-min TTL) with a `cacheKey`
+- Supports `loadAll(maxItems)` for full async fetch
+- Components should NOT import `QueryDocumentSnapshot` directly — keep cursor management inside hooks
+
+### Converter Layers
+
+Three converter files handle Firestore ↔ TypeScript transformations:
+
+| File | Purpose |
+|------|---------|
+| `config/converters.ts` | Standard entity converters (Rating, Comment, Favorite, etc.) |
+| `config/adminConverters.ts` | Admin-specific converters (DailyMetrics, AbuseLog, PerfMetrics) |
+| `config/metricsConverter.ts` | Public metrics transformation |
+
+Use the appropriate converter based on context. Never duplicate conversion logic.
+
+### Persistence Decision Guide
+
+| Storage | When to use | TTL | Survives reload |
+|---------|------------|-----|-----------------|
+| React state | UI-only state (dialogs, form inputs) | Session | No |
+| Context | Shared app state (auth, selection, filters) | Session | No |
+| In-memory cache | Query results, business data | 2-5 min | No |
+| `localStorage` | User preferences (color mode, hints, visits, email) | Permanent | Yes |
+| IndexedDB | Offline queue, read cache | Permanent / LRU | Yes |
+| Firestore | User data, content | Permanent | Yes |
+
+### Analytics Events
+
+Track user interactions via `trackEvent(name, params?)` from `utils/analytics.ts`:
+
+- Only active in production when `analyticsEnabled` is true
+- Events use `snake_case` naming (e.g., `business_view`, `rating_submit`, `side_menu_open`)
+- Always include relevant IDs in params (e.g., `{ businessId }`)
+- Screen tracking is automatic via `useScreenTracking()` (logs pathname changes)
 
 ---
 
