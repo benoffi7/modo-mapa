@@ -25,7 +25,6 @@ export default function HomeScreen() {
       <SpecialsSection />
       <Divider sx={{ my: 0.5 }} />
       <RecentSearches />
-      <Divider sx={{ my: 0.5 }} />
       <ForYouSection />
     </Box>
   );

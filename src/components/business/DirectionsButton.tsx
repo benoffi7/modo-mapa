@@ -28,11 +28,11 @@ export default function DirectionsButton({ business }: Props) {
       aria-label="Cómo llegar"
       startIcon={<DirectionsIcon />}
       onClick={handleClick}
+      fullWidth
       sx={{
         borderRadius: '12px',
         textTransform: 'none',
         fontWeight: 500,
-        px: 3,
       }}
     >
       Cómo llegar
