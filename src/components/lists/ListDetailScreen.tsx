@@ -9,10 +9,16 @@ import PublicIcon from '@mui/icons-material/Public';
 import ShareIcon from '@mui/icons-material/Share';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import GroupIcon from '@mui/icons-material/Group';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { Badge } from '@mui/material';
 import ColorPicker, { sanitizeListColor } from './ColorPicker';
+import EditorsDialog from './EditorsDialog';
+import InviteEditorDialog from './InviteEditorDialog';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { fetchListItems, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
+import { fetchListItems, fetchSharedList, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
+import { logger } from '../../utils/logger';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -31,7 +37,10 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const { user } = useAuth();
   const toast = useToast();
   const isOwner = user?.uid === list.ownerId;
-  const canEdit = isOwner && !readOnly;
+  const canEditConfig = isOwner && !readOnly;
+  const [editorIds, setEditorIds] = useState(list.editorIds ?? []);
+  const isEditor = !isOwner && !!user && editorIds.includes(user.uid);
+  const canEditItems = (isOwner || isEditor) && !readOnly;
   const { navigateToBusiness } = useNavigateToBusiness();
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +48,8 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const [currentColor, setCurrentColor] = useState(() => sanitizeListColor(list.color));
   const [isPublic, setIsPublic] = useState(list.isPublic);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [editorsOpen, setEditorsOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,14 +111,23 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     toast.success(MSG_LIST.itemRemoved);
   };
 
+  const handleEditorsChanged = async () => {
+    try {
+      const result = await fetchSharedList(list.id);
+      if (result) setEditorIds(result.editorIds ?? []);
+    } catch (err) {
+      logger.warn('Failed to refetch editorIds', err);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
         <IconButton edge="start" onClick={() => onBack({
-          id: list.id, color: currentColor, itemCount: items.length, isPublic,
+          id: list.id, color: currentColor, itemCount: items.length, isPublic, editorIds,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
-        {canEdit && (
+        {canEditConfig && (
           <>
             <IconButton size="small" onClick={() => setColorPickerOpen(true)}>
               <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
@@ -118,6 +138,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
             {isPublic && (
               <IconButton size="small" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
             )}
+            <IconButton size="small" onClick={() => setEditorsOpen(true)}>
+              <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
+                <GroupIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+            <IconButton size="small" onClick={() => setInviteOpen(true)}>
+              <PersonAddIcon fontSize="small" />
+            </IconButton>
             <IconButton size="small" color="error" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
           </>
         )}
@@ -166,7 +194,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
                         {CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
                       </Typography>
                     </Box>
-                    {canEdit && (
+                    {canEditItems && (
                       <IconButton
                         size="small"
                         onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
@@ -187,6 +215,20 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         onClose={() => setColorPickerOpen(false)}
         onSelect={handleColorChange}
         selectedHex={currentColor}
+      />
+
+      <EditorsDialog
+        open={editorsOpen}
+        onClose={() => setEditorsOpen(false)}
+        listId={list.id}
+        editorIds={editorIds}
+        onEditorRemoved={handleEditorsChanged}
+      />
+
+      <InviteEditorDialog
+        listId={inviteOpen ? list.id : null}
+        onClose={() => setInviteOpen(false)}
+        onInvited={handleEditorsChanged}
       />
 
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>

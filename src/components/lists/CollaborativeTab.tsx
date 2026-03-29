@@ -48,7 +48,6 @@ export default function CollaborativeTab({ onRegisterBackHandler }: Props = {}) 
         list={selectedList}
         onBack={() => { setSelectedList(null); load(); }}
         onDeleted={() => { setSelectedList(null); load(); }}
-        readOnly
       />
     );
   }
