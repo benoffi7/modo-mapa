@@ -168,7 +168,7 @@ No hay deuda tecnica que se resuelva como parte de este feature. El scope se lim
 
 - [x] Logica de negocio en hooks/services (los servicios `inviteEditor`, `removeEditor`, `fetchEditorName` ya estan en `services/sharedLists.ts`)
 - [x] Componentes nuevos son reutilizables fuera del contexto actual (los dialogs ya existen y son independientes)
-- [x] No se agregan useState de logica de negocio a AppShell o SideMenu
+- [x] No se agregan useState de logica de negocio a TabShell o MapAppShell
 - [x] Props explicitas en `EditorsDialog` y `InviteEditorDialog` (ya implementadas)
 - [x] Cada prop de accion tiene un handler real (`onEditorRemoved`, `onInvited`, `onClose`)
 - [x] Ningun componente nuevo importa directamente de `firebase/firestore`

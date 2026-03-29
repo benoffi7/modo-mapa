@@ -10,7 +10,7 @@
 
 ## Contexto
 
-La infraestructura de dark mode esta completa desde hace varias versiones: `ColorModeContext` con provider, `useColorMode` hook, `getDesignTokens(mode)` en `src/theme/index.ts`, persistencia en localStorage, respeto de `prefers-color-scheme`, y tracking de analytics via `setUserProperty('theme', mode)`. Sin embargo, no existe ningun punto de entrada en la UI para que el usuario active o desactive el modo oscuro manualmente. Nota: `patterns.md` aun referencia "Toggle en SideMenu footer", pero `SideMenu` fue eliminado en el rediseno v3 (`new-home`). La ubicacion correcta es `SettingsPanel`.
+La infraestructura de dark mode esta completa desde hace varias versiones: `ColorModeContext` con provider, `useColorMode` hook, `getDesignTokens(mode)` en `src/theme/index.ts`, persistencia en localStorage, respeto de `prefers-color-scheme`, y tracking de analytics via `setUserProperty('theme', mode)`. Sin embargo, no existe ningun punto de entrada en la UI para que el usuario active o desactive el modo oscuro manualmente. Nota: `patterns.md` aun referencia "Toggle en SideMenu footer", pero `SideMenu` fue reemplazado por `TabShell`/`TabBar`/`MapAppShell` en el rediseno v3 (`new-home`). La ubicacion correcta es `SettingsPanel` dentro de `ProfileScreen`.
 
 ## Problema
 
@@ -39,12 +39,14 @@ Si el usuario accede desde `ProfileScreen`, el icono del modo actual (sol/luna) 
 Revisar los componentes principales de la app en modo oscuro para detectar problemas de contraste, bordes invisibles, o textos ilegibles. Usar `contrast.ts` (WCAG 2.0) para validar combinaciones criticas. Los componentes a auditar como minimo:
 
 - BusinessSheet (tabs Info/Opiniones)
-- SideMenu (header, secciones, footer)
-- SettingsPanel
+- ProfileScreen (header, SettingsPanel, SettingsMenu)
+- HomeScreen (GreetingHeader, QuickActions, ForYouSection)
+- ListsScreen (ListCardGrid, ListDetailScreen)
 - Dialogs (EmailPasswordDialog, ChangePasswordDialog, DeleteAccountDialog)
-- Mapa (marcadores, info window)
-- Notificaciones (drawer, badges)
+- Mapa (marcadores, SearchBar, FilterChips)
+- Notificaciones (NotificationsSection, badges)
 - Onboarding (BenefitsDialog, checklist)
+- TabBar (bottom navigation)
 
 ---
 
@@ -155,7 +157,7 @@ No aplica. Este feature es 100% client-side, sin interaccion con backend.
 
 - [x] Logica de negocio en hooks/services (no inline en componentes de layout) -- usa `useColorMode()` hook existente
 - [x] Componentes nuevos son reutilizables fuera del contexto actual de layout -- reutiliza `SettingRow` existente
-- [x] No se agregan useState de logica de negocio a AppShell o SideMenu
+- [x] No se agregan useState de logica de negocio a TabShell o MapAppShell
 - [x] Props explicitas en vez de dependencias implicitas a contextos de layout
 - [x] Cada prop de accion tiene un handler real especificado -- `toggleColorMode` del context
 - [x] Ningun componente nuevo importa directamente de `firebase/firestore`

@@ -164,7 +164,7 @@ Este feature **reduce** el porcentaje monolitico al eliminar codigo muerto que e
 
 - [x] No se agrega logica de negocio inline
 - [x] No se agregan componentes nuevos
-- [x] No se agregan useState a AppShell o SideMenu
+- [x] No se agregan useState a TabShell o MapAppShell
 - [x] No se agregan dependencias implicitas
 - [x] No se agregan props con noop handlers
 - [x] Ningun componente nuevo importa directamente de `firebase/firestore`
