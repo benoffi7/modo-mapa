@@ -1,5 +1,7 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { getDb } from '../helpers/env';
+import { checkRateLimit } from '../utils/rateLimiter';
+import { logAbuse } from '../utils/abuseLogger';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { updateRatingAggregates } from '../utils/aggregates';
 import { trackFunctionTiming } from '../utils/perfTracker';
@@ -18,14 +20,23 @@ export const onRatingWritten = onDocumentWritten(
     if (!beforeExists && afterExists) {
       // Create
       const data = after!.data()!;
+      const userId = data.userId as string;
       const businessId = data.businessId as string;
       const score = data.score as number;
+
+      // Rate limit: 30 ratings per day per user
+      const exceeded = await checkRateLimit(db, { collection: 'ratings', limit: 30, windowType: 'daily' }, userId);
+      if (exceeded) {
+        await after!.ref.delete();
+        await logAbuse(db, { userId, type: 'rate_limit', collection: 'ratings', detail: 'Exceeded 30 ratings/day' });
+        return;
+      }
+
       await incrementCounter(db, 'ratings', 1);
       await trackWrite(db, 'ratings');
       await updateRatingAggregates(db, businessId, 'add', score);
 
       // Fan-out to followers
-      const userId = data.userId as string;
       const userSnap = await db.doc(`users/${userId}`).get();
       const actorName = userSnap.exists ? (userSnap.data()!.displayName as string) : 'Alguien';
       const bizSnap = await db.doc(`businesses/${businessId}`).get();
