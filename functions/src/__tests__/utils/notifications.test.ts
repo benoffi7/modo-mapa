@@ -9,11 +9,15 @@ vi.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: mockServerTimestamp },
 }));
 
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { createNotification } from '../../utils/notifications';
 
 // --- DB mock helper ---
 
-function createMockDb(userSettingsData?: Record<string, unknown> | null) {
+function createMockDb(userSettingsData?: Record<string, unknown> | null, recentNotifCount = 0) {
   const mockAdd = vi.fn().mockResolvedValue({ id: 'notif1' });
 
   const mockGet = vi.fn().mockResolvedValue(
@@ -22,8 +26,14 @@ function createMockDb(userSettingsData?: Record<string, unknown> | null) {
       : { exists: true, data: () => userSettingsData },
   );
 
+  const mockCountGet = vi.fn().mockResolvedValue({ data: () => ({ count: recentNotifCount }) });
+  const mockCount = vi.fn().mockReturnValue({ get: mockCountGet });
+  const mockWhereObj: Record<string, unknown> = { add: mockAdd, count: mockCount };
+  const mockWhere = vi.fn().mockReturnValue(mockWhereObj);
+  mockWhereObj.where = mockWhere;
+
   const mockDoc = vi.fn().mockReturnValue({ get: mockGet });
-  const mockCollection = vi.fn().mockReturnValue({ add: mockAdd });
+  const mockCollection = vi.fn().mockReturnValue({ add: mockAdd, where: mockWhere });
 
   const db = { doc: mockDoc, collection: mockCollection };
   return { db: db as never, mockAdd, mockGet, mockDoc };
