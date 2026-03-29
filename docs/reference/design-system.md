@@ -87,8 +87,8 @@ Los archivos >400 lineas fueron modularizados:
 
 | Archivo original | Accion | Resultado |
 |------------------|--------|-----------|
-| CommentsList.tsx (592) | Extraido `CommentItem.tsx` | 378 + 226 lineas |
-| BusinessComments.tsx (523) | Extraido `InlineReplyForm.tsx` compartido | 467 lineas |
+| CommentsList.tsx (592) | Extraido `CommentsListItem.tsx` (renombrado de CommentItem) | 378 + 226 lineas |
+| BusinessComments.tsx (523) | Extraido `InlineReplyForm.tsx` compartido (activo, usado por Comments y Questions) | 467 lineas |
 | BusinessQuestions.tsx (507) | Usa `InlineReplyForm.tsx` compartido | 459 lineas |
 | admin.ts (517) | Split en `admin/counters`, `activity`, `users`, `social`, `content` | 5 modulos (26-199 lineas) |
 | converters.ts (497) | Data layer, sin cambios | pendiente |

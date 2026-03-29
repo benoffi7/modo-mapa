@@ -54,7 +54,7 @@ Capa de abstraccion entre componentes y Firestore. Los componentes nunca importa
 | `specials.ts` | `specials` (config) | `fetchSpecials`, `fetchActiveSpecials`, `saveAllSpecials`, `deleteSpecial` |
 | `users.ts` | `users` | `searchUsers`, `fetchUserDisplayNames` |
 | `userProfile.ts` | `users` + aggregados | `fetchUserProfile` (read-only aggregate con stats) |
-| `sharedLists.ts` | `sharedLists`, `listItems` | `fetchSharedList`, `fetchUserLists`, `fetchEditorName`, `inviteEditor` + operaciones CRUD de listas y items |
+| `sharedLists.ts` | `sharedLists`, `listItems` | `fetchSharedList`, `fetchUserLists`, `fetchEditorName`, `inviteEditor` + operaciones CRUD de listas y items. `createList` y `updateList` aceptan `icon?: string` (validado via `getListIconById`) |
 | `emailAuth.ts` | Firebase Auth | `linkWithCredential`, `signInWithEmailAndPassword`, `signOut`, `sendEmailVerification`, `sendPasswordResetEmail`, `reauthenticate`, `updatePassword`, `getAuthErrorMessage` |
 
 ### Servicios de datos agregados

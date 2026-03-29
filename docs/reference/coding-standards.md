@@ -55,7 +55,7 @@ Every Firestore collection has a corresponding service module:
 - They **validate input** as a first line of defense (defense in depth): text lengths, score ranges, enum whitelists.
 - They use strict types (`FeedbackCategory`, `PredefinedTagId`) instead of plain `string`.
 - They handle cache invalidation internally (e.g., `invalidateQueryCache`).
-- Components import from `src/services/` (or `src/services/index.ts` barrel).
+- Components import from `src/services/` (individual modules, barrel was removed in #232).
 
 **Input validation examples:**
 
@@ -243,10 +243,9 @@ Organize imports in this order, with a blank line between groups:
 
 Use barrel exports (`index.ts`) for:
 
-- `src/services/index.ts` - public service functions
 - `src/components/stats/index.ts` - shared chart components
 
-Do NOT barrel-export everything; only use for frequently imported modules.
+Do NOT barrel-export everything; only use for frequently imported modules. Note: `src/services/index.ts` barrel was removed in #232 — import individual service modules directly.
 
 ---
 
@@ -283,8 +282,7 @@ try {
 | Context | State |
 |---------|-------|
 | `AuthContext` | user, displayName, signInWithGoogle, signOut, setDisplayName |
-| `MapContext` | selectedBusiness, searchQuery, activeFilters, userLocation |
-| `SelectionContext` | Selected business ID (split from MapContext to reduce re-renders) |
+| `SelectionContext` | Selected business ID |
 | `FiltersContext` | Active search filters (split from MapContext) |
 | `ConnectivityContext` | Online/offline status, consumed via `useConnectivity` |
 | `OnboardingContext` | Onboarding flow state and checklist progress |

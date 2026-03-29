@@ -5,8 +5,6 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import type { Business } from '../../types';
 import { CATEGORY_LABELS } from '../../types';
-import DirectionsButton from './DirectionsButton';
-
 interface Props {
   business: Business;
   favoriteButton: ReactNode;
@@ -69,9 +67,6 @@ export default function BusinessHeader({ business, favoriteButton, shareButton, 
         </Box>
       )}
 
-      <Box sx={{ mt: 1.5 }}>
-        <DirectionsButton business={business} />
-      </Box>
     </Box>
   );
 }

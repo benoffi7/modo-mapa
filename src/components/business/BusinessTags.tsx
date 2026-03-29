@@ -183,7 +183,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
               disabled={pendingTagId === tag.id}
               variant={isSeed || userAdded ? 'filled' : 'outlined'}
               color={userAdded ? 'primary' : 'default'}
-              sx={{ opacity: isVisible ? 1 : 0.6 }}
+              sx={{ opacity: isVisible ? 1 : 0.6, borderRadius: 1 }}
             />
           );
         })}
@@ -197,6 +197,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
             onClick={(e) => handleCustomTagClick(e, tag)}
             variant="outlined"
             color="secondary"
+            sx={{ borderRadius: 1 }}
           />
         ))}
 
@@ -207,7 +208,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
             icon={<AddIcon fontSize="small" />}
             onClick={handleOpenCreateDialog}
             variant="outlined"
-            sx={{ borderStyle: 'dashed' }}
+            sx={{ borderStyle: 'dashed', borderRadius: 1 }}
           />
         )}
       </Box>
