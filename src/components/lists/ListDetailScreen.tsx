@@ -9,10 +9,16 @@ import PublicIcon from '@mui/icons-material/Public';
 import ShareIcon from '@mui/icons-material/Share';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import InsertEmoticonOutlinedIcon from '@mui/icons-material/InsertEmoticonOutlined';
 import ColorPicker, { sanitizeListColor } from './ColorPicker';
+import IconPicker from './IconPicker';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { fetchListItems, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
+import { getListIconById } from '../../constants/listIcons';
+import type { ListIconOption } from '../../constants/listIcons';
+import { trackEvent } from '../../utils/analytics';
+import { EVT_LIST_ICON_CHANGED } from '../../constants/analyticsEvents';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -39,6 +45,8 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const [currentColor, setCurrentColor] = useState(() => sanitizeListColor(list.color));
   const [isPublic, setIsPublic] = useState(list.isPublic);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [currentIcon, setCurrentIcon] = useState(list.icon);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,15 +108,32 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     toast.success(MSG_LIST.itemRemoved);
   };
 
+  const handleIconChange = async (icon: ListIconOption) => {
+    const prev = currentIcon;
+    setCurrentIcon(icon.id);
+    try {
+      await updateList(list.id, list.name, list.description, undefined, icon.id);
+      trackEvent(EVT_LIST_ICON_CHANGED, { list_id: list.id, icon_id: icon.id });
+    } catch {
+      setCurrentIcon(prev);
+      toast.error(MSG_LIST.iconError);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
         <IconButton edge="start" onClick={() => onBack({
-          id: list.id, color: currentColor, itemCount: items.length, isPublic,
+          id: list.id, color: currentColor, itemCount: items.length, isPublic, icon: currentIcon,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEdit && (
           <>
+            <IconButton size="small" onClick={() => setIconPickerOpen(true)}>
+              {currentIcon && getListIconById(currentIcon)
+                ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
+                : <InsertEmoticonOutlinedIcon fontSize="small" />}
+            </IconButton>
             <IconButton size="small" onClick={() => setColorPickerOpen(true)}>
               <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
             </IconButton>
@@ -181,6 +206,13 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
           </Box>
         )}
       </Box>
+
+      <IconPicker
+        open={iconPickerOpen}
+        onClose={() => setIconPickerOpen(false)}
+        onSelect={handleIconChange}
+        selectedId={currentIcon}
+      />
 
       <ColorPicker
         open={colorPickerOpen}

@@ -172,11 +172,11 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       <CreateListDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(listId, name, description) => {
+        onCreated={(listId, name, description, icon) => {
           setCreateOpen(false);
           if (user) {
             setLists((prev) => [{
-              id: listId, ownerId: user.uid, name, description,
+              id: listId, ownerId: user.uid, name, description, icon,
               isPublic: false, featured: false, editorIds: [], itemCount: 0,
               createdAt: new Date(), updatedAt: new Date(),
             }, ...prev]);

@@ -22,6 +22,7 @@ export const MSG_LIST = {
   editorRemoved: 'Editor removido',
   editorInviteError: 'No se pudo invitar',
   editorRemoveError: 'No se pudo remover',
+  iconError: 'Error al cambiar icono',
   favoritesAdded: (count: number) =>
     count > 0
       ? `${count} favorito${count !== 1 ? 's' : ''} agregado${count !== 1 ? 's' : ''}`
