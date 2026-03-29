@@ -7,12 +7,11 @@ import { cardSx } from '../../theme/cards';
 import PeopleIcon from '@mui/icons-material/People';
 import { useAuth } from '../../context/AuthContext';
 import { fetchFollowing } from '../../services/follows';
+import type { FollowCursor } from '../../services/follows';
 import { fetchUserDisplayNames } from '../../services/users';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MSG_SOCIAL } from '../../constants/messages';
-import type { Follow } from '../../types';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 const UserSearchField = lazy(() =>
   import('../UserSearchField').then((m) => ({ default: m.UserSearchField })),
@@ -29,11 +28,11 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<Follow> | null>(null);
+  const [lastDoc, setLastDoc] = useState<FollowCursor | null>(null);
 
   const userId = user?.uid;
 
-  const loadPage = useCallback(async (cursor?: QueryDocumentSnapshot | null) => {
+  const loadPage = useCallback(async (cursor?: FollowCursor | null) => {
     if (!userId) return;
     const isFirst = !cursor;
     if (isFirst) setIsLoading(true);
@@ -50,7 +49,7 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
       });
 
       setHasMore(result.hasMore);
-      setLastDoc(result.docs[result.docs.length - 1] ?? null);
+      setLastDoc(result.cursor);
       if (isFirst) setItems(newItems);
       else setItems((prev) => [...prev, ...newItems]);
     } catch {
