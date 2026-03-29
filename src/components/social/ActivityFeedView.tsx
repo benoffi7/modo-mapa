@@ -3,7 +3,7 @@ import { Box, List } from '@mui/material';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
 import { useAuth } from '../../context/AuthContext';
 import { useActivityFeed } from '../../hooks/useActivityFeed';
-import { PaginatedListShell } from './PaginatedListShell';
+import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MSG_SOCIAL } from '../../constants/messages';
 import { ActivityFeedItemRow } from './ActivityFeedItem';

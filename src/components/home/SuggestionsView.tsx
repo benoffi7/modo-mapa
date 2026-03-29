@@ -18,7 +18,7 @@ import { useListFilters } from '../../hooks/useListFilters';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../types';
-import ListFilters from './ListFilters';
+import ListFilters from '../common/ListFilters';
 import TrendingList from './TrendingList';
 import type { Business, SuggestionReason } from '../../types';
 

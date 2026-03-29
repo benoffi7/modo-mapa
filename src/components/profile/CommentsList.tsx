@@ -14,7 +14,7 @@ import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
-import { PaginatedListShell } from './PaginatedListShell';
+import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
 import CommentsToolbar from './CommentsToolbar';

@@ -8,7 +8,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import { useAuth } from '../../context/AuthContext';
 import { fetchFollowing } from '../../services/follows';
 import { fetchUserDisplayNames } from '../../services/users';
-import { PaginatedListShell } from './PaginatedListShell';
+import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MSG_SOCIAL } from '../../constants/messages';
 import type { Follow } from '../../types';
