@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-27 (post new-home session: list fixes, specials navigation, avatar persistence, copy audit, field whitelist audit)*
+*Actualizado: 2026-03-29 (post docs audit: #224-#228 closed, v2.30.5)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
