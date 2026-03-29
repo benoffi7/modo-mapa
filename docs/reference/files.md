@@ -34,7 +34,6 @@ src/
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
 │   └── NotificationsContext.tsx      # Notificaciones: instancia unica compartida (unread count, mark read, polling)
 ├── services/
-│   ├── index.ts                     # Barrel export de todas las operaciones CRUD
 │   ├── favorites.ts                 # addFavorite, removeFavorite
 │   ├── ratings.ts                   # upsertRating
 │   ├── comments.ts                  # addComment, editComment, deleteComment, likeComment, unlikeComment
@@ -169,10 +168,8 @@ src/
 │   │   └── PullToRefreshWrapper.tsx # Wrapper pull-to-refresh
 │   ├── home/
 │   │   ├── HomeScreen.tsx           # Pantalla principal: mapa, specials, trending, sugerencias
-│   │   ├── SuggestionsView.tsx      # Sugerencias personalizadas (useSuggestions)
 │   │   ├── TrendingList.tsx         # Lista de comercios trending
-│   │   ├── TrendingBusinessCard.tsx # Card individual trending
-│   │   └── RecentVisits.tsx         # Lista de comercios visitados recientemente
+│   │   └── TrendingBusinessCard.tsx # Card individual trending
 │   ├── social/
 │   │   ├── SocialScreen.tsx         # Pantalla social: actividad, seguidos, recomendaciones, rankings
 │   │   ├── ActivityFeedView.tsx     # Feed de actividad de seguidos
@@ -188,7 +185,7 @@ src/
 │   │   └── ScoreSparkline.tsx       # Mini grafico de puntaje
 │   ├── profile/
 │   │   ├── ProfileScreen.tsx        # Pantalla perfil: settings, stats, comments, ratings
-│   │   ├── SettingsPanel.tsx        # Configuracion de usuario (privacidad, notificaciones)
+│   │   ├── SettingsPanel.tsx        # Configuracion de usuario (apariencia, privacidad, notificaciones)
 │   │   ├── AccountSection.tsx       # Seccion de cuenta (email, password)
 │   │   ├── EditDisplayNameDialog.tsx # Dialog editar nombre de usuario
 │   │   ├── LocalityPicker.tsx       # Selector de localidad
@@ -202,7 +199,6 @@ src/
 │   │   ├── useVirtualizedList.ts    # Hook para virtualizacion condicional
 │   │   ├── RatingsList.tsx          # Lista de ratings del usuario
 │   │   ├── StatsView.tsx            # Vista publica de estadisticas
-│   │   ├── CheckInsView.tsx         # Vista de check-ins
 │   │   ├── FeedbackForm.tsx         # Tabs: Enviar + Mis envios
 │   │   ├── MyFeedbackList.tsx       # Lista de feedback del usuario
 │   │   ├── HelpSection.tsx          # 7 topics de ayuda en Accordion
@@ -211,8 +207,11 @@ src/
 │       ├── ListsScreen.tsx          # Pantalla listas: favoritos, compartidas, recientes, colaborativas
 │       ├── FavoritesList.tsx         # Lista de favoritos
 │       ├── SharedListsView.tsx      # Orquestador de listas compartidas
-│       ├── SharedListDetailView.tsx # Vista detalle de lista compartida
-│       ├── CreateListDialog.tsx     # Dialog crear nueva lista
+│       ├── ListDetailScreen.tsx     # Detalle de lista: toolbar (color, icon, visibilidad, editores), items
+│       ├── CreateListDialog.tsx     # Dialog crear nueva lista (con icon picker)
+│       ├── IconPicker.tsx           # Selector de icono para listas (30 opciones)
+│       ├── ColorPicker.tsx          # Selector de color para listas (8 opciones)
+│       ├── CollaborativeTab.tsx     # Tab de listas colaborativas
 │       ├── EditorsDialog.tsx        # Dialog gestionar editores
 │       └── InviteEditorDialog.tsx   # Dialog invitar editores
 ```

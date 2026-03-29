@@ -201,8 +201,8 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Mutable prop audit** | Componentes que reciben datos como props Y los modifican deben usar state local + notificar al parent (callback o refetch). Si el parent mantiene la fuente de verdad, el componente hijo debe hacer optimistic update local y propagar el cambio hacia arriba. Ejemplo: `ListDetailScreen` recibe la lista como prop, modifica color/isPublic localmente y notifica al parent para que actualice su estado. Auditar en specs template. |
-| **Firestore rules field whitelist** | Toda escritura a Firestore debe tener sus campos validados con `hasOnly()` en las rules. Cada vez que un servicio agrega un campo nuevo a un `updateDoc`/`setDoc`, verificar que el campo este en la lista `hasOnly()` de la regla correspondiente. Ejemplo: agregar `color` e `icon` a la regla de update de `sharedLists`. Auditar en merge Phase 1i. |
+| **Mutable prop audit** | Componentes que reciben datos como props Y los modifican deben usar state local + notificar al parent (callback o refetch). Si el parent mantiene la fuente de verdad, el componente hijo debe hacer optimistic update local y propagar el cambio hacia arriba. Ejemplo: `ListDetailScreen` recibe la lista como prop, modifica color/isPublic/icon/editorIds localmente y notifica al parent para que actualice su estado. Auditar en specs template. |
+| **Firestore rules field whitelist** | Toda escritura a Firestore debe tener sus campos validados con `hasOnly()` en las rules. Cada vez que un servicio agrega un campo nuevo a un `updateDoc`/`setDoc`, verificar que el campo este en la lista `hasOnly()` de la regla correspondiente. Ejemplo: `color` e `icon` en la regla de update de `sharedLists`. Auditar en merge Phase 1i. |
 
 ## Copywriting y localizacion
 
