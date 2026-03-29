@@ -16,11 +16,9 @@ import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';
+import { MAX_FOLLOWS, FOLLOWS_PAGE_SIZE } from '../constants/social';
 
 export type FollowCursor = QueryDocumentSnapshot<Follow>;
-
-const MAX_FOLLOWS = 200;
-const PAGE_SIZE = 20;
 
 export function getFollowsCollection(): CollectionReference<Follow> {
   return collection(db, COLLECTIONS.FOLLOWS).withConverter(followConverter) as CollectionReference<Follow>;
@@ -66,7 +64,7 @@ export async function isFollowing(followerId: string, followedId: string): Promi
 
 export async function fetchFollowing(
   userId: string,
-  pageSize = PAGE_SIZE,
+  pageSize = FOLLOWS_PAGE_SIZE,
   afterDoc?: FollowCursor,
 ): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean; cursor: FollowCursor | null }> {
   const constraints: QueryConstraint[] = [
@@ -84,7 +82,7 @@ export async function fetchFollowing(
 
 export async function fetchFollowers(
   userId: string,
-  pageSize = PAGE_SIZE,
+  pageSize = FOLLOWS_PAGE_SIZE,
   afterDoc?: FollowCursor,
 ): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean; cursor: FollowCursor | null }> {
   const constraints: QueryConstraint[] = [
