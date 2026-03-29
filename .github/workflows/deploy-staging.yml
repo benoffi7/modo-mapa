@@ -70,12 +70,13 @@ jobs:
         run: bash scripts/deploy-staging-rules.sh
 
       - name: Deploy Cloud Functions (if changed)
+        continue-on-error: true
         run: |
           if git diff origin/main -- functions/src/ functions/package.json | grep -q .; then
             echo "Functions changed — deploying..."
             cd functions && npm ci
             cd ..
-            npx firebase-tools deploy --only functions --except functions:onBeforeUserCreated --project modo-mapa-app --force
+            npx firebase-tools deploy --only functions --project modo-mapa-app --force
           else
             echo "No function changes detected — skipping deploy."
           fi

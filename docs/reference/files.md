@@ -32,7 +32,6 @@ src/
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
-│   ├── MapContext.tsx                # Estado del mapa (selected, search, filters)
 │   └── NotificationsContext.tsx      # Notificaciones: instancia unica compartida (unread count, mark read, polling)
 ├── services/
 │   ├── index.ts                     # Barrel export de todas las operaciones CRUD
