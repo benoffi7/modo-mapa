@@ -6,6 +6,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import { useColorMode } from '../../hooks/useColorMode';
 import LocalityPicker from './LocalityPicker';
 import AccountSection from './AccountSection';
 
@@ -52,6 +53,7 @@ function SettingRow({ label, description, checked, disabled, indented, onChange 
 
 export default function SettingsPanel() {
   const { settings, loading, updateSetting, updateLocality, clearLocality } = useUserSettings();
+  const { mode, toggleColorMode } = useColorMode();
 
   if (loading) {
     return (
@@ -81,6 +83,19 @@ export default function SettingsPanel() {
         currentLocality={settings.locality}
         onSelect={updateLocality}
         onClear={clearLocality}
+      />
+
+      <Divider sx={{ my: 1.5 }} />
+
+      {/* Apariencia */}
+      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+        Apariencia
+      </Typography>
+      <SettingRow
+        label="Modo oscuro"
+        description="Cambia el tema visual de la app"
+        checked={mode === 'dark'}
+        onChange={() => toggleColorMode()}
       />
 
       <Divider sx={{ my: 1.5 }} />
