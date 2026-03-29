@@ -127,6 +127,8 @@ Trigger: push a `staging`
 - Deploy de functions es condicional (ahorra tiempo si solo cambiaron componentes)
 - No actualiza minVersion
 
+**Cross-reference:** detalle completo sobre patrones de staging (Cloud Functions, triggers, limitaciones) en [`docs/reference/staging.md`](staging.md).
+
 ### Preview (`preview.yml`)
 
 - Trigger: PR a `main`

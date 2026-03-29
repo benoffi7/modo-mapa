@@ -386,9 +386,9 @@ La app implementa **dos sistemas separados** de gamificacion:
 
 | Sistema | Archivo | Cantidad | Logica | UI |
 |---------|---------|----------|--------|----|
-| **Badges** | `constants/badges.ts` | 11 tipos | Computados dinamicamente via `evaluateBadges()` basado en breakdown del usuario | `BadgesList.tsx` en `UserProfileModal` (rankings) |
-| **Achievements** | `constants/achievements.ts` | 8 tipos | Almacenados en Firestore `achievements`, gestionados por admin | `AchievementsGrid.tsx` + `AchievementsSection.tsx` en ProfileScreen |
+| **Badges** | `constants/badges.ts` | 11 tipos | Computados dinamicamente via `evaluateBadges()` + `check()` contra `UserRankingEntry.breakdown` | `BadgesList.tsx` en `UserProfileModal` (rankings) |
+| **Achievements** | `constants/achievements.ts` | 8 tipos | Definiciones estaticas con `AchievementDefinition` interface + `target` numerico. Servicio: `services/achievements.ts`. Coleccion Firestore `achievements` | `AchievementsGrid.tsx` + `AchievementsSection.tsx` en ProfileScreen |
 
-**Badges** (actividad): primera reseña, comentarista, influencer, fotografo, critico, popular, todoterreno, podio, racha 7d, primera foto, primera calificacion.
+**Badges** (milestones de actividad): primera resena, comentarista, influencer, primera foto, fotografo, primera calificacion, critico, popular, todoterreno, podio, racha 7d.
 
-**Achievements** (progresion): Explorador, Social, Critico, Viajero, Coleccionista, Fotografo, Embajador, Racha. Cada uno tiene niveles de progreso.
+**Achievements** (progresion goal-based): Explorador (10 check-ins), Social (5 follows), Critico (10 ratings), Viajero (3 localidades), Coleccionista (20 favoritos), Fotografo (5 fotos), Embajador (10 recomendaciones), Racha (7 dias consecutivos).
