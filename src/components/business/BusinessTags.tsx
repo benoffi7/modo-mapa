@@ -14,7 +14,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
-import { PREDEFINED_TAGS } from '../../types';
+import { PREDEFINED_TAGS } from '../../constants/tags';
 import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
 import type { CustomTag, UserTag } from '../../types';
 import CustomTagDialog from './CustomTagDialog';

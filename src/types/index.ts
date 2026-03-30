@@ -132,9 +132,6 @@ export interface Feedback {
 }
 
 import { PREDEFINED_TAGS } from '../constants/tags';
-import { PRICE_LEVEL_LABELS } from '../constants/business';
-
-export { PREDEFINED_TAGS, PRICE_LEVEL_LABELS };
 
 export type PredefinedTagId = (typeof PREDEFINED_TAGS)[number]['id'];
 

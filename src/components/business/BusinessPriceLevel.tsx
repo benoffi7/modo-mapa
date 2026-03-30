@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { upsertPriceLevel, deletePriceLevel } from '../../services/priceLevels';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
-import { PRICE_LEVEL_LABELS } from '../../types';
+import { PRICE_LEVEL_LABELS } from '../../constants/business';
 import { LEVELS, LEVEL_SYMBOLS } from '../../constants/business';
 import type { PriceLevel } from '../../types';
 
