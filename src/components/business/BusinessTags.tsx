@@ -11,7 +11,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PREDEFINED_TAGS } from '../../types';

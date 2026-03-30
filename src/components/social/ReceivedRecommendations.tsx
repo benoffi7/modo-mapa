@@ -7,7 +7,7 @@ import { cardSx } from '../../theme/cards';
 import SendIcon from '@mui/icons-material/Send';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import { useAuth } from '../../context/AuthContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { getRecommendationsCollection, getReceivedRecommendationsConstraints, markRecommendationAsRead, markAllRecommendationsAsRead } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';

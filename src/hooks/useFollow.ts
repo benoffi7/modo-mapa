@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { MSG_SOCIAL } from '../constants/messages';
-import { useConnectivity } from './useConnectivity';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { isFollowing as checkIsFollowing, followUser, unfollowUser } from '../services/follows';
 import { withOfflineSupport } from '../services/offlineInterceptor';
 import { logger } from '../utils/logger';

@@ -5,7 +5,7 @@ import ReportIcon from '@mui/icons-material/Report';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { formatDateMedium } from '../../utils/formatDate';
 import { logger } from '../../utils/logger';
 
