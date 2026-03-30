@@ -301,6 +301,15 @@ export type SocialSubTab = 'actividad' | 'seguidos' | 'recomendaciones' | 'ranki
 export type ListsSubTab = 'favoritos' | 'listas' | 'recientes' | 'colaborativas';
 export type SearchViewMode = 'map' | 'list';
 
+export type LocationSource = 'gps' | 'locality' | 'office';
+
+export interface LocalTrendingResult {
+  businesses: TrendingBusiness[];
+  source: LocationSource;
+  localityName: string | null;
+  radiusKm: number;
+}
+
 export type {
   OfflineAction,
   OfflineActionType,
