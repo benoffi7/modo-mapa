@@ -37,7 +37,7 @@ export default function SpecialsPanel() {
       const data = await fetchSpecials();
       setSpecials(data);
     } catch {
-      setError('Error al cargar especiales');
+      setError('No se pudieron cargar los especiales');
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function SpecialsPanel() {
       await saveAllSpecials(specials);
       await load();
     } catch {
-      setError('Error al guardar');
+      setError('No se pudo guardar');
     } finally {
       setSaving(false);
     }
@@ -114,7 +114,7 @@ export default function SpecialsPanel() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Los especiales aparecen en la pestana Inicio de la app. Maximo recomendado: 3 items visibles.
+        Los especiales aparecen en la pestaña Inicio de la app. Máximo recomendado: 3 items visibles.
       </Typography>
 
       {specials.map((special, index) => (
@@ -122,8 +122,8 @@ export default function SpecialsPanel() {
           <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pb: '16px !important' }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Typography variant="caption" color="text.secondary">#{index + 1}</Typography>
-              <TextField label="Titulo" value={special.title} onChange={(e) => updateField(special.id, 'title', e.target.value)} size="small" fullWidth />
-              <TextField label="Subtitulo" value={special.subtitle} onChange={(e) => updateField(special.id, 'subtitle', e.target.value)} size="small" fullWidth />
+              <TextField label="Título" value={special.title} onChange={(e) => updateField(special.id, 'title', e.target.value)} size="small" fullWidth />
+              <TextField label="Subtítulo" value={special.subtitle} onChange={(e) => updateField(special.id, 'subtitle', e.target.value)} size="small" fullWidth />
             </Box>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -159,7 +159,7 @@ export default function SpecialsPanel() {
 
       {specials.length === 0 && (
         <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          No hay especiales configurados. Toca "Agregar" para crear uno.
+          No hay especiales configurados. Tocá "Agregar" para crear uno.
         </Typography>
       )}
     </Box>

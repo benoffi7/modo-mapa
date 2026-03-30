@@ -107,7 +107,7 @@ export default function FeedbackList() {
   };
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando feedback.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudo cargar el feedback.">
       <Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
           {STATUS_FILTERS.map((sf) => (

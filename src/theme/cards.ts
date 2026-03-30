@@ -40,7 +40,7 @@ export const iconCircleSx = (color: string, size = 44): SxProps<Theme> => ({
  * Import from there: import { NAV_CHIP_SX } from '../constants/ui';
  */
 
-/** Section title — "Acciones rapidas", "Especiales", "Para Ti", etc. */
+/** Section title — "Acciones rápidas", "Especiales", "Para Ti", etc. */
 export const sectionTitleSx: SxProps<Theme> = {
   mb: 1,
 };

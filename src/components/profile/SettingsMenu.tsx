@@ -63,7 +63,7 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
         await signOut();
         setConfirmOpen(false);
       } catch {
-        setError('Error al limpiar los datos. Intentá de nuevo.');
+        setError('No se pudieron limpiar los datos. Intentá de nuevo.');
       } finally {
         setLoading(false);
       }

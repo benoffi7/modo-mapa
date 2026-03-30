@@ -5,7 +5,7 @@ export const MSG_COMMENT = {
   likeError: 'No se pudo actualizar el like',
   replySuccess: 'Respuesta publicada',
   replyError: 'No se pudo publicar la respuesta',
-  favoriteHint: 'Guarda tus favoritos tocando el corazon.',
+  favoriteHint: 'Guardá tus favoritos tocando el corazón.',
   emptyOwn: 'No dejaste comentarios todavía',
   emptyBusiness: 'No hay comentarios para este comercio',
 } as const;

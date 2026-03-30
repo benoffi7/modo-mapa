@@ -100,7 +100,7 @@ export function useCheckIn(
       if (id) setRecentCheckInId(id);
     } catch (e) {
       setStatus('error');
-      setError(e instanceof Error ? e.message : 'Error al registrar visita');
+      setError(e instanceof Error ? e.message : 'No se pudo registrar la visita');
     }
   }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby, isOffline, toast]);
 
@@ -124,7 +124,7 @@ export function useCheckIn(
       setRecentCheckInId(null);
     } catch (e) {
       setStatus('error');
-      setError(e instanceof Error ? e.message : 'Error al desmarcar visita');
+      setError(e instanceof Error ? e.message : 'No se pudo desmarcar la visita');
     }
   }, [user, recentCheckInId, businessId, isOffline, toast]);
 

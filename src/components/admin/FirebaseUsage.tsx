@@ -46,7 +46,7 @@ export default function FirebaseUsage() {
   const estimatedMonthlyWrites = Math.round((totalWrites / daysTracked) * 30);
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando métricas de Firebase.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las métricas de Firebase.">
       <Grid container spacing={2}>
         <Grid size={{ xs: 12 }}>
           <LineChartCard

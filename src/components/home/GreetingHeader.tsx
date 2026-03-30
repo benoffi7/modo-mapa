@@ -26,7 +26,7 @@ export default function GreetingHeader() {
       </Typography>
       {isAnonymous && !hasName && (
         <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
-          Podes elegir tu nombre en la pestana Perfil
+          Podés elegir tu nombre en la pestaña Perfil
         </Typography>
       )}
     </Box>

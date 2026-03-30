@@ -145,7 +145,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-          Error al cargar favoritos
+          No se pudieron cargar los favoritos
         </Typography>
         <Button size="small" onClick={reload}>Reintentar</Button>
       </Box>

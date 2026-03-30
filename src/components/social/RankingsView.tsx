@@ -104,7 +104,7 @@ export default function RankingsView() {
         {error && (
           <Box sx={{ p: 2 }}>
             <Typography variant="body2" color="error">
-              Error cargando el ranking.
+              No se pudo cargar el ranking.
             </Typography>
           </Box>
         )}

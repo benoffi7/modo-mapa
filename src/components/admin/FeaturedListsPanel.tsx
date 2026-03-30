@@ -88,7 +88,7 @@ export default function FeaturedListsPanel() {
   return (
     <Box>
       <ListStatsSection />
-      <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando listas destacadas.">
+      <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las listas destacadas.">
         <Typography variant="h6" sx={{ mb: 2 }}>
         <StarIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
         Listas Destacadas

@@ -95,7 +95,7 @@ export default function DashboardOverview() {
     <AdminPanelWrapper
       loading={isLoading}
       error={isError}
-      errorMessage="Error cargando datos del dashboard. Revisá la consola para más detalles."
+      errorMessage="No se pudieron cargar los datos del dashboard. Revisá la consola para más detalles."
     >
       <Grid container spacing={2}>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>

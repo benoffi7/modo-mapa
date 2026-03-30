@@ -68,7 +68,7 @@ export default function ActivityFeed() {
   const checkins = data?.checkins ?? [];
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando actividad.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudo cargar la actividad.">
       <Box>
         <Tabs value={tab} onChange={(_, v: number) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
           <Tab label={`Comentarios (${comments.length})`} />

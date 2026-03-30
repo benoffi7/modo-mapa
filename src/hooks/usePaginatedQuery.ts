@@ -125,7 +125,7 @@ export function usePaginatedQuery<T>(
       }
     } catch (err) {
       if (import.meta.env.DEV) logger.error('Error loading data:', err);
-      setError('Error al cargar datos');
+      setError('No se pudieron cargar los datos');
     }
 
     if (isFirstPage) {
