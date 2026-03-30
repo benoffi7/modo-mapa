@@ -138,6 +138,23 @@ done
 
 If any file exceeds 400 lines, it MUST be decomposed before merging (extract subcomponents, hooks, or utils). Reference: `docs/reference/file-size-directive.md`. Exceptions: test files, DEV-only files (ConstantsDashboard, ThemePlayground), config files (converters.ts, admin services).
 
+### 1i2. Merge conflict markers check
+
+**BLOCKER:** Verify NO committed files contain unresolved merge conflict markers. This catches the case where a conflict resolution was incomplete.
+
+```bash
+# Check ALL changed files (src + docs) for conflict markers
+for f in $(git diff --name-only origin/new-home); do
+  if [ -f "$f" ]; then
+    if grep -qE '^(<<<<<<<|=======|>>>>>>>)' "$f" 2>/dev/null; then
+      echo "CONFLICT MARKERS: $f"
+    fi
+  fi
+done
+```
+
+If any found → fix immediately. Conflict markers in docs break the GH Pages site. In code they break compilation.
+
 ### 1j. Firestore rules field whitelist audit
 
 If `firestore.rules` OR any service file (`src/services/**`) was modified, cross-check that every field written by client code is allowed by the rules' `hasOnly()` whitelist.
