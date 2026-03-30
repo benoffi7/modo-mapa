@@ -246,6 +246,26 @@ for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' 
 done
 ```
 
+### 1k3. Async useEffect cancellation guard
+
+**WARN:** New `useEffect` hooks with async operations (fetch, getDocs, etc.) MUST include a cancellation pattern to prevent setState-after-unmount:
+
+```bash
+# Check new/modified hooks and components for async useEffect without cancelled flag
+for f in $(git diff --name-only origin/new-home -- 'src/hooks/*.ts' 'src/components/**/*.tsx' | grep -v '.test.'); do
+  if [ -f "$f" ]; then
+    # Find useEffect with async but no cancelled/mounted/abort pattern
+    if grep -q 'useEffect' "$f" && grep -q 'await\|\.then(' "$f"; then
+      if ! grep -qE 'cancelled|mounted|abort|AbortController' "$f" 2>/dev/null; then
+        echo "WARN: $f has async useEffect without cancellation guard"
+      fi
+    fi
+  fi
+done
+```
+
+Pattern to use: `let cancelled = false; ... if (!cancelled) setState(...); return () => { cancelled = true; }`
+
 ### 1l. Billing impact guard
 
 **WARN:** If the branch adds new Cloud Function triggers or new writable Firestore collections, evaluate billing impact.
