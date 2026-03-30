@@ -36,6 +36,7 @@ const mockReturn = (overrides: Partial<UserSettings> = {}) => ({
   settings: { ...MOCK_SETTINGS, ...overrides },
   loading: false,
   updateSetting: vi.fn(),
+  updateDigestFrequency: vi.fn(),
   updateLocality: vi.fn(),
   clearLocality: vi.fn(),
 });

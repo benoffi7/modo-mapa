@@ -4,7 +4,7 @@ import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
 import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
-import type { UserSettings } from '../types';
+import type { UserSettings, DigestFrequency } from '../types';
 import { logger } from '../utils/logger';
 
 type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'notifyFollowers' | 'notifyRecommendations' | 'analyticsEnabled';
@@ -12,6 +12,7 @@ type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes
 export function useUserSettings() {
   const { user } = useAuth();
   const [optimistic, setOptimistic] = useState<Partial<Record<BooleanSettingKey, boolean>>>({});
+  const [digestOverride, setDigestOverride] = useState<DigestFrequency | null>(null);
   const [localityOverride, setLocalityOverride] = useState<{ locality: string; localityLat: number; localityLng: number } | null>(null);
 
   const fetcher = useCallback(async (): Promise<UserSettings> => {
@@ -24,6 +25,7 @@ export function useUserSettings() {
   const settings: UserSettings = {
     ...(data ?? DEFAULT_SETTINGS),
     ...optimistic,
+    ...(digestOverride != null ? { notificationDigest: digestOverride } : {}),
     ...(localityOverride ?? {}),
   };
 
@@ -81,5 +83,17 @@ export function useUserSettings() {
     [user],
   );
 
-  return { settings, loading, updateSetting, updateLocality, clearLocality };
+  const updateDigestFrequency = useCallback(
+    (value: DigestFrequency) => {
+      if (!user) return;
+      setDigestOverride(value);
+      updateUserSettings(user.uid, { notificationDigest: value }).catch((err) => {
+        logger.error('[useUserSettings] updateDigestFrequency failed:', err);
+        setDigestOverride(null);
+      });
+    },
+    [user],
+  );
+
+  return { settings, loading, updateSetting, updateDigestFrequency, updateLocality, clearLocality };
 }

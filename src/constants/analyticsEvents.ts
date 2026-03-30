@@ -64,3 +64,9 @@ export const EVT_TRENDING_NEAR_VIEWED = 'trending_near_viewed';
 export const EVT_TRENDING_NEAR_TAPPED = 'trending_near_tapped';
 export const EVT_TRENDING_NEAR_CONFIGURE_TAPPED = 'trending_near_configure_tapped';
 export const EVT_RANKINGS_ZONE_FILTER = 'rankings_zone_filter';
+
+// Digest notification events (#203)
+export const EVT_DIGEST_SECTION_VIEWED = 'digest_section_viewed';
+export const EVT_DIGEST_ITEM_TAPPED = 'digest_item_tapped';
+export const EVT_DIGEST_CTA_TAPPED = 'digest_cta_tapped';
+export const EVT_DIGEST_FREQUENCY_CHANGED = 'digest_frequency_changed';

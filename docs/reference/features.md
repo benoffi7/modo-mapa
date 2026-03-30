@@ -76,7 +76,10 @@
 - Drawer con lista de notificaciones, tiempo relativo ("hace 2 min", "ayer")
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
-- Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
+- Polling cada 300s (5 min) para unread count en modo `realtime` (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries). Sin polling en modos `daily`/`weekly` (carga unica al abrir)
+- **Digest frequency** (`notificationDigest`): preferencia del usuario en `userSettings`. Valores: `realtime` (default, polling 5min), `daily` (carga unica/dia), `weekly` (carga unica/semana). Selector con chips en SettingsPanel
+- **ActivityDigestSection**: seccion en Home despues de ForYouSection. Muestra hasta 3 grupos de notificaciones no leidas agrupadas por tipo (ej: "3 respuestas a tus comentarios"). Estado vacio con CTA "Explorar negocios". Analytics: `digest_section_viewed`, `digest_item_tapped`, `digest_cta_tapped`, `digest_frequency_changed`
+- **useNotificationDigest hook**: agrupa notificaciones no leidas por tipo, genera labels singular/plural, retorna max 3 grupos ordenados por fecha
 - Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`, `new_follower`, `recommendation`
 - Generadas automaticamente por Cloud Functions triggers
 - `comment_reply`: notifica al autor del comentario padre cuando alguien responde. Generada por `onCommentCreated` cuando el comentario tiene `parentId`. Respeta setting `notifyReplies` del usuario destinatario. NotificationItem muestra `ReplyIcon` para este tipo
