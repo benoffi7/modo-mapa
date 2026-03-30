@@ -406,6 +406,20 @@
     - [PRD](/feat/social/seguir-usuarios/prd.md)
     - [Specs](/feat/social/seguir-usuarios/specs.md)
     - [Plan](/feat/social/seguir-usuarios/plan.md)
+  - [#201 Badges de Verificación](/feat/social/201-badges-verificacion/)
+    - [PRD](/feat/social/201-badges-verificacion/prd.md)
+    - [Specs](/feat/social/201-badges-verificacion/specs.md)
+    - [Plan](/feat/social/201-badges-verificacion/plan.md)
+
+- **[Discovery](/feat/discovery/)**
+  - [#200 Trending por Zona](/feat/discovery/200-trending-zona/)
+    - [PRD](/feat/discovery/200-trending-zona/prd.md)
+    - [Specs](/feat/discovery/200-trending-zona/specs.md)
+    - [Plan](/feat/discovery/200-trending-zona/plan.md)
+  - [#205 Seguir Tags](/feat/discovery/205-seguir-tags/)
+    - [PRD](/feat/discovery/205-seguir-tags/prd.md)
+    - [Specs](/feat/discovery/205-seguir-tags/specs.md)
+    - [Plan](/feat/discovery/205-seguir-tags/plan.md)
 
 - **[UX](/feat/ux/)**
   - [Accessibility Gaps](/feat/ux/accessibility-gaps/)
@@ -464,6 +478,10 @@
     - [PRD](/feat/ux/color-iconos-acciones-rapidas/prd.md)
     - [Specs](/feat/ux/color-iconos-acciones-rapidas/specs.md)
     - [Plan](/feat/ux/color-iconos-acciones-rapidas/plan.md)
+  - [#203 Notificaciones Digest](/feat/ux/203-notificaciones-digest/)
+    - [PRD](/feat/ux/203-notificaciones-digest/prd.md)
+    - [Specs](/feat/ux/203-notificaciones-digest/specs.md)
+    - [Plan](/feat/ux/203-notificaciones-digest/plan.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
