@@ -17,7 +17,7 @@
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
-| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, notifyFollowers, notifyRecommendations, analyticsEnabled, locality?, localityLat?, localityLng?, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, notifyFollowers, notifyRecommendations, analyticsEnabled, locality?, localityLat?, localityLng?, notificationDigest?, followedTags? (**pendiente rules fix #251**), followedTagsUpdatedAt? (**pendiente rules fix #251**), followedTagsLastSeenAt? (**pendiente rules fix #251**), updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
@@ -175,6 +175,7 @@ interface UserProfile {
 }
 
 // User settings (includes notifyFeedback)
+type DigestFrequency = 'realtime' | 'daily' | 'weekly';
 interface UserSettings {
   profilePublic: boolean;
   notificationsEnabled: boolean;
@@ -189,6 +190,10 @@ interface UserSettings {
   locality?: string;                // localidad seleccionada
   localityLat?: number;             // latitud de localidad
   localityLng?: number;             // longitud de localidad
+  notificationDigest?: DigestFrequency; // frecuencia de digest de notificaciones
+  followedTags?: string[];          // tags seguidos (max 20) — pendiente rules fix #251
+  followedTagsUpdatedAt?: Date;     // ultima actualizacion de tags — pendiente rules fix #251
+  followedTagsLastSeenAt?: Date;    // ultima vez que vio el feed — pendiente rules fix #251
   updatedAt: Date;
 }
 

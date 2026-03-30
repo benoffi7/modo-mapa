@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.34.0
+**Version:** 2.34.1
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-30
@@ -71,7 +71,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Admin** (`/admin`): 16 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (metricas por funcionalidad con graficos 30 dias), listas, notificaciones, **social** (metricas sociales: follows, activity feed, recomendaciones), **especiales** (CRUD tarjetas especiales para Inicio), **logros** (CRUD definiciones de logros)
 - **Seguir usuarios** (#129): seguir a otros usuarios, feed de actividad de seguidos (ratings, comentarios, favoritos), busqueda de usuarios por nombre, FollowButton en perfil, secciones Seguidos y Actividad en SideMenu, notificacion `new_follower`, configuracion `notifyFollowers`
 - **Recomendaciones** (#135): recomendar comercios a otros usuarios con mensaje opcional (max 200 chars). Rate limit 20/dia. Lista de recibidas con badge de no leidas. Notificacion `recommendation`. Soporte offline. Configuracion `notifyRecommendations`
-- **Cloud Functions**: 14 callable + 17 triggers + 6 scheduled
+- **Cloud Functions**: 13 callable + 16 triggers + 7 scheduled
 - **Seguridad**: App Check, Firestore rules (`keys().hasOnly()` + `affectedKeys()` en todas las colecciones), rate limiting server-side (4 colecciones + `_rateLimits` in COLLECTIONS #193), moderacion, CSP, replyCount/likeCount server-only via Cloud Functions, cascade deletes, userId inmutabilidad, Storage rules para fotos de menu y feedback media. 3 rondas de auditoría completadas (0 vulnerabilidades restantes).
 
 ### Patrones clave
@@ -100,4 +100,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Offline read caching** (#197): IndexedDB `readCache.ts` con LRU eviction (20 entries). 3-tier lookup en `useBusinessData`: memory → IndexedDB → Firestore. `StaleBanner` para datos stale. Incremental loading (`isLoadingComments`, `stale` fields)
 - **Accesibilidad** (#196): `contrast.ts` (WCAG 2.0), `aria-live` en contadores dinamicos, `role=alertdialog` en dialogs destructivos, `PasswordField` con `helperText` nativo (auto `aria-describedby`)
 - **Rating prompt** (#199): `useRatingPrompt` hook detecta check-ins recientes (2-8h) sin calificar. `RatingPromptBanner` en HomeScreen. 3/dia cap. 4 analytics events
-- **Tests**: 108 test files (74 frontend + 34 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, 34 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 212 test files (95 frontend + 117 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, 34 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
