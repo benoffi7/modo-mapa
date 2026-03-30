@@ -151,6 +151,8 @@
     - [Specs](/feat/security/250-menuphotos-storagepath-validation/specs.md)
     - [Plan](/feat/security/250-menuphotos-storagepath-validation/plan.md)
   - [#251 userSettings Rules Fix](/feat/security/251-usersettings-rules-fix/prd.md)
+    - [Specs](/feat/security/251-usersettings-rules-fix/specs.md)
+    - [Plan](/feat/security/251-usersettings-rules-fix/plan.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
