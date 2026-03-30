@@ -292,6 +292,9 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       ...(settings.locality != null && { locality: settings.locality }),
       ...(settings.localityLat != null && { localityLat: settings.localityLat }),
       ...(settings.localityLng != null && { localityLng: settings.localityLng }),
+      ...(settings.followedTags != null && { followedTags: settings.followedTags }),
+      ...(settings.followedTagsUpdatedAt != null && { followedTagsUpdatedAt: settings.followedTagsUpdatedAt }),
+      ...(settings.followedTagsLastSeenAt != null && { followedTagsLastSeenAt: settings.followedTagsLastSeenAt }),
       updatedAt: settings.updatedAt,
     };
   },
@@ -311,6 +314,9 @@ export const userSettingsConverter: FirestoreDataConverter<UserSettings> = {
       ...(d.locality != null && { locality: d.locality }),
       ...(d.localityLat != null && { localityLat: d.localityLat }),
       ...(d.localityLng != null && { localityLng: d.localityLng }),
+      ...(d.followedTags != null && { followedTags: d.followedTags }),
+      ...(d.followedTagsUpdatedAt != null && { followedTagsUpdatedAt: toDate(d.followedTagsUpdatedAt) }),
+      ...(d.followedTagsLastSeenAt != null && { followedTagsLastSeenAt: toDate(d.followedTagsLastSeenAt) }),
       updatedAt: toDate(d.updatedAt),
     };
   },

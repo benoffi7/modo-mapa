@@ -247,7 +247,22 @@ export interface UserSettings {
   locality?: string;
   localityLat?: number;
   localityLng?: number;
+  followedTags?: string[];
+  followedTagsUpdatedAt?: Date;
+  followedTagsLastSeenAt?: Date;
   updatedAt: Date;
+}
+
+export interface InterestFeedItem {
+  business: Business;
+  matchingTags: string[];
+  isNew: boolean;
+}
+
+export interface InterestFeedGroup {
+  tag: string;
+  businesses: InterestFeedItem[];
+  newCount: number;
 }
 
 export interface CheckIn {
