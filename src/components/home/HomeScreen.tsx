@@ -1,12 +1,6 @@
+import { Suspense } from 'react';
 import { Box, Divider } from '@mui/material';
-import GreetingHeader from './GreetingHeader';
-import QuickActions from './QuickActions';
-import SpecialsSection from './SpecialsSection';
-import TrendingNearYouSection from './TrendingNearYouSection';
-import YourInterestsSection from './YourInterestsSection';
-import RecentSearches from './RecentSearches';
-import ForYouSection from './ForYouSection';
-import ActivityDigestSection from './ActivityDigestSection';
+import { HOME_SECTIONS } from './homeSections';
 import RatingPromptBanner from '../ui/RatingPromptBanner';
 import { useRatingPrompt } from '../../hooks/useRatingPrompt';
 
@@ -15,26 +9,19 @@ export default function HomeScreen() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
-      <GreetingHeader />
-      {ratingPrompt.promptData && (
-        <RatingPromptBanner
-          businessName={ratingPrompt.promptData.businessName}
-          onRate={ratingPrompt.navigateToBusiness}
-          onDismiss={ratingPrompt.dismiss}
-        />
-      )}
-      <QuickActions />
-      <Divider sx={{ my: 0.5 }} />
-      <SpecialsSection />
-      <Divider sx={{ my: 0.5 }} />
-      <TrendingNearYouSection />
-      <Divider sx={{ my: 0.5 }} />
-      <YourInterestsSection />
-      <Divider sx={{ my: 0.5 }} />
-      <RecentSearches />
-      <ForYouSection />
-      <Divider sx={{ my: 0.5 }} />
-      <ActivityDigestSection />
+      {HOME_SECTIONS.map(({ id, component: Section, hasDividerAfter }, index) => (
+        <Suspense key={id} fallback={null}>
+          {index === 1 && ratingPrompt.promptData && (
+            <RatingPromptBanner
+              businessName={ratingPrompt.promptData.businessName}
+              onRate={ratingPrompt.navigateToBusiness}
+              onDismiss={ratingPrompt.dismiss}
+            />
+          )}
+          <Section />
+          {hasDividerAfter && <Divider sx={{ my: 0.5 }} />}
+        </Suspense>
+      ))}
     </Box>
   );
 }

@@ -14,8 +14,8 @@
 | Patron | Descripcion |
 | ------ | ----------- |
 | **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Textos user-facing en subdirectorio `constants/messages/` (ver Copywriting). Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
-| **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
-| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS y PRICE_LEVEL_LABELS para backwards compatibility. CATEGORY_LABELS se importa directamente de `constants/business`. |
+| **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents/` (directorio con archivos por dominio: onboarding, trending, offline, social, navigation, system, business, digest, interests). Barrel `index.ts` re-exporta todo. Consumidores importan de `constants/analyticsEvents`. Para agregar eventos de un feature nuevo, crear archivo de dominio nuevo y agregar `export *` al barrel. Nunca usar string literals para trackEvent. |
+| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` es un barrel que re-exporta desde archivos de dominio (business, user, social, lists, feedback, notifications, rankings, navigation, discovery) + los existentes (offline, admin). Dependencias cruzadas entre archivos de types usan `import type`. CATEGORY_LABELS se importa directamente de `constants/business`. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
 
 ## Datos y estado
