@@ -450,6 +450,7 @@
     - [PRD](/feat/ux/swipe-cerrar-menu/prd.md)
     - [Specs](/feat/ux/swipe-cerrar-menu/specs.md)
     - [Plan](/feat/ux/swipe-cerrar-menu/plan.md)
+  - [Color Iconos Acciones Rapidas (#235)](/prd/235-color-iconos-acciones-rapidas.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
