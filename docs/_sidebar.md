@@ -82,6 +82,8 @@
     - [Specs](/feat/infra/245-performance-improvements/specs.md)
     - [Plan](/feat/infra/245-performance-improvements/plan.md)
   - [#248 Parallel Barrel Split](/feat/infra/248-parallel-barrel-split/prd.md)
+    - [Specs](/feat/infra/248-parallel-barrel-split/specs.md)
+    - [Plan](/feat/infra/248-parallel-barrel-split/plan.md)
   - [#247 Converters + Exhaustive Deps + Badges](/feat/infra/247-converters-exhaustive-deps/prd.md)
     - [Specs](/feat/infra/247-converters-exhaustive-deps/specs.md)
     - [Plan](/feat/infra/247-converters-exhaustive-deps/plan.md)
