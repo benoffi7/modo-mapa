@@ -264,7 +264,11 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 
 Get changed files with: `git diff --name-only origin/new-home -- 'src/**/*.tsx' 'src/**/*.ts'`
 
-**IMPORTANT:** When running from a worktree, pass the full worktree path (`$WORKDIR`) as "Working directory" in every agent prompt. Agents that receive only a relative path or no path will default to the main repo and read stale files.
+**IMPORTANT — Worktree agent prompts MUST include:**
+1. Full worktree path (`$WORKDIR`) as "Working directory" — agents without it will read/write to the main repo
+2. Explicit output file paths using the worktree prefix (e.g., `$WORKDIR/docs/feat/...`) — agents that receive relative paths may commit to wrong locations
+3. "DO NOT push. DO NOT modify files outside the worktree." — prevents cross-contamination
+4. "Commit when done" with explicit commit message — ensures work is captured before worktree cleanup
 
 Fix critical issues. Report all results as summary table before proceeding.
 
