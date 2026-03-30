@@ -7,11 +7,11 @@ import { cardSx } from '../../theme/cards';
 import PeopleIcon from '@mui/icons-material/People';
 import { useAuth } from '../../context/AuthContext';
 import { fetchFollowing } from '../../services/follows';
-import type { FollowCursor } from '../../services/follows';
 import { fetchUserDisplayNames } from '../../services/users';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { MSG_SOCIAL } from '../../constants/messages';
+import type { FollowCursor } from '../../services/follows';
 
 const UserSearchField = lazy(() =>
   import('../UserSearchField').then((m) => ({ default: m.UserSearchField })),

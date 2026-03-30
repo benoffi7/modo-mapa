@@ -6,7 +6,7 @@ export interface ListIconOption {
 
 export const LIST_ICON_OPTIONS: ListIconOption[] = [
   { id: 'food', label: 'Comida', emoji: '🍽️' },
-  { id: 'coffee', label: 'Cafe', emoji: '☕' },
+  { id: 'coffee', label: 'Café', emoji: '☕' },
   { id: 'pizza', label: 'Pizza', emoji: '🍕' },
   { id: 'burger', label: 'Hamburguesa', emoji: '🍔' },
   { id: 'sushi', label: 'Sushi', emoji: '🍣' },
@@ -16,7 +16,7 @@ export const LIST_ICON_OPTIONS: ListIconOption[] = [
   { id: 'cocktail', label: 'Cocktail', emoji: '🍹' },
   { id: 'cake', label: 'Torta', emoji: '🎂' },
   { id: 'star', label: 'Estrella', emoji: '⭐' },
-  { id: 'heart', label: 'Corazon', emoji: '❤️' },
+  { id: 'heart', label: 'Corazón', emoji: '❤️' },
   { id: 'fire', label: 'Fuego', emoji: '🔥' },
   { id: 'trophy', label: 'Trofeo', emoji: '🏆' },
   { id: 'crown', label: 'Corona', emoji: '👑' },
