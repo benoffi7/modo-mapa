@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-30 (post merge: #240 closed, v2.32.1)*
+*Actualizado: 2026-03-30 (post merge: #241-#246 closed, v2.33.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -28,14 +28,20 @@
 
 ---
 
-## Deuda tecnica identificada (new-home session)
+## Deuda tecnica resuelta
 
 | Item | Estado |
 |------|--------|
-| Firestore rules field whitelist: auditar todas las colecciones | **Completado** v2.32.0 (#237) — todas limpias |
-| Mutable prop audit: componentes que modifican props | **Completado** v2.32.0 (#238) — sin violaciones |
-| Copy audit: tildes y signos de apertura | **Completado** v2.32.0 (#239) — 54 archivos corregidos |
-| Rate limit docs falta campo `userId` para cleanup en account deletion | **Completado** v2.32.1 (#240) |
+| Firestore rules field whitelist audit | Completado v2.32.0 (#237) |
+| Mutable prop audit | Completado v2.32.0 (#238) |
+| Copy audit: tildes y voseo | Completado v2.32.0 (#239) |
+| Rate limit docs userId cleanup | Completado v2.32.1 (#240) |
+| affectedKeys() en update rules | Completado v2.33.0 (#241) |
+| Rate limit menuPhotos/listItems + sharedLists validation | Completado v2.33.0 (#242) |
+| Service layer violations (AuthContext, MenuPhoto) | Completado v2.33.0 (#243) |
+| firestore.md 8 colecciones + sidebar 224 links rotos | Completado v2.33.0 (#244) |
+| Performance (dynamic import, parallel queries, split context, dead code) | Completado v2.33.0 (#245) |
+| Dark mode hardcoded colors | Completado v2.33.0 (#246) |
 
 ---
 
@@ -44,5 +50,5 @@
 | Metrica | Valor |
 |---------|-------|
 | Issues abiertos | 5 (#168, #200, #201, #203, #205) |
-| Issues cerrados | #128–#199, #207–#240 (65) |
-| Versiones publicadas | v2.10.0 – v2.32.1 |
+| Issues cerrados | #128–#199, #207–#246 (71) |
+| Versiones publicadas | v2.10.0 – v2.33.0 |
