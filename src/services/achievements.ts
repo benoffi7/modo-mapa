@@ -32,8 +32,3 @@ export async function saveAllAchievements(achievements: Achievement[]): Promise<
     await setDoc(doc(db, COLLECTIONS.ACHIEVEMENTS, id), { ...data, updatedAt: new Date() });
   }
 }
-
-/** Delete a single achievement by ID. */
-export async function deleteAchievement(id: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTIONS.ACHIEVEMENTS, id));
-}

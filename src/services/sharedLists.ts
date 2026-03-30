@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   increment,
   writeBatch,
-  runTransaction,
 } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -21,7 +20,6 @@ import { COLLECTIONS } from '../config/collections';
 import { sharedListConverter, listItemConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
-import { MAX_LISTS } from '../constants/lists';
 import { getListIconById } from '../constants/listIcons';
 import type { SharedList, ListItem } from '../types';
 
@@ -120,60 +118,6 @@ export async function fetchListItems(listId: string): Promise<ListItem[]> {
     ),
   );
   return snap.docs.map((d) => d.data());
-}
-
-export async function copyList(sourceListId: string, targetUserId: string): Promise<string> {
-  // Fetch source list and items outside transaction (read-only, no race risk)
-  const sourceSnap = await getDoc(
-    doc(db, COLLECTIONS.SHARED_LISTS, sourceListId).withConverter(sharedListConverter),
-  );
-  if (!sourceSnap.exists()) throw new Error('Lista no encontrada');
-  const source = sourceSnap.data();
-
-  if (!source.isPublic && source.ownerId !== targetUserId) {
-    throw new Error('No se puede copiar una lista privada');
-  }
-
-  const items = await fetchListItems(sourceListId);
-
-  // Transaction: check limit + create list + copy items atomically
-  const newListId = await runTransaction(db, async (transaction) => {
-    // Check user list count inside transaction to prevent race
-    const userListsSnap = await getDocs(
-      query(collection(db, COLLECTIONS.SHARED_LISTS), where('ownerId', '==', targetUserId)),
-    );
-    if (userListsSnap.size >= MAX_LISTS) {
-      throw new Error('Límite de 10 listas alcanzado');
-    }
-
-    // Create new list doc
-    const newRef = doc(collection(db, COLLECTIONS.SHARED_LISTS));
-    transaction.set(newRef, {
-      ownerId: targetUserId,
-      name: source.name.trim(),
-      description: source.description.trim(),
-      isPublic: false,
-      itemCount: items.length,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
-    // Copy items
-    for (const item of items) {
-      const itemRef = doc(db, COLLECTIONS.LIST_ITEMS, `${newRef.id}__${item.businessId}`);
-      transaction.set(itemRef, {
-        listId: newRef.id,
-        businessId: item.businessId,
-        createdAt: serverTimestamp(),
-      });
-    }
-
-    return newRef.id;
-  });
-
-  invalidateQueryCache(COLLECTIONS.SHARED_LISTS, targetUserId);
-  trackEvent('list_copied', { source_list_id: sourceListId, item_count: items.length });
-  return newListId;
 }
 
 export async function fetchFeaturedLists(): Promise<SharedList[]> {

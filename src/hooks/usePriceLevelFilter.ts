@@ -73,9 +73,3 @@ export function usePriceLevelFilter() {
 
   return priceMap;
 }
-
-/** Invalidate the global cache (call after user votes). */
-export function invalidatePriceLevelCache() {
-  globalPriceMap = null;
-  fetchPromise = null;
-}

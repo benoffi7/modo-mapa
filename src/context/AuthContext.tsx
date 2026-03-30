@@ -33,19 +33,22 @@ function getAuthMethod(user: User | null): AuthMethod {
   return 'anonymous';
 }
 
-interface AuthContextType {
+export interface AuthStateContextType {
   user: User | null;
   displayName: string | null;
-  setDisplayName: (name: string) => Promise<void>;
   avatarId: string | null;
-  setAvatarId: (id: string) => Promise<void>;
   isLoading: boolean;
   authError: string | null;
+  authMethod: AuthMethod;
+  emailVerified: boolean;
+}
+
+export interface AuthActionsContextType {
+  setDisplayName: (name: string) => Promise<void>;
+  setAvatarId: (id: string) => Promise<void>;
   clearAuthError: () => void;
   signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
-  authMethod: AuthMethod;
-  emailVerified: boolean;
   linkEmailPassword: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   resendVerification: () => Promise<void>;
@@ -53,19 +56,24 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+type AuthContextType = AuthStateContextType & AuthActionsContextType;
+
+const AuthStateContext = createContext<AuthStateContextType>({
   user: null,
   displayName: null,
-  setDisplayName: async () => {},
   avatarId: null,
-  setAvatarId: async () => {},
   isLoading: true,
   authError: null,
+  authMethod: 'anonymous',
+  emailVerified: false,
+});
+
+const AuthActionsContext = createContext<AuthActionsContextType>({
+  setDisplayName: async () => {},
+  setAvatarId: async () => {},
   clearAuthError: () => {},
   signInWithGoogle: async () => null,
   signOut: async () => {},
-  authMethod: 'anonymous',
-  emailVerified: false,
   linkEmailPassword: async () => {},
   signInWithEmail: async () => {},
   resendVerification: async () => {},
@@ -227,19 +235,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [authMethod]);
 
-  const value = useMemo<AuthContextType>(() => ({
-    user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
-    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
-    resendVerification, refreshEmailVerified, changePassword,
-  }), [user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
-    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
-    resendVerification, refreshEmailVerified, changePassword]);
+  const stateValue = useMemo<AuthStateContextType>(() => ({
+    user, displayName, avatarId, isLoading, authError, authMethod, emailVerified,
+  }), [user, displayName, avatarId, isLoading, authError, authMethod, emailVerified]);
+
+  const actionsValue = useMemo<AuthActionsContextType>(() => ({
+    setDisplayName, setAvatarId, clearAuthError, signInWithGoogle, signOut,
+    linkEmailPassword, signInWithEmail, resendVerification, refreshEmailVerified, changePassword,
+  }), [setDisplayName, setAvatarId, clearAuthError, signInWithGoogle, signOut,
+    linkEmailPassword, signInWithEmail, resendVerification, refreshEmailVerified, changePassword]);
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuthState = (): AuthStateContextType => useContext(AuthStateContext);
+
+export const useAuthActions = (): AuthActionsContextType => useContext(AuthActionsContext);
+
+export const useAuth = (): AuthContextType => {
+  const state = useAuthState();
+  const actions = useAuthActions();
+  return { ...state, ...actions };
+};
