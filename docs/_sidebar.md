@@ -94,6 +94,8 @@
     - [Specs](/feat/infra/252-docs-conflict-markers/specs.md)
     - [Plan](/feat/infra/252-docs-conflict-markers/plan.md)
   - [#253 Architecture Cleanup](/feat/infra/253-architecture-cleanup/prd.md)
+    - [Specs](/feat/infra/253-architecture-cleanup/specs.md)
+    - [Plan](/feat/infra/253-architecture-cleanup/plan.md)
   - [#254 useEffect + Dead Code Cleanup](/feat/infra/254-useeffect-deadcode-cleanup/prd.md)
 
 - **Security**
