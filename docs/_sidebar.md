@@ -241,6 +241,8 @@
     - [Plan](/feat/infra/240-rate-limit-userid-cleanup/plan.md)
   - [#243 Service Layer Violations](/feat/infra/243-service-layer-violations/)
     - [PRD](/feat/infra/243-service-layer-violations/prd.md)
+    - [Specs](/feat/infra/243-service-layer-violations/specs.md)
+    - [Plan](/feat/infra/243-service-layer-violations/plan.md)
   - [#244 Docs Firestore + Sidebar](/feat/infra/244-docs-firestore-sidebar/)
     - [PRD](/feat/infra/244-docs-firestore-sidebar/prd.md)
   - [#245 Performance Improvements](/feat/infra/245-performance-improvements/)
@@ -338,6 +340,8 @@
     - [Plan](/feat/security/241-affectedkeys-update-rules/plan.md)
   - [#242 Rate Limits + Field Validation](/feat/security/242-rate-limits-field-validation/)
     - [PRD](/feat/security/242-rate-limits-field-validation/prd.md)
+    - [Specs](/feat/security/242-rate-limits-field-validation/specs.md)
+    - [Plan](/feat/security/242-rate-limits-field-validation/plan.md)
 
 - **[Social](/feat/social/)**
   - [Check-in](/feat/social/check-in/)
