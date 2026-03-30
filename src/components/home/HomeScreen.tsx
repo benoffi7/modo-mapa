@@ -2,6 +2,7 @@ import { Box, Divider } from '@mui/material';
 import GreetingHeader from './GreetingHeader';
 import QuickActions from './QuickActions';
 import SpecialsSection from './SpecialsSection';
+import YourInterestsSection from './YourInterestsSection';
 import RecentSearches from './RecentSearches';
 import ForYouSection from './ForYouSection';
 import RatingPromptBanner from '../ui/RatingPromptBanner';
@@ -23,6 +24,8 @@ export default function HomeScreen() {
       <QuickActions />
       <Divider sx={{ my: 0.5 }} />
       <SpecialsSection />
+      <Divider sx={{ my: 0.5 }} />
+      <YourInterestsSection />
       <Divider sx={{ my: 0.5 }} />
       <RecentSearches />
       <ForYouSection />

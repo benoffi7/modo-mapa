@@ -1,7 +1,8 @@
 import { useState, lazy, Suspense } from 'react';
-import { Box, Typography, Avatar, Divider, IconButton, CircularProgress, Toolbar } from '@mui/material';
+import { Box, Typography, Avatar, Divider, IconButton, CircularProgress, Toolbar, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { useAuth } from '../../context/AuthContext';
 import { useProfileStats } from '../../hooks/useProfileStats';
 import { useConnectivity } from '../../context/ConnectivityContext';
@@ -27,6 +28,7 @@ const RatingsList = lazy(() => import('./RatingsList'));
 const StatsView = lazy(() => import('./StatsView'));
 const AchievementsSection = lazy(() => import('./AchievementsSection'));
 const AchievementsGrid = lazy(() => import('./AchievementsGrid'));
+const InterestsSection = lazy(() => import('./InterestsSection'));
 
 const SECTION_TITLES: Record<string, string> = {
   notifications: 'Notificaciones',
@@ -37,6 +39,7 @@ const SECTION_TITLES: Record<string, string> = {
   reviews: 'Resenas',
   stats: 'Estadisticas',
   achievements: 'Logros',
+  interests: 'Tus intereses',
 };
 
 function SectionLoader() {
@@ -53,7 +56,7 @@ export default function ProfileScreen() {
   const { isOffline } = useConnectivity();
   const { navigateToListsSubTab } = useTabNavigation();
   const { navigateToBusiness } = useNavigateToBusiness();
-  const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | 'achievements' | null>(null);
+  const [activeSection, setActiveSection] = useState<SettingsSection | 'reviews' | 'stats' | 'achievements' | 'interests' | null>(null);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
 
@@ -96,6 +99,7 @@ export default function ProfileScreen() {
             )}
             {activeSection === 'stats' && <StatsView />}
             {activeSection === 'achievements' && <AchievementsGrid />}
+            {activeSection === 'interests' && <InterestsSection />}
           </Suspense>
         </Box>
       </Box>
@@ -159,6 +163,19 @@ export default function ProfileScreen() {
       <Suspense fallback={null}>
         <AchievementsSection onViewAll={() => setActiveSection('achievements')} />
       </Suspense>
+
+      {/* Interests */}
+      <Box sx={{ px: 2, py: 1 }}>
+        <Button
+          variant="text"
+          size="small"
+          startIcon={<LocalOfferIcon />}
+          onClick={() => setActiveSection('interests')}
+          sx={{ textTransform: 'none' }}
+        >
+          Tus intereses
+        </Button>
+      </Box>
 
       <Divider />
 
