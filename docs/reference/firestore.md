@@ -4,20 +4,20 @@
 
 | Coleccion | Doc ID | Campos | Reglas |
 |-----------|--------|--------|--------|
-| `users` | `{userId}` | displayName, createdAt | R/W owner; admin read |
+| `users` | `{userId}` | displayName, displayNameLower, avatarId?, createdAt, followersCount (server), followingCount (server) | R/W owner; admin read |
 | `favorites` | `{userId}__{businessId}` | userId, businessId, createdAt | Read auth; create/delete owner |
 | `ratings` | `{userId}__{businessId}` | userId, businessId, score (1-5), criteria? (food/service/price/ambiance/speed, each 1-5), createdAt, updatedAt | Read auth; create/update owner, score 1-5, isValidCriteria validation |
-| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged?, parentId?, replyCount? | Read auth; create owner (`keys().hasOnly`, no replyCount); update owner (`affectedKeys` text+updatedAt only); delete owner. replyCount managed by Cloud Functions. |
+| `comments` | auto-generated | userId, userName, businessId, text (1-500), createdAt, updatedAt?, likeCount, flagged?, parentId?, replyCount?, type? ('comment'/'question') | Read auth; create owner (`keys().hasOnly`, no replyCount); update owner (`affectedKeys` text+updatedAt only); delete owner. replyCount managed by Cloud Functions. |
 | `commentLikes` | `{userId}__{commentId}` | userId, commentId, createdAt | Read auth; create/delete owner |
 | `userTags` | `{userId}__{businessId}__{tagId}` | userId, businessId, tagId, createdAt | Read auth; create/delete owner |
 | `customTags` | auto-generated | userId, businessId, label (1-30), createdAt | Read auth; create/update/delete owner |
-| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/datos_usuario/datos_comercio/otro), status (pending/viewed/responded/resolved), createdAt, flagged?, adminResponse?, respondedAt?, respondedBy?, viewedByUser?, mediaUrl?, mediaType? (image/video), githubIssueUrl? | Create auth+owner; read/delete owner; admin read+update (respond/resolve); user update (viewedByUser) |
+| `feedback` | auto-generated | userId, message (1-1000), category (bug/sugerencia/datos_usuario/datos_comercio/otro), status (pending/viewed/responded/resolved), createdAt, flagged?, adminResponse?, respondedAt?, respondedBy?, viewedByUser?, mediaUrl?, mediaType? (image/pdf), githubIssueUrl?, rating? (1-5), businessId?, businessName? (1-100) | Create auth+owner; read/delete owner; admin read+update (respond/resolve); user update (viewedByUser) |
 | `config` | `counters`, `moderation`, `perfCounters`, `appVersion` | counters: totales + daily reads/writes/deletes; moderation: bannedWords; perfCounters: Cloud Function timings (array union per function name, reset daily); appVersion: minVersion (semver string), updatedAt (timestamp) — force-update check (#191) | appVersion: public read, Admin SDK write; others: admin read, Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, newAccounts, daily ops, byCollection, performance? (vitals/queries/functions/sampleCount) | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
 | `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
-| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, analyticsEnabled, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, notifyFollowers, notifyRecommendations, analyticsEnabled, locality?, localityLat?, localityLng?, updatedAt | Read auth; write owner (`keys().hasOnly`) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
@@ -96,6 +96,7 @@ interface Comment {
   flagged?: boolean;
   parentId?: string;    // ID del comentario padre (threads, 1 nivel)
   replyCount?: number;  // Cantidad de respuestas (solo en root comments)
+  type?: 'comment' | 'question';  // tipo de comentario (normal o pregunta Q&A)
 }
 
 // Suggestion types
@@ -149,8 +150,11 @@ interface Feedback {
   respondedBy?: string;
   viewedByUser?: boolean;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'pdf';
   githubIssueUrl?: string;
+  rating?: number;        // 1-5, rating de la app
+  businessId?: string;    // comercio asociado
+  businessName?: string;  // nombre del comercio asociado
 }
 
 // Feedback status colors (constants/feedback.ts)
@@ -158,6 +162,17 @@ interface Feedback {
 
 // Notification types
 type NotificationType = 'like' | 'photo_approved' | 'photo_rejected' | 'ranking' | 'feedback_response' | 'comment_reply';
+
+// User profile
+interface UserProfile {
+  displayName: string;
+  displayNameLower?: string;    // lowercase para busqueda case-insensitive
+  avatarId?: string;            // ID de avatar seleccionado
+  createdAt: Date;
+  // Server-only (Cloud Functions via admin SDK):
+  // followersCount: number;
+  // followingCount: number;
+}
 
 // User settings (includes notifyFeedback)
 interface UserSettings {
@@ -167,8 +182,13 @@ interface UserSettings {
   notifyPhotos: boolean;
   notifyRankings: boolean;
   notifyFeedback: boolean;
-  notifyReplies: boolean;      // default true — notificaciones cuando responden a tus comentarios
+  notifyReplies: boolean;           // default true — notificaciones cuando responden a tus comentarios
+  notifyFollowers: boolean;         // notificaciones de nuevos seguidores
+  notifyRecommendations: boolean;   // notificaciones de recomendaciones
   analyticsEnabled: boolean;
+  locality?: string;                // localidad seleccionada
+  localityLat?: number;             // latitud de localidad
+  localityLng?: number;             // longitud de localidad
   updatedAt: Date;
 }
 
