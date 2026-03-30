@@ -208,7 +208,7 @@ describe('useCheckIn', () => {
     await act(async () => { await result.current.performCheckIn(); });
 
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('Error al registrar visita');
+    expect(result.current.error).toBe('No se pudo registrar la visita');
   });
 
   it('undoes check-in successfully', async () => {
@@ -268,6 +268,6 @@ describe('useCheckIn', () => {
     await act(async () => { await result.current.undoCheckIn(); });
 
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('Error al desmarcar visita');
+    expect(result.current.error).toBe('No se pudo desmarcar la visita');
   });
 });

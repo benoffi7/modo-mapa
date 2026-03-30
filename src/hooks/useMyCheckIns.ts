@@ -28,7 +28,7 @@ export function useMyCheckIns(): UseMyCheckInsReturn {
       const data = await fetchMyCheckIns(user.uid);
       setCheckIns(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar visitas');
+      setError(e instanceof Error ? e.message : 'No se pudieron cargar las visitas');
     } finally {
       setIsLoading(false);
     }

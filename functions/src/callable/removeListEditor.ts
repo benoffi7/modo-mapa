@@ -1,6 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { checkCallableRateLimit } from '../utils/callableRateLimit';
+
+const DAILY_REMOVE_LIMIT = 10;
 
 export const removeListEditor = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK },
@@ -16,6 +19,9 @@ export const removeListEditor = onCall(
     }
 
     const db = getDb(databaseId);
+
+    await checkCallableRateLimit(db, `editors_remove_${request.auth.uid}`, DAILY_REMOVE_LIMIT);
+
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
 

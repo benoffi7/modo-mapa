@@ -10,15 +10,15 @@ import type { Achievement } from '../../types';
 import { fetchAchievements, saveAllAchievements } from '../../services/achievements';
 
 const METRIC_OPTIONS = [
-  { value: 'checkins_unique', label: 'Check-ins unicos' },
+  { value: 'checkins_unique', label: 'Check-ins únicos' },
   { value: 'follows', label: 'Seguidos' },
   { value: 'recommendations_sent', label: 'Recomendaciones enviadas' },
   { value: 'ratings', label: 'Calificaciones' },
   { value: 'comments', label: 'Comentarios' },
   { value: 'localities', label: 'Localidades' },
   { value: 'favorites', label: 'Favoritos' },
-  { value: 'photos', label: 'Fotos de menu' },
-  { value: 'streak_days', label: 'Dias consecutivos' },
+  { value: 'photos', label: 'Fotos de menú' },
+  { value: 'streak_days', label: 'Días consecutivos' },
 ];
 
 const ICON_OPTIONS = [
@@ -47,7 +47,7 @@ export default function AchievementsPanel() {
       const data = await fetchAchievements();
       setAchievements(data);
     } catch {
-      setError('Error al cargar logros');
+      setError('No se pudieron cargar los logros');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function AchievementsPanel() {
       await saveAllAchievements(achievements);
       await load();
     } catch {
-      setError('Error al guardar');
+      setError('No se pudo guardar');
     } finally {
       setSaving(false);
     }
@@ -111,8 +111,8 @@ export default function AchievementsPanel() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Defini logros con condiciones. El progreso se calcula automaticamente via Cloud Functions.
-        Los usuarios ven su progreso en la pestana Perfil.
+        Definí logros con condiciones. El progreso se calcula automáticamente vía Cloud Functions.
+        Los usuarios ven su progreso en la pestaña Perfil.
       </Typography>
 
       {achievements.map((ach, index) => (
@@ -133,7 +133,7 @@ export default function AchievementsPanel() {
               />
             </Box>
             <TextField
-              label="Descripcion (que ve el usuario)"
+              label="Descripción (que ve el usuario)"
               value={ach.description}
               onChange={(e) => updateField(ach.id, 'description', e.target.value)}
               size="small"
@@ -141,10 +141,10 @@ export default function AchievementsPanel() {
               placeholder="Ej: Hace check-in en 10 lugares diferentes"
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>Condicion:</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>Condición:</Typography>
               <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel>Metrica</InputLabel>
-                <Select value={ach.condition.metric} label="Metrica" onChange={(e) => updateField(ach.id, 'metric', e.target.value)}>
+                <InputLabel>Métrica</InputLabel>
+                <Select value={ach.condition.metric} label="Métrica" onChange={(e) => updateField(ach.id, 'metric', e.target.value)}>
                   {METRIC_OPTIONS.map((m) => <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>)}
                 </Select>
               </FormControl>
@@ -168,7 +168,7 @@ export default function AchievementsPanel() {
 
       {achievements.length === 0 && (
         <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          No hay logros definidos. Toca "Agregar" para crear uno.
+          No hay logros definidos. Tocá "Agregar" para crear uno.
         </Typography>
       )}
     </Box>

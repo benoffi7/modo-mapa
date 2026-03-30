@@ -28,7 +28,7 @@ export default function AdminPanelWrapper({ loading, error, errorMessage, childr
   if (error) {
     return (
       <Alert severity="error">
-        {errorMessage ?? 'Error cargando datos.'}
+        {errorMessage ?? 'No se pudieron cargar los datos.'}
       </Alert>
     );
   }

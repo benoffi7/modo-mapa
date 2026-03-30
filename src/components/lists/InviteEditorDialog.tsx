@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
 import { MSG_LIST } from '../../constants/messages';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { inviteEditor } from '../../services/sharedLists';
 
 interface Props {

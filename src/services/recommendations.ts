@@ -36,7 +36,7 @@ export async function createRecommendation(
     throw new Error('senderId, recipientId, and businessId are required');
   }
   if (senderId === recipientId) {
-    throw new Error('No podes recomendarte a vos mismo');
+    throw new Error('No podés recomendarte a vos mismo');
   }
   const trimmed = message.trim().slice(0, MAX_RECOMMENDATION_MESSAGE_LENGTH);
 

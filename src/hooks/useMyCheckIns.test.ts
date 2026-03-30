@@ -75,7 +75,7 @@ describe('useMyCheckIns', () => {
     const { result } = renderHook(() => useMyCheckIns());
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.error).toBe('Error al cargar visitas');
+    expect(result.current.error).toBe('No se pudieron cargar las visitas');
   });
 
   it('sets isLoading true while fetching', async () => {

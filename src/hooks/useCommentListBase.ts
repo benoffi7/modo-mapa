@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useConnectivity } from './useConnectivity';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { addComment, deleteComment, likeComment, unlikeComment } from '../services/comments';
 import { withOfflineSupport } from '../services/offlineInterceptor';
 import { useProfileVisibility } from './useProfileVisibility';

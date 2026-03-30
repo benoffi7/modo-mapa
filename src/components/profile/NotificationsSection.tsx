@@ -32,7 +32,7 @@ export default function NotificationsSection() {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <NotificationsOffIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-        <Typography color="text.secondary">No tenes notificaciones</Typography>
+        <Typography color="text.secondary">No tenés notificaciones</Typography>
       </Box>
     );
   }

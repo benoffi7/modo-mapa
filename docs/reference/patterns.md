@@ -15,7 +15,7 @@
 | ------ | ----------- |
 | **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Textos user-facing en subdirectorio `constants/messages/` (ver Copywriting). Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
 | **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
-| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
+| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS y PRICE_LEVEL_LABELS para backwards compatibility. CATEGORY_LABELS se importa directamente de `constants/business`. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
 
 ## Datos y estado
@@ -128,7 +128,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (Firestore-backed, 5/min/user). |
+| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers via `checkRateLimit`) + Cloud Functions callable (Firestore-backed via `checkCallableRateLimit` en `functions/src/utils/callableRateLimit.ts`, transaccion atomica con ventana diaria). |
 | **Moderacion de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). Normalizacion de acentos + word boundary. |
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
@@ -160,7 +160,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **withOfflineSupport wrapper** | Componentes wrappean llamadas a servicios con `withOfflineSupport(isOffline, type, meta, payload, onlineAction, onEnqueued)`. Si offline, encola en IndexedDB. Si online, ejecuta la accion. Servicios no se modifican. |
-| **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook. |
+| **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook directamente desde `context/ConnectivityContext.tsx` (el wrapper `hooks/useConnectivity.ts` fue eliminado). |
 | **IndexedDB nativa** | `offlineQueue.ts` usa IndexedDB API directamente (sin idb/Dexie). Singleton DB, subscribe/notify pattern, indexes por status y createdAt. |
 | **SyncEngine dynamic imports** | `syncEngine.ts` usa `await import()` para cargar servicios bajo demanda, evitando que el import chain tire de firebase.ts en tests. |
 | **Offline action types** | Union discriminada `OfflineActionType` con 9 tipos. Payloads tipados por tipo de accion en `types/offline.ts`. |

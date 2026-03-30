@@ -93,7 +93,7 @@ export default function TrendsPanel() {
   const data = allMetrics ? aggregate(allMetrics, granularity) : [];
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando tendencias.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las tendencias.">
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
           <ToggleButtonGroup

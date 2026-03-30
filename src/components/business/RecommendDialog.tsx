@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { UserSearchField } from '../UserSearchField';
 import { createRecommendation, countRecommendationsSentToday } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';

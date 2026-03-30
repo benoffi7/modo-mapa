@@ -48,7 +48,7 @@ export default function SocialPanel() {
   const recoStats = data?.recoStats;
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando datos sociales.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar los datos sociales.">
       <Box>
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid size={{ xs: 6, sm: 3 }}>

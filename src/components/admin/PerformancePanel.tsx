@@ -67,7 +67,7 @@ export default function PerformancePanel() {
   const trendData = useMemo(() => buildTrendData(filtered), [filtered]);
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando métricas de performance.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las métricas de performance.">
       {data && (
         <>
           {/* Filters */}

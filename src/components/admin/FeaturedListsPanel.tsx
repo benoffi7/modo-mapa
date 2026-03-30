@@ -21,7 +21,7 @@ import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
 import { allBusinesses } from '../../hooks/useBusinesses';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 import type { SharedList, ListItem as ListItemType } from '../../types';
 
 const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
@@ -88,7 +88,7 @@ export default function FeaturedListsPanel() {
   return (
     <Box>
       <ListStatsSection />
-      <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando listas destacadas.">
+      <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las listas destacadas.">
         <Typography variant="h6" sx={{ mb: 2 }}>
         <StarIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
         Listas Destacadas

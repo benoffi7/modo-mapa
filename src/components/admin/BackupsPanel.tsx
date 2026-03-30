@@ -103,7 +103,7 @@ export default function BackupsPanel() {
       setTotalCount(total);
     } catch (err) {
       logError('error listing backups', err);
-      setError(mapErrorToUserMessage(extractErrorMessage(err), 'Error cargando backups'));
+      setError(mapErrorToUserMessage(extractErrorMessage(err), 'No se pudieron cargar los backups'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -136,7 +136,7 @@ export default function BackupsPanel() {
       await fetchBackups();
     } catch (err) {
       logError('error creating backup', err);
-      setError(mapErrorToUserMessage(extractErrorMessage(err), 'Error al crear el backup'));
+      setError(mapErrorToUserMessage(extractErrorMessage(err), 'No se pudo crear el backup'));
     } finally {
       setOperating(false);
     }
@@ -154,7 +154,7 @@ export default function BackupsPanel() {
       setSuccess(`Backup del ${formatBackupDate(backup.createdAt)} restaurado exitosamente.`);
     } catch (err) {
       logError('error restoring backup', err);
-      setError(mapErrorToUserMessage(extractErrorMessage(err), 'Error al restaurar el backup'));
+      setError(mapErrorToUserMessage(extractErrorMessage(err), 'No se pudo restaurar el backup'));
     } finally {
       setOperating(false);
     }
@@ -174,7 +174,7 @@ export default function BackupsPanel() {
       setTotalCount((prev) => prev - 1);
     } catch (err) {
       logError('error deleting backup', err);
-      setError(mapErrorToUserMessage(extractErrorMessage(err), 'Error al eliminar el backup'));
+      setError(mapErrorToUserMessage(extractErrorMessage(err), 'No se pudo eliminar el backup'));
     } finally {
       setOperating(false);
     }

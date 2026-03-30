@@ -20,13 +20,13 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { MSG_OFFLINE } from '../../constants/messages';
 import type { OfflineActionType } from '../../types/offline';
 
 const ACTION_LABELS: Record<OfflineActionType, string> = {
-  rating_upsert: 'Calificacion',
-  rating_delete: 'Borrar calificacion',
+  rating_upsert: 'Calificación',
+  rating_delete: 'Borrar calificación',
   comment_create: 'Comentario',
   favorite_add: 'Agregar favorito',
   favorite_remove: 'Quitar favorito',
@@ -40,8 +40,8 @@ const ACTION_LABELS: Record<OfflineActionType, string> = {
   checkin_delete: 'Deshacer check-in',
   follow_add: 'Seguir usuario',
   follow_remove: 'Dejar de seguir',
-  recommendation_create: 'Recomendacion',
-  recommendation_read: 'Marcar leida',
+  recommendation_create: 'Recomendación',
+  recommendation_read: 'Marcar leída',
 };
 
 const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
@@ -142,7 +142,7 @@ export default memo(function PendingActionsSection() {
               </ListItemIcon>
               <ListItemText
                 primary={`${ACTION_LABELS[action.type]}${action.businessName ? ` - ${action.businessName}` : ''}`}
-                secondary={`${timeAgo(action.createdAt)}${isFailed ? ' - Fallo' : ''}`}
+                secondary={`${timeAgo(action.createdAt)}${isFailed ? ' - Falló' : ''}`}
                 primaryTypographyProps={{ fontSize: '0.85rem', color: isFailed ? 'error.main' : 'text.primary' }}
                 secondaryTypographyProps={{ fontSize: '0.75rem' }}
               />

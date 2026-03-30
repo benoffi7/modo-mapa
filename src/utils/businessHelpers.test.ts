@@ -7,7 +7,7 @@ vi.mock('../hooks/useBusinesses', () => ({
   ],
 }));
 
-vi.mock('../types', () => ({
+vi.mock('../constants/tags', () => ({
   PREDEFINED_TAGS: [
     { id: 'barato', label: 'Barato' },
     { id: 'rapido', label: 'Rápido' },

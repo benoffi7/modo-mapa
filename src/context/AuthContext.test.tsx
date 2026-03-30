@@ -562,7 +562,7 @@ describe('AuthContext', () => {
       });
 
       expect(returnedUser).toBeNull();
-      expect(result.current.authError).toBe('Error al iniciar sesión con Google');
+      expect(result.current.authError).toBe('No se pudo iniciar sesión con Google');
     });
   });
 

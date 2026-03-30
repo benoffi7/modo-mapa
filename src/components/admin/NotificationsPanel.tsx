@@ -27,7 +27,7 @@ export default function NotificationsPanel() {
     : 0;
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando notificaciones.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las notificaciones.">
       {data && (
         <Box>
           <Grid container spacing={2} sx={{ mb: 3 }}>

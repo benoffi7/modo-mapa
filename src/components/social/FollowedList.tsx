@@ -53,7 +53,7 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
       if (isFirst) setItems(newItems);
       else setItems((prev) => [...prev, ...newItems]);
     } catch {
-      setError('Error al cargar seguidos');
+      setError('No se pudieron cargar los seguidos');
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);

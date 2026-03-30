@@ -39,8 +39,22 @@ export const LIST_ICON_OPTIONS: ListIconOption[] = [
 
 const VALID_ICON_IDS = new Set(LIST_ICON_OPTIONS.map((i) => i.id));
 
-/** Returns icon option by ID. Returns undefined for invalid/unknown IDs. */
+/**
+ * Fallback map for legacy icon IDs that may exist in Firestore documents
+ * created before the current icon set was standardized.
+ * Maps old ID -> current ID. Populate as legacy IDs are discovered in production data.
+ *
+ * Example: { 'restaurant': 'food', 'drink': 'cocktail' }
+ */
+const LEGACY_ICON_MAP: Record<string, string> = {};
+
+/**
+ * Returns icon option by ID. Checks the legacy fallback map for deprecated IDs.
+ * Returns `undefined` for unknown/invalid IDs — callers should fall back to a default icon.
+ */
 export function getListIconById(id: string | undefined): ListIconOption | undefined {
-  if (!id || typeof id !== 'string' || !VALID_ICON_IDS.has(id)) return undefined;
-  return LIST_ICON_OPTIONS.find((i) => i.id === id);
+  if (!id || typeof id !== 'string') return undefined;
+  const resolvedId = LEGACY_ICON_MAP[id] ?? id;
+  if (!VALID_ICON_IDS.has(resolvedId)) return undefined;
+  return LIST_ICON_OPTIONS.find((i) => i.id === resolvedId);
 }

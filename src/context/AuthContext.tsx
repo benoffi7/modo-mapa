@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
+      const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión con Google';
       setAuthError(message);
       if (import.meta.env.DEV) logger.error('Error signing in with Google:', error);
       return null;

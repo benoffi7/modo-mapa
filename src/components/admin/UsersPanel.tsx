@@ -148,7 +148,7 @@ export default function UsersPanel() {
       });
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando datos de usuarios.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar los datos de usuarios.">
       <Box>
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid size={{ xs: 6, sm: 4, md: 3 }}>
