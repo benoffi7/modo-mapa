@@ -86,14 +86,14 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 |-----------|------|--------|--------|--------|
 | `users` | auth | owner, `keys().hasOnly(['displayName','displayNameLower','avatarId','createdAt'])` | owner, `affectedKeys().hasOnly(['displayName','displayNameLower','avatarId'])` | — |
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
-| `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner (userId immutability, score + updatedAt + criteria) | owner |
+| `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner, `affectedKeys().hasOnly(['score','updatedAt','criteria'])` | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
-| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner (userId immutability) | owner |
+| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
-| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
-| `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner (userId immutability, level + updatedAt) | owner |
+| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only | Rate limit 10/día |
+| `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner, `affectedKeys().hasOnly(['level','updatedAt'])` | owner |
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
 | `abuseLogs` | admin | Functions | — | — |
@@ -105,8 +105,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 ### Patrones de seguridad en rules
 
 - **`keys().hasOnly()`**: todas las reglas de `create` (y `write` en userSettings) restringen los campos permitidos para prevenir inyección de datos arbitrarios.
-- **`affectedKeys().hasOnly()`**: comments update y notifications update restringen qué campos pueden cambiar, previniendo que el cliente manipule campos server-side como `replyCount`, `flagged`, `likeCount`.
-- **userId inmutabilidad**: ratings, customTags y priceLevels update verifican `request.resource.data.userId == resource.data.userId`.
+- **`affectedKeys().hasOnly()`**: ratings, customTags, priceLevels, comments, notifications y feedback update restringen qué campos pueden cambiar, previniendo que el cliente manipule campos server-side como `replyCount`, `flagged`, `likeCount`, `businessId`, `userId`, `createdAt`.
 - **Ownership en update/delete**: siempre se chequea `resource.data.userId == request.auth.uid` (no el request data).
 - **replyCount server-only**: gestionado exclusivamente por Cloud Functions (`onCommentCreated`/`onCommentDeleted`). El cliente no puede modificar este campo.
 
@@ -173,6 +172,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `ratings` | 30/día por usuario |
 | `userTags` | 100/día por usuario |
 | `feedback` | 5/día por usuario |
+| `menuPhotos` | 10/día por usuario |
+| `listItems` | 100/día por usuario (campo `addedBy`) |
 | `notifications` | 50/día por destinatario (admin types exempt) |
 
 ### Rate limiting server-side (callables)

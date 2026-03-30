@@ -2,10 +2,11 @@
  * Firestore + Storage service for the `menuPhotos` collection.
  */
 import { collection, doc, setDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
 import type { CollectionReference, DocumentReference } from 'firebase/firestore';
 import type { UploadTask } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db, storage, functions } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { menuPhotoConverter } from '../config/converters';
 import { invalidateBusinessCache } from '../hooks/useBusinessDataCache';
@@ -122,4 +123,19 @@ export async function getUserPendingPhotos(
     where('status', '==', 'pending'),
   ));
   return snap.docs.map((d) => d.data());
+}
+
+/**
+ * Report a menu photo via Cloud Function callable.
+ */
+export async function reportMenuPhoto(photoId: string): Promise<void> {
+  const report = httpsCallable(functions, 'reportMenuPhoto');
+  await report({ photoId });
+}
+
+/**
+ * Get download URL for a menu photo from Storage.
+ */
+export async function getMenuPhotoUrl(path: string): Promise<string> {
+  return getDownloadURL(ref(storage, path));
 }

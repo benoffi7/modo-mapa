@@ -194,7 +194,7 @@
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificacion en frontend (AdminGuard) y server-side (Firestore rules)
-- 13 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
+- 16 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
 
 | Tab | Descripcion |
 |-----|-------------|
@@ -211,6 +211,9 @@
 | **Listas** | Stats globales (total, publicas, privadas, colaborativas, total items, promedio items/lista), top 10 listas por tamano. Toggle listas destacadas (callable getPublicLists/toggleFeaturedList) |
 | **Funcionalidades** | Metricas por funcionalidad: cards con numero de hoy (prominente) + total acumulado. Tendencia vs ayer (flecha). Click expande grafico lineal 30 dias. Features Firestore: ratings, comments, likes, favorites, tags, feedback, check-ins, follows, recomendaciones, nivel de gasto. Features GA4: Sorprendeme, listas, busqueda, compartir, fotos, dark mode, preguntas Q&A. Cache en `config/analyticsCache` con TTL 1h. Graceful degradation si GA4 API falla. Seccion Adopcion: usuarios totales, activos hoy, tasa de actividad |
 | **Notificaciones** | Stats globales (total, leidas, no leidas, tasa de lectura). Tabla desglose por tipo (8 tipos) con total, leidas, tasa de lectura con barra de progreso. Highlight rojo si tasa <20% |
+| **Social** | Panel de metricas sociales (follows, activity feed, recomendaciones). Stats y actividad reciente |
+| **Especiales** | CRUD de tarjetas especiales para la pantalla Inicio. Campos: titulo, subtitulo, icono, tipo, referenceId, orden, activo |
+| **Logros** | CRUD de definiciones de logros. Campos: label, descripcion, icono, condicion (metrica+umbral), orden, activo |
 
 ---
 

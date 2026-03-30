@@ -83,22 +83,4 @@ export async function fetchFollowing(
   return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };
 }
 
-export async function fetchFollowers(
-  userId: string,
-  pageSize = PAGE_SIZE,
-  afterDoc?: FollowCursor,
-): Promise<{ docs: QueryDocumentSnapshot<Follow>[]; hasMore: boolean; cursor: FollowCursor | null }> {
-  const constraints: QueryConstraint[] = [
-    where('followedId', '==', userId),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (afterDoc) constraints.push(startAfter(afterDoc));
-  constraints.push(limit(pageSize + 1));
-
-  const snap = await getDocs(query(getFollowsCollection(), ...constraints));
-  const hasMore = snap.docs.length > pageSize;
-  const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
-  return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };
-}
-
 // searchUsers moved to src/services/users.ts

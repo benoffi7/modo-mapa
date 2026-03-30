@@ -5,7 +5,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Auth anonima + email/password + Google Sign-In** | Usuarios ingresan como anonimos. Pueden vincular email/password via `linkWithCredential` (preserva UID). Login cross-device con `signInWithEmailAndPassword`. Admin usa Google Sign-In solo en `/admin`. AuthMethod: `'anonymous' \| 'email' \| 'google'`. |
-| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. |
+| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. User profile writes (displayName, avatar) en `services/userProfile.ts`. |
 | **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
 | **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 
@@ -23,7 +23,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
-| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. Solo `src/services/`, `src/config/`, `src/context/` y `src/hooks/` pueden importar de `firebase/firestore`. Enforced por architecture agent y PR reviewer. |
+| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore`, `firebase/functions` ni `firebase/storage` directamente. Solo `src/services/`, `src/config/` y `src/hooks/` pueden importar de Firebase SDK. Contexts (como AuthContext) usan servicios para writes — no importan `firebase/firestore` directamente. Enforced por architecture agent y PR reviewer. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
@@ -147,6 +147,8 @@
 | **Logger centralizado** | `src/utils/logger.ts` — `logger.error()`, `.warn()`, `.log()`. En DEV: console. En PROD: errors a Sentry, warn/log silenciados. Nunca usar `console.*` directamente. |
 | **No silent .catch(() => {})** | ESLint rule `@typescript-eslint/no-empty-function: error` previene `.catch(() => {})`. Usar `.catch((e) => logger.warn(...))` como minimo. `pre-staging-check.sh` lo valida tambien en CI. PR reviewer lo flaggea como cambio solicitado. |
 | **Context-first data access** | Si un dato ya esta disponible en un Context (AuthContext, SelectionContext, etc.), consumirlo de ahi. NO hacer `getDoc` para leer datos que el context ya carga al montar. Ejemplo: `avatarId` debe venir de AuthContext, no de un getDoc extra en ProfileScreen. Architecture agent lo detecta. |
+| **Split State/Actions contexts** | AuthContext esta internamente splitado en `AuthStateContext` (7 campos de estado: user, displayName, avatarId, isLoading, authError, authMethod, emailVerified) y `AuthActionsContext` (10 funciones mutadoras). `useAuth()` es un wrapper backward-compatible que consume ambos. `useAuthState()` y `useAuthActions()` disponibles para consumidores que solo necesitan uno u otro (reduce re-renders). Migracion gradual — consumidores existentes pueden seguir usando `useAuth()`. |
+| **Dynamic import for heavy deps** | Dependencias pesadas que solo se usan en flujos especificos se cargan con `await import()` dentro del handler. Ejemplos: `browser-image-compression` en `MenuPhotoUpload.handleSubmit`, servicios de Firestore en `SyncEngine`, Sentry SDK. `import type` para tipos (se elimina en build). El `catch` existente del handler cubre errores de carga offline. |
 
 ## Dark mode
 
@@ -154,6 +156,8 @@
 |--------|-------------|
 | **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SettingsPanel seccion "Apariencia" (entre Ubicacion y Privacidad). |
 | **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
+| **Overlay adaptativo** | Overlays sobre imagenes usan `alpha()` de `@mui/material/styles` con `theme.palette.mode` para elegir color base. Light: `alpha(common.black, 0.55)`. Dark: `alpha(common.white, 0.15)`. Hover incrementa opacidad (0.75/0.25). Patron usado en `MenuPhotoSection`. |
+| **Sin hex hardcodeados** | Colores en `sx` deben usar tokens del tema (`'primary.dark'`, `'common.white'`, `'background.paper'`) o `alpha()` con `theme.palette.*`. Nunca hex literales como `'#fff'` o `'#1565c0'`. Esto permite adaptacion automatica a dark mode. |
 
 ## Offline queue
 
@@ -171,7 +175,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes. |
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`. Reemplaza duplicados en paneles admin, converters y componentes. |
 | **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, LinearProgress } from '@mui/material';
-import imageCompression from 'browser-image-compression';
 import { useAuth } from '../../context/AuthContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
 import { logger } from '../../utils/logger';
@@ -41,6 +40,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
     abortRef.current = abort;
 
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(selectedFile, {
         maxSizeMB: 2,
         maxWidthOrHeight: 2048,

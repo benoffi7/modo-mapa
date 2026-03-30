@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.32.0
+**Version:** 2.32.1
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-03-30
@@ -68,7 +68,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Autenticacion**: anonima por defecto + email/password opcional (linkWithCredential preserva UID). Registro, login cross-device, verificacion email, recuperacion contrasena, cambio contrasena, logout, **eliminacion de cuenta** (#192, permanente con re-auth, Cloud Function `deleteUserAccount` borra 19 colecciones). "Empezar de cero" para anonimos. UI en SideMenu (badge + botones) y SettingsPanel (seccion Cuenta)
 - **Configuracion de usuario**: panel lateral con seccion Cuenta (auth, eliminar cuenta), perfil publico/privado, notificaciones (master + granulares incl. nuevos seguidores y recomendaciones), datos de uso (analytics)
 - **Analytics**: Firebase Analytics (GA4) con eventos de negocio (business_view, rating_submit, etc.) — solo en produccion, lazy-loaded
-- **Admin** (`/admin`): 11 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (métricas por funcionalidad con gráficos 30 días)
+- **Admin** (`/admin`): 16 tabs — overview, actividad, feedback (con responder/resolver/crear issue GitHub), tendencias, usuarios, Firebase usage, alertas (con revisar/descartar, filtro por estado, badge reincidente), backups, fotos, performance (descompuesto en subcomponentes), **features** (metricas por funcionalidad con graficos 30 dias), listas, notificaciones, **social** (metricas sociales: follows, activity feed, recomendaciones), **especiales** (CRUD tarjetas especiales para Inicio), **logros** (CRUD definiciones de logros)
 - **Seguir usuarios** (#129): seguir a otros usuarios, feed de actividad de seguidos (ratings, comentarios, favoritos), busqueda de usuarios por nombre, FollowButton en perfil, secciones Seguidos y Actividad en SideMenu, notificacion `new_follower`, configuracion `notifyFollowers`
 - **Recomendaciones** (#135): recomendar comercios a otros usuarios con mensaje opcional (max 200 chars). Rate limit 20/dia. Lista de recibidas con badge de no leidas. Notificacion `recommendation`. Soporte offline. Configuracion `notifyRecommendations`
 - **Cloud Functions**: 14 callable + 17 triggers + 6 scheduled
