@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-30 (post merge: #235-#239 closed, v2.32.0)*
+*Actualizado: 2026-03-30 (post merge: #240 closed, v2.32.1)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -35,7 +35,7 @@
 | Firestore rules field whitelist: auditar todas las colecciones | **Completado** v2.32.0 (#237) — todas limpias |
 | Mutable prop audit: componentes que modifican props | **Completado** v2.32.0 (#238) — sin violaciones |
 | Copy audit: tildes y signos de apertura | **Completado** v2.32.0 (#239) — 54 archivos corregidos |
-| Rate limit docs falta campo `userId` para cleanup en account deletion | Pendiente — detectado en audit v2.32.0 |
+| Rate limit docs falta campo `userId` para cleanup en account deletion | **Completado** v2.32.1 (#240) |
 
 ---
 
@@ -44,5 +44,5 @@
 | Metrica | Valor |
 |---------|-------|
 | Issues abiertos | 5 (#168, #200, #201, #203, #205) |
-| Issues cerrados | #128–#199, #207–#239 (64) |
-| Versiones publicadas | v2.10.0 – v2.32.0 |
+| Issues cerrados | #128–#199, #207–#240 (65) |
+| Versiones publicadas | v2.10.0 – v2.32.1 |
