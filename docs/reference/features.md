@@ -385,6 +385,21 @@ Todas las callable admin:
 
 ---
 
+## HomeScreen — Trending cerca tuyo (#200)
+
+- **TrendingNearYouSection**: seccion en HomeScreen entre SpecialsSection y RecentSearches que muestra trending businesses filtrados por proximidad al usuario
+- **Ubicacion**: usa cadena de fallback existente `useSortLocation` (GPS → localidad configurada → oficina). Siempre hay datos
+- **Subtitulo dinamico**: "Cerca tuyo" (GPS), "En {localidad}" (localidad configurada), "En tu zona" (fallback oficina)
+- **Label de sugerencia**: cuando source es office, muestra caption "Configura tu localidad para resultados mas precisos". Dismisseable (localStorage)
+- **Carrusel horizontal**: reutiliza `TrendingBusinessCard`. Maximo 8 resultados
+- **Radio progresivo**: intenta 1km, si < 5 resultados expande a 2km, luego 5km. Filtrado client-side con haversine sobre trending data cacheado
+- **Hook**: `useLocalTrending` — consume `useTrending`, `useSortLocation`, `useUserSettings`, `useFilters`. Retorna `{ businesses, source, localityName, radiusKm, loading }`
+- **RankingsView**: chip "Mi zona" junto a chips de periodo. Cuando activo, muestra trending businesses filtrados por zona en lugar del ranking de usuarios
+- **Analytics**: `trending_near_viewed` (source, radius_km, count), `trending_near_tapped` (business_id, rank, source), `trending_near_configure_tapped`, `rankings_zone_filter` (enabled)
+- **Archivos**: `TrendingNearYouSection.tsx`, `useLocalTrending.ts`, `constants/trending.ts`
+
+---
+
 ## Nota: Badges vs Achievements
 
 La app implementa **dos sistemas separados** de gamificacion:

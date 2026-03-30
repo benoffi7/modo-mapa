@@ -176,7 +176,8 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`. Reemplaza duplicados en paneles admin, converters y componentes. |
-| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
+| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`, `useLocalTrending`. |
+| **Progressive radius filtering** | `useLocalTrending` filtra trending businesses por proximidad con expansion progresiva de radio (1km → 2km → 5km) para garantizar minimo de resultados. Patron reutilizable para cualquier filtrado geolocal client-side. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 
 ## Codigo compartido frontend/functions
