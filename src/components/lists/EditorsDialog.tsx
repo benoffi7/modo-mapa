@@ -103,7 +103,7 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
               >
                 <ListItemText
                   primary={editor.displayName}
-                  secondary={editor.uid.slice(0, 8) + '...'}
+                  secondary="Editor"
                   primaryTypographyProps={{ fontSize: '0.9rem' }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />
