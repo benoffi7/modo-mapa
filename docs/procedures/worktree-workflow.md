@@ -231,6 +231,30 @@ export const NEW_CONSTANT = 'value';
 
 ---
 
+## Regla de no-append para barrel files
+
+**Regla:** Cuando se agregan constantes, tipos o secciones a un modulo organizado por dominio, CREAR un archivo nuevo por dominio en vez de hacer append a un archivo existente. Los barrels (`index.ts`) solo re-exportan.
+
+### Archivos afectados
+
+| Modulo | Directorio | Barrel | Accion para agregar |
+|--------|-----------|--------|-------------------|
+| Analytics events | `src/constants/analyticsEvents/` | `analyticsEvents/index.ts` | Crear `{dominio}.ts`, agregar `export * from './{dominio}'` al barrel |
+| Types | `src/types/` | `types/index.ts` | Crear `{dominio}.ts`, agregar `export * from './{dominio}'` al barrel |
+| Home sections | `src/components/home/homeSections.ts` | N/A (array declarativo) | Agregar entrada al array `HOME_SECTIONS` |
+
+### Por que no-append
+
+Los archivos append-only (donde multiples features agregan lineas al final) son la causa principal de conflictos de merge en trabajo paralelo. Cada agente en worktree toca la misma zona del archivo.
+
+Con archivos por dominio, cada agente crea su propio archivo y solo agrega una linea al barrel. La probabilidad de conflicto baja de ~100% a ~5%.
+
+### Incluir en prompts de agentes
+
+"Para `analyticsEvents`, crea un archivo nuevo en `src/constants/analyticsEvents/{dominio}.ts` y agrega el re-export en el barrel `index.ts`. NO hagas append a archivos de dominio existentes de otros features. Para types, crea un archivo nuevo en `src/types/{dominio}.ts` y agrega el re-export en el barrel."
+
+---
+
 ## Requisitos para prompts de agentes de implementacion
 
 Todo prompt enviado a un agente de implementacion (ya sea en worktree o directo) DEBE incluir estos pasos finales:
