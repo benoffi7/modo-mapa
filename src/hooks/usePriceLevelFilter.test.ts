@@ -108,40 +108,6 @@ describe('usePriceLevelFilter', () => {
     expect(mockGetDocs).toHaveBeenCalledTimes(1);
   });
 
-  it('invalidatePriceLevelCache clears cache and forces re-fetch', async () => {
-    mockGetDocs.mockResolvedValue(makeSnapshot([
-      makePriceLevelDoc('biz1', 2),
-    ]));
-    const { usePriceLevelFilter, invalidatePriceLevelCache } = await loadModule();
-
-    // First render: fetches and caches
-    const { result, unmount } = renderHook(() => usePriceLevelFilter());
-    await waitFor(() => {
-      expect(result.current.size).toBe(1);
-    });
-    expect(mockGetDocs).toHaveBeenCalledTimes(1);
-    unmount();
-
-    // Invalidate cache
-    act(() => {
-      invalidatePriceLevelCache();
-    });
-
-    // Update mock to return different data
-    mockGetDocs.mockResolvedValue(makeSnapshot([
-      makePriceLevelDoc('biz2', 4),
-    ]));
-
-    // Second render: should re-fetch since cache was invalidated
-    const { result: result2 } = renderHook(() => usePriceLevelFilter());
-    await waitFor(() => {
-      expect(result2.current.size).toBe(1);
-    });
-
-    expect(mockGetDocs).toHaveBeenCalledTimes(2);
-    expect(result2.current.get('biz2')).toBe(4);
-  });
-
   it('re-fetches after cache TTL expires (5 minutes)', async () => {
     const realNow = Date.now;
     let fakeTime = 1000000;

@@ -40,8 +40,3 @@ export async function saveAllSpecials(specials: Special[]): Promise<void> {
     await setDoc(doc(db, COLLECTIONS.SPECIALS, id), { ...data, updatedAt: new Date() });
   }
 }
-
-/** Delete a single special by ID. */
-export async function deleteSpecial(id: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTIONS.SPECIALS, id));
-}

@@ -61,7 +61,6 @@ import {
   removeBusinessFromList,
   fetchListItems,
   fetchSharedWithMe,
-  copyList,
   fetchSharedList,
   fetchUserLists,
   fetchEditorName,
@@ -167,78 +166,6 @@ describe('sharedLists', () => {
       const result = await fetchSharedWithMe('u1');
       expect(result).toHaveLength(1);
       expect(mockGetDocs).toHaveBeenCalled();
-    });
-  });
-
-  describe('copyList', () => {
-    it('throws when source list does not exist', async () => {
-      mockGetDoc.mockResolvedValueOnce({ exists: () => false });
-      await expect(copyList('source1', 'user1')).rejects.toThrow('Lista no encontrada');
-    });
-
-    it('throws when source list is private and caller is not owner', async () => {
-      mockGetDoc.mockResolvedValueOnce({
-        exists: () => true,
-        data: () => ({ ownerId: 'other-user', isPublic: false, name: 'Test', description: '' }),
-      });
-      await expect(copyList('source1', 'user1')).rejects.toThrow('No se puede copiar una lista privada');
-    });
-
-    it('throws when user has 10 lists already (inside transaction)', async () => {
-      // Source list fetch (outside transaction)
-      mockGetDoc.mockResolvedValueOnce({
-        exists: () => true,
-        data: () => ({ ownerId: 'other', isPublic: true, name: 'Test', description: '' }),
-      });
-      // fetchListItems (outside transaction)
-      mockGetDocs
-        .mockResolvedValueOnce({ docs: [] })
-        // user list count (inside transaction)
-        .mockResolvedValueOnce({ size: 10 });
-      await expect(copyList('source1', 'user1')).rejects.toThrow('Límite de 10 listas alcanzado');
-    });
-
-    it('allows owner to copy their own private list', async () => {
-      mockGetDoc.mockResolvedValueOnce({
-        exists: () => true,
-        data: () => ({ ownerId: 'user1', isPublic: false, name: 'My List', description: 'desc' }),
-      });
-      mockGetDocs
-        .mockResolvedValueOnce({ docs: [] }) // fetchListItems
-        .mockResolvedValueOnce({ size: 0 }); // user list count in transaction
-
-      await copyList('source1', 'user1');
-      expect(mockTransactionSet).toHaveBeenCalledTimes(1); // list doc only, no items
-    });
-
-    it('copies public list with items via transaction', async () => {
-      mockGetDoc.mockResolvedValueOnce({
-        exists: () => true,
-        data: () => ({ ownerId: 'other', isPublic: true, name: 'Public List', description: 'hi' }),
-      });
-      mockGetDocs
-        .mockResolvedValueOnce({ docs: [
-          { data: () => ({ businessId: 'biz1' }) },
-          { data: () => ({ businessId: 'biz2' }) },
-        ]}) // fetchListItems
-        .mockResolvedValueOnce({ size: 2 }); // user list count in transaction
-
-      await copyList('source1', 'user1');
-      // 1 list doc + 2 item docs = 3 transaction.set calls
-      expect(mockTransactionSet).toHaveBeenCalledTimes(3);
-    });
-
-    it('copies empty list without adding items', async () => {
-      mockGetDoc.mockResolvedValueOnce({
-        exists: () => true,
-        data: () => ({ ownerId: 'other', isPublic: true, name: 'Empty', description: '' }),
-      });
-      mockGetDocs
-        .mockResolvedValueOnce({ docs: [] }) // fetchListItems
-        .mockResolvedValueOnce({ size: 0 }); // user list count in transaction
-
-      await copyList('source1', 'user1');
-      expect(mockTransactionSet).toHaveBeenCalledTimes(1); // only list doc
     });
   });
 

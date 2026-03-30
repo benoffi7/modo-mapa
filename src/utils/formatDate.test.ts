@@ -4,7 +4,6 @@ import {
   formatDateShort,
   formatDateMedium,
   formatRelativeTime,
-  formatDateFull,
 } from './formatDate';
 
 describe('toDate', () => {
@@ -102,22 +101,5 @@ describe('formatRelativeTime', () => {
     expect(result).not.toContain('hace');
     expect(result).not.toContain('ayer');
     vi.useRealTimers();
-  });
-});
-
-describe('formatDateFull', () => {
-  it('formats valid ISO string', () => {
-    const result = formatDateFull('2025-01-15T10:30:00');
-    expect(result).toContain('15');
-    expect(result).toContain('01');
-    expect(result).toContain('2025');
-  });
-
-  it('returns original string for invalid date', () => {
-    expect(formatDateFull('not-a-date')).toBe('not-a-date');
-  });
-
-  it('returns original string for empty string', () => {
-    expect(formatDateFull('')).toBe('');
   });
 });
