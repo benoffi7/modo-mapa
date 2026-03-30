@@ -496,6 +496,8 @@
     - [Plan](/feat/ux/203-notificaciones-digest/plan.md)
   - [#246 Dark Mode Hardcoded Colors](/feat/ux/246-dark-mode-hardcoded-colors/)
     - [PRD](/feat/ux/246-dark-mode-hardcoded-colors/prd.md)
+    - [Specs](/feat/ux/246-dark-mode-hardcoded-colors/specs.md)
+    - [Plan](/feat/ux/246-dark-mode-hardcoded-colors/plan.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
