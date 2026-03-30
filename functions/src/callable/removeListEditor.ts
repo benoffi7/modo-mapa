@@ -20,7 +20,7 @@ export const removeListEditor = onCall(
 
     const db = getDb(databaseId);
 
-    await checkCallableRateLimit(db, `editors_remove_${request.auth.uid}`, DAILY_REMOVE_LIMIT);
+    await checkCallableRateLimit(db, `editors_remove_${request.auth.uid}`, DAILY_REMOVE_LIMIT, request.auth.uid);
 
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');

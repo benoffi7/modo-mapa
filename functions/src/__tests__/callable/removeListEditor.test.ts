@@ -64,7 +64,7 @@ describe('removeListEditor', () => {
   it('calls checkCallableRateLimit with correct key and limit', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1' }) });
     await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
-    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_remove_u1', 10);
+    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_remove_u1', 10, 'u1');
   });
 
   it('rejects with resource-exhausted when rate limited', async () => {

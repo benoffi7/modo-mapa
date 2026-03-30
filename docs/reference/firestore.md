@@ -22,7 +22,7 @@
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
 | `trendingBusinesses` | `current` | businesses (array: businessId, name, category, score, breakdown, rank), computedAt, periodStart, periodEnd | Read auth; write false (Functions only) |
-| `_rateLimits` | `backup_{userId}`, `perf_{userId}`, `delete_{userId}`, `clean_{userId}`, `editors_invite_{userId}`, `editors_remove_{userId}` | count, resetAt | No client access; Functions write (admin SDK). Usado por backups (5/min), perfMetrics (5/dia), deleteUserAccount (1/min), cleanAnonymousData (1/min), inviteListEditor (10/dia), removeListEditor (10/dia) |
+| `_rateLimits` | `backup_{userId}`, `perf_{userId}`, `delete_{userId}`, `clean_{userId}`, `editors_invite_{userId}`, `editors_remove_{userId}` | count, resetAt, userId | No client access; Functions write (admin SDK). Campo `userId` permite cleanup en account deletion via `deleteAllUserData`. Usado por backups (5/min), perfMetrics (5/dia), deleteUserAccount (1/min), cleanAnonymousData (1/min), inviteListEditor (10/dia), removeListEditor (10/dia) |
 
 ### Subcollections
 

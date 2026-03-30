@@ -106,7 +106,7 @@ describe('inviteListEditor', () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
     mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
     await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } });
-    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_invite_u1', 10);
+    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_invite_u1', 10, 'u1');
   });
 
   it('rejects with resource-exhausted when rate limited', async () => {

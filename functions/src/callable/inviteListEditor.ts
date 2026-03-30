@@ -22,7 +22,7 @@ export const inviteListEditor = onCall(
 
     const db = getDb(databaseId);
 
-    await checkCallableRateLimit(db, `editors_invite_${request.auth.uid}`, DAILY_INVITE_LIMIT);
+    await checkCallableRateLimit(db, `editors_invite_${request.auth.uid}`, DAILY_INVITE_LIMIT, request.auth.uid);
 
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
