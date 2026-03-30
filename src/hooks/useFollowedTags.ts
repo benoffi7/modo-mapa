@@ -5,6 +5,7 @@ import { fetchUserSettings, updateUserSettings } from '../services/userSettings'
 import { MAX_FOLLOWED_TAGS } from '../constants/interests';
 import { VALID_TAG_IDS } from '../constants/tags';
 import { trackEvent } from '../utils/analytics';
+import { EVT_TAG_FOLLOWED, EVT_TAG_UNFOLLOWED } from '../constants/analyticsEvents';
 import { logger } from '../utils/logger';
 import type { UserSettings } from '../types';
 
@@ -45,7 +46,7 @@ export function useFollowedTags() {
       const next = [...current, tag];
       setOptimisticTags(next);
 
-      trackEvent('tag_followed', { tag, source });
+      trackEvent(EVT_TAG_FOLLOWED, { tag, source });
 
       updateUserSettings(user.uid, {
         followedTags: next,
@@ -67,7 +68,7 @@ export function useFollowedTags() {
       const next = current.filter((t) => t !== tag);
       setOptimisticTags(next);
 
-      trackEvent('tag_unfollowed', { tag, source });
+      trackEvent(EVT_TAG_UNFOLLOWED, { tag, source });
 
       updateUserSettings(user.uid, {
         followedTags: next,

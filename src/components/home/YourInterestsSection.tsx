@@ -9,6 +9,12 @@ import { useAuth } from '../../context/AuthContext';
 import { SUGGESTED_TAGS } from '../../constants/interests';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { trackEvent } from '../../utils/analytics';
+import {
+  EVT_INTERESTS_SECTION_VIEWED,
+  EVT_INTERESTS_BUSINESS_TAPPED,
+  EVT_INTERESTS_CTA_TAPPED,
+  EVT_INTERESTS_SUGGESTED_TAPPED,
+} from '../../constants/analyticsEvents';
 import FollowTagChip from '../common/FollowTagChip';
 import type { BusinessCategory, InterestFeedGroup } from '../../types';
 
@@ -60,7 +66,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
             tag={tag}
             followed={false}
             onToggle={() => {
-              trackEvent('interests_suggested_tapped', { tag });
+              trackEvent(EVT_INTERESTS_SUGGESTED_TAPPED, { tag });
               onFollow(tag);
             }}
           />
@@ -69,7 +75,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
       <Button
         size="small"
         onClick={() => {
-          trackEvent('interests_cta_tapped');
+          trackEvent(EVT_INTERESTS_CTA_TAPPED);
           onExplore();
         }}
         sx={{ mt: 0.5 }}
@@ -97,7 +103,7 @@ export default function YourInterestsSection() {
   // Mark seen when section renders with data
   useEffect(() => {
     if (groups.length > 0) {
-      trackEvent('interests_section_viewed', { tag_count: tags.length, total_new: 0 });
+      trackEvent(EVT_INTERESTS_SECTION_VIEWED, { tag_count: tags.length, total_new: 0 });
       markSeen();
     }
   }, [groups.length, tags.length, markSeen]);
@@ -105,7 +111,7 @@ export default function YourInterestsSection() {
   if (!user || loading) return null;
 
   const handleBusinessTap = (businessId: string, tag: string) => {
-    trackEvent('interests_business_tapped', { business_id: businessId, tag });
+    trackEvent(EVT_INTERESTS_BUSINESS_TAPPED, { business_id: businessId, tag });
     navigateToBusiness(businessId);
   };
 
