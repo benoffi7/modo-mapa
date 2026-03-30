@@ -233,6 +233,8 @@ export interface UserRanking {
   totalParticipants: number;
 }
 
+export type DigestFrequency = 'realtime' | 'daily' | 'weekly';
+
 export interface UserSettings {
   profilePublic: boolean;
   notificationsEnabled: boolean;
@@ -243,11 +245,21 @@ export interface UserSettings {
   notifyReplies: boolean;
   notifyFollowers: boolean;
   notifyRecommendations: boolean;
+  notificationDigest?: DigestFrequency;
   analyticsEnabled: boolean;
   locality?: string;
   localityLat?: number;
   localityLng?: number;
   updatedAt: Date;
+}
+
+export interface DigestGroup {
+  type: AppNotification['type'];
+  count: number;
+  label: string;
+  icon: string;
+  latestAt: Date;
+  notifications: AppNotification[];
 }
 
 export interface CheckIn {
