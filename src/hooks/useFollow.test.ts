@@ -29,7 +29,7 @@ vi.mock('../context/ToastContext', () => ({
 }));
 
 let mockIsOffline = false;
-vi.mock('./useConnectivity', () => ({
+vi.mock('../context/ConnectivityContext', () => ({
   useConnectivity: () => ({ isOffline: mockIsOffline }),
 }));
 
