@@ -416,6 +416,7 @@ La app implementa **dos sistemas separados** de gamificacion:
 
 **Achievements** (progresion goal-based): Explorador (10 check-ins), Social (5 follows), Critico (10 ratings), Viajero (3 localidades), Coleccionista (20 favoritos), Fotografo (5 fotos), Embajador (10 recomendaciones), Racha (7 dias consecutivos).
 
+<<<<<<< HEAD
 **Verification Badges** (#201): 3 badges de verificacion de usuario calculados client-side con cache localStorage 24h. Hook: `useVerificationBadges(userId, locality?)`. Componente: `VerificationBadge` (compact chip o card con progreso). Integrados en `BadgesList`, `AchievementsGrid` y `UserProfileModal`.
 
 | Badge | Criterio | Constante |
@@ -428,3 +429,18 @@ La app implementa **dos sistemas separados** de gamificacion:
 - Badges no earned: borde gris, progreso visible, incentiva completar
 - Analytics: `verification_badge_earned`, `verification_badge_viewed`, `verification_badge_tooltip`
 - Sin writes a Firestore, sin Cloud Functions, sin cambios a Firestore rules
+=======
+---
+
+## Seguir Tags / Tus Intereses (#205)
+
+- **useFollowedTags hook** (`hooks/useFollowedTags.ts`): CRUD de tags seguidos con persistencia en `userSettings.followedTags`. Optimistic updates, limite de 20 tags, analytics con source tracking
+- **useInterestsFeed hook** (`hooks/useInterestsFeed.ts`): filtra `allBusinesses` por tags seguidos, agrupa por tag, limita a 5 negocios por tag. Client-side matching O(n*m)
+- **YourInterestsSection** (`components/home/YourInterestsSection.tsx`): seccion en HomeScreen con chips de tags seguidos y lista de negocios. Empty state con suggested tags y CTA
+- **FollowTagChip** (`components/common/FollowTagChip.tsx`): chip reutilizable con toggle filled/outlined y badge numerico opcional
+- **InterestsSection** (`components/profile/InterestsSection.tsx`): sub-seccion en ProfileScreen para gestionar tags seguidos (follow/unfollow completo)
+- **BusinessTags integration**: icono bookmark junto a cada tag predefinido para follow/unfollow desde la ficha del negocio
+- **Modelo de datos**: campos `followedTags`, `followedTagsUpdatedAt`, `followedTagsLastSeenAt` en `UserSettings`
+- **Constantes**: `MAX_FOLLOWED_TAGS=20`, `INTERESTS_MAX_BUSINESSES_PER_TAG=5`, `SUGGESTED_TAGS` en `constants/interests.ts`
+- **Analytics**: 6 eventos (`tag_followed`, `tag_unfollowed`, `interests_section_viewed`, `interests_business_tapped`, `interests_cta_tapped`, `interests_suggested_tapped`)
+>>>>>>> feat/205-seguir-tags
