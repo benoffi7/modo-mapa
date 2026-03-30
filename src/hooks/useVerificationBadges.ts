@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
-import { ratingConverter } from '../config/converters';
-import { checkinConverter } from '../config/converters';
-import { allBusinesses } from './useBusinesses';
-import { distanceKm } from '../utils/distance';
+import { fetchUserRatings } from '../services/ratings';
+import { fetchUserCheckIns } from '../services/checkins';
+import { calcLocalGuide } from './useLocalGuideBadge';
+import { calcVerifiedVisitor } from './useVerifiedVisitorBadge';
+import { calcTrustedReviewer } from './useTrustedReviewerBadge';
 import { VERIFICATION_BADGES, VERIFICATION_CACHE_KEY, VERIFICATION_CACHE_TTL } from '../constants/verificationBadges';
 import { trackEvent } from '../utils/analytics';
 import { logger } from '../utils/logger';
-import type { VerificationBadge, VerificationBadgeId, Rating, CheckIn } from '../types';
+import type { VerificationBadge, VerificationBadgeId } from '../types';
 
 interface CacheEntry {
   badges: VerificationBadge[];
@@ -35,120 +33,6 @@ function setCache(userId: string, badges: VerificationBadge[]): void {
   } catch {
     // localStorage full or unavailable — ignore
   }
-}
-
-/** Extract locality from a business address (last segment after comma). */
-function extractLocality(address: string): string {
-  const parts = address.split(',');
-  return (parts[parts.length - 1] || '').trim().toLowerCase();
-}
-
-/** Build a map of businessId -> locality from static businesses data. */
-function buildBusinessLocalityMap(): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const b of allBusinesses) {
-    map.set(b.id, extractLocality(b.address));
-  }
-  return map;
-}
-
-/** Build a map of businessId -> { lat, lng } from static businesses data. */
-function buildBusinessCoordsMap(): Map<string, { lat: number; lng: number }> {
-  const map = new Map<string, { lat: number; lng: number }>();
-  for (const b of allBusinesses) {
-    map.set(b.id, { lat: b.lat, lng: b.lng });
-  }
-  return map;
-}
-
-function calcLocalGuide(
-  userRatings: Rating[],
-  userLocality: string | undefined,
-): { current: number; target: number } {
-  const target = VERIFICATION_BADGES.local_guide.target;
-  if (!userLocality) return { current: 0, target };
-
-  const localityMap = buildBusinessLocalityMap();
-  const normalizedLocality = userLocality.toLowerCase().trim();
-
-  let count = 0;
-  for (const r of userRatings) {
-    const bizLocality = localityMap.get(r.businessId);
-    if (bizLocality === normalizedLocality) count++;
-  }
-  return { current: count, target };
-}
-
-function calcVerifiedVisitor(
-  userCheckIns: CheckIn[],
-): { current: number; target: number } {
-  const target = VERIFICATION_BADGES.verified_visitor.target;
-  const coordsMap = buildBusinessCoordsMap();
-
-  let count = 0;
-  for (const ci of userCheckIns) {
-    if (!ci.location) continue;
-    const bizCoords = coordsMap.get(ci.businessId);
-    if (!bizCoords) continue;
-    const dist = distanceKm(ci.location.lat, ci.location.lng, bizCoords.lat, bizCoords.lng);
-    if (dist < 0.1) count++; // < 100m
-  }
-  return { current: count, target };
-}
-
-async function calcTrustedReviewer(
-  userRatings: Rating[],
-): Promise<{ current: number; target: number }> {
-  const target = VERIFICATION_BADGES.trusted_reviewer.target;
-  if (userRatings.length === 0) return { current: 0, target };
-
-  // Get unique business IDs the user has rated
-  const businessIds = [...new Set(userRatings.map((r) => r.businessId))];
-
-  // Fetch all ratings for those businesses in batches of 10 (Firestore 'in' limit)
-  const avgMap = new Map<string, number>();
-  const BATCH_SIZE = 10;
-
-  for (let i = 0; i < businessIds.length; i += BATCH_SIZE) {
-    const batch = businessIds.slice(i, i + BATCH_SIZE);
-    try {
-      const snap = await getDocs(
-        query(
-          collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
-          where('businessId', 'in', batch),
-        ),
-      );
-      // Group by businessId and compute averages
-      const sums = new Map<string, { sum: number; count: number }>();
-      for (const d of snap.docs) {
-        const r = d.data();
-        const entry = sums.get(r.businessId) ?? { sum: 0, count: 0 };
-        entry.sum += r.score;
-        entry.count += 1;
-        sums.set(r.businessId, entry);
-      }
-      for (const [bId, { sum, count }] of sums) {
-        avgMap.set(bId, sum / count);
-      }
-    } catch (err) {
-      logger.warn('[useVerificationBadges] Failed to fetch ratings batch:', err);
-    }
-  }
-
-  // Count how many of the user's ratings are within +-0.5 of the business average
-  let consistentCount = 0;
-  for (const r of userRatings) {
-    const avg = avgMap.get(r.businessId);
-    if (avg != null && Math.abs(r.score - avg) <= 0.5) {
-      consistentCount++;
-    }
-  }
-
-  const percentage = userRatings.length > 0
-    ? Math.round((consistentCount / userRatings.length) * 100)
-    : 0;
-
-  return { current: percentage, target };
 }
 
 function buildBadge(
@@ -192,25 +76,13 @@ export function useVerificationBadges(
 
     setLoading(true);
     try {
-      // Fetch user's ratings
-      const ratingsSnap = await getDocs(
-        query(
-          collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
-          where('userId', '==', uid),
-        ),
-      );
-      const userRatings = ratingsSnap.docs.map((d) => d.data());
+      // Fetch data via service layer
+      const [userRatings, userCheckIns] = await Promise.all([
+        fetchUserRatings(uid),
+        fetchUserCheckIns(uid),
+      ]);
 
-      // Fetch user's check-ins
-      const checkInsSnap = await getDocs(
-        query(
-          collection(db, COLLECTIONS.CHECKINS).withConverter(checkinConverter),
-          where('userId', '==', uid),
-        ),
-      );
-      const userCheckIns = checkInsSnap.docs.map((d) => d.data());
-
-      // Calculate each badge
+      // Calculate each badge using dedicated calculators
       const localGuide = calcLocalGuide(userRatings, userLocality);
       const verifiedVisitor = calcVerifiedVisitor(userCheckIns);
       const trustedReviewer = await calcTrustedReviewer(userRatings);

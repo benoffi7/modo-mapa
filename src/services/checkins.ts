@@ -76,3 +76,10 @@ export async function deleteCheckIn(userId: string, checkInId: string): Promise<
   invalidateQueryCache(COLLECTIONS.CHECKINS, userId);
   trackEvent('checkin_deleted', { checkin_id: checkInId });
 }
+
+export async function fetchUserCheckIns(userId: string): Promise<CheckIn[]> {
+  const snap = await getDocs(
+    query(getCheckinsCollection(), where('userId', '==', userId)),
+  );
+  return snap.docs.map((d) => d.data());
+}
