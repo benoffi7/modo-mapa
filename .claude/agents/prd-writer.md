@@ -166,6 +166,31 @@ gh issue list --label "tech debt" --state open --json number,title
 
 ---
 
+## Robustez del codigo
+
+{Para cada hook/componente nuevo que haga operaciones async:}
+
+### Checklist de hooks async
+
+- [ ] Cada `useEffect` con `await` o `.then()` tiene patron de cancelacion (`let cancelled = false; return () => { cancelled = true; }`)
+- [ ] Cada handler async en componentes tiene `try/catch` con toast de error
+- [ ] No hay `setState` despues de operaciones async sin guard de unmount
+- [ ] Funciones exportadas que no se usan fuera del archivo y tests: marcar como internas o no exportar
+- [ ] Archivos en `src/hooks/` DEBEN usar al menos un React hook — si no, van en `src/services/` o `src/utils/`
+- [ ] Constantes nuevas de localStorage usan key de `src/constants/storage.ts` — nunca strings hardcodeados
+- [ ] Archivos nuevos no superan 300 lineas (warn) ni 400 lineas (blocker)
+
+### Checklist de documentacion
+
+- [ ] Nuevas secciones de HomeScreen registradas en `homeSections.ts` (no modificar JSX de HomeScreen directamente)
+- [ ] Nuevos analytics events en archivo de dominio bajo `src/constants/analyticsEvents/` (no appendear al barrel)
+- [ ] Nuevos tipos en archivo de dominio bajo `src/types/` (no appendear al barrel)
+- [ ] `docs/reference/features.md` actualizado con la nueva feature
+- [ ] `docs/reference/firestore.md` actualizado si hay colecciones/campos nuevos
+- [ ] `docs/reference/patterns.md` actualizado si hay patrones nuevos
+
+---
+
 ## Offline
 
 {Evaluate this feature's offline behavior. For each data flow (reads and writes), specify:}
@@ -204,7 +229,10 @@ gh issue list --label "tech debt" --state open --json number,title
 - [ ] No se agregan useState de logica de negocio a AppShell o SideMenu
 - [ ] Props explicitas en vez de dependencias implicitas a contextos de layout
 - [ ] Cada prop de accion (onClick, onSelect, onNavigate) tiene un handler real especificado — nunca noop `() => {}`
-- [ ] Ningun componente nuevo importa directamente de `firebase/firestore`
+- [ ] Ningun componente nuevo importa directamente de `firebase/firestore`, `firebase/functions`, o `firebase/storage`
+- [ ] Archivos en `src/hooks/` contienen al menos un React hook — sin hooks van en `src/services/`
+- [ ] Ningun archivo nuevo supera 400 lineas (300 = warning zone)
+- [ ] Converters nuevos van en el archivo de dominio correcto bajo `src/config/converters/` — no appendear a un archivo existente
 - [ ] Archivos nuevos van en carpeta de dominio correcta (NO en `components/menu/`)
 - [ ] Si el feature necesita estado global, evaluar si un contexto existente lo cubre antes de crear uno nuevo
 - [ ] Ningun archivo nuevo supera 400 lineas
