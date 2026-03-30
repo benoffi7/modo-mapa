@@ -156,6 +156,8 @@
 |--------|-------------|
 | **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SettingsPanel seccion "Apariencia" (entre Ubicacion y Privacidad). |
 | **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
+| **Overlay adaptativo** | Overlays sobre imagenes usan `alpha()` de `@mui/material/styles` con `theme.palette.mode` para elegir color base. Light: `alpha(common.black, 0.55)`. Dark: `alpha(common.white, 0.15)`. Hover incrementa opacidad (0.75/0.25). Patron usado en `MenuPhotoSection`. |
+| **Sin hex hardcodeados** | Colores en `sx` deben usar tokens del tema (`'primary.dark'`, `'common.white'`, `'background.paper'`) o `alpha()` con `theme.palette.*`. Nunca hex literales como `'#fff'` o `'#1565c0'`. Esto permite adaptacion automatica a dark mode. |
 
 ## Offline queue
 
