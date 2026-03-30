@@ -97,6 +97,8 @@
     - [Specs](/feat/infra/253-architecture-cleanup/specs.md)
     - [Plan](/feat/infra/253-architecture-cleanup/plan.md)
   - [#254 useEffect + Dead Code Cleanup](/feat/infra/254-useeffect-deadcode-cleanup/prd.md)
+    - [Specs](/feat/infra/254-useeffect-deadcode-cleanup/specs.md)
+    - [Plan](/feat/infra/254-useeffect-deadcode-cleanup/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
