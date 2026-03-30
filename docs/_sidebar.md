@@ -245,6 +245,8 @@
     - [Plan](/feat/infra/243-service-layer-violations/plan.md)
   - [#244 Docs Firestore + Sidebar](/feat/infra/244-docs-firestore-sidebar/)
     - [PRD](/feat/infra/244-docs-firestore-sidebar/prd.md)
+    - [Specs](/feat/infra/244-docs-firestore-sidebar/specs.md)
+    - [Plan](/feat/infra/244-docs-firestore-sidebar/plan.md)
   - [#245 Performance Improvements](/feat/infra/245-performance-improvements/)
     - [PRD](/feat/infra/245-performance-improvements/prd.md)
     - [Specs](/feat/infra/245-performance-improvements/specs.md)
