@@ -150,4 +150,7 @@ describe('useFollowedTags', () => {
 
     expect(result.current.tags).toEqual([]);
   });
+
+  // Verification that useFollowedTags.ts has no eslint-disable comments
+  // is enforced by the lint step (Phase 4), not by a runtime test.
 });

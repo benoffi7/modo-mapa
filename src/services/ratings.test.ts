@@ -8,20 +8,24 @@ vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
 const mockGetDoc = vi.fn();
+const mockGetDocs = vi.fn();
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
+  collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
   doc: vi.fn().mockReturnValue({}),
   getDoc: (...args: unknown[]) => mockGetDoc(...args),
+  getDocs: (...args: unknown[]) => mockGetDocs(...args),
   setDoc: (...args: unknown[]) => mockSetDoc(...args),
   updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
+  query: vi.fn(),
+  where: vi.fn(),
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
-import { upsertRating, upsertCriteriaRating } from './ratings';
+import { upsertRating, upsertCriteriaRating, fetchUserRatings, fetchRatingsByBusinessIds } from './ratings';
 
 describe('upsertRating — input validation', () => {
   beforeEach(() => {
@@ -123,5 +127,72 @@ describe('upsertCriteriaRating — input validation', () => {
         criteria: { speed: 3 },
       }),
     );
+  });
+});
+
+describe('fetchUserRatings', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns ratings for the user', async () => {
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        { data: () => ({ userId: 'u1', businessId: 'b1', score: 4, createdAt: new Date(), updatedAt: new Date() }) },
+      ],
+    });
+    const result = await fetchUserRatings('u1');
+    expect(result).toHaveLength(1);
+    expect(result[0].score).toBe(4);
+  });
+
+  it('returns empty array when no ratings', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    const result = await fetchUserRatings('u1');
+    expect(result).toEqual([]);
+  });
+
+  it('propagates errors', async () => {
+    mockGetDocs.mockRejectedValue(new Error('network'));
+    await expect(fetchUserRatings('u1')).rejects.toThrow('network');
+  });
+});
+
+describe('fetchRatingsByBusinessIds', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns ratings for given business IDs', async () => {
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        { data: () => ({ userId: 'u1', businessId: 'b1', score: 3, createdAt: new Date(), updatedAt: new Date() }) },
+        { data: () => ({ userId: 'u2', businessId: 'b1', score: 5, createdAt: new Date(), updatedAt: new Date() }) },
+      ],
+    });
+    const result = await fetchRatingsByBusinessIds(['b1']);
+    expect(result).toHaveLength(2);
+  });
+
+  it('returns empty for empty input', async () => {
+    const result = await fetchRatingsByBusinessIds([]);
+    expect(result).toEqual([]);
+    expect(mockGetDocs).not.toHaveBeenCalled();
+  });
+
+  it('batches queries for >10 IDs', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    const ids = Array.from({ length: 15 }, (_, i) => `b${i}`);
+    await fetchRatingsByBusinessIds(ids);
+    expect(mockGetDocs).toHaveBeenCalledTimes(2);
+  });
+
+  it('consolidates results from multiple batches', async () => {
+    mockGetDocs
+      .mockResolvedValueOnce({
+        docs: [{ data: () => ({ userId: 'u1', businessId: 'b0', score: 3, createdAt: new Date(), updatedAt: new Date() }) }],
+      })
+      .mockResolvedValueOnce({
+        docs: [{ data: () => ({ userId: 'u1', businessId: 'b11', score: 4, createdAt: new Date(), updatedAt: new Date() }) }],
+      });
+    const ids = Array.from({ length: 12 }, (_, i) => `b${i}`);
+    const result = await fetchRatingsByBusinessIds(ids);
+    expect(result).toHaveLength(2);
   });
 });
