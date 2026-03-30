@@ -2,13 +2,16 @@ import {
   Box,
   Typography,
   Switch,
+  Chip,
   Divider,
   Skeleton,
 } from '@mui/material';
 import { useUserSettings } from '../../hooks/useUserSettings';
 import { useColorMode } from '../../hooks/useColorMode';
+import { trackEvent } from '../../utils/analytics';
 import LocalityPicker from './LocalityPicker';
 import AccountSection from './AccountSection';
+import type { DigestFrequency } from '../../types';
 
 interface SettingRowProps {
   label: string;
@@ -52,7 +55,20 @@ function SettingRow({ label, description, checked, disabled, indented, onChange 
 }
 
 export default function SettingsPanel() {
-  const { settings, loading, updateSetting, updateLocality, clearLocality } = useUserSettings();
+  const { settings, loading, updateSetting, updateDigestFrequency, updateLocality, clearLocality } = useUserSettings();
+  const digestFrequency: DigestFrequency = settings.notificationDigest ?? 'realtime';
+
+  const DIGEST_OPTIONS: { value: DigestFrequency; label: string }[] = [
+    { value: 'realtime', label: 'Tiempo real' },
+    { value: 'daily', label: 'Diario' },
+    { value: 'weekly', label: 'Semanal' },
+  ];
+
+  const handleDigestChange = (value: DigestFrequency) => {
+    if (value === digestFrequency) return;
+    trackEvent('digest_frequency_changed', { from: digestFrequency, to: value });
+    updateDigestFrequency(value);
+  };
   const { mode, toggleColorMode } = useColorMode();
 
   if (loading) {
@@ -172,6 +188,28 @@ export default function SettingsPanel() {
         indented
         onChange={(val) => updateSetting('notifyRecommendations', val)}
       />
+
+      <Box sx={{ mt: 1.5, mb: 0.5 }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+          Frecuencia de notificaciones
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          Elegí con qué frecuencia querés ver novedades
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {DIGEST_OPTIONS.map((opt) => (
+            <Chip
+              key={opt.value}
+              label={opt.label}
+              variant={digestFrequency === opt.value ? 'filled' : 'outlined'}
+              color={digestFrequency === opt.value ? 'primary' : 'default'}
+              disabled={!settings.notificationsEnabled}
+              onClick={() => handleDigestChange(opt.value)}
+              size="small"
+            />
+          ))}
+        </Box>
+      </Box>
 
       <Divider sx={{ my: 1.5 }} />
 

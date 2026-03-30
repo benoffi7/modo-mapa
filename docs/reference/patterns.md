@@ -41,6 +41,7 @@
 | **Business data cache** | `useBusinessDataCache.ts` — cache module-level (`Map`) con TTL de 5 min para las 7 queries del business view. Se invalida en cada write. |
 | **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Cache module-level (`Map`) con TTL de 2 min para la primera pagina de listas paginadas. |
 | **Firestore persistent cache (prod)** | En produccion se usa `initializeFirestore` con `persistentLocalCache` + `persistentMultipleTabManager` para cachear datos en IndexedDB. |
+| **Verification badges cache** | `useVerificationBadges` cachea resultados en localStorage con key `mm_verification_badges_{userId}` y TTL 24h. Calculo client-side usa datos de Firestore (ratings, check-ins) + static business data. Sin writes a Firestore. |
 | **usePaginatedQuery** | Hook generico para paginacion con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Boton "Cargar mas". |
 
 ## UI patterns
@@ -176,7 +177,8 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`. Reemplaza duplicados en paneles admin, converters y componentes. |
-| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
+| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`, `useLocalTrending`. |
+| **Progressive radius filtering** | `useLocalTrending` filtra trending businesses por proximidad con expansion progresiva de radio (1km → 2km → 5km) para garantizar minimo de resultados. Patron reutilizable para cualquier filtrado geolocal client-side. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 
 ## Codigo compartido frontend/functions

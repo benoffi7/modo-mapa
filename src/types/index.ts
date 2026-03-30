@@ -233,6 +233,8 @@ export interface UserRanking {
   totalParticipants: number;
 }
 
+export type DigestFrequency = 'realtime' | 'daily' | 'weekly';
+
 export interface UserSettings {
   profilePublic: boolean;
   notificationsEnabled: boolean;
@@ -243,11 +245,36 @@ export interface UserSettings {
   notifyReplies: boolean;
   notifyFollowers: boolean;
   notifyRecommendations: boolean;
+  notificationDigest?: DigestFrequency;
   analyticsEnabled: boolean;
   locality?: string;
   localityLat?: number;
   localityLng?: number;
+  followedTags?: string[];
+  followedTagsUpdatedAt?: Date;
+  followedTagsLastSeenAt?: Date;
   updatedAt: Date;
+}
+
+export interface DigestGroup {
+  type: AppNotification['type'];
+  count: number;
+  label: string;
+  icon: string;
+  latestAt: Date;
+  notifications: AppNotification[];
+}
+
+export interface InterestFeedItem {
+  business: Business;
+  matchingTags: string[];
+  isNew: boolean;
+}
+
+export interface InterestFeedGroup {
+  tag: string;
+  businesses: InterestFeedItem[];
+  newCount: number;
 }
 
 export interface CheckIn {
@@ -301,6 +328,15 @@ export type SocialSubTab = 'actividad' | 'seguidos' | 'recomendaciones' | 'ranki
 export type ListsSubTab = 'favoritos' | 'listas' | 'recientes' | 'colaborativas';
 export type SearchViewMode = 'map' | 'list';
 
+export type LocationSource = 'gps' | 'locality' | 'office';
+
+export interface LocalTrendingResult {
+  businesses: TrendingBusiness[];
+  source: LocationSource;
+  localityName: string | null;
+  radiusKm: number;
+}
+
 export type {
   OfflineAction,
   OfflineActionType,
@@ -320,3 +356,17 @@ export type {
 } from './offline';
 
 export type { Special, AchievementCondition, Achievement } from './admin';
+
+// Verification badges (#201)
+export type VerificationBadgeId = 'local_guide' | 'verified_visitor' | 'trusted_reviewer';
+
+export interface VerificationBadge {
+  id: VerificationBadgeId;
+  name: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+  progress: number;     // 0-100
+  current: number;
+  target: number;
+}

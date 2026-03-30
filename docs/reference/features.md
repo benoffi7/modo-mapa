@@ -76,7 +76,10 @@
 - Drawer con lista de notificaciones, tiempo relativo ("hace 2 min", "ayer")
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
-- Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
+- Polling cada 300s (5 min) para unread count en modo `realtime` (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries). Sin polling en modos `daily`/`weekly` (carga unica al abrir)
+- **Digest frequency** (`notificationDigest`): preferencia del usuario en `userSettings`. Valores: `realtime` (default, polling 5min), `daily` (carga unica/dia), `weekly` (carga unica/semana). Selector con chips en SettingsPanel
+- **ActivityDigestSection**: seccion en Home despues de ForYouSection. Muestra hasta 3 grupos de notificaciones no leidas agrupadas por tipo (ej: "3 respuestas a tus comentarios"). Estado vacio con CTA "Explorar negocios". Analytics: `digest_section_viewed`, `digest_item_tapped`, `digest_cta_tapped`, `digest_frequency_changed`
+- **useNotificationDigest hook**: agrupa notificaciones no leidas por tipo, genera labels singular/plural, retorna max 3 grupos ordenados por fecha
 - Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`, `new_follower`, `recommendation`
 - Generadas automaticamente por Cloud Functions triggers
 - `comment_reply`: notifica al autor del comentario padre cuando alguien responde. Generada por `onCommentCreated` cuando el comentario tiene `parentId`. Respeta setting `notifyReplies` del usuario destinatario. NotificationItem muestra `ReplyIcon` para este tipo
@@ -385,6 +388,21 @@ Todas las callable admin:
 
 ---
 
+## HomeScreen — Trending cerca tuyo (#200)
+
+- **TrendingNearYouSection**: seccion en HomeScreen entre SpecialsSection y RecentSearches que muestra trending businesses filtrados por proximidad al usuario
+- **Ubicacion**: usa cadena de fallback existente `useSortLocation` (GPS → localidad configurada → oficina). Siempre hay datos
+- **Subtitulo dinamico**: "Cerca tuyo" (GPS), "En {localidad}" (localidad configurada), "En tu zona" (fallback oficina)
+- **Label de sugerencia**: cuando source es office, muestra caption "Configura tu localidad para resultados mas precisos". Dismisseable (localStorage)
+- **Carrusel horizontal**: reutiliza `TrendingBusinessCard`. Maximo 8 resultados
+- **Radio progresivo**: intenta 1km, si < 5 resultados expande a 2km, luego 5km. Filtrado client-side con haversine sobre trending data cacheado
+- **Hook**: `useLocalTrending` — consume `useTrending`, `useSortLocation`, `useUserSettings`, `useFilters`. Retorna `{ businesses, source, localityName, radiusKm, loading }`
+- **RankingsView**: chip "Mi zona" junto a chips de periodo. Cuando activo, muestra trending businesses filtrados por zona en lugar del ranking de usuarios
+- **Analytics**: `trending_near_viewed` (source, radius_km, count), `trending_near_tapped` (business_id, rank, source), `trending_near_configure_tapped`, `rankings_zone_filter` (enabled)
+- **Archivos**: `TrendingNearYouSection.tsx`, `useLocalTrending.ts`, `constants/trending.ts`
+
+---
+
 ## Nota: Badges vs Achievements
 
 La app implementa **dos sistemas separados** de gamificacion:
@@ -397,3 +415,32 @@ La app implementa **dos sistemas separados** de gamificacion:
 **Badges** (milestones de actividad): primera resena, comentarista, influencer, primera foto, fotografo, primera calificacion, critico, popular, todoterreno, podio, racha 7d.
 
 **Achievements** (progresion goal-based): Explorador (10 check-ins), Social (5 follows), Critico (10 ratings), Viajero (3 localidades), Coleccionista (20 favoritos), Fotografo (5 fotos), Embajador (10 recomendaciones), Racha (7 dias consecutivos).
+
+<<<<<<< HEAD
+**Verification Badges** (#201): 3 badges de verificacion de usuario calculados client-side con cache localStorage 24h. Hook: `useVerificationBadges(userId, locality?)`. Componente: `VerificationBadge` (compact chip o card con progreso). Integrados en `BadgesList`, `AchievementsGrid` y `UserProfileModal`.
+
+| Badge | Criterio | Constante |
+|-------|----------|-----------|
+| Local Guide | 50+ ratings en negocios de la misma ciudad/localidad del usuario | `constants/verificationBadges.ts` |
+| Visitante Verificado | 5+ check-ins desde < 100m del negocio | `constants/verificationBadges.ts` |
+| Opinion Confiable | 80%+ de ratings dentro de +-0.5 del promedio del negocio | `constants/verificationBadges.ts` |
+
+- Badges earned: borde dorado (#FFD700), fondo sutil dorado
+- Badges no earned: borde gris, progreso visible, incentiva completar
+- Analytics: `verification_badge_earned`, `verification_badge_viewed`, `verification_badge_tooltip`
+- Sin writes a Firestore, sin Cloud Functions, sin cambios a Firestore rules
+=======
+---
+
+## Seguir Tags / Tus Intereses (#205)
+
+- **useFollowedTags hook** (`hooks/useFollowedTags.ts`): CRUD de tags seguidos con persistencia en `userSettings.followedTags`. Optimistic updates, limite de 20 tags, analytics con source tracking
+- **useInterestsFeed hook** (`hooks/useInterestsFeed.ts`): filtra `allBusinesses` por tags seguidos, agrupa por tag, limita a 5 negocios por tag. Client-side matching O(n*m)
+- **YourInterestsSection** (`components/home/YourInterestsSection.tsx`): seccion en HomeScreen con chips de tags seguidos y lista de negocios. Empty state con suggested tags y CTA
+- **FollowTagChip** (`components/common/FollowTagChip.tsx`): chip reutilizable con toggle filled/outlined y badge numerico opcional
+- **InterestsSection** (`components/profile/InterestsSection.tsx`): sub-seccion en ProfileScreen para gestionar tags seguidos (follow/unfollow completo)
+- **BusinessTags integration**: icono bookmark junto a cada tag predefinido para follow/unfollow desde la ficha del negocio
+- **Modelo de datos**: campos `followedTags`, `followedTagsUpdatedAt`, `followedTagsLastSeenAt` en `UserSettings`
+- **Constantes**: `MAX_FOLLOWED_TAGS=20`, `INTERESTS_MAX_BUSINESSES_PER_TAG=5`, `SUGGESTED_TAGS` en `constants/interests.ts`
+- **Analytics**: 6 eventos (`tag_followed`, `tag_unfollowed`, `interests_section_viewed`, `interests_business_tapped`, `interests_cta_tapped`, `interests_suggested_tapped`)
+>>>>>>> feat/205-seguir-tags

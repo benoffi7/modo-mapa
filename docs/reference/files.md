@@ -28,11 +28,17 @@ src/
 │   ├── criteria.ts                 # RATING_CRITERIA (CriterionConfig[] con id y label para multi-criterio)
 │   ├── suggestions.ts              # SUGGESTION_WEIGHTS, MAX_SUGGESTIONS, NEARBY_RADIUS_KM
 │   ├── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
+<<<<<<< HEAD
+│   ├── performance.ts              # PERF_THRESHOLDS (green/red por vital), PERF_FLUSH_DELAY_MS
+│   └── verificationBadges.ts       # VERIFICATION_BADGES (3 badges de verificacion), cache key + TTL
+=======
+│   ├── notifications.ts            # DIGEST_LABELS (singular/plural/icon por tipo), DIGEST_MAX_GROUPS
 │   └── performance.ts              # PERF_THRESHOLDS (green/red por vital), PERF_FLUSH_DELAY_MS
+>>>>>>> feat/203-notificaciones-digest
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
-│   └── NotificationsContext.tsx      # Notificaciones: instancia unica compartida (unread count, mark read, polling)
+│   └── NotificationsContext.tsx      # Notificaciones: instancia unica compartida (unread count, mark read, polling). Respeta digest frequency (realtime/daily/weekly)
 ├── services/
 │   ├── favorites.ts                 # addFavorite, removeFavorite
 │   ├── ratings.ts                   # upsertRating
@@ -67,6 +73,7 @@ src/
 │   ├── useSwipeActions.ts          # Hook para swipe-to-reveal en mobile (touch events, threshold 80px)
 │   ├── usePriceLevelFilter.ts       # Cache global de promedios de precio para filtro de mapa (limit 20K + TTL 5min)
 │   ├── useNotifications.ts          # Hook para notificaciones in-app con polling visibility-aware
+│   ├── useNotificationDigest.ts     # Hook para agrupar notificaciones no leidas por tipo (max 3 grupos, labels singular/plural)
 │   ├── useProfileVisibility.ts      # Hook para visibilidad de perfil publico (cache TTL 60s)
 │   ├── useVisitHistory.ts           # Historial de visitas en localStorage (ultimos 20)
 │   ├── useUserLocation.ts           # Geolocalizacion del navegador
@@ -75,7 +82,8 @@ src/
 │   ├── useSuggestions.ts           # Hook para sugerencias personalizadas (scoring client-side)
 │   ├── useOnboardingHint.ts        # Logica de display del hint de onboarding (extraida de AppShell)
 │   ├── useOnboardingFlow.ts        # Manejo de pasos del flujo de onboarding (extraida de AppShell)
-│   └── useSurpriseMe.ts            # Logica de seleccion aleatoria de comercio "sorprendeme" (extraida de SideMenu)
+│   ├── useSurpriseMe.ts            # Logica de seleccion aleatoria de comercio "sorprendeme" (extraida de SideMenu)
+│   └── useVerificationBadges.ts    # Badges de verificacion: Local Guide, Visitante Verificado, Opinion Confiable (cache 24h)
 ├── utils/
 │   ├── businessHelpers.ts           # getBusinessName, getTagLabel (compartidos)
 │   ├── formatDate.ts                # toDate, formatDateShort, formatDateMedium, formatRelativeTime, formatDateFull (compartidos)
@@ -167,7 +175,8 @@ src/
 │   │   ├── ListFilters.tsx          # Filtros compartidos entre listas
 │   │   └── PullToRefreshWrapper.tsx # Wrapper pull-to-refresh
 │   ├── home/
-│   │   ├── HomeScreen.tsx           # Pantalla principal: mapa, specials, trending, sugerencias
+│   │   ├── HomeScreen.tsx           # Pantalla principal: mapa, specials, trending, sugerencias, digest
+│   │   ├── ActivityDigestSection.tsx # Seccion digest de notificaciones agrupadas (max 3 grupos) con CTA vacio
 │   │   ├── TrendingList.tsx         # Lista de comercios trending
 │   │   └── TrendingBusinessCard.tsx # Card individual trending
 │   ├── social/
@@ -181,7 +190,8 @@ src/
 │   │   ├── RankingsEmptyState.tsx   # Estado vacio del ranking
 │   │   ├── UserProfileModal.tsx     # Modal perfil de usuario
 │   │   ├── UserScoreCard.tsx        # Card de puntaje del usuario
-│   │   ├── BadgesList.tsx           # Lista de badges/medallas
+│   │   ├── BadgesList.tsx           # Lista de badges/medallas + verificacion
+│   │   ├── VerificationBadge.tsx    # Badge de verificacion (compact/normal)
 │   │   └── ScoreSparkline.tsx       # Mini grafico de puntaje
 │   ├── profile/
 │   │   ├── ProfileScreen.tsx        # Pantalla perfil: settings, stats, comments, ratings
