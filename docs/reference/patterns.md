@@ -41,6 +41,7 @@
 | **Business data cache** | `useBusinessDataCache.ts` — cache module-level (`Map`) con TTL de 5 min para las 7 queries del business view. Se invalida en cada write. |
 | **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Cache module-level (`Map`) con TTL de 2 min para la primera pagina de listas paginadas. |
 | **Firestore persistent cache (prod)** | En produccion se usa `initializeFirestore` con `persistentLocalCache` + `persistentMultipleTabManager` para cachear datos en IndexedDB. |
+| **Verification badges cache** | `useVerificationBadges` cachea resultados en localStorage con key `mm_verification_badges_{userId}` y TTL 24h. Calculo client-side usa datos de Firestore (ratings, check-ins) + static business data. Sin writes a Firestore. |
 | **usePaginatedQuery** | Hook generico para paginacion con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Boton "Cargar mas". |
 
 ## UI patterns

@@ -397,3 +397,16 @@ La app implementa **dos sistemas separados** de gamificacion:
 **Badges** (milestones de actividad): primera resena, comentarista, influencer, primera foto, fotografo, primera calificacion, critico, popular, todoterreno, podio, racha 7d.
 
 **Achievements** (progresion goal-based): Explorador (10 check-ins), Social (5 follows), Critico (10 ratings), Viajero (3 localidades), Coleccionista (20 favoritos), Fotografo (5 fotos), Embajador (10 recomendaciones), Racha (7 dias consecutivos).
+
+**Verification Badges** (#201): 3 badges de verificacion de usuario calculados client-side con cache localStorage 24h. Hook: `useVerificationBadges(userId, locality?)`. Componente: `VerificationBadge` (compact chip o card con progreso). Integrados en `BadgesList`, `AchievementsGrid` y `UserProfileModal`.
+
+| Badge | Criterio | Constante |
+|-------|----------|-----------|
+| Local Guide | 50+ ratings en negocios de la misma ciudad/localidad del usuario | `constants/verificationBadges.ts` |
+| Visitante Verificado | 5+ check-ins desde < 100m del negocio | `constants/verificationBadges.ts` |
+| Opinion Confiable | 80%+ de ratings dentro de +-0.5 del promedio del negocio | `constants/verificationBadges.ts` |
+
+- Badges earned: borde dorado (#FFD700), fondo sutil dorado
+- Badges no earned: borde gris, progreso visible, incentiva completar
+- Analytics: `verification_badge_earned`, `verification_badge_viewed`, `verification_badge_tooltip`
+- Sin writes a Firestore, sin Cloud Functions, sin cambios a Firestore rules
