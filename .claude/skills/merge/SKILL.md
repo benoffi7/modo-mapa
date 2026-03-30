@@ -220,6 +220,32 @@ done
 
 If violations found: move the Firebase call to a service function. Components must stay Firebase-agnostic to keep the monolith % low.
 
+### 1k2. Layer boundary guard
+
+**WARN:** Check that new files in `src/hooks/` actually use React hooks. Files without `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, or `useContext` belong in `src/services/` or `src/utils/`.
+
+```bash
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/hooks/*.ts' | grep -v '.test.'); do
+  if [ -f "$f" ]; then
+    if ! grep -qE 'use(State|Effect|Memo|Callback|Ref|Context)' "$f" 2>/dev/null; then
+      echo "MISPLACED: $f has no React hooks — should be in services/ or utils/"
+    fi
+  fi
+done
+```
+
+Also check for magic strings — new `localStorage.getItem/setItem` calls should use keys from `src/constants/storage.ts`:
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.' | grep -v 'constants/storage'); do
+  if [ -f "$f" ]; then
+    if grep -qE "localStorage\.(get|set|remove)Item\('[^']+'\)" "$f" 2>/dev/null; then
+      echo "MAGIC STRING: $f uses localStorage with hardcoded key"
+    fi
+  fi
+done
+```
+
 ### 1l. Billing impact guard
 
 **WARN:** If the branch adds new Cloud Function triggers or new writable Firestore collections, evaluate billing impact.
