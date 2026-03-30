@@ -1,5 +1,5 @@
 import { allBusinesses } from '../hooks/useBusinesses';
-import { PREDEFINED_TAGS } from '../types';
+import { PREDEFINED_TAGS } from '../constants/tags';
 
 export function getBusinessName(id: string): string {
   return allBusinesses.find((b) => b.id === id)?.name ?? id;

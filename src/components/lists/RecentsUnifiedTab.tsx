@@ -12,7 +12,7 @@ import { MSG_CHECKIN } from '../../constants/messages';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { formatRelativeTime } from '../../utils/formatDate';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import type { Business, BusinessCategory } from '../../types';
 

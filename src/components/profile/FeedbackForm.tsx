@@ -18,7 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { sendFeedback } from '../../services/feedback';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';

@@ -4,7 +4,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import type { Business } from '../../types';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 interface Props {
   business: Business;
   favoriteButton: ReactNode;

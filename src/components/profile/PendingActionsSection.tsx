@@ -20,7 +20,7 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { MSG_OFFLINE } from '../../constants/messages';
 import type { OfflineActionType } from '../../types/offline';
 

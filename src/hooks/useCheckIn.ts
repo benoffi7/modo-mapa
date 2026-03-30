@@ -9,6 +9,8 @@ import { CHECKIN_COOLDOWN_HOURS, CHECKIN_PROXIMITY_RADIUS_M } from '../constants
 import { distanceKm } from '../utils/distance';
 import { trackEvent } from '../utils/analytics';
 
+export type CheckInResult = 'success' | 'error' | 'blocked';
+
 export interface UseCheckInReturn {
   hasCheckedInRecently: boolean;
   isNearby: boolean;
@@ -17,8 +19,8 @@ export interface UseCheckInReturn {
   error: string | null;
   /** ID del check-in reciente (para poder eliminarlo) */
   recentCheckInId: string | null;
-  performCheckIn: () => Promise<void>;
-  undoCheckIn: () => Promise<void>;
+  performCheckIn: () => Promise<CheckInResult>;
+  undoCheckIn: () => Promise<CheckInResult>;
 }
 
 export function useCheckIn(
@@ -67,11 +69,11 @@ export function useCheckIn(
 
   const canCheckIn = !hasCheckedInRecently && status !== 'loading';
 
-  const performCheckIn = useCallback(async () => {
-    if (!user) return;
+  const performCheckIn = useCallback(async (): Promise<CheckInResult> => {
+    if (!user || user.isAnonymous) return 'blocked';
     if (hasCheckedInRecently) {
       trackEvent('checkin_cooldown_blocked', { business_id: businessId });
-      return;
+      return 'blocked';
     }
 
     if (!isNearby) {
@@ -98,14 +100,17 @@ export function useCheckIn(
       setStatus('success');
       setHasCheckedInRecently(true);
       if (id) setRecentCheckInId(id);
+      return 'success';
     } catch (e) {
       setStatus('error');
       setError(e instanceof Error ? e.message : 'Error al registrar visita');
+      return 'error';
     }
   }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby, isOffline, toast]);
 
-  const undoCheckIn = useCallback(async () => {
-    if (!user || !recentCheckInId) return;
+  const undoCheckIn = useCallback(async (): Promise<CheckInResult> => {
+    if (!user || user.isAnonymous) return 'blocked';
+    if (!recentCheckInId) return 'error';
 
     setStatus('loading');
     setError(null);
@@ -122,9 +127,11 @@ export function useCheckIn(
       setStatus('idle');
       setHasCheckedInRecently(false);
       setRecentCheckInId(null);
+      return 'success';
     } catch (e) {
       setStatus('error');
       setError(e instanceof Error ? e.message : 'Error al desmarcar visita');
+      return 'error';
     }
   }, [user, recentCheckInId, businessId, isOffline, toast]);
 

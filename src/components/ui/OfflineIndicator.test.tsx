@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
-import * as useConnectivityModule from '../../hooks/useConnectivity';
+import * as useConnectivityModule from '../../context/ConnectivityContext';
 import { MSG_OFFLINE } from '../../constants/messages';
 import { vi } from 'vitest';
 

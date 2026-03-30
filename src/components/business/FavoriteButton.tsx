@@ -4,7 +4,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { addFavorite, removeFavorite } from '../../services/favorites';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { MSG_BUSINESS } from '../../constants/messages';

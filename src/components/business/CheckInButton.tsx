@@ -2,7 +2,6 @@ import { memo, useCallback } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useAuth } from '../../context/AuthContext';
 import { useCheckIn } from '../../hooks/useCheckIn';
 import { useToast } from '../../context/ToastContext';
 import { MSG_CHECKIN, MSG_AUTH } from '../../constants/messages';
@@ -14,7 +13,6 @@ interface Props {
 }
 
 export default memo(function CheckInButton({ businessId, businessName, businessLocation }: Props) {
-  const { user } = useAuth();
   const toast = useToast();
   const { hasCheckedInRecently, isNearby, status, recentCheckInId, performCheckIn, undoCheckIn } = useCheckIn(
     businessId,
@@ -26,14 +24,10 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
   const isSuccess = status === 'success' || hasCheckedInRecently;
 
   const handleClick = useCallback(async () => {
-    if (!user || user.isAnonymous) {
-      toast.info(MSG_AUTH.loginRequired);
-      return;
-    }
-
     if (isSuccess && recentCheckInId) {
-      await undoCheckIn();
-      toast.info(MSG_CHECKIN.removed);
+      const result = await undoCheckIn();
+      if (result === 'success') toast.info(MSG_CHECKIN.removed);
+      if (result === 'blocked') toast.info(MSG_AUTH.loginRequired);
       return;
     }
 
@@ -41,12 +35,10 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
       toast.info(MSG_CHECKIN.tooFar);
     }
 
-    await performCheckIn();
-
-    if (status !== 'error') {
-      toast.success(MSG_CHECKIN.success);
-    }
-  }, [user, isNearby, isSuccess, recentCheckInId, performCheckIn, undoCheckIn, status, toast]);
+    const result = await performCheckIn();
+    if (result === 'success') toast.success(MSG_CHECKIN.success);
+    if (result === 'blocked') toast.info(MSG_AUTH.loginRequired);
+  }, [isNearby, isSuccess, recentCheckInId, performCheckIn, undoCheckIn, toast]);
 
   return (
     <Button
