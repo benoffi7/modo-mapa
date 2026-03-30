@@ -18,6 +18,8 @@ import { useTab } from '../../context/TabContext';
 import { useSurpriseMe } from '../../hooks/useSurpriseMe';
 import { useSelection } from '../../context/SelectionContext';
 import { trackEvent } from '../../utils/analytics';
+import { CATEGORY_COLORS } from '../../constants/business';
+import { iconCircleSx } from '../../theme/cards';
 import type { BusinessCategory } from '../../types';
 
 interface QuickActionSlot {
@@ -50,6 +52,20 @@ const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
   { id: 'recientes', label: 'Recientes', icon: <HistoryIcon />, type: 'shortcut' },
   { id: 'visitas', label: 'Visitas', icon: <PlaceIcon />, type: 'shortcut' },
 ];
+
+const QUICK_ACTION_COLORS: Record<string, string> = {
+  sorprendeme: '#00897b',
+  favoritos: '#e53935',
+  recientes: '#546e7a',
+  visitas: '#1e88e5',
+};
+
+export function getSlotColor(slot: QuickActionSlot): string {
+  if (slot.type === 'category') {
+    return CATEGORY_COLORS[slot.id as BusinessCategory] ?? '#546e7a';
+  }
+  return QUICK_ACTION_COLORS[slot.id] ?? '#546e7a';
+}
 
 const DEFAULT_IDS = ['restaurant', 'cafe', 'bar', 'pizza', 'fastfood', 'bakery', 'icecream', 'sorprendeme'];
 import { STORAGE_KEY_QUICK_ACTIONS as STORAGE_KEY } from '../../constants/storage';
@@ -143,9 +159,9 @@ export default function QuickActions() {
           <Box key={slot.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
             <IconButton
               onClick={() => handleTap(slot)}
-              sx={{ bgcolor: 'action.hover', width: 48, height: 48 }}
+              sx={{ ...iconCircleSx(getSlotColor(slot), 48) }}
             >
-              {slot.icon}
+              <Box sx={{ color: '#fff', display: 'flex' }}>{slot.icon}</Box>
             </IconButton>
             <Typography variant="caption" noWrap sx={{ maxWidth: 64, textAlign: 'center' }}>
               {slot.label}
@@ -174,7 +190,9 @@ export default function QuickActions() {
               }
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {slot.icon}
+                  <Box sx={{ ...iconCircleSx(getSlotColor(slot), 32), color: '#fff' }}>
+                    <Box sx={{ display: 'flex', fontSize: 18 }}>{slot.icon}</Box>
+                  </Box>
                   <Typography variant="body2">{slot.label}</Typography>
                 </Box>
               }
