@@ -5,7 +5,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Auth anonima + email/password + Google Sign-In** | Usuarios ingresan como anonimos. Pueden vincular email/password via `linkWithCredential` (preserva UID). Login cross-device con `signInWithEmailAndPassword`. Admin usa Google Sign-In solo en `/admin`. AuthMethod: `'anonymous' \| 'email' \| 'google'`. |
-| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. |
+| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. User profile writes (displayName, avatar) en `services/userProfile.ts`. |
 | **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
 | **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 
@@ -23,7 +23,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
-| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. Solo `src/services/`, `src/config/`, `src/context/` y `src/hooks/` pueden importar de `firebase/firestore`. Enforced por architecture agent y PR reviewer. |
+| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore`, `firebase/functions` ni `firebase/storage` directamente. Solo `src/services/`, `src/config/` y `src/hooks/` pueden importar de Firebase SDK. Contexts (como AuthContext) usan servicios para writes — no importan `firebase/firestore` directamente. Enforced por architecture agent y PR reviewer. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
