@@ -448,6 +448,8 @@ Referenced by: workflow.md, memory (feedback_features_vs_backlog.md).
 ## Phase 8: Post-merge review — MANDATORY, DO NOT SKIP
 
 **⚠️ This phase is as mandatory as Phase 3 (docs). Do NOT end the conversation without completing it.**
+**⚠️ EXECUTE THIS PHASE IMMEDIATELY AFTER Phase 7 — before responding to the user with "merge complete".**
+**⚠️ If you find yourself about to say "¿Algún feedback?" without having done 8a-8b first, STOP and do them now.**
 
 ### 8a. Tech debt issue
 
