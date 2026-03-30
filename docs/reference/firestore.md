@@ -23,12 +23,21 @@
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
 | `trendingBusinesses` | `current` | businesses (array: businessId, name, category, score, breakdown, rank), computedAt, periodStart, periodEnd | Read auth; write false (Functions only) |
 | `_rateLimits` | `backup_{userId}`, `perf_{userId}`, `delete_{userId}`, `clean_{userId}`, `editors_invite_{userId}`, `editors_remove_{userId}` | count, resetAt, userId | No client access; Functions write (admin SDK). Campo `userId` permite cleanup en account deletion via `deleteAllUserData`. Usado por backups (5/min), perfMetrics (5/dia), deleteUserAccount (1/min), cleanAnonymousData (1/min), inviteListEditor (10/dia), removeListEditor (10/dia) |
+| `checkins` | auto-generated | userId, businessId, businessName (1-100), createdAt, location? (map: lat -90..90, lng -180..180) | Read owner+admin; create owner (`keys().hasOnly`, businessId validado, createdAt==request.time); no update; delete owner |
+| `follows` | `{followerId}__{followedId}` | followerId, followedId, createdAt | Read follower+followed+admin; create owner (followerId==auth.uid, followedId!=followerId, target no es privado via get userSettings); no update; delete owner |
+| `recommendations` | auto-generated | senderId, senderName (1-30), recipientId, businessId, businessName (1-100), message (0-200), read (false en create), createdAt | Read recipient+admin; create sender (senderId==auth.uid, sender!=recipient, businessId validado); update recipient (solo read); no delete |
+| `sharedLists` | auto-generated | ownerId, name (1-50), description (0-200), isPublic, itemCount, createdAt, updatedAt, color?, icon?, featured? (admin SDK only), editorIds? (admin SDK only) | Read auth (owner/editor/isPublic/featured/admin); create owner (`keys().hasOnly`, itemCount==0); update owner (name/desc/isPublic/itemCount/updatedAt/color/icon) o editor (solo itemCount/updatedAt); delete owner |
+| `listItems` | auto-generated | listId, businessId, addedBy?, createdAt | Read auth (si parent list es owner/editor/public/featured); create auth (`keys().hasOnly`, addedBy==auth.uid si presente, caller es owner o editor del list); delete auth (caller es owner o editor del list) |
+| `specials` | auto-generated | title, subtitle, icon, type ('featured_list'/'trending'/'custom_link'), referenceId, order, active | Read auth; write admin only |
+| `achievements` | auto-generated | label, description, icon, condition (map: metric+threshold), order, active | Read auth; write admin only |
+| `_ipRateLimits` | variable | (interno — rate limits por IP) | No client access; Functions write (admin SDK) |
 
 ### Subcollections
 
 | Parent | Subcollection | Doc ID | Campos | Proposito |
 |--------|---------------|--------|--------|-----------|
 | `menuPhotos/{photoId}` | `reports` | `{userId}` | createdAt | Previene reportes duplicados por usuario. `reportCount` en doc padre se incrementa atomicamente. |
+| `activityFeed/{userId}` | `items` | auto-generated | actorId, actorName, type ('rating'/'comment'/'favorite'), businessId, businessName, referenceId, createdAt, expiresAt | Feed de actividad de usuarios seguidos. Owner read only. Cloud Functions escribe via admin SDK (fan-out). |
 
 ---
 
@@ -236,6 +245,105 @@ interface PerfMetricsDoc {
 
 // Storage stats (from getStorageStats callable)
 interface StorageStats { totalBytes: number; fileCount: number; updatedAt: string }
+
+// Check-in (registro de visita)
+interface CheckIn {
+  id: string;
+  userId: string;
+  businessId: string;
+  businessName: string;
+  createdAt: Date;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+// Follow (relacion unidireccional)
+interface Follow {
+  followerId: string;
+  followedId: string;
+  createdAt: Date;
+}
+
+// Activity feed item (subcollection activityFeed/{userId}/items)
+type ActivityType = 'rating' | 'comment' | 'favorite';
+interface ActivityFeedItem {
+  id: string;
+  actorId: string;
+  actorName: string;
+  type: ActivityType;
+  businessId: string;
+  businessName: string;
+  referenceId: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+// Recommendation (recomendacion entre usuarios)
+interface Recommendation {
+  id: string;
+  senderId: string;
+  senderName: string;
+  recipientId: string;
+  businessId: string;
+  businessName: string;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+// Shared list
+interface SharedList {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  isPublic: boolean;
+  featured: boolean;
+  editorIds: string[];
+  itemCount: number;
+  icon?: string;
+  color?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// List item
+interface ListItem {
+  id: string;
+  listId: string;
+  businessId: string;
+  addedBy: string;
+  createdAt: Date;
+}
+
+// Special (tarjeta especial en Inicio)
+interface Special {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  type: 'featured_list' | 'trending' | 'custom_link';
+  referenceId: string;
+  order: number;
+  active: boolean;
+}
+
+// Achievement (definicion de logro)
+interface AchievementCondition {
+  metric: string;
+  threshold: number;
+}
+interface Achievement {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  condition: AchievementCondition;
+  order: number;
+  active: boolean;
+}
 ```
 
 ---
@@ -249,10 +357,13 @@ Converters disponibles:
 - `ratingConverter`, `commentConverter`, `commentLikeConverter`
 - `favoriteConverter`, `userTagConverter`, `customTagConverter`
 - `feedbackConverter`, `menuPhotoConverter`, `priceLevelConverter`
+- `checkinConverter`, `followConverter`, `activityFeedConverter`
+- `sharedListConverter`, `listItemConverter`, `recommendationConverter`
 
 Admin converters (`src/config/adminConverters.ts`):
 
 - `adminCountersConverter`, `dailyMetricsConverter` (includes `newAccounts` field), `abuseLogConverter`
+- `specialConverter`, `achievementConverter`
 
 Metrics converter (`src/config/metricsConverter.ts`):
 
