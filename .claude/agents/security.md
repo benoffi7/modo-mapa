@@ -38,13 +38,17 @@ Piensa como un atacante con herramientas de IA a su disposicion. Los atacantes m
 - Auth requerida en todas las colecciones
 - Ownership enforcement (`resource.data.userId == request.auth.uid`)
 - `hasOnly()` en TODAS las colecciones (create Y update) — campos sin whitelist = inyeccion
-- Validacion de tipo y rango en cada campo (string length, int range, enum values)
+- **CADA campo en `hasOnly()` DEBE tener validacion de tipo** (`is string`, `is bool`, `is int`, `is list`, `is timestamp`) — sin tipo = inyeccion de tipos arbitrarios (maps, arrays gigantes)
+- **Campos string DEBEN tener limite de longitud** — sin limite = storage DoS (1MB por doc)
+- **Campos `storagePath` DEBEN validar patron** con `request.auth.uid` en el path — sin validar = proxy de archivos privados via Cloud Function (SEC-34-01)
 - `affectedKeys().hasOnly()` en updates para prevenir manipulacion de campos server-only
+- **Cuando se agregan campos a userSettings**: verificar que estan en `keys().hasOnly()` — olvidar = feature silenciosamente rota en prod (SEC-34-02)
 - Operator precedence en reglas con `||` (AND binds tighter than OR)
 - Colecciones sin reglas explicitas (default deny pero indica gap en defense-in-depth)
 
 ### 2. Cloud Functions
 - Rate limiting en TODOS los triggers user-facing (no solo comments/check-ins)
+- **Rate limit triggers DEBEN llamar `snap.ref.delete()`** cuando se excede — log-only no es enforcement (SEC-34-04)
 - Rate limiting POR DESTINATARIO en notificaciones (anti-flood)
 - Moderacion de contenido en campos de texto
 - Validacion de input en callables

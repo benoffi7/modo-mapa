@@ -147,9 +147,18 @@ If `firestore.rules` OR any service file (`src/services/**`) was modified, cross
 2. In the corresponding service functions (`src/services/*.ts`), find all `updateDoc`, `setDoc`, `addDoc` calls for that collection and extract the field names being written.
 3. Any field written by services but NOT in the rules' `hasOnly()` list = **BLOCKER**. Firestore silently rejects the entire write with "Missing or insufficient permissions".
 
-**Common miss:** Adding a new optional field (e.g. `color`, `icon`) to a type and service without updating the rules whitelist.
+**Common misses:**
+- Adding a new optional field (e.g. `color`, `icon`) to a type and service without updating the rules whitelist
+- Adding fields to `userSettings` (e.g. `followedTags`, `notificationDigest`) without adding to `keys().hasOnly()` — feature silently breaks in production
+- Fields in `hasOnly()` without type validation — allows injection of arbitrary types (maps, arrays, huge strings)
 
-If mismatch found, update `firestore.rules` to include the missing fields before proceeding.
+**BLOCKER checks:**
+1. Every field in `hasOnly()` MUST have type validation (e.g. `is string`, `is bool`, `is int`, `is list`, `is timestamp`)
+2. String fields MUST have length limits (e.g. `name.size() <= 50`)
+3. Fields accepting `storagePath` MUST validate the path pattern matches `^expected_prefix/` + `request.auth.uid`
+4. Rate limit triggers that detect excess MUST call `snap.ref.delete()` — log-only enforcement is not enforcement
+
+If mismatch found, update `firestore.rules` to include the missing fields AND their type validation before proceeding.
 
 ### 1j2. Firestore rules `affectedKeys()` audit on update rules
 

@@ -125,10 +125,18 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 
 {Si el feature escribe a Firestore:}
 - [ ] Create rule tiene `hasOnly()` con whitelist de campos permitidos
+- [ ] CADA campo en `hasOnly()` tiene validacion de tipo (`is string`, `is bool`, `is int`, `is list`, `is timestamp`)
+- [ ] Campos string tienen limite de longitud (`name.size() <= 50`)
+- [ ] Campos con `storagePath` validan patron regex con `request.auth.uid` en el path
 - [ ] Update rule tiene `affectedKeys().hasOnly()` para restringir campos modificables
 - [ ] Campos immutables (userId, businessId) no estan en la lista de affectedKeys
-- [ ] Rate limit server-side en Cloud Function trigger
+- [ ] Rate limit server-side en Cloud Function trigger — DEBE llamar `snap.ref.delete()` si excede (log-only no es enforcement)
 - [ ] Moderacion via `checkModeration()` si hay texto libre
+{Si el feature agrega campos a userSettings:}
+- [ ] Agregar campo a `keys().hasOnly()` en firestore.rules para userSettings
+- [ ] Agregar validacion de tipo para el campo nuevo
+- [ ] Agregar campo al converter en `src/config/converters/userConverters.ts`
+- [ ] Agregar valor default en `DEFAULT_SETTINGS` de `services/userSettings.ts`
 {Si el feature lee datos: evaluar si permite scraping masivo y si necesita restricciones adicionales en rules.}
 
 ---
