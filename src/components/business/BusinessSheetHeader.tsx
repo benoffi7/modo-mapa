@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Box, Divider } from '@mui/material';
 import BusinessHeader from './BusinessHeader';
 import BusinessRating from './BusinessRating';
+import DirectionsButton from './DirectionsButton';
 import type { Business, Rating } from '../../types';
 import type { UseBusinessRatingReturn } from '../../hooks/useBusinessRating';
 
@@ -44,8 +45,15 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
         recommendButton={recommendButton}
         addToListButton={addToListButton}
       />
-      <Box sx={{ my: 1, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{
+        my: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 1,
+        '& > *': { flex: { xs: 1, sm: 'none' }, maxWidth: { sm: '50%' } },
+      }}>
         {checkInButton}
+        <DirectionsButton business={business} />
       </Box>
       <BusinessRating
         ratingData={ratingData}

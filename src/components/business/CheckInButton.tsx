@@ -60,6 +60,7 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
       onClick={handleClick}
       disabled={isLoading}
       color={isSuccess ? 'success' : 'primary'}
+      fullWidth
       sx={{ textTransform: 'none', borderRadius: '12px' }}
     >
       {isSuccess ? 'Check-in ✓' : 'Hacer check-in'}

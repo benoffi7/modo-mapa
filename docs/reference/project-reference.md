@@ -1,9 +1,9 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.30.0
+**Version:** 2.31.0
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-27
+**Ultima actualizacion:** 2026-03-29
 
 ---
 
@@ -95,9 +95,9 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`useSwipeActions`**: swipe-to-reveal en mobile con touch events, threshold 80px, fallback accesible
 - **`CommentRow` (memo)**: componente memoizado extraido de BusinessComments, `isEditing` precalculado
 - **3-tier read cache**: memory → IndexedDB → Firestore en `useBusinessData`, con `StaleBanner` y incremental loading
-- **`shared/` folder**: codigo compartido entre frontend y functions (ej: `shared/userOwnedCollections.ts`)
-- **Extracted hooks** (#195): 8 hooks extraidos de componentes grandes — `useOptimisticLikes`, `useCommentSort`, `useCommentEdit`, `useCommentThreads`, `useVerificationCooldown`, `useQuestionThreads`, `useCommentsListFilters`, `useVirtualizedList`
+- **`shared/` folder**: codigo compartido entre frontend y functions (ej: `shared/userOwnedCollections.ts` — fuente canonica, `functions/src/shared/` contiene copia para build)
+- **Extracted hooks** (#195, updated #232): 4 hooks activos — `useCommentEdit`, `useVerificationCooldown`, `useCommentsListFilters`, `useVirtualizedList`. Nota: `useOptimisticLikes`, `useCommentSort`, `useCommentThreads` y `useQuestionThreads` eliminados en #232 (logica inlined en componentes consumidores)
 - **Offline read caching** (#197): IndexedDB `readCache.ts` con LRU eviction (20 entries). 3-tier lookup en `useBusinessData`: memory → IndexedDB → Firestore. `StaleBanner` para datos stale. Incremental loading (`isLoadingComments`, `stale` fields)
 - **Accesibilidad** (#196): `contrast.ts` (WCAG 2.0), `aria-live` en contadores dinamicos, `role=alertdialog` en dialogs destructivos, `PasswordField` con `helperText` nativo (auto `aria-describedby`)
 - **Rating prompt** (#199): `useRatingPrompt` hook detecta check-ins recientes (2-8h) sin calificar. `RatingPromptBanner` en HomeScreen. 3/dia cap. 4 analytics events
-- **Tests**: 1131 tests (839 frontend + 292 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useOptimisticLikes, useCommentSort, useCommentEdit, useCommentThreads, useVerificationCooldown, 20 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 108 test files (74 frontend + 34 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, 34 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)

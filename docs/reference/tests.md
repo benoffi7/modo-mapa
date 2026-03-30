@@ -6,8 +6,8 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 63 (40 React + 32 Functions, algunos complementados) |
-| **Total test cases** | 1131 (839 React + 292 Functions) |
+| **Total test files** | 108 (74 React + 34 Functions) |
+| **Total test cases** | ~1200+ (estimado post-#229/#230/#231/#232) |
 | **Cobertura minima requerida** | 80% global (enforced en CI) |
 
 ### Cobertura actual (2026-03-27)
@@ -111,7 +111,7 @@
 | `priceLevels.ts` | `priceLevels.test.ts` | 9 | 100% |
 | `rankings.ts` | `rankings.test.ts` | 26 | 98% stmts, 89% branches |
 | `queryCache.ts` | `queryCache.test.ts` | 7 | 100% |
-| `sharedLists.ts` | — | — | ⏳ Cascade deletes, counter atomics |
+| `sharedLists.ts` | `sharedLists.test.ts` | — | Parcial (createList, updateList con icon) |
 | `userProfile.ts` | — | — | ⏳ Complex aggregation, 7 parallel queries |
 | `userSettings.ts` | — | — | ⏳ Optimistic update rollback |
 | `suggestions.ts` | — | — | 🔻 Baja prioridad (simple aggregation) |
@@ -136,7 +136,7 @@
 | `useUnsavedChanges.ts` | — | — | ⏳ Dialog state machine |
 | `useRankings.ts` | — | — | ⏳ Position delta calc |
 | `useUserSettings.ts` | — | — | ⏳ Optimistic updates |
-| `useColorMode.ts` | — | — | 🔻 Simple wrapper |
+| `useColorMode.ts` | — | — | 🔻 Simple wrapper (covered via ColorModeContext tests) |
 | otros (13 hooks) | — | — | ⏳ |
 
 ### React App — Contexts (`src/context/`)
@@ -144,8 +144,7 @@
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
 | `AuthContext.tsx` | `AuthContext.test.tsx` | 35 | 77% stmts, 81% branches |
-| `MapContext.tsx` | `MapContext.test.tsx` | 21 | 100% stmts/branches |
-| `ColorModeContext.tsx` | — | — | ⏳ |
+| `ColorModeContext.tsx` | — | — | ⏳ (planned in #231) |
 | `NotificationsContext.tsx` | — | — | ⏳ |
 | `ToastContext.tsx` | — | — | ⏳ |
 

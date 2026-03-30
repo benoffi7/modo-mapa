@@ -47,7 +47,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count via `useOptimisticLikes` hook compartido (extraido de BusinessComments en #195, reutilizado en BusinessQuestions). Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. `useFollow` usa optimistic toggle con revert on error + offline support. |
+| **Optimistic UI** | Comentarios se agregan al state local antes de que Firestore confirme. Likes usan Maps para toggle state + delta count (logica inlined en BusinessComments y BusinessQuestions tras eliminacion de `useOptimisticLikes` en #232). Rating usa `pendingRating`. Price level usa `pendingLevel`. FavoriteButton usa derived state pattern (`prevIsFavorite` + `optimistic`) para reset sin flicker al re-render del parent. `useFollow` usa optimistic toggle con revert on error + offline support. |
 | **Toast global (`useToast`)** | Context provider en `ToastContext.tsx` con `useMemo` para valor estable. Metodos `success/error/warning/info`. Auto-dismiss 4s. Un toast a la vez. Integrado en ratings (error), comments (exito+error), favorites (exito+error). |
 | **Pull-to-refresh (`usePullToRefresh`)** | Hook custom para gesto touch vertical. Solo activa si `scrollTop === 0`. Threshold 80px. `PullToRefreshWrapper` component con CircularProgress. Integrado en FavoritesList, CommentsList, RatingsList, RankingsView. |
 | **Rate limit precheck (UI)** | En BusinessComments, si `userCommentsToday >= MAX_COMMENTS_PER_DAY`, se reemplaza el input por Alert informativo. Contador "X/20 hoy" en helperText con color warning cuando quedan ≤3. Evita que el usuario escriba un comentario que no podra publicar. |
@@ -92,6 +92,7 @@
 | **Public/private toggle** | Campo `isPublic` en sharedList. Rules: read solo para owner o `isPublic == true`. Share button solo visible si pública. |
 | **Deep link** | `?list={id}` en URL abre SideMenu en sección lists con la lista específica. `sharedListId` prop propagado AppShell → SideMenu → SharedListsView. |
 | **AddToListDialog** | Dialog desde BusinessSheet con checkboxes por lista. Carga estado checked via `fetchListItems` por cada lista del usuario. Crear nueva lista inline. |
+| **Owner vs Editor permissions** | En `ListDetailScreen`, tres niveles de permisos: `canEditConfig` (solo owner: color, visibilidad, delete, editores, icono), `canEditItems` (owner + editor: agregar/quitar items), `readOnly` (viewer: solo lectura). `isEditor` se determina chequeando `editorIds.includes(user.uid)`. Tras invitar/remover editor, se refetchea via `fetchSharedList` para actualizar `editorIds` local. |
 
 ## Follows y activity feed
 
@@ -151,7 +152,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SideMenu footer. |
+| **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SettingsPanel seccion "Apariencia" (entre Ubicacion y Privacidad). |
 | **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
 
 ## Offline queue
@@ -170,15 +171,15 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes de menu (ej: `RecentVisits` usaba una copia local de `formatRelativeTime`). |
-| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `SuggestionsView`, `FavoritesList`. |
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes. |
+| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 
 ## Codigo compartido frontend/functions
 
 | Patron | Descripcion |
 |--------|-------------|
-| **shared/ folder** | Directorio `shared/` en la raiz del proyecto para codigo que se importa tanto desde `src/` (frontend) como desde `functions/src/` (Cloud Functions). Cada archivo exporta constantes o tipos puros (sin dependencias de framework). Ejemplo: `shared/userOwnedCollections.ts` define `USER_OWNED_COLLECTIONS` registry usado por `deleteUserAccount` (functions) y `deleteAllUserData` helper. |
+| **shared/ folder** | Directorio `shared/` en la raiz del proyecto para codigo que se importa tanto desde `src/` (frontend) como desde `functions/src/` (Cloud Functions). Cada archivo exporta constantes o tipos puros (sin dependencias de framework). Ejemplo: `shared/userOwnedCollections.ts` define `USER_OWNED_COLLECTIONS` registry usado por `deleteUserAccount` (functions) y `deleteAllUserData` helper. Nota: `shared/userOwnedCollections.ts` es la fuente canonica; `functions/src/shared/` contiene una copia para el build de Cloud Functions. |
 | **userOwnedCollections registry** | `shared/userOwnedCollections.ts` — lista centralizada de las 19 colecciones que contienen datos de usuario. Cada entrada tiene `collection`, `field` (campo que contiene el userId) y `type` ('doc-id' o 'field'). Usado por `deleteUserAccount` para iterar y borrar todos los datos. Cross-validated con test que verifica consistencia con `COLLECTIONS` config. |
 
 ## Accesibilidad
@@ -193,15 +194,15 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 8 hooks extraidos: `useOptimisticLikes` (likes con Maps), `useCommentSort` (sorting logic), `useCommentEdit` (edit state + handlers), `useCommentThreads` (thread expand/collapse), `useVerificationCooldown` (60s cooldown timer), `useQuestionThreads` (Q&A thread logic), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). |
-| **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). `QuestionInput` extraido de BusinessQuestions (formulario de pregunta con rate limit). |
+| **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 4 hooks activos: `useCommentEdit` (edit state + handlers), `useVerificationCooldown` (60s cooldown timer), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). Nota: `useOptimisticLikes`, `useCommentSort`, `useCommentThreads` y `useQuestionThreads` fueron eliminados en #232 — su logica fue inlined en los componentes consumidores. |
+| **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). Nota: `QuestionInput` fue eliminado en #232 — logica integrada directamente en BusinessQuestions. |
 
 ## Integridad de datos
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Mutable prop audit** | Componentes que reciben datos como props Y los modifican deben usar state local + notificar al parent (callback o refetch). Si el parent mantiene la fuente de verdad, el componente hijo debe hacer optimistic update local y propagar el cambio hacia arriba. Ejemplo: `ListDetailScreen` recibe la lista como prop, modifica color/isPublic localmente y notifica al parent para que actualice su estado. Auditar en specs template. |
-| **Firestore rules field whitelist** | Toda escritura a Firestore debe tener sus campos validados con `hasOnly()` en las rules. Cada vez que un servicio agrega un campo nuevo a un `updateDoc`/`setDoc`, verificar que el campo este en la lista `hasOnly()` de la regla correspondiente. Ejemplo: agregar `color` e `icon` a la regla de update de `sharedLists`. Auditar en merge Phase 1i. |
+| **Mutable prop audit** | Componentes que reciben datos como props Y los modifican deben usar state local + notificar al parent (callback o refetch). Si el parent mantiene la fuente de verdad, el componente hijo debe hacer optimistic update local y propagar el cambio hacia arriba. Ejemplo: `ListDetailScreen` recibe la lista como prop, modifica color/isPublic/icon/editorIds localmente y notifica al parent para que actualice su estado. Auditar en specs template. |
+| **Firestore rules field whitelist** | Toda escritura a Firestore debe tener sus campos validados con `hasOnly()` en las rules. Cada vez que un servicio agrega un campo nuevo a un `updateDoc`/`setDoc`, verificar que el campo este en la lista `hasOnly()` de la regla correspondiente. Ejemplo: `color` e `icon` en la regla de update de `sharedLists`. Auditar en merge Phase 1i. |
 
 ## Copywriting y localizacion
 

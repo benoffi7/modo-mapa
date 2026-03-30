@@ -43,7 +43,7 @@ export default memo(function CriteriaSection({ criteriaAverages, myCriteria, myR
         variant="outlined"
         onClick={() => setCriteriaOpen((prev) => !prev)}
         icon={criteriaOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        sx={{ fontSize: '0.75rem' }}
+        sx={{ fontSize: '0.75rem', borderRadius: 1 }}
       />
       <Collapse in={criteriaOpen}>
         <Box sx={{ mt: 1.5 }}>

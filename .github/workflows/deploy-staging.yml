@@ -70,6 +70,7 @@ jobs:
         run: bash scripts/deploy-staging-rules.sh
 
       - name: Deploy Cloud Functions (if changed)
+        continue-on-error: true
         run: |
           if git diff origin/main -- functions/src/ functions/package.json | grep -q .; then
             echo "Functions changed — deploying..."
