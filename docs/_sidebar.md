@@ -247,6 +247,8 @@
     - [PRD](/feat/infra/244-docs-firestore-sidebar/prd.md)
   - [#245 Performance Improvements](/feat/infra/245-performance-improvements/)
     - [PRD](/feat/infra/245-performance-improvements/prd.md)
+    - [Specs](/feat/infra/245-performance-improvements/specs.md)
+    - [Plan](/feat/infra/245-performance-improvements/plan.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
