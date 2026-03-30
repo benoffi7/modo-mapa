@@ -161,7 +161,7 @@ export default function QuickActions() {
               onClick={() => handleTap(slot)}
               sx={{ ...iconCircleSx(getSlotColor(slot), 48) }}
             >
-              <Box sx={{ color: '#fff', display: 'flex' }}>{slot.icon}</Box>
+              <Box sx={{ color: 'common.white', display: 'flex' }}>{slot.icon}</Box>
             </IconButton>
             <Typography variant="caption" noWrap sx={{ maxWidth: 64, textAlign: 'center' }}>
               {slot.label}
@@ -190,7 +190,7 @@ export default function QuickActions() {
               }
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ ...iconCircleSx(getSlotColor(slot), 32), color: '#fff' }}>
+                  <Box sx={{ ...iconCircleSx(getSlotColor(slot), 32), color: 'common.white' }}>
                     <Box sx={{ display: 'flex', fontSize: 18 }}>{slot.icon}</Box>
                   </Box>
                   <Typography variant="body2">{slot.label}</Typography>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Chip, IconButton } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
@@ -88,9 +89,17 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
                   position: 'absolute',
                   bottom: 6,
                   right: 6,
-                  bgcolor: 'rgba(0,0,0,0.55)',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light'
+                      ? alpha(theme.palette.common.black, 0.55)
+                      : alpha(theme.palette.common.white, 0.15),
                   color: 'white',
-                  '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+                  '&:hover': {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'light'
+                        ? alpha(theme.palette.common.black, 0.75)
+                        : alpha(theme.palette.common.white, 0.25),
+                  },
                 }}
               >
                 <CameraAltIcon sx={{ fontSize: 18 }} />
