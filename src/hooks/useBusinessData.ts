@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from './useBusinessDataCache';
+import { getBusinessCache, setBusinessCache, invalidateBusinessCache, patchBusinessCache } from '../services/businessDataCache';
 import { getReadCacheEntry, setReadCacheEntry } from '../services/readCache';
 import { fetchBusinessData, fetchSingleCollection } from '../services/businessData';
 import type { BusinessDataCollectionName } from '../services/businessData';

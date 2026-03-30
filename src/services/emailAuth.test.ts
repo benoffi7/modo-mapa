@@ -42,7 +42,7 @@ vi.mock('./queryCache', () => ({
 }));
 
 const mockClearAllBusinessCache = vi.fn();
-vi.mock('../hooks/useBusinessDataCache', () => ({
+vi.mock('./businessDataCache', () => ({
   clearAllBusinessCache: (...args: unknown[]) => mockClearAllBusinessCache(...args),
 }));
 
