@@ -239,6 +239,12 @@
     - [PRD](/feat/infra/240-rate-limit-userid-cleanup/prd.md)
     - [Specs](/feat/infra/240-rate-limit-userid-cleanup/specs.md)
     - [Plan](/feat/infra/240-rate-limit-userid-cleanup/plan.md)
+  - [#243 Service Layer Violations](/feat/infra/243-service-layer-violations/)
+    - [PRD](/feat/infra/243-service-layer-violations/prd.md)
+  - [#244 Docs Firestore + Sidebar](/feat/infra/244-docs-firestore-sidebar/)
+    - [PRD](/feat/infra/244-docs-firestore-sidebar/prd.md)
+  - [#245 Performance Improvements](/feat/infra/245-performance-improvements/)
+    - [PRD](/feat/infra/245-performance-improvements/prd.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
@@ -326,6 +332,10 @@
     - [PRD](/feat/security/usertags-rate-limit-trigger/prd.md)
     - [Specs](/feat/security/usertags-rate-limit-trigger/specs.md)
     - [Plan](/feat/security/usertags-rate-limit-trigger/plan.md)
+  - [#241 affectedKeys() Update Rules](/feat/security/241-affectedkeys-update-rules/)
+    - [PRD](/feat/security/241-affectedkeys-update-rules/prd.md)
+  - [#242 Rate Limits + Field Validation](/feat/security/242-rate-limits-field-validation/)
+    - [PRD](/feat/security/242-rate-limits-field-validation/prd.md)
 
 - **[Social](/feat/social/)**
   - [Check-in](/feat/social/check-in/)
@@ -482,6 +492,8 @@
     - [PRD](/feat/ux/203-notificaciones-digest/prd.md)
     - [Specs](/feat/ux/203-notificaciones-digest/specs.md)
     - [Plan](/feat/ux/203-notificaciones-digest/plan.md)
+  - [#246 Dark Mode Hardcoded Colors](/feat/ux/246-dark-mode-hardcoded-colors/)
+    - [PRD](/feat/ux/246-dark-mode-hardcoded-colors/prd.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
