@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings } from '../services/userSettings';
@@ -10,12 +10,40 @@ import { logger } from '../utils/logger';
 import type { UserSettings } from '../types';
 
 /**
+ * Optimistic tags state that auto-resets when the server settings version changes.
+ * Each time settings changes identity, pending is cleared so server truth wins.
+ */
+function useOptimisticTags(settings: UserSettings | null) {
+  const [state, setState] = useState<{
+    pending: string[] | null;
+    settingsVersion: UserSettings | null;
+  }>({ pending: null, settingsVersion: settings });
+
+  // If settings identity changed, discard optimistic state (React-safe pattern:
+  // derive state from props during render without effects or refs).
+  const pending =
+    settings !== state.settingsVersion ? null : state.pending;
+
+  const setPending = useCallback(
+    (next: string[] | null) =>
+      setState((prev) => ({ ...prev, pending: next })),
+    [],
+  );
+
+  // Keep settingsVersion in sync so the comparison above works on subsequent renders.
+  if (settings !== state.settingsVersion) {
+    setState({ pending: null, settingsVersion: settings });
+  }
+
+  return [pending, setPending] as const;
+}
+
+/**
  * CRUD hook for followed tags. Reads from userSettings and persists
  * follow/unfollow changes via updateUserSettings.
  */
 export function useFollowedTags() {
   const { user } = useAuth();
-  const [optimisticTags, setOptimisticTags] = useState<string[] | null>(null);
 
   const fetcher = useCallback(async (): Promise<UserSettings | null> => {
     if (!user) return null;
@@ -24,17 +52,13 @@ export function useFollowedTags() {
 
   const { data: settings } = useAsyncData(fetcher);
 
-  const serverTags = settings?.followedTags ?? [];
-  const tags = optimisticTags ?? serverTags;
+  const [optimisticTags, setOptimisticTags] = useOptimisticTags(settings);
 
-  // Sync optimistic state when server data arrives
-  useEffect(() => {
-    if (optimisticTags !== null && settings) {
-      setOptimisticTags(null);
-    }
-    // Only reset when settings change, not on every optimistic update
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings]);
+  const serverTags = useMemo(
+    () => settings?.followedTags ?? [],
+    [settings?.followedTags],
+  );
+  const tags = optimisticTags ?? serverTags;
 
   const followTag = useCallback(
     (tag: string, source: 'home' | 'business' | 'search' | 'profile' = 'home') => {
@@ -56,7 +80,7 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags],
+    [user, optimisticTags, serverTags, setOptimisticTags],
   );
 
   const unfollowTag = useCallback(
@@ -78,7 +102,7 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags],
+    [user, optimisticTags, serverTags, setOptimisticTags],
   );
 
   const isFollowed = useCallback(
