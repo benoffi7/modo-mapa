@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-29 (post merge: #229/#232 closed, v2.31.0)*
+*Actualizado: 2026-03-30 (post merge: #229/#230/#231/#232 closed, v2.31.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -9,13 +9,29 @@
 
 ---
 
-## Roadmap por Milestone
+## Issues abiertos
 
-### v3.0.0 — 19 may – 25 may
+### Tech debt
 
-| Issue | Título | Etiqueta | Estado |
-|-------|--------|----------|--------|
-| [#158](https://github.com/benoffi7/modo-mapa/issues/158) | Rediseño del home: evaluar alternativas al mapa central | arquitectura | **En progreso** (branch `new-home`: specials section, list improvements, avatar persistence) |
+| Issue | Titulo | PRD | Estado |
+|-------|--------|-----|--------|
+| [#236](https://github.com/benoffi7/modo-mapa/issues/236) | Tech debt: security + architecture findings v2.31.0 | [PRD](../feat/infra/tech-debt-v2-31-0/prd.md) | PRD/specs/plan listos |
+| [#168](https://github.com/benoffi7/modo-mapa/issues/168) | Vite 8 y ESLint 10 bloqueados por peer deps | — | Bloqueado por dependencias upstream |
+
+### UX
+
+| Issue | Titulo | PRD | Estado |
+|-------|--------|-----|--------|
+| [#235](https://github.com/benoffi7/modo-mapa/issues/235) | Agregar color a iconos de Acciones Rapidas en Home | [PRD](../feat/ux/color-iconos-acciones-rapidas/prd.md) | PRD/specs/plan listos |
+
+### Features futuras
+
+| Issue | Titulo | Estado |
+|-------|--------|--------|
+| [#205](https://github.com/benoffi7/modo-mapa/issues/205) | Seguir tags/categorias — descubrir negocios por interes | Propuesta |
+| [#203](https://github.com/benoffi7/modo-mapa/issues/203) | Notificaciones digest — resumen diario/semanal | Propuesta |
+| [#201](https://github.com/benoffi7/modo-mapa/issues/201) | Badges de verificacion de usuario | Propuesta |
+| [#200](https://github.com/benoffi7/modo-mapa/issues/200) | Trending por zona — rankings filtrados por localidad | Propuesta |
 
 ---
 
@@ -29,11 +45,10 @@
 
 ---
 
-## Métricas de progreso
+## Metricas de progreso
 
-| Métrica | Valor |
+| Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 1 (#235) |
-| Issues cerrados | #138, #133, #145, #147, #146, #139, #142, #159, #141, #144, #161, #149, #162, #152, #148, #134, #143, #130, #128, #155, #156, #160, #157, #163, #164, #165, #153, #167, #137, #154, #140, #169, #166, #127, #131, #172, #171, #136, #173, #174, #175, #176, #177, #178, #179, #129, #135, #192, #193, #194, #195, #196, #197, #198, #199, #229, #232 (57) |
+| Issues abiertos | 7 (#168, #200, #201, #203, #205, #235, #236) |
+| Issues cerrados | #128–#199, #207–#232 (59) |
 | Versiones publicadas | v2.10.0 – v2.31.0 |
-| Milestones planificados | 1 (v3.0.0) |
