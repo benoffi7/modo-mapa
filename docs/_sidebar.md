@@ -232,6 +232,7 @@
     - [PRD](/feat/infra/tech-debt-reply-pagination-boilerplate/prd.md)
     - [Specs](/feat/infra/tech-debt-reply-pagination-boilerplate/specs.md)
     - [Plan](/feat/infra/tech-debt-reply-pagination-boilerplate/plan.md)
+  - [#236 Tech Debt: Security + Architecture v2.31.0](/prd/236-tech-debt-v2-31-0/prd.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
@@ -482,17 +483,19 @@
   - [Staging Cloud Functions Friction](/postmortem/2026-03-19-staging-cloud-functions-friction.md)
 
 - **[PRDs](/prd/)**
-  - [#158 Redesign Tab Navigation](/prd/158-redesign-tab-navigation.md)
-    - [Specs](/prd/158-specs.md)
-    - [Plan](/prd/158-plan.md)
-  - [#158b Social Content Redesign](/prd/158b-social-content-redesign.md)
-  - [#158c Lists Content Redesign](/prd/158c-lists-content-redesign.md)
-  - [#158d Shared Lists Grid Refactor](/prd/158d-shared-lists-grid-refactor.md)
-  - [#167 Office Marker](/prd/167-office-marker.md)
-  - [#191 Force App Update](/prd/191-force-app-update.md)
-    - [Specs](/prd/191-specs.md)
-    - [Plan](/prd/191-plan.md)
-  - [#235 Color Iconos Acciones Rapidas](/prd/235-color-iconos-acciones-rapidas.md)
+  - [#158 Rediseno Tab Navigation](/prd/158-rediseno-tab-navigation/prd.md)
+    - [Specs](/prd/158-rediseno-tab-navigation/specs.md)
+    - [Plan](/prd/158-rediseno-tab-navigation/plan.md)
+    - [Social Content](/prd/158-rediseno-tab-navigation/prd-social.md)
+    - [Lists Content](/prd/158-rediseno-tab-navigation/prd-lists.md)
+    - [Grid Refactor](/prd/158-rediseno-tab-navigation/prd-grid-refactor.md)
+  - [#191 Force App Update](/prd/191-force-app-update/prd.md)
+    - [Specs](/prd/191-force-app-update/specs.md)
+    - [Plan](/prd/191-force-app-update/plan.md)
+  - [#235 Color Iconos Acciones Rapidas](/prd/235-color-iconos-acciones-rapidas/prd.md)
+    - [Specs](/prd/235-color-iconos-acciones-rapidas/specs.md)
+    - [Plan](/prd/235-color-iconos-acciones-rapidas/plan.md)
+  - [#236 Tech Debt: Security + Architecture v2.31.0](/prd/236-tech-debt-v2-31-0/prd.md)
 
 - **[Tech Debt: New Home](/prd/tech-debt-new-home/)**
   - [1 - Admin Service Layer](/prd/tech-debt-new-home/1-admin-service-layer.md)
