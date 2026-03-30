@@ -185,11 +185,10 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
 
       <Box sx={{ px: 2, py: 0.5, mt: 0.5 }}>
         <Chip
-          size="small"
           label={isPublic ? 'Pública' : 'Privada'}
           icon={isPublic ? <PublicIcon /> : <LockIcon />}
           variant="outlined"
-          sx={{ borderRadius: 1, '& .MuiChip-label, & .MuiChip-labelSmall': { px: 2 } }}
+          sx={{ borderRadius: 1 }}
         />
       </Box>
 
