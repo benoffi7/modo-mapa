@@ -97,13 +97,19 @@
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `converters.ts` | `converters.test.ts` | 42 | 100% |
+| `converters/userConverters.ts` | `converters/userConverters.test.ts` | 5 | 100% |
+| `converters/businessConverters.ts` | `converters/businessConverters.test.ts` | 23 | 100% |
+| `converters/socialConverters.ts` | `converters/socialConverters.test.ts` | 12 | 100% |
+| `converters/listConverters.ts` | `converters/listConverters.test.ts` | 6 | 100% |
+| `converters/rankingConverters.ts` | `converters/rankingConverters.test.ts` | 10 | 100% |
+| `converters/feedbackConverters.ts` | `converters/feedbackConverters.test.ts` | 6 | 100% |
 
 ### React App — Servicios (`src/services/`)
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `ratings.ts` | `ratings.test.ts` | 13 | 100% |
+| `ratings.ts` | `ratings.test.ts` | 17 | 100% (incluye fetchUserRatings, fetchRatingsByBusinessIds) |
+| `checkins.ts` | `checkins.test.ts` | 13 | 100% (incluye fetchUserCheckIns) |
 | `emailAuth.ts` | `emailAuth.test.ts` | 14 | 100% |
 | `comments.ts` | `comments.test.ts` | 16 | 100% |
 | `favorites.ts` | `favorites.test.ts` | 7 | 100% |
@@ -131,6 +137,11 @@
 | `usePaginatedQuery.ts` | `usePaginatedQuery.test.ts` | 11 | 100% |
 | `useSuggestions.ts` | `useSuggestions.test.ts` | 10 | 100% |
 | `usePriceLevelFilter.ts` | `usePriceLevelFilter.test.ts` | 7 | 100% stmts/lines, 93% branches |
+| `useLocalGuideBadge.ts` | `useLocalGuideBadge.test.ts` | 9 | 100% (funcion pura calcLocalGuide) |
+| `useVerifiedVisitorBadge.ts` | `useVerifiedVisitorBadge.test.ts` | 7 | 100% (funcion pura calcVerifiedVisitor) |
+| `useTrustedReviewerBadge.ts` | `useTrustedReviewerBadge.test.ts` | 7 | 100% (funcion async calcTrustedReviewer) |
+| `useVerificationBadges.ts` | `useVerificationBadges.test.ts` | 6 | 100% (orquestador con mocks de servicios) |
+| `useFollowedTags.ts` | `useFollowedTags.test.ts` | 10 | 100% |
 | `useUndoDelete.ts` | — | — | ⏳ Timer management, ref sync |
 | `useAsyncData.ts` | — | — | ⏳ Race conditions, cleanup |
 | `useUnsavedChanges.ts` | — | — | ⏳ Dialog state machine |

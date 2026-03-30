@@ -1,0 +1,78 @@
+import { describe, it, expect } from 'vitest';
+import * as events from '../index';
+
+describe('analyticsEvents barrel', () => {
+  // All EVT_* constants that must be exported from the barrel
+  const expectedExports = [
+    // onboarding
+    'EVT_ONBOARDING_BANNER_SHOWN',
+    'EVT_ONBOARDING_BANNER_CLICKED',
+    'EVT_ONBOARDING_BANNER_DISMISSED',
+    'EVT_BENEFITS_SCREEN_SHOWN',
+    'EVT_BENEFITS_SCREEN_CONTINUE',
+    'EVT_ACTIVITY_REMINDER_SHOWN',
+    'EVT_ACTIVITY_REMINDER_CLICKED',
+    'EVT_VERIFICATION_NUDGE_SHOWN',
+    'EVT_VERIFICATION_NUDGE_RESEND',
+    'EVT_VERIFICATION_NUDGE_DISMISSED',
+    // trending
+    'EVT_TRENDING_VIEWED',
+    'EVT_TRENDING_BUSINESS_CLICKED',
+    'EVT_TRENDING_NEAR_VIEWED',
+    'EVT_TRENDING_NEAR_TAPPED',
+    'EVT_TRENDING_NEAR_CONFIGURE_TAPPED',
+    'EVT_RANKINGS_ZONE_FILTER',
+    // offline
+    'EVT_OFFLINE_ACTION_QUEUED',
+    'EVT_OFFLINE_SYNC_COMPLETED',
+    'EVT_OFFLINE_SYNC_FAILED',
+    'EVT_OFFLINE_ACTION_DISCARDED',
+    // social
+    'EVT_FOLLOW',
+    'EVT_UNFOLLOW',
+    'EVT_FEED_VIEWED',
+    'EVT_FEED_ITEM_CLICKED',
+    'EVT_RECOMMENDATION_SENT',
+    'EVT_RECOMMENDATION_OPENED',
+    'EVT_RECOMMENDATION_LIST_VIEWED',
+    // navigation
+    'EVT_TAB_SWITCHED',
+    'EVT_SUB_TAB_SWITCHED',
+    'EVT_BUSINESS_SHEET_TAB_CHANGED',
+    // system
+    'EVT_FORCE_UPDATE_TRIGGERED',
+    'EVT_FORCE_UPDATE_LIMIT_REACHED',
+    'EVT_ACCOUNT_DELETED',
+    // business
+    'EVT_RATING_PROMPT_SHOWN',
+    'EVT_RATING_PROMPT_CLICKED',
+    'EVT_RATING_PROMPT_DISMISSED',
+    'EVT_RATING_PROMPT_CONVERTED',
+    'EVT_BUSINESS_SHEET_PHASE1_MS',
+    'EVT_BUSINESS_SHEET_PHASE2_MS',
+    'EVT_BUSINESS_SHEET_CACHE_HIT',
+    'EVT_LIST_ICON_CHANGED',
+    // digest
+    'EVT_DIGEST_SECTION_VIEWED',
+    'EVT_DIGEST_ITEM_TAPPED',
+    'EVT_DIGEST_CTA_TAPPED',
+    'EVT_DIGEST_FREQUENCY_CHANGED',
+    // interests
+    'EVT_TAG_FOLLOWED',
+    'EVT_TAG_UNFOLLOWED',
+    'EVT_INTERESTS_SECTION_VIEWED',
+    'EVT_INTERESTS_BUSINESS_TAPPED',
+    'EVT_INTERESTS_CTA_TAPPED',
+    'EVT_INTERESTS_SUGGESTED_TAPPED',
+  ] as const;
+
+  it.each(expectedExports)('exports %s', (name) => {
+    expect(events[name]).toBeDefined();
+    expect(typeof events[name]).toBe('string');
+  });
+
+  it('exports exactly the expected number of events', () => {
+    const exportedKeys = Object.keys(events);
+    expect(exportedKeys).toHaveLength(expectedExports.length);
+  });
+});

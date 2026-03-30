@@ -54,4 +54,4 @@ Ejemplo en un plan:
 
 - `*.test.ts` / `*.test.tsx` — tests pueden ser más largos
 - Páginas DEV-only (`ConstantsDashboard.tsx`, `ThemePlayground.tsx`)
-- Archivos de configuración (`converters.ts`, `admin.ts` services)
+- Archivos de configuración (`admin.ts` services)

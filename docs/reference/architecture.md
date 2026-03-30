@@ -41,13 +41,19 @@ TabShell
 
 ## Tab: Inicio (HomeScreen)
 
+HomeScreen usa un array declarativo `HOME_SECTIONS` (definido en `homeSections.ts`) para renderizar secciones con `lazy()` + `Suspense`. Agregar una seccion nueva requiere solo una entrada en el array, sin modificar JSX.
+
 ```text
-HomeScreen (scrollable)
+HomeScreen (scrollable, iterador sobre HOME_SECTIONS)
   ├─ GreetingHeader (saludo por hora + nombre + localidad)
+  ├─ RatingPromptBanner (condicional, fuera del array)
   ├─ QuickActions (grilla 2x4, editable, localStorage)
   ├─ SpecialsSection (3 items curados, placeholder → Firestore)
+  ├─ TrendingNearYouSection (trending por proximidad)
+  ├─ YourInterestsSection (tags seguidos)
   ├─ RecentSearches (4 chips de visitas recientes)
-  └─ ForYouSection (cards horizontales de useSuggestions)
+  ├─ ForYouSection (cards horizontales de useSuggestions)
+  └─ ActivityDigestSection (digest de actividad)
 ```
 
 ## Tab: Social (SocialScreen)

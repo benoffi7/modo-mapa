@@ -91,7 +91,7 @@ Los archivos >400 lineas fueron modularizados:
 | BusinessComments.tsx (523) | Extraido `InlineReplyForm.tsx` compartido (activo, usado por Comments y Questions) | 467 lineas |
 | BusinessQuestions.tsx (507) | Usa `InlineReplyForm.tsx` compartido | 459 lineas |
 | admin.ts (517) | Split en `admin/counters`, `activity`, `users`, `social`, `content` | 5 modulos (26-199 lineas) |
-| converters.ts (497) | Data layer, sin cambios | pendiente |
+| converters.ts (497) | Split en `converters/` con 6 archivos por dominio + barrel | 6 modulos (40-182 lineas) |
 
 ## Cobertura de tests
 

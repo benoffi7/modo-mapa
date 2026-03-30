@@ -1,7 +1,7 @@
 /**
  * Firestore service for the `ratings` collection.
  */
-import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
@@ -91,4 +91,26 @@ export async function deleteRating(
   const docId = `${userId}__${businessId}`;
   await deleteDoc(doc(db, COLLECTIONS.RATINGS, docId));
   invalidateQueryCache(COLLECTIONS.RATINGS, userId);
+}
+
+export async function fetchUserRatings(userId: string): Promise<Rating[]> {
+  const snap = await getDocs(
+    query(getRatingsCollection(), where('userId', '==', userId)),
+  );
+  return snap.docs.map((d) => d.data());
+}
+
+export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<Rating[]> {
+  const BATCH_SIZE = 10;
+  const results: Rating[] = [];
+  for (let i = 0; i < businessIds.length; i += BATCH_SIZE) {
+    const batch = businessIds.slice(i, i + BATCH_SIZE);
+    const snap = await getDocs(
+      query(getRatingsCollection(), where('businessId', 'in', batch)),
+    );
+    for (const d of snap.docs) {
+      results.push(d.data());
+    }
+  }
+  return results;
 }

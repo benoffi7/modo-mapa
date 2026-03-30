@@ -23,7 +23,7 @@
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
 | `trendingBusinesses` | `current` | businesses (array: businessId, name, category, score, breakdown, rank), computedAt, periodStart, periodEnd | Read auth; write false (Functions only) |
 | `_rateLimits` | `backup_{userId}`, `perf_{userId}`, `delete_{userId}`, `clean_{userId}`, `editors_invite_{userId}`, `editors_remove_{userId}` | count, resetAt, userId | No client access; Functions write (admin SDK). Campo `userId` permite cleanup en account deletion via `deleteAllUserData`. Usado por backups (5/min), perfMetrics (5/dia), deleteUserAccount (1/min), cleanAnonymousData (1/min), inviteListEditor (10/dia), removeListEditor (10/dia) |
-| `checkins` | auto-generated | userId, businessId, businessName (1-100), createdAt, location? (map: lat -90..90, lng -180..180) | Read owner+admin; create owner (`keys().hasOnly`, businessId validado, createdAt==request.time); no update; delete owner |
+| `checkins` | auto-generated | userId, businessId, businessName (1-100), createdAt, location? (map: lat -90..90, lng -180..180) | Read owner+admin; create owner (`keys().hasOnly`, businessId validado, createdAt==request.time); no update; delete owner. Service: `services/checkins.ts` (`createCheckIn`, `fetchMyCheckIns`, `fetchCheckInsForBusiness`, `deleteCheckIn`, `fetchUserCheckIns`) |
 | `follows` | `{followerId}__{followedId}` | followerId, followedId, createdAt | Read follower+followed+admin; create owner (followerId==auth.uid, followedId!=followerId, target no es privado via get userSettings); no update; delete owner |
 | `recommendations` | auto-generated | senderId, senderName (1-30), recipientId, businessId, businessName (1-100), message (0-200), read (false en create), createdAt | Read recipient+admin; create sender (senderId==auth.uid, sender!=recipient, businessId validado); update recipient (solo read); no delete |
 | `sharedLists` | auto-generated | ownerId, name (1-50), description (0-200), isPublic, itemCount, createdAt, updatedAt, color?, icon?, featured? (admin SDK only), editorIds? (admin SDK only) | Read auth (owner/editor/isPublic/featured/admin); create owner (`keys().hasOnly`, itemCount==0); update owner (name/desc/isPublic/itemCount/updatedAt/color/icon) o editor (solo itemCount/updatedAt); delete owner |
@@ -368,7 +368,7 @@ interface Achievement {
 
 ---
 
-## Converters (`src/config/converters.ts`)
+## Converters (`src/config/converters/`)
 
 Todos los tipos tienen un `FirestoreDataConverter<T>` centralizado. Las lecturas usan `withConverter<T>()` para tipado seguro. Las escrituras **no** usan converter (necesitan `serverTimestamp()` que no es compatible con los tipos del converter).
 
