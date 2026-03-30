@@ -375,7 +375,7 @@ Three converter files handle Firestore ↔ TypeScript transformations:
 
 | File | Purpose | Who reads |
 |------|---------|-----------|
-| `config/converters.ts` | Standard entity converters (Rating, Comment, Favorite, etc.) | User-facing reads |
+| `config/converters/` | Standard entity converters (Rating, Comment, Favorite, etc.) split by domain with barrel re-export | User-facing reads |
 | `config/adminConverters.ts` | Admin-specific converters (DailyMetrics, AbuseLog, PerfMetrics) | Admin panel reads |
 | `config/metricsConverter.ts` | Public metrics transformation | Public metrics (no auth) |
 

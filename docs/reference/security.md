@@ -119,7 +119,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 2. **Rate limiting client-side:** Limitar cantidad de escrituras por usuario/día.
 3. **Optimistic updates:** Actualizar UI inmediatamente pero manejar el rollback si falla.
 4. **Loading state:** Deshabilitar el botón/control durante la operación.
-5. **Tipado con converters:** Usar `withConverter<T>()` de `src/config/converters.ts`.
+5. **Tipado con converters:** Usar `withConverter<T>()` de `src/config/converters/`.
 
 ### Lectura de Firestore (read/query)
 
@@ -313,7 +313,7 @@ COLLECTIONS.CUSTOM_TAGS  → auth para leer, ownership + validación de label + 
 
 ### Converters tipados
 
-Todas las lecturas de Firestore usan `withConverter<T>()` desde `src/config/converters.ts`:
+Todas las lecturas de Firestore usan `withConverter<T>()` desde `src/config/converters/`:
 
 ```typescript
 // Lectura tipada (sin d.data() as any)
