@@ -86,7 +86,8 @@ service cloud.firestore {
         && isValidCriteria(request.resource.data);
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['score', 'updatedAt', 'criteria'])
         && request.resource.data.score is int
         && request.resource.data.score >= 1
         && request.resource.data.score <= 5
@@ -203,7 +204,8 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['label'])
         && request.resource.data.label is string
         && request.resource.data.label.size() > 0
         && request.resource.data.label.size() <= 30;
@@ -273,7 +275,8 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['level', 'updatedAt'])
         && request.resource.data.level is int
         && request.resource.data.level >= 1
         && request.resource.data.level <= 3
