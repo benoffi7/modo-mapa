@@ -4,6 +4,7 @@ import QuickActions from './QuickActions';
 import SpecialsSection from './SpecialsSection';
 import RecentSearches from './RecentSearches';
 import ForYouSection from './ForYouSection';
+import ActivityDigestSection from './ActivityDigestSection';
 import RatingPromptBanner from '../ui/RatingPromptBanner';
 import { useRatingPrompt } from '../../hooks/useRatingPrompt';
 
@@ -26,6 +27,8 @@ export default function HomeScreen() {
       <Divider sx={{ my: 0.5 }} />
       <RecentSearches />
       <ForYouSection />
+      <Divider sx={{ my: 0.5 }} />
+      <ActivityDigestSection />
     </Box>
   );
 }
