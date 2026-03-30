@@ -255,7 +255,14 @@ service cloud.firestore {
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
-        && request.resource.data.reportCount == 0;
+        && request.resource.data.reportCount == 0
+        // storagePath validation: must follow menus/{uid}/{bizId}/{fileName} format
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.size() > 0
+        && request.resource.data.storagePath.size() <= 200
+        && request.resource.data.storagePath.matches('^menus/' + request.auth.uid + '/biz_[0-9]{1,6}/[a-zA-Z0-9_-]+$')
+        // thumbnailPath must be empty string on create (Cloud Function sets it)
+        && request.resource.data.thumbnailPath == '';
       allow update: if false;
       allow delete: if false;
     }
