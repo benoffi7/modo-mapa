@@ -361,7 +361,12 @@ service cloud.firestore {
         && (
           (isListOwner()
             && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['name', 'description', 'isPublic', 'itemCount', 'updatedAt', 'color', 'icon']))
+               .hasOnly(['name', 'description', 'isPublic', 'itemCount', 'updatedAt', 'color', 'icon'])
+            && request.resource.data.name is string
+            && request.resource.data.name.size() > 0
+            && request.resource.data.name.size() <= 50
+            && request.resource.data.description is string
+            && request.resource.data.description.size() <= 200)
           || (isListEditor()
               && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['itemCount', 'updatedAt']))
