@@ -123,7 +123,12 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 |-----------|---------------|---------------------|
 | {ej: nuevo endpoint} | {ej: spam automatizado} | {ej: rate limit + App Check} |
 
-{Si el feature escribe a Firestore: verificar que la coleccion tiene hasOnly(), rate limit server-side, y moderacion si hay texto libre.}
+{Si el feature escribe a Firestore:}
+- [ ] Create rule tiene `hasOnly()` con whitelist de campos permitidos
+- [ ] Update rule tiene `affectedKeys().hasOnly()` para restringir campos modificables
+- [ ] Campos immutables (userId, businessId) no estan en la lista de affectedKeys
+- [ ] Rate limit server-side en Cloud Function trigger
+- [ ] Moderacion via `checkModeration()` si hay texto libre
 {Si el feature lee datos: evaluar si permite scraping masivo y si necesita restricciones adicionales en rules.}
 
 ---

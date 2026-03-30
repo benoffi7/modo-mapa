@@ -151,24 +151,48 @@ If `firestore.rules` OR any service file (`src/services/**`) was modified, cross
 
 If mismatch found, update `firestore.rules` to include the missing fields before proceeding.
 
+### 1j2. Firestore rules `affectedKeys()` audit on update rules
+
+**BLOCKER:** If `firestore.rules` was modified, verify that **every user-writable collection's update rule** uses `affectedKeys().hasOnly()` to restrict which fields can be changed. Without this, an attacker can inject arbitrary fields or change immutable fields like `businessId` to re-target data.
+
+```bash
+# Check for update rules missing affectedKeys
+if git diff --name-only origin/new-home | grep -q 'firestore.rules'; then
+  echo "=== Update rules WITHOUT affectedKeys ==="
+  grep -n 'allow update' firestore.rules | while read line; do
+    linenum=$(echo "$line" | cut -d: -f1)
+    # Check if affectedKeys appears within 10 lines after the allow update
+    if ! sed -n "${linenum},$((linenum+10))p" firestore.rules | grep -q 'affectedKeys'; then
+      echo "MISSING affectedKeys: $line"
+    fi
+  done
+fi
+```
+
+For each update rule missing `affectedKeys().hasOnly()`:
+- Add `request.resource.data.diff(resource.data).affectedKeys().hasOnly([allowed fields])`
+- Verify `businessId` and `userId` are immutable (not in the allowed set)
+
 If any step fails, stop and fix. Do NOT proceed to Phase 1k.
 
 ### 1k. Import boundary guard
 
-**BLOCKER:** No component file may import `firebase/firestore` for write operations. Read-type imports are a WARN.
+**BLOCKER:** No user-facing component file may import any Firebase SDK module directly. This includes `firebase/firestore`, `firebase/functions`, and `firebase/storage`. All Firebase access must go through `src/services/` or `src/hooks/`.
+
+Admin-only components (in `src/components/admin/`) are exempt but should be tracked for future cleanup.
 
 ```bash
-# Check for firebase/firestore imports in components
+# Check for ANY firebase/ imports in user-facing components (exclude admin/)
 for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.ts' 'src/components/**/*.tsx'); do
-  if [ -f "$f" ]; then
-    if grep -q "from 'firebase/firestore'" "$f" 2>/dev/null; then
-      echo "BOUNDARY VIOLATION: $f imports firebase/firestore"
+  if [ -f "$f" ] && [[ "$f" != *"/admin/"* ]]; then
+    if grep -qE "from 'firebase/(firestore|functions|storage)'" "$f" 2>/dev/null; then
+      echo "BOUNDARY VIOLATION: $f imports Firebase SDK directly"
     fi
   fi
 done
 ```
 
-If violations found: move the Firestore query/write to a hook or service. Components must stay Firebase-agnostic to keep the monolith % low.
+If violations found: move the Firebase call to a service function. Components must stay Firebase-agnostic to keep the monolith % low.
 
 ### 1l. Billing impact guard
 

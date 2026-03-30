@@ -103,19 +103,41 @@ Rules:
 - Only list files that actually exist — do NOT add placeholder links
 - Keep the order: Reference, Admin, Content, Infra, Security, Social, Fixes, Reports, Issues
 
-### 4. Validate
+### 4. Validate — MANDATORY, DO NOT SKIP
 
-After regenerating, verify:
-- Every `.md` file in `docs/` (except `_sidebar.md` and `README.md` files) appears in the sidebar
-- Every link in the sidebar points to an existing file
-- No broken links in any README.md
+After regenerating, run BOTH checks:
+
+#### 4a. Check for orphaned docs (files not in sidebar)
 
 ```bash
-# Check for orphaned docs (in docs/ but not in sidebar)
 find docs -name "*.md" -not -name "_sidebar.md" -not -name "README.md" | sort > /tmp/all_docs.txt
 grep -oP '\(([^)]+\.md)\)' docs/_sidebar.md | tr -d '()' | sort > /tmp/sidebar_links.txt
 comm -23 /tmp/all_docs.txt /tmp/sidebar_links.txt
 ```
+
+#### 4b. Check for broken links (sidebar refs to non-existent files) — CRITICAL
+
+```bash
+# Extract all file/directory links from sidebar and verify each exists on disk
+broken=0
+grep -oP '\(/[^)]+\)' docs/_sidebar.md | tr -d '()' | while read link; do
+  # Convert absolute docsify path to filesystem path
+  filepath="docs${link}"
+  # Handle directory links (ending with /)
+  if [[ "$filepath" == */ ]]; then
+    filepath="${filepath}README.md"
+  fi
+  if [ ! -f "$filepath" ]; then
+    echo "BROKEN LINK: $link → $filepath does not exist"
+    broken=$((broken + 1))
+  fi
+done
+echo "Total broken links: $broken"
+```
+
+**If broken links > 0:** Remove the broken entries from `_sidebar.md` before committing. Do NOT leave broken links — they cause 404s on the docs site.
+
+**Root cause prevention:** Only add sidebar entries for files that exist on disk. When files are moved or deleted, update the sidebar in the same commit.
 
 ## Important
 
