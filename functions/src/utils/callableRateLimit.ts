@@ -14,6 +14,7 @@ export async function checkCallableRateLimit(
   db: Firestore,
   key: string,
   limit: number,
+  userId: string,
 ): Promise<void> {
   const docRef = db.collection('_rateLimits').doc(key);
   const now = Date.now();
@@ -25,7 +26,7 @@ export async function checkCallableRateLimit(
     const data = snap.data() as { count: number; resetAt: number } | undefined;
 
     if (!data || now >= data.resetAt) {
-      tx.set(docRef, { count: 1, resetAt: startOfTomorrow.getTime() });
+      tx.set(docRef, { count: 1, resetAt: startOfTomorrow.getTime(), userId });
       return;
     }
 

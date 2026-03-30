@@ -42,15 +42,15 @@ describe('checkCallableRateLimit', () => {
 
   it('creates a new rate limit doc on first call', async () => {
     const { db, mockSet } = createMockDb(undefined);
-    await checkCallableRateLimit(db as never, 'test_key', 10);
-    expect(mockSet).toHaveBeenCalledWith({}, { count: 1, resetAt: expect.any(Number) });
+    await checkCallableRateLimit(db as never, 'test_key', 10, 'test_user');
+    expect(mockSet).toHaveBeenCalledWith({}, { count: 1, resetAt: expect.any(Number), userId: 'test_user' });
   });
 
   it('increments count within the daily window', async () => {
     const tomorrow = new Date();
     tomorrow.setHours(24, 0, 0, 0);
     const { db, mockUpdate } = createMockDb({ count: 3, resetAt: tomorrow.getTime() });
-    await checkCallableRateLimit(db as never, 'test_key', 10);
+    await checkCallableRateLimit(db as never, 'test_key', 10, 'test_user');
     expect(mockUpdate).toHaveBeenCalledWith({}, { count: 4 });
   });
 
@@ -58,14 +58,14 @@ describe('checkCallableRateLimit', () => {
     const tomorrow = new Date();
     tomorrow.setHours(24, 0, 0, 0);
     const { db } = createMockDb({ count: 10, resetAt: tomorrow.getTime() });
-    await expect(checkCallableRateLimit(db as never, 'test_key', 10))
+    await expect(checkCallableRateLimit(db as never, 'test_key', 10, 'test_user'))
       .rejects.toThrow('Limite diario alcanzado');
   });
 
   it('resets counter when the daily window has expired', async () => {
     const yesterday = Date.now() - 86_400_000;
     const { db, mockSet } = createMockDb({ count: 10, resetAt: yesterday });
-    await checkCallableRateLimit(db as never, 'test_key', 10);
-    expect(mockSet).toHaveBeenCalledWith({}, { count: 1, resetAt: expect.any(Number) });
+    await checkCallableRateLimit(db as never, 'test_key', 10, 'test_user');
+    expect(mockSet).toHaveBeenCalledWith({}, { count: 1, resetAt: expect.any(Number), userId: 'test_user' });
   });
 });
