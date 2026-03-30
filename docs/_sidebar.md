@@ -91,6 +91,8 @@
     - [Specs](/feat/infra/249-split-converters/specs.md)
     - [Plan](/feat/infra/249-split-converters/plan.md)
   - [#252 Docs Conflict Markers](/feat/infra/252-docs-conflict-markers/prd.md)
+    - [Specs](/feat/infra/252-docs-conflict-markers/specs.md)
+    - [Plan](/feat/infra/252-docs-conflict-markers/plan.md)
   - [#253 Architecture Cleanup](/feat/infra/253-architecture-cleanup/prd.md)
   - [#254 useEffect + Dead Code Cleanup](/feat/infra/254-useeffect-deadcode-cleanup/prd.md)
 
