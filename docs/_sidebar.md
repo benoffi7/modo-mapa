@@ -334,6 +334,8 @@
     - [Plan](/feat/security/usertags-rate-limit-trigger/plan.md)
   - [#241 affectedKeys() Update Rules](/feat/security/241-affectedkeys-update-rules/)
     - [PRD](/feat/security/241-affectedkeys-update-rules/prd.md)
+    - [Specs](/feat/security/241-affectedkeys-update-rules/specs.md)
+    - [Plan](/feat/security/241-affectedkeys-update-rules/plan.md)
   - [#242 Rate Limits + Field Validation](/feat/security/242-rate-limits-field-validation/)
     - [PRD](/feat/security/242-rate-limits-field-validation/prd.md)
 
