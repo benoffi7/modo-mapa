@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-30 (post merge: #229/#230/#231/#232 closed, v2.31.0)*
+*Actualizado: 2026-03-30 (post merge: #235-#239 closed, v2.32.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -13,16 +13,9 @@
 
 ### Tech debt
 
-| Issue | Titulo | PRD | Estado |
-|-------|--------|-----|--------|
-| [#236](https://github.com/benoffi7/modo-mapa/issues/236) | Tech debt: security + architecture findings v2.31.0 | [PRD](../feat/infra/tech-debt-v2-31-0/prd.md) | PRD/specs/plan listos |
-| [#168](https://github.com/benoffi7/modo-mapa/issues/168) | Vite 8 y ESLint 10 bloqueados por peer deps | — | Bloqueado por dependencias upstream |
-
-### UX
-
-| Issue | Titulo | PRD | Estado |
-|-------|--------|-----|--------|
-| [#235](https://github.com/benoffi7/modo-mapa/issues/235) | Agregar color a iconos de Acciones Rapidas en Home | [PRD](../feat/ux/color-iconos-acciones-rapidas/prd.md) | PRD/specs/plan listos |
+| Issue | Titulo | Estado |
+|-------|--------|--------|
+| [#168](https://github.com/benoffi7/modo-mapa/issues/168) | Vite 8 y ESLint 10 bloqueados por peer deps | Bloqueado por dependencias upstream |
 
 ### Features futuras
 
@@ -39,9 +32,10 @@
 
 | Item | Estado |
 |------|--------|
-| Firestore rules field whitelist: auditar todas las colecciones (no solo `sharedLists`) | Pendiente — agregar a merge Phase 1i |
-| Mutable prop audit: componentes que reciben datos como props y los modifican | Pendiente — agregar a specs template |
-| Copy audit: tildes y signos de apertura en todos los archivos `.ts`/`.tsx` | Parcial — corregidos los dialogos de confirmacion y listas |
+| Firestore rules field whitelist: auditar todas las colecciones | **Completado** v2.32.0 (#237) — todas limpias |
+| Mutable prop audit: componentes que modifican props | **Completado** v2.32.0 (#238) — sin violaciones |
+| Copy audit: tildes y signos de apertura | **Completado** v2.32.0 (#239) — 54 archivos corregidos |
+| Rate limit docs falta campo `userId` para cleanup en account deletion | Pendiente — detectado en audit v2.32.0 |
 
 ---
 
@@ -49,6 +43,6 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 7 (#168, #200, #201, #203, #205, #235, #236) |
-| Issues cerrados | #128–#199, #207–#232 (59) |
-| Versiones publicadas | v2.10.0 – v2.31.0 |
+| Issues abiertos | 5 (#168, #200, #201, #203, #205) |
+| Issues cerrados | #128–#199, #207–#239 (64) |
+| Versiones publicadas | v2.10.0 – v2.32.0 |
