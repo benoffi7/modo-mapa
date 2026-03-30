@@ -4,6 +4,7 @@ import { Box, Divider } from '@mui/material';
 import BusinessHeader from './BusinessHeader';
 import BusinessRating from './BusinessRating';
 import DirectionsButton from './DirectionsButton';
+import { useFilters } from '../../context/FiltersContext';
 import type { Business, Rating } from '../../types';
 import type { UseBusinessRatingReturn } from '../../hooks/useBusinessRating';
 
@@ -24,6 +25,8 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
   { business, isTrending, ratings, isLoading, ratingData, favoriteButton, shareButton, recommendButton, addToListButton, checkInButton },
   ref,
 ) {
+  const { userLocation } = useFilters();
+
   return (
     <Box
       ref={ref}
@@ -53,7 +56,7 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
         '& > *': { flex: { xs: 1, sm: 'none' }, maxWidth: { sm: '50%' } },
       }}>
         {checkInButton}
-        <DirectionsButton business={business} />
+        <DirectionsButton business={business} userLocation={userLocation} />
       </Box>
       <BusinessRating
         ratingData={ratingData}

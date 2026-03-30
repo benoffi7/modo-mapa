@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider,
   CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
@@ -14,9 +14,10 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import InsertEmoticonOutlinedIcon from '@mui/icons-material/InsertEmoticonOutlined';
 import { Badge } from '@mui/material';
 import ColorPicker, { sanitizeListColor } from './ColorPicker';
-import IconPicker from './IconPicker';
-import EditorsDialog from './EditorsDialog';
-import InviteEditorDialog from './InviteEditorDialog';
+
+const IconPicker = lazy(() => import('./IconPicker'));
+const EditorsDialog = lazy(() => import('./EditorsDialog'));
+const InviteEditorDialog = lazy(() => import('./InviteEditorDialog'));
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { fetchListItems, fetchSharedList, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
@@ -119,14 +120,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     toast.success(MSG_LIST.itemRemoved);
   };
 
-  const handleEditorsChanged = async () => {
+  const handleEditorsChanged = useCallback(async () => {
     try {
       const result = await fetchSharedList(list.id);
       if (result) setEditorIds(result.editorIds ?? []);
     } catch (err) {
       logger.warn('Failed to refetch editorIds', err);
     }
-  };
+  }, [list.id]);
 
   const handleIconChange = async (icon: ListIconOption) => {
     const prev = currentIcon;
@@ -234,12 +235,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         )}
       </Box>
 
-      <IconPicker
-        open={iconPickerOpen}
-        onClose={() => setIconPickerOpen(false)}
-        onSelect={handleIconChange}
-        selectedId={currentIcon}
-      />
+      <Suspense fallback={null}>
+        <IconPicker
+          open={iconPickerOpen}
+          onClose={() => setIconPickerOpen(false)}
+          onSelect={handleIconChange}
+          selectedId={currentIcon}
+        />
+      </Suspense>
 
       <ColorPicker
         open={colorPickerOpen}
@@ -248,19 +251,23 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         selectedHex={currentColor}
       />
 
-      <EditorsDialog
-        open={editorsOpen}
-        onClose={() => setEditorsOpen(false)}
-        listId={list.id}
-        editorIds={editorIds}
-        onEditorRemoved={handleEditorsChanged}
-      />
+      <Suspense fallback={null}>
+        <EditorsDialog
+          open={editorsOpen}
+          onClose={() => setEditorsOpen(false)}
+          listId={list.id}
+          editorIds={editorIds}
+          onEditorRemoved={handleEditorsChanged}
+        />
+      </Suspense>
 
-      <InviteEditorDialog
-        listId={inviteOpen ? list.id : null}
-        onClose={() => setInviteOpen(false)}
-        onInvited={handleEditorsChanged}
-      />
+      <Suspense fallback={null}>
+        <InviteEditorDialog
+          listId={inviteOpen ? list.id : null}
+          onClose={() => setInviteOpen(false)}
+          onInvited={handleEditorsChanged}
+        />
+      </Suspense>
 
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
         <DialogTitle>&iquest;Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
