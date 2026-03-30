@@ -15,6 +15,7 @@
   - [Issues](/reference/issues.md)
   - [Workflow](/reference/workflow.md)
   - [Staging](/reference/staging.md)
+  - [Design System](/reference/design-system.md)
   - [File Size Directive](/reference/file-size-directive.md)
 
 - **[Procedures](/procedures/)**
@@ -110,6 +111,8 @@
     - [Plan](/feat/infra/descomponer-comments-list/plan.md)
   - [Carga Incremental BusinessSheet](/feat/infra/carga-incremental-business-sheet/)
     - [PRD](/feat/infra/carga-incremental-business-sheet/prd.md)
+    - [Specs](/feat/infra/carga-incremental-business-sheet/specs.md)
+    - [Plan](/feat/infra/carga-incremental-business-sheet/plan.md)
   - [Extract Business Data Service](/feat/infra/extract-business-data-service/)
     - [PRD](/feat/infra/extract-business-data-service/prd.md)
     - [Specs](/feat/infra/extract-business-data-service/specs.md)
@@ -450,7 +453,6 @@
     - [PRD](/feat/ux/swipe-cerrar-menu/prd.md)
     - [Specs](/feat/ux/swipe-cerrar-menu/specs.md)
     - [Plan](/feat/ux/swipe-cerrar-menu/plan.md)
-  - [Color Iconos Acciones Rapidas (#235)](/prd/235-color-iconos-acciones-rapidas.md)
 
 - **[Fixes](/fix/)**
   - [Audit Residuals](/fix/audit-residuals/)
@@ -483,10 +485,14 @@
   - [#158 Redesign Tab Navigation](/prd/158-redesign-tab-navigation.md)
     - [Specs](/prd/158-specs.md)
     - [Plan](/prd/158-plan.md)
+  - [#158b Social Content Redesign](/prd/158b-social-content-redesign.md)
+  - [#158c Lists Content Redesign](/prd/158c-lists-content-redesign.md)
+  - [#158d Shared Lists Grid Refactor](/prd/158d-shared-lists-grid-refactor.md)
   - [#167 Office Marker](/prd/167-office-marker.md)
   - [#191 Force App Update](/prd/191-force-app-update.md)
     - [Specs](/prd/191-specs.md)
     - [Plan](/prd/191-plan.md)
+  - [#235 Color Iconos Acciones Rapidas](/prd/235-color-iconos-acciones-rapidas.md)
 
 - **[Tech Debt: New Home](/prd/tech-debt-new-home/)**
   - [1 - Admin Service Layer](/prd/tech-debt-new-home/1-admin-service-layer.md)
