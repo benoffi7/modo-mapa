@@ -368,7 +368,7 @@ interface Achievement {
 
 ---
 
-## Converters (`src/config/converters.ts`)
+## Converters (`src/config/converters/`)
 
 Todos los tipos tienen un `FirestoreDataConverter<T>` centralizado. Las lecturas usan `withConverter<T>()` para tipado seguro. Las escrituras **no** usan converter (necesitan `serverTimestamp()` que no es compatible con los tipos del converter).
 

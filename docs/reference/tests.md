@@ -97,7 +97,12 @@
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `converters.ts` | `converters.test.ts` | 42 | 100% |
+| `converters/userConverters.ts` | `converters/userConverters.test.ts` | 5 | 100% |
+| `converters/businessConverters.ts` | `converters/businessConverters.test.ts` | 23 | 100% |
+| `converters/socialConverters.ts` | `converters/socialConverters.test.ts` | 12 | 100% |
+| `converters/listConverters.ts` | `converters/listConverters.test.ts` | 6 | 100% |
+| `converters/rankingConverters.ts` | `converters/rankingConverters.test.ts` | 10 | 100% |
+| `converters/feedbackConverters.ts` | `converters/feedbackConverters.test.ts` | 6 | 100% |
 
 ### React App — Servicios (`src/services/`)
 

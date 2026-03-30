@@ -10,7 +10,14 @@ src/
 ├── config/
 │   ├── firebase.ts                  # Init Firebase + emuladores en DEV + App Check (prod) + persistent cache (prod)
 │   ├── collections.ts               # Nombres de colecciones Firestore centralizados (incl. COMMENT_LIKES, PERF_METRICS)
-│   ├── converters.ts                # FirestoreDataConverter<T> tipados por coleccion (incl. feedback, commentLike)
+│   ├── converters/                  # FirestoreDataConverter<T> tipados por dominio (barrel re-export en index.ts)
+│   │   ├── index.ts               # Barrel re-export de los 18 converters
+│   │   ├── userConverters.ts      # userProfileConverter, userSettingsConverter
+│   │   ├── businessConverters.ts  # ratingConverter, commentConverter, commentLikeConverter, userTagConverter, customTagConverter, favoriteConverter, menuPhotoConverter, priceLevelConverter
+│   │   ├── socialConverters.ts    # followConverter, activityFeedItemConverter, checkinConverter, recommendationConverter
+│   │   ├── listConverters.ts      # sharedListConverter, listItemConverter
+│   │   ├── rankingConverters.ts   # userRankingConverter, notificationConverter, trendingDataConverter
+│   │   └── feedbackConverters.ts  # feedbackConverter
 │   ├── adminConverters.ts           # Converters para AdminCounters (incl. commentLikes), DailyMetrics, AbuseLog
 │   └── metricsConverter.ts          # Converter para PublicMetrics (solo campos publicos)
 ├── constants/
