@@ -7,7 +7,8 @@ import {
   getUnreadCount,
 } from '../services/notifications';
 import { POLL_INTERVAL_MS } from '../constants/timing';
-import type { AppNotification } from '../types';
+import type { AppNotification, DigestFrequency } from '../types';
+import { useUserSettings } from '../hooks/useUserSettings';
 import { logger } from '../utils/logger';
 
 const EMPTY_NOTIFICATIONS: AppNotification[] = [];
@@ -26,6 +27,8 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
+  const { settings } = useUserSettings();
+  const digestFrequency: DigestFrequency = settings.notificationDigest ?? 'realtime';
   const [notifications, setNotifications] = useState<AppNotification[]>(EMPTY_NOTIFICATIONS);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -65,17 +68,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     loadNotifications(uid).finally(() => setLoading(false));
 
-    const currentUid = uid;
-    intervalRef.current = setInterval(() => {
-      if (document.visibilityState === 'visible' && navigator.onLine) {
-        loadCountOnly(currentUid);
-      }
-    }, POLL_INTERVAL_MS);
+    // Only poll when digest frequency is 'realtime'; daily/weekly load once on mount
+    if (digestFrequency === 'realtime') {
+      const currentUid = uid;
+      intervalRef.current = setInterval(() => {
+        if (document.visibilityState === 'visible' && navigator.onLine) {
+          loadCountOnly(currentUid);
+        }
+      }, POLL_INTERVAL_MS);
+    }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [uid, loadNotifications, loadCountOnly]);
+  }, [uid, digestFrequency, loadNotifications, loadCountOnly]);
 
   const markRead = useCallback(async (notificationId: string) => {
     await markNotificationRead(notificationId);
