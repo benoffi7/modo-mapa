@@ -46,10 +46,12 @@ export default function MyFeedbackList() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     fetchUserFeedback(user.uid)
-      .then(setItems)
+      .then((data) => { if (!cancelled) setItems(data); })
       .catch((err) => logger.error('[MyFeedbackList] fetchUserFeedback failed:', err))
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [user]);
 
   const handleToggle = async (fb: Feedback) => {

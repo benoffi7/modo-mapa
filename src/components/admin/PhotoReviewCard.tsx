@@ -27,9 +27,11 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
   useEffect(() => {
     const path = photo.thumbnailPath || photo.storagePath;
     if (!path) return;
+    let cancelled = false;
     getDownloadURL(ref(storage, path))
-      .then(setImageUrl)
-      .catch((err) => { logger.error('[PhotoReviewCard] getDownloadURL failed:', err); setImageUrl(null); });
+      .then((url) => { if (!cancelled) setImageUrl(url); })
+      .catch((err) => { logger.error('[PhotoReviewCard] getDownloadURL failed:', err); if (!cancelled) setImageUrl(null); });
+    return () => { cancelled = true; };
   }, [photo]);
 
   const handleApprove = async () => {
