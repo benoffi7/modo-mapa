@@ -1,0 +1,114 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const {
+  handlers,
+  mockGetFirestore,
+  mockIncrementCounter,
+  mockTrackWrite,
+  mockLogAbuse,
+  mockCountGet,
+} = vi.hoisted(() => {
+  const mockCountGet = vi.fn().mockResolvedValue({ data: () => ({ count: 5 }) });
+  const mockCount = vi.fn().mockReturnValue({ get: mockCountGet });
+  const mockWhere2 = vi.fn().mockReturnValue({ count: mockCount });
+  const mockWhere1 = vi.fn().mockReturnValue({ where: mockWhere2 });
+  const mockCollection = vi.fn().mockReturnValue({ where: mockWhere1 });
+  const mockDb = { collection: mockCollection };
+  const mockGetFirestore = vi.fn().mockReturnValue(mockDb);
+
+  return {
+    handlers: {} as Record<string, (event: unknown) => Promise<void>>,
+    mockGetFirestore,
+    mockIncrementCounter: vi.fn().mockResolvedValue(undefined),
+    mockTrackWrite: vi.fn().mockResolvedValue(undefined),
+    mockLogAbuse: vi.fn().mockResolvedValue(undefined),
+    mockCountGet,
+    mockCollection,
+    mockWhere1,
+    mockWhere2,
+    mockCount,
+    mockDb,
+  };
+});
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: mockGetFirestore,
+}));
+
+vi.mock('firebase-functions/v2/firestore', () => ({
+  onDocumentCreated: (path: string, handler: (event: unknown) => Promise<void>) => {
+    handlers[`created:${path}`] = handler;
+    return handler;
+  },
+}));
+
+vi.mock('../../utils/counters', () => ({
+  incrementCounter: (...args: unknown[]) => mockIncrementCounter(...args),
+  trackWrite: (...args: unknown[]) => mockTrackWrite(...args),
+}));
+
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: (...args: unknown[]) => mockLogAbuse(...args),
+}));
+
+import '../../triggers/listItems';
+
+describe('onListItemCreated', () => {
+  const onCreated = () => handlers['created:listItems/{itemId}'];
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('skips if no snapshot data', async () => {
+    await onCreated()({ data: null, params: { itemId: 'i1' } });
+    expect(mockIncrementCounter).not.toHaveBeenCalled();
+  });
+
+  it('increments counters without rate limit check when addedBy is missing', async () => {
+    await onCreated()({
+      params: { itemId: 'i1' },
+      data: {
+        data: () => ({ listId: 'list1', businessId: 'biz1' }),
+      },
+    });
+
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'listItems', 1);
+    expect(mockTrackWrite).toHaveBeenCalledWith(expect.anything(), 'listItems');
+    expect(mockCountGet).not.toHaveBeenCalled();
+    expect(mockLogAbuse).not.toHaveBeenCalled();
+  });
+
+  it('increments counters and does not log abuse when rate limit not exceeded', async () => {
+    mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 50 }) });
+
+    await onCreated()({
+      params: { itemId: 'i1' },
+      data: {
+        data: () => ({ listId: 'list1', businessId: 'biz1', addedBy: 'user1' }),
+      },
+    });
+
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'listItems', 1);
+    expect(mockTrackWrite).toHaveBeenCalledWith(expect.anything(), 'listItems');
+    expect(mockLogAbuse).not.toHaveBeenCalled();
+  });
+
+  it('increments counters and logs abuse when rate limit exceeded', async () => {
+    mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 101 }) });
+
+    await onCreated()({
+      params: { itemId: 'i1' },
+      data: {
+        data: () => ({ listId: 'list1', businessId: 'biz1', addedBy: 'user1' }),
+      },
+    });
+
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'listItems', 1);
+    expect(mockTrackWrite).toHaveBeenCalledWith(expect.anything(), 'listItems');
+    expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), {
+      userId: 'user1',
+      type: 'rate_limit',
+      collection: 'listItems',
+      detail: 'Exceeded 100 listItems/day',
+    });
+  });
+});
