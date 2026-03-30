@@ -156,6 +156,7 @@
 | `EmailPasswordDialog.tsx` | `EmailPasswordDialog.test.tsx` | 17 | 100% |
 | `ErrorBoundary.tsx` | `ErrorBoundary.test.tsx` | 3 | 100% |
 | `OfflineIndicator.tsx` | `OfflineIndicator.test.tsx` | 5 | 100% |
+| `EditorsDialog.tsx` | `EditorsDialog.test.tsx` | 2 | 100% (UID leak + secondary text) |
 | otros (87 componentes) | — | — | 🔻 Mayoria visual |
 
 ### Cloud Functions — Utils (`functions/src/utils/`)
@@ -166,6 +167,7 @@
 | `moderator.ts` | `moderator.test.ts` | 6 | 95% stmts, 63% branches |
 | `notifications.ts` | `notifications.test.ts` | 9 | 100% stmts, 86% branches |
 | `rateLimiter.ts` | `rateLimiter.test.ts` | 4 | 100% stmts, 83% branches |
+| `callableRateLimit.ts` | `callableRateLimit.test.ts` | 4 | 100% |
 | `aggregates.ts` | `aggregates.test.ts` | 6 | 100% |
 | `abuseLogger.ts` | `abuseLogger.test.ts` | 5 | 100% stmts, 50% branches |
 | `perfTracker.ts` | `perfTracker.test.ts` | 15 | 100% |
@@ -190,6 +192,14 @@
 | `menuPhotos.ts` | — | — | ⏳ Cloud Storage I/O |
 | `users.ts` | — | — | 🔻 Simple counter |
 | `priceLevels.ts` | — | — | 🔻 Simple counter |
+
+### Cloud Functions — Callables (`functions/src/callable/`)
+
+| Archivo | Test | Cases | Cobertura |
+|---------|------|-------|-----------|
+| `inviteListEditor.ts` | `inviteListEditor.test.ts` | 11 | 100% |
+| `removeListEditor.ts` | `removeListEditor.test.ts` | 6 | 100% |
+| `deleteUserAccount.ts` | `deleteUserAccount.test.ts` | — | ⏳ |
 
 ### Cloud Functions — Admin (`functions/src/admin/`)
 

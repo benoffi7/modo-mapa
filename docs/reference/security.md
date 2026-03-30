@@ -175,6 +175,24 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `feedback` | 5/día por usuario |
 | `notifications` | 50/día por destinatario (admin types exempt) |
 
+### Rate limiting server-side (callables)
+
+| Callable | Límite | Clave `_rateLimits` |
+|----------|--------|---------------------|
+| `inviteListEditor` | 10/día por usuario | `editors_invite_{userId}` |
+| `removeListEditor` | 10/día por usuario | `editors_remove_{userId}` |
+| `backups` (admin) | 5/min por usuario | `backup_{userId}` |
+| `deleteUserAccount` | 1/min por usuario | `delete_{userId}` |
+| `cleanAnonymousData` | 1/min por usuario | `clean_{userId}` |
+| `writePerfMetrics` | 5/día por usuario | `perf_{userId}` |
+
+Los callables de editores usan `checkCallableRateLimit()` de `functions/src/utils/callableRateLimit.ts` con transacción atómica y ventana diaria.
+
+### UID leak prevention
+
+- `inviteListEditor` response no incluye `targetUid` (solo `{ success: true }`)
+- `EditorsDialog` muestra "Editor" como secondary text en vez de UID parcial
+
 ### IP-based rate limiting
 
 | Acción | Límite |
