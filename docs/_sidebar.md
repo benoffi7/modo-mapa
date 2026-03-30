@@ -144,6 +144,8 @@
     - [Specs](/feat/security/242-rate-limits-field-validation/specs.md)
     - [Plan](/feat/security/242-rate-limits-field-validation/plan.md)
   - [#250 menuPhotos storagePath Validation](/feat/security/250-menuphotos-storagepath-validation/prd.md)
+    - [Specs](/feat/security/250-menuphotos-storagepath-validation/specs.md)
+    - [Plan](/feat/security/250-menuphotos-storagepath-validation/plan.md)
   - [#251 userSettings Rules Fix](/feat/security/251-usersettings-rules-fix/prd.md)
 
 - **Social**
