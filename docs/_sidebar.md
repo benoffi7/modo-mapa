@@ -233,6 +233,9 @@
     - [Specs](/feat/infra/tech-debt-reply-pagination-boilerplate/specs.md)
     - [Plan](/feat/infra/tech-debt-reply-pagination-boilerplate/plan.md)
   - [#236 Tech Debt: Security + Architecture v2.31.0](/prd/236-tech-debt-v2-31-0/prd.md)
+    - [PRD](/prd/236-tech-debt-v2-31-0/prd.md)
+    - [Specs](/prd/236-tech-debt-v2-31-0/specs.md)
+    - [Plan](/prd/236-tech-debt-v2-31-0/plan.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
@@ -496,6 +499,9 @@
     - [Specs](/prd/235-color-iconos-acciones-rapidas/specs.md)
     - [Plan](/prd/235-color-iconos-acciones-rapidas/plan.md)
   - [#236 Tech Debt: Security + Architecture v2.31.0](/prd/236-tech-debt-v2-31-0/prd.md)
+    - [PRD](/prd/236-tech-debt-v2-31-0/prd.md)
+    - [Specs](/prd/236-tech-debt-v2-31-0/specs.md)
+    - [Plan](/prd/236-tech-debt-v2-31-0/plan.md)
 
 - **[Tech Debt: New Home](/prd/tech-debt-new-home/)**
   - [1 - Admin Service Layer](/prd/tech-debt-new-home/1-admin-service-layer.md)

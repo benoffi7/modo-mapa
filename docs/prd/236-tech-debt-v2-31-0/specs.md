@@ -1,6 +1,6 @@
 # Specs: Tech debt — security + architecture findings v2.31.0
 
-**PRD:** [236-tech-debt-v2-31-0.md](236-tech-debt-v2-31-0.md)
+**PRD:** [prd.md](prd.md)
 **Fecha:** 2026-03-29
 
 ---
