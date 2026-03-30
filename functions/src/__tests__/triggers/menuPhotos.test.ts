@@ -7,6 +7,8 @@ const {
   mockTrackWrite,
   mockGetStorage,
   mockSharp,
+  mockCheckRateLimit,
+  mockLogAbuse,
 } = vi.hoisted(() => {
   const mockSave = vi.fn().mockResolvedValue(undefined);
   const mockDownload = vi.fn().mockResolvedValue([Buffer.from('fake-image')]);
@@ -29,6 +31,8 @@ const {
     mockTrackWrite: vi.fn().mockResolvedValue(undefined),
     mockGetStorage,
     mockSharp,
+    mockCheckRateLimit: vi.fn().mockResolvedValue(false),
+    mockLogAbuse: vi.fn().mockResolvedValue(undefined),
     mockFile,
     mockSave,
     mockDownload,
@@ -59,6 +63,14 @@ vi.mock('firebase-functions/v2/firestore', () => ({
 vi.mock('../../utils/counters', () => ({
   incrementCounter: (...args: unknown[]) => mockIncrementCounter(...args),
   trackWrite: (...args: unknown[]) => mockTrackWrite(...args),
+}));
+
+vi.mock('../../utils/rateLimiter', () => ({
+  checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+}));
+
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: (...args: unknown[]) => mockLogAbuse(...args),
 }));
 
 function createMockDb() {
@@ -147,5 +159,48 @@ describe('onMenuPhotoCreated', () => {
     expect(mockUpdate).toHaveBeenCalledWith({
       thumbnailPath: 'menus/u2/bizABC/myPhotoId_thumb.jpg',
     });
+  });
+
+  it('skips thumbnail and counters when rate limit exceeded', async () => {
+    createMockDb();
+    mockCheckRateLimit.mockResolvedValueOnce(true);
+    const mockUpdate = vi.fn().mockResolvedValue(undefined);
+
+    await onCreated()({
+      params: { photoId: 'photo123' },
+      data: {
+        data: () => ({ storagePath: 'menus/u1/biz1/photo123.jpg', businessId: 'biz1', userId: 'u1' }),
+        ref: { update: mockUpdate },
+      },
+    });
+
+    expect(mockSharp).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockIncrementCounter).not.toHaveBeenCalled();
+    expect(mockTrackWrite).not.toHaveBeenCalled();
+    expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), {
+      userId: 'u1',
+      type: 'rate_limit',
+      collection: 'menuPhotos',
+      detail: 'Exceeded 10 menuPhotos/day',
+    });
+  });
+
+  it('processes normally when rate limit not exceeded', async () => {
+    createMockDb();
+    mockCheckRateLimit.mockResolvedValueOnce(false);
+    const mockUpdate = vi.fn().mockResolvedValue(undefined);
+
+    await onCreated()({
+      params: { photoId: 'photo123' },
+      data: {
+        data: () => ({ storagePath: 'menus/u1/biz1/photo123.jpg', businessId: 'biz1', userId: 'u1' }),
+        ref: { update: mockUpdate },
+      },
+    });
+
+    expect(mockSharp).toHaveBeenCalled();
+    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'menuPhotos', 1);
+    expect(mockLogAbuse).not.toHaveBeenCalled();
   });
 });

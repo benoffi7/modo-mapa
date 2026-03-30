@@ -3,6 +3,8 @@ import { getStorage } from 'firebase-admin/storage';
 import { getDb } from '../helpers/env';
 import sharp from 'sharp';
 import { incrementCounter, trackWrite } from '../utils/counters';
+import { checkRateLimit } from '../utils/rateLimiter';
+import { logAbuse } from '../utils/abuseLogger';
 
 export const onMenuPhotoCreated = onDocumentCreated(
   'menuPhotos/{photoId}',
@@ -12,6 +14,25 @@ export const onMenuPhotoCreated = onDocumentCreated(
     const data = snap.data();
     const photoId = event.params.photoId;
     const db = getDb();
+    const userId = data.userId as string;
+
+    // Rate limit: 10 menuPhotos per day per user
+    // Don't delete doc (allow delete: if false in rules), just skip processing
+    const exceeded = await checkRateLimit(
+      db,
+      { collection: 'menuPhotos', limit: 10, windowType: 'daily' },
+      userId,
+    );
+
+    if (exceeded) {
+      await logAbuse(db, {
+        userId,
+        type: 'rate_limit',
+        collection: 'menuPhotos',
+        detail: 'Exceeded 10 menuPhotos/day',
+      });
+      return;
+    }
 
     // Generate thumbnail
     try {

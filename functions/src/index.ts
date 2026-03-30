@@ -13,6 +13,7 @@ export { onRatingWritten } from './triggers/ratings';
 export { onFavoriteCreated, onFavoriteDeleted } from './triggers/favorites';
 export { onUserCreated } from './triggers/users';
 export { onMenuPhotoCreated } from './triggers/menuPhotos';
+export { onListItemCreated } from './triggers/listItems';
 export { onPriceLevelCreated, onPriceLevelUpdated } from './triggers/priceLevels';
 export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
 export { onFollowCreated, onFollowDeleted } from './triggers/follows';

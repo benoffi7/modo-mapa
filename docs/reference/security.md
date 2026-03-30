@@ -92,7 +92,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
 | `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
-| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
+| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only | Rate limit 10/día |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner, `affectedKeys().hasOnly(['level','updatedAt'])` | owner |
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
@@ -172,6 +172,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `ratings` | 30/día por usuario |
 | `userTags` | 100/día por usuario |
 | `feedback` | 5/día por usuario |
+| `menuPhotos` | 10/día por usuario |
+| `listItems` | 100/día por usuario (campo `addedBy`) |
 | `notifications` | 50/día por destinatario (admin types exempt) |
 
 ### Rate limiting server-side (callables)
