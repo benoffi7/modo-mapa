@@ -112,14 +112,14 @@
 | `rankings.ts` | `rankings.test.ts` | 26 | 98% stmts, 89% branches |
 | `queryCache.ts` | `queryCache.test.ts` | 7 | 100% |
 | `sharedLists.ts` | `sharedLists.test.ts` | — | Parcial (createList, updateList con icon) |
-| `userProfile.ts` | — | — | ⏳ Complex aggregation, 7 parallel queries |
+| `userProfile.ts` | `__tests__/userProfile.test.ts` | 8 | Parcial (fetchUserProfileDoc, updateUserDisplayName, updateUserAvatar) |
 | `userSettings.ts` | — | — | ⏳ Optimistic update rollback |
 | `suggestions.ts` | — | — | 🔻 Baja prioridad (simple aggregation) |
 | `feedback.ts` | — | — | ⏳ |
 | `notifications.ts` | — | — | ⏳ |
 | `admin.ts` | — | — | ⏳ |
 | `adminFeedback.ts` | — | — | ⏳ |
-| `menuPhotos.ts` | — | — | ⏳ |
+| `menuPhotos.ts` | `__tests__/menuPhotos.test.ts` | 4 | Parcial (reportMenuPhoto, getMenuPhotoUrl) |
 
 ### React App — Hooks (`src/hooks/`)
 

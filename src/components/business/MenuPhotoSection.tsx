@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Chip, IconButton } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { getUserPendingPhotos } from '../../services/menuPhotos';
+import { getUserPendingPhotos, getMenuPhotoUrl } from '../../services/menuPhotos';
 import { formatDateMedium } from '../../utils/formatDate';
 import MenuPhotoUpload from './MenuPhotoUpload';
 import MenuPhotoViewer from './MenuPhotoViewer';
@@ -34,7 +32,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     }
     const path = menuPhoto.thumbnailPath || menuPhoto.storagePath;
     if (!path) return;
-    getDownloadURL(ref(storage, path))
+    getMenuPhotoUrl(path)
       .then(setPhotoUrl)
       .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
   }, [menuPhoto]);

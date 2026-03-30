@@ -8,10 +8,8 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
-import { userProfileConverter } from '../config/converters';
+import { auth } from '../config/firebase';
+import { fetchUserProfileDoc, updateUserDisplayName, updateUserAvatar } from '../services/userProfile';
 import { setUserProperty, trackEvent } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import { logger } from '../utils/logger';
@@ -95,11 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthMethod(method);
         setEmailVerified(firebaseUser.emailVerified);
         setUserProperty('auth_type', method);
-        const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setDisplayNameState(data.displayName || null);
-          setAvatarIdState(data.avatarId ?? null);
+        const profile = await fetchUserProfileDoc(firebaseUser.uid);
+        if (profile) {
+          setDisplayNameState(profile.displayName || null);
+          setAvatarIdState(profile.avatarId ?? null);
         }
       } else {
         const isAdminRoute = pathnameRef.current.startsWith('/admin');
@@ -122,17 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const trimmed = name.trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
     if (!trimmed) return;
-    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      await updateDoc(userRef, { displayName: trimmed, displayNameLower: trimmed.toLowerCase() });
-    } else {
-      await setDoc(userRef, {
-        displayName: trimmed,
-        displayNameLower: trimmed.toLowerCase(),
-        createdAt: serverTimestamp(),
-      });
-    }
+    await updateUserDisplayName(user.uid, trimmed);
     setDisplayNameState(trimmed);
   }, [user]);
 
@@ -142,8 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const prev = avatarId;
     setAvatarIdState(id);
     try {
-      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      await updateDoc(userRef, { avatarId: id });
+      await updateUserAvatar(user.uid, id);
     } catch (error) {
       setAvatarIdState(prev);
       if (import.meta.env.DEV) logger.error('Error setting avatar:', error);
