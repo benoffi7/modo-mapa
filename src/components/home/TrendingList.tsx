@@ -34,7 +34,7 @@ export default function TrendingList({ onSelectBusiness }: Props) {
     <Box role="alert" sx={{ p: 3, textAlign: 'center' }}>
       <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
       <Typography variant="body2" color="text.secondary">
-        Error cargando tendencias.
+        No se pudieron cargar las tendencias.
       </Typography>
     </Box>
   );

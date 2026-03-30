@@ -103,7 +103,7 @@ export function useCheckIn(
       return 'success';
     } catch (e) {
       setStatus('error');
-      setError(e instanceof Error ? e.message : 'Error al registrar visita');
+      setError(e instanceof Error ? e.message : 'No se pudo registrar la visita');
       return 'error';
     }
   }, [user, businessId, businessName, userLocation, businessLocation, hasCheckedInRecently, isNearby, isOffline, toast]);
@@ -130,7 +130,7 @@ export function useCheckIn(
       return 'success';
     } catch (e) {
       setStatus('error');
-      setError(e instanceof Error ? e.message : 'Error al desmarcar visita');
+      setError(e instanceof Error ? e.message : 'No se pudo desmarcar la visita');
       return 'error';
     }
   }, [user, recentCheckInId, businessId, isOffline, toast]);

@@ -13,7 +13,7 @@ export const MSG_LIST = {
   itemRemoved: 'Comercio removido',
   copySuccess: 'Lista copiada a Mis Listas',
   copyError: 'No se pudo copiar',
-  addFavoritesError: 'No se pudo agregar favoritos',
+  addFavoritesError: 'No se pudieron agregar los favoritos',
   favoriteUpdateError: 'No se pudo actualizar el favorito',
   emptyLists: 'No tenés listas todavía',
   emptyCollaborative: 'No participás en listas colaborativas todavía',
@@ -22,7 +22,7 @@ export const MSG_LIST = {
   editorRemoved: 'Editor removido',
   editorInviteError: 'No se pudo invitar',
   editorRemoveError: 'No se pudo remover',
-  iconError: 'No se pudo cambiar el icono',
+  iconError: 'No se pudo cambiar el ícono',
   favoritesAdded: (count: number) =>
     count > 0
       ? `${count} favorito${count !== 1 ? 's' : ''} agregado${count !== 1 ? 's' : ''}`

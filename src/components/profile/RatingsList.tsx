@@ -78,7 +78,7 @@ export default function RatingsList({ onSelectBusiness }: Props) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-          Error al cargar calificaciones
+          No se pudieron cargar las calificaciones
         </Typography>
         <Button size="small" onClick={reload}>Reintentar</Button>
       </Box>

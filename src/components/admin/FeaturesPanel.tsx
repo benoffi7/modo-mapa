@@ -69,9 +69,9 @@ interface GA4FeatureDef {
 }
 
 const GA4_FEATURES: GA4FeatureDef[] = [
-  { key: 'surprise', name: 'Sorprendeme', icon: <CasinoIcon />, eventNames: ['surprise_me'], color: '#FF5722' },
+  { key: 'surprise', name: 'Sorprendeme!', icon: <CasinoIcon />, eventNames: ['surprise_me'], color: '#FF5722' },
   { key: 'lists', name: 'Listas', icon: <BookmarkBorderIcon />, eventNames: ['list_created', 'list_item_added'], color: '#795548' },
-  { key: 'search', name: 'Busqueda', icon: <SearchIcon />, eventNames: ['business_search'], color: '#607D8B' },
+  { key: 'search', name: 'Búsqueda', icon: <SearchIcon />, eventNames: ['business_search'], color: '#607D8B' },
   { key: 'share', name: 'Compartir', icon: <ShareIcon />, eventNames: ['business_share'], color: '#00BCD4' },
   { key: 'photos', name: 'Fotos', icon: <CameraAltOutlinedIcon />, eventNames: ['menu_photo_upload'], color: '#8BC34A' },
   { key: 'darkMode', name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, eventNames: ['dark_mode_toggle'], color: '#424242' },
@@ -142,7 +142,7 @@ export default function FeaturesPanel() {
     const ga4Data = ga4Result.status === 'fulfilled' ? ga4Result.value : null;
 
     if (!firestoreData) {
-      throw new Error('Error cargando datos de Firestore');
+      throw new Error('No se pudieron cargar los datos de Firestore');
     }
 
     return {
@@ -161,7 +161,7 @@ export default function FeaturesPanel() {
   }, [data]);
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando metricas de features.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las métricas de features.">
       {data?.counters && (
         <>
           {/* Summary */}
@@ -172,9 +172,9 @@ export default function FeaturesPanel() {
           </Box>
 
           {/* Feature cards */}
-          <Typography variant="h6" gutterBottom>Metricas por funcionalidad</Typography>
+          <Typography variant="h6" gutterBottom>Métricas por funcionalidad</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Toca una card para ver el grafico de los ultimos 30 dias.
+            Tocá una card para ver el gráfico de los últimos 30 días.
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {/* Firestore features */}
@@ -212,7 +212,7 @@ export default function FeaturesPanel() {
                     <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                       <Box sx={{ px: 2, pb: 2 }}>
                         <LineChartCard
-                          title={`${feature.name} — ultimos 30 dias`}
+                          title={`${feature.name} — últimos 30 días`}
                           data={trendData}
                           lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
                           xAxisKey="date"
@@ -228,7 +228,7 @@ export default function FeaturesPanel() {
             {data.ga4Error && (
               <Grid size={{ xs: 12 }}>
                 <Alert severity="warning">
-                  No se pudieron cargar las metricas de GA4. Los datos de colecciones estan disponibles.
+                  No se pudieron cargar las métricas de GA4. Los datos de colecciones están disponibles.
                 </Alert>
               </Grid>
             )}
@@ -257,13 +257,13 @@ export default function FeaturesPanel() {
                         {ga4Data.today}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        hoy (GA4) · {ga4Data.total.toLocaleString()} ultimos 30d
+                        hoy (GA4) · {ga4Data.total.toLocaleString()} últimos 30d
                       </Typography>
                     </CardContent>
                     <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                       <Box sx={{ px: 2, pb: 2 }}>
                         <LineChartCard
-                          title={`${feature.name} — ultimos 30 dias`}
+                          title={`${feature.name} — últimos 30 días`}
                           data={ga4Data.trend}
                           lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
                           xAxisKey="date"
@@ -277,7 +277,7 @@ export default function FeaturesPanel() {
           </Grid>
 
           {/* Adoption */}
-          <Typography variant="h6" gutterBottom>Adopcion</Typography>
+          <Typography variant="h6" gutterBottom>Adopción</Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <Card variant="outlined">

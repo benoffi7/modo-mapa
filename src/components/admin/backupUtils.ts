@@ -23,16 +23,16 @@ export function extractErrorMessage(err: unknown): string {
 
 export function mapErrorToUserMessage(message: string, context: string): string {
   if (message.includes('internal') || message.includes('INTERNAL')) {
-    return `${context}. Verifica que las Cloud Functions esten desplegadas y que el service account tenga permisos.`;
+    return `${context}. Verificá que las Cloud Functions estén desplegadas y que el service account tenga permisos.`;
   }
   if (message.includes('permission-denied')) {
-    return 'No tenes permisos para realizar esta accion.';
+    return 'No tenés permisos para realizar esta acción.';
   }
   if (message.includes('not-found')) {
     return 'Backup no encontrado.';
   }
   if (message.includes('resource-exhausted')) {
-    return 'Demasiadas solicitudes. Intenta de nuevo en un minuto.';
+    return 'Demasiadas solicitudes. Intentá de nuevo en un minuto.';
   }
   return `${context}: ${message}`;
 }

@@ -30,21 +30,21 @@ function BackupConfirmDialog({ confirmAction, onClose, onConfirm }: BackupConfir
         {confirmAction?.type === 'restore' ? (
           <>
             <DialogContentText id="confirm-dialog-description">
-              Esta accion sobrescribira los datos actuales con el backup del{' '}
+              Esta acción sobrescribirá los datos actuales con el backup del{' '}
               <strong>{confirmAction ? formatBackupDate(confirmAction.backup.createdAt) : ''}</strong>.
             </DialogContentText>
             <DialogContentText sx={{ mt: 1 }}>
-              Se creara un backup de seguridad automaticamente antes de restaurar.
+              Se creará un backup de seguridad automáticamente antes de restaurar.
             </DialogContentText>
           </>
         ) : (
           <>
             <DialogContentText id="confirm-dialog-description">
-              Se eliminara permanentemente el backup del{' '}
+              Se eliminará permanentemente el backup del{' '}
               <strong>{confirmAction ? formatBackupDate(confirmAction.backup.createdAt) : ''}</strong>.
             </DialogContentText>
             <DialogContentText sx={{ mt: 1, fontWeight: 'bold' }}>
-              Esta operacion NO es reversible.
+              Esta operación NO es reversible.
             </DialogContentText>
           </>
         )}

@@ -53,7 +53,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
     } catch (err) {
       if (import.meta.env.DEV) logger.error('MenuPhotoUpload error:', err);
       if (!abort.signal.aborted) {
-        setError(err instanceof Error ? err.message : 'Error al subir la foto');
+        setError(err instanceof Error ? err.message : 'No se pudo subir la foto');
       }
     } finally {
       setUploading(false);

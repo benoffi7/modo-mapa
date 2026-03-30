@@ -166,7 +166,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const handleExport = () => { const d = new Date(); exportToCsv(filtered, `alertas-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`); };
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando alertas.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las alertas.">
       {kpis && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
           <KpiCard label="Alertas hoy" value={kpis.alertsToday} secondary={trendIcon} />

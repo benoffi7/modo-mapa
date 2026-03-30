@@ -29,7 +29,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   feedback_response: 'Respuesta feedback',
   comment_reply: 'Respuesta comentario',
   new_follower: 'Nuevo seguidor',
-  recommendation: 'Recomendacion',
+  recommendation: 'Recomendación',
 };
 
 export const ABUSE_TYPE_LABELS: Record<AbuseLog['type'], string> = {
