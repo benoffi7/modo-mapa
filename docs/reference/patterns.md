@@ -147,6 +147,8 @@
 | **Logger centralizado** | `src/utils/logger.ts` — `logger.error()`, `.warn()`, `.log()`. En DEV: console. En PROD: errors a Sentry, warn/log silenciados. Nunca usar `console.*` directamente. |
 | **No silent .catch(() => {})** | ESLint rule `@typescript-eslint/no-empty-function: error` previene `.catch(() => {})`. Usar `.catch((e) => logger.warn(...))` como minimo. `pre-staging-check.sh` lo valida tambien en CI. PR reviewer lo flaggea como cambio solicitado. |
 | **Context-first data access** | Si un dato ya esta disponible en un Context (AuthContext, SelectionContext, etc.), consumirlo de ahi. NO hacer `getDoc` para leer datos que el context ya carga al montar. Ejemplo: `avatarId` debe venir de AuthContext, no de un getDoc extra en ProfileScreen. Architecture agent lo detecta. |
+| **Split State/Actions contexts** | AuthContext esta internamente splitado en `AuthStateContext` (7 campos de estado: user, displayName, avatarId, isLoading, authError, authMethod, emailVerified) y `AuthActionsContext` (10 funciones mutadoras). `useAuth()` es un wrapper backward-compatible que consume ambos. `useAuthState()` y `useAuthActions()` disponibles para consumidores que solo necesitan uno u otro (reduce re-renders). Migracion gradual — consumidores existentes pueden seguir usando `useAuth()`. |
+| **Dynamic import for heavy deps** | Dependencias pesadas que solo se usan en flujos especificos se cargan con `await import()` dentro del handler. Ejemplos: `browser-image-compression` en `MenuPhotoUpload.handleSubmit`, servicios de Firestore en `SyncEngine`, Sentry SDK. `import type` para tipos (se elimina en build). El `catch` existente del handler cubre errores de carga offline. |
 
 ## Dark mode
 
@@ -171,7 +173,7 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes. |
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`. Reemplaza duplicados en paneles admin, converters y componentes. |
 | **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 
