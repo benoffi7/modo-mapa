@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Dialog, IconButton, Typography, Box, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ReportIcon from '@mui/icons-material/Report';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../config/firebase';
+import { reportMenuPhoto } from '../../services/menuPhotos';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { formatDateMedium } from '../../utils/formatDate';
@@ -26,8 +25,7 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
   const handleReport = async () => {
     setReporting(true);
     try {
-      const report = httpsCallable(functions, 'reportMenuPhoto');
-      await report({ photoId });
+      await reportMenuPhoto(photoId);
       setReported(true);
     } catch (err) {
       if (import.meta.env.DEV) logger.error('Error reporting photo:', err);
