@@ -81,6 +81,7 @@
   - [#245 Performance Improvements](/feat/infra/245-performance-improvements/prd.md)
     - [Specs](/feat/infra/245-performance-improvements/specs.md)
     - [Plan](/feat/infra/245-performance-improvements/plan.md)
+  - [#248 Parallel Barrel Split](/feat/infra/248-parallel-barrel-split/prd.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
