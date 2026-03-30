@@ -235,6 +235,8 @@
   - [#236 Tech Debt: Security + Architecture v2.31.0](/feat/infra/tech-debt-v2-31-0/)
     - [PRD](/feat/infra/tech-debt-v2-31-0/prd.md)
     - [Specs](/feat/infra/tech-debt-v2-31-0/specs.md)
+  - [#240 Rate Limit userId Cleanup](/feat/infra/240-rate-limit-userid-cleanup/)
+    - [PRD](/feat/infra/240-rate-limit-userid-cleanup/prd.md)
 
 - **[Security](/feat/security/)**
   - [App Check Enforcement](/feat/security/app-check-enforcement/)
