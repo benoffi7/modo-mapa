@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -8,6 +9,8 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { ACTION_LABELS, SCORING, getUserTier } from '../../constants/rankings';
 import { evaluateBadges } from '../../constants/badges';
+import { useVerificationBadges } from '../../hooks/useVerificationBadges';
+import { trackEvent } from '../../utils/analytics';
 import BadgesList from './BadgesList';
 import type { UserRankingEntry } from '../../types';
 
@@ -22,6 +25,17 @@ export default function UserProfileModal({ entry, position, onClose }: Props) {
     () => entry ? evaluateBadges(entry.breakdown, { position: position ?? undefined }) : [],
     [entry, position],
   );
+
+  const { badges: verificationBadges, loading: vLoading } = useVerificationBadges(entry?.userId);
+
+  // Track verification badges viewed in modal context
+  useEffect(() => {
+    if (!vLoading && verificationBadges.length > 0) {
+      for (const vb of verificationBadges) {
+        trackEvent('verification_badge_viewed', { badge_id: vb.id, context: 'modal' });
+      }
+    }
+  }, [vLoading, verificationBadges]);
 
   if (!entry) return null;
 
@@ -95,10 +109,15 @@ export default function UserProfileModal({ entry, position, onClose }: Props) {
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
             Logros
           </Typography>
-          <BadgesList badges={badges} />
-          {badges.length === 0 && (
+          {vLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+              <CircularProgress size={20} />
+            </Box>
+          )}
+          <BadgesList badges={badges} verificationBadges={vLoading ? undefined : verificationBadges} />
+          {badges.length === 0 && verificationBadges.length === 0 && !vLoading && (
             <Typography variant="caption" color="text.secondary">
-              Aún no tiene logros
+              A&uacute;n no tiene logros
             </Typography>
           )}
         </Box>
