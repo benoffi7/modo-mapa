@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box, Typography, Card, CardActionArea,
   LinearProgress, Dialog, DialogTitle, DialogContent, IconButton,
+  CircularProgress,
 } from '@mui/material';
 import type { SvgIconProps } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -14,7 +15,12 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
+import { useAuth } from '../../context/AuthContext';
+import { useUserSettings } from '../../hooks/useUserSettings';
+import { useVerificationBadges } from '../../hooks/useVerificationBadges';
+import { trackEvent } from '../../utils/analytics';
 import { ACHIEVEMENT_DEFINITIONS } from '../../constants/achievements';
+import VerificationBadge from '../social/VerificationBadge';
 
 const ACHIEVEMENT_ICONS: Record<string, React.ComponentType<SvgIconProps>> = {
   ExploreOutlined: ExploreOutlinedIcon,
@@ -37,8 +43,20 @@ interface Achievement {
 }
 
 export default function AchievementsGrid() {
+  const { user } = useAuth();
+  const { settings } = useUserSettings();
+  const { badges: verificationBadges, loading: vLoading } = useVerificationBadges(user?.uid, settings.locality);
   const { stats } = useMyCheckIns();
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+
+  // Track verification badges viewed
+  useEffect(() => {
+    if (!vLoading && verificationBadges.length > 0) {
+      for (const vb of verificationBadges) {
+        trackEvent('verification_badge_viewed', { badge_id: vb.id, context: 'profile' });
+      }
+    }
+  }, [vLoading, verificationBadges]);
 
   const resolveProgress = (id: string): number => {
     if (id === 'explorador') return stats.uniqueBusinesses;
@@ -57,6 +75,29 @@ export default function AchievementsGrid() {
 
   return (
     <Box sx={{ p: 2 }}>
+      {/* Verification Badges */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+          Verificaci&oacute;n
+        </Typography>
+        {vLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1, overflow: 'auto', pb: 0.5 }}>
+            {verificationBadges.map((vb) => (
+              <Box key={vb.id} sx={{ minWidth: 160, flexShrink: 0 }}>
+                <VerificationBadge badge={vb} />
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+        Actividad
+      </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5 }}>
         {achievements.map((a) => {
           const pct = Math.min(100, Math.round((a.current / a.target) * 100));

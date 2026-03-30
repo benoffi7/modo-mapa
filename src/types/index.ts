@@ -329,3 +329,17 @@ export type {
 } from './offline';
 
 export type { Special, AchievementCondition, Achievement } from './admin';
+
+// Verification badges (#201)
+export type VerificationBadgeId = 'local_guide' | 'verified_visitor' | 'trusted_reviewer';
+
+export interface VerificationBadge {
+  id: VerificationBadgeId;
+  name: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+  progress: number;     // 0-100
+  current: number;
+  target: number;
+}
