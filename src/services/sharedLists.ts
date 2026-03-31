@@ -23,12 +23,8 @@ import { trackEvent } from '../utils/analytics';
 import { getListIconById } from '../constants/listIcons';
 import type { SharedList, ListItem } from '../types';
 
-export function getSharedListsCollection(): CollectionReference<SharedList> {
+function getSharedListsCollection(): CollectionReference<SharedList> {
   return collection(db, COLLECTIONS.SHARED_LISTS).withConverter(sharedListConverter) as CollectionReference<SharedList>;
-}
-
-export function getListItemsCollection(): CollectionReference<ListItem> {
-  return collection(db, COLLECTIONS.LIST_ITEMS).withConverter(listItemConverter) as CollectionReference<ListItem>;
 }
 
 export async function createList(userId: string, name: string, description: string = '', icon?: string): Promise<string> {
