@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { logger } from '../utils/logger';
 import { useAuth } from '../context/AuthContext';
 import { useFilters } from '../context/FiltersContext';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -51,18 +52,23 @@ export function useCheckIn(
     if (!user || !businessId) return;
     let cancelled = false;
 
-    fetchCheckInsForBusiness(businessId, user.uid).then((checkIns) => {
-      if (cancelled) return;
-      if (checkIns.length > 0) {
-        const latest = checkIns[0];
-        const hoursSince = (Date.now() - latest.createdAt.getTime()) / (1000 * 60 * 60);
-        if (hoursSince < CHECKIN_COOLDOWN_HOURS) {
-          setHasCheckedInRecently(true);
-          setRecentCheckInId(latest.id);
-          setStatus('success');
+    fetchCheckInsForBusiness(businessId, user.uid)
+      .then((checkIns) => {
+        if (cancelled) return;
+        if (checkIns.length > 0) {
+          const latest = checkIns[0];
+          const hoursSince = (Date.now() - latest.createdAt.getTime()) / (1000 * 60 * 60);
+          if (hoursSince < CHECKIN_COOLDOWN_HOURS) {
+            setHasCheckedInRecently(true);
+            setRecentCheckInId(latest.id);
+            setStatus('success');
+          }
         }
-      }
-    });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        logger.warn('[useCheckIn] fetchCheckInsForBusiness failed', err);
+      });
 
     return () => { cancelled = true; };
   }, [user, businessId]);

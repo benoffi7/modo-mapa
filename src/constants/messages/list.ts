@@ -23,6 +23,7 @@ export const MSG_LIST = {
   editorInviteError: 'No se pudo invitar',
   editorRemoveError: 'No se pudo remover',
   iconError: 'No se pudo cambiar el ícono',
+  itemRemoveError: 'No se pudo eliminar el comercio. Intentá de nuevo.',
   favoritesAdded: (count: number) =>
     count > 0
       ? `${count} favorito${count !== 1 ? 's' : ''} agregado${count !== 1 ? 's' : ''}`

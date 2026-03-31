@@ -115,9 +115,15 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleRemoveItem = async (item: ListItem) => {
-    await removeBusinessFromList(list.id, item.businessId);
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    toast.success(MSG_LIST.itemRemoved);
+    const prev = items;
+    setItems((current) => current.filter((i) => i.id !== item.id));
+    try {
+      await removeBusinessFromList(list.id, item.businessId);
+      toast.success(MSG_LIST.itemRemoved);
+    } catch {
+      setItems(prev);
+      toast.error(MSG_LIST.itemRemoveError);
+    }
   };
 
   const handleEditorsChanged = useCallback(async () => {
