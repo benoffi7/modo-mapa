@@ -20,7 +20,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useAuth } from '../../context/AuthContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -145,7 +145,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-          Error al cargar favoritos
+          No se pudieron cargar los favoritos
         </Typography>
         <Button size="small" onClick={reload}>Reintentar</Button>
       </Box>

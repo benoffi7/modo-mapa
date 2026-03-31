@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useConnectivity } from './useConnectivity';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { upsertRating, deleteRating, upsertCriteriaRating } from '../services/ratings';
 import { withOfflineSupport } from '../services/offlineInterceptor';
 import { RATING_CRITERIA } from '../constants/criteria';

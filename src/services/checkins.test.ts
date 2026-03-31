@@ -23,7 +23,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
-import { createCheckIn, fetchMyCheckIns, fetchCheckInsForBusiness, deleteCheckIn } from './checkins';
+import { createCheckIn, fetchMyCheckIns, fetchCheckInsForBusiness, deleteCheckIn, fetchUserCheckIns } from './checkins';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 
@@ -105,5 +105,29 @@ describe('deleteCheckIn', () => {
     expect(mockDeleteDoc).toHaveBeenCalled();
     expect(invalidateQueryCache).toHaveBeenCalledWith('checkins', 'u1');
     expect(trackEvent).toHaveBeenCalledWith('checkin_deleted', { checkin_id: 'ci_001' });
+  });
+});
+
+describe('fetchUserCheckIns', () => {
+  it('returns check-ins for the user', async () => {
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        { data: () => ({ id: '1', userId: 'u1', businessId: 'b1', businessName: 'T', createdAt: new Date() }) },
+        { data: () => ({ id: '2', userId: 'u1', businessId: 'b2', businessName: 'T2', createdAt: new Date() }) },
+      ],
+    });
+    const result = await fetchUserCheckIns('u1');
+    expect(result).toHaveLength(2);
+  });
+
+  it('returns empty array when no check-ins', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    const result = await fetchUserCheckIns('u1');
+    expect(result).toEqual([]);
+  });
+
+  it('propagates errors', async () => {
+    mockGetDocs.mockRejectedValue(new Error('network'));
+    await expect(fetchUserCheckIns('u1')).rejects.toThrow('network');
   });
 });

@@ -38,7 +38,7 @@ export default function PhotoReviewPanel() {
   }, [photos]);
 
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando fotos.">
+    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las fotos.">
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">
           {`Fotos (${filtered.length})`}

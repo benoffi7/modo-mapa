@@ -49,7 +49,7 @@ export const writePerfMetrics = onCall<PerfMetricsPayload>(
         }
         tx.update(rateLimitRef, { count: data.count + 1 });
       } else {
-        tx.set(rateLimitRef, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        tx.set(rateLimitRef, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS, userId: uid });
       }
     });
 

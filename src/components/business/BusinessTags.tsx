@@ -9,12 +9,17 @@ import CheckIcon from '@mui/icons-material/Check';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { useFollowedTags } from '../../hooks/useFollowedTags';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
-import { PREDEFINED_TAGS } from '../../types';
+import { PREDEFINED_TAGS } from '../../constants/tags';
 import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
 import type { CustomTag, UserTag } from '../../types';
 import CustomTagDialog from './CustomTagDialog';
@@ -41,6 +46,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
   const { user } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { isFollowed: isTagFollowed, followTag, unfollowTag } = useFollowedTags();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
@@ -173,18 +179,34 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
 
           if (!isVisible && !user) return null;
 
+          const tagFollowed = isTagFollowed(tag.id);
+
           return (
-            <Chip
-              key={tag.id}
-              label={`${tag.label}${count > 0 ? ` (${count})` : ''}`}
-              size="small"
-              icon={userAdded ? <CheckIcon fontSize="small" /> : <AddIcon fontSize="small" />}
-              onClick={() => handleToggleTag(tag.id)}
-              disabled={pendingTagId === tag.id}
-              variant={isSeed || userAdded ? 'filled' : 'outlined'}
-              color={userAdded ? 'primary' : 'default'}
-              sx={{ opacity: isVisible ? 1 : 0.6, borderRadius: 1 }}
-            />
+            <Box key={tag.id} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0 }}>
+              <Chip
+                label={`${tag.label}${count > 0 ? ` (${count})` : ''}`}
+                size="small"
+                icon={userAdded ? <CheckIcon fontSize="small" /> : <AddIcon fontSize="small" />}
+                onClick={() => handleToggleTag(tag.id)}
+                disabled={pendingTagId === tag.id}
+                variant={isSeed || userAdded ? 'filled' : 'outlined'}
+                color={userAdded ? 'primary' : 'default'}
+                sx={{ opacity: isVisible ? 1 : 0.6, borderRadius: 1 }}
+              />
+              {user && (
+                <Tooltip title={tagFollowed ? 'Dejar de seguir tag' : 'Seguir tag'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => tagFollowed ? unfollowTag(tag.id, 'business') : followTag(tag.id, 'business')}
+                    sx={{ ml: -0.5, p: 0.25 }}
+                  >
+                    {tagFollowed
+                      ? <BookmarkIcon fontSize="small" color="primary" />
+                      : <BookmarkBorderIcon fontSize="small" />}
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           );
         })}
 

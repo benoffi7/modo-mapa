@@ -5,7 +5,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Auth anonima + email/password + Google Sign-In** | Usuarios ingresan como anonimos. Pueden vincular email/password via `linkWithCredential` (preserva UID). Login cross-device con `signInWithEmailAndPassword`. Admin usa Google Sign-In solo en `/admin`. AuthMethod: `'anonymous' \| 'email' \| 'google'`. |
-| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. |
+| **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. User profile writes (displayName, avatar) en `services/userProfile.ts`. |
 | **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
 | **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 
@@ -14,8 +14,8 @@
 | Patron | Descripcion |
 | ------ | ----------- |
 | **Constantes en `src/constants/`** | Todos los valores magicos, configuraciones y labels centralizados en modulos por dominio (validation, cache, storage, timing, feedback, ui, map, tags, rankings, business, admin, auth, analyticsEvents, achievements). Barrel re-export en `constants/index.ts`. Textos user-facing en subdirectorio `constants/messages/` (ver Copywriting). Si un array/objeto se usa en 2+ componentes, debe extraerse a constantes. Architecture agent y PR reviewer lo detectan. |
-| **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents.ts` como `EVT_*` constants. Nunca usar string literals para trackEvent. |
-| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` re-exporta PREDEFINED_TAGS, PRICE_LEVEL_LABELS, CATEGORY_LABELS para backwards compatibility. |
+| **Analytics event names** | Nombres de eventos centralizados en `constants/analyticsEvents/` (directorio con archivos por dominio: onboarding, trending, offline, social, navigation, system, business, digest, interests). Barrel `index.ts` re-exporta todo. Consumidores importan de `constants/analyticsEvents`. Para agregar eventos de un feature nuevo, crear archivo de dominio nuevo y agregar `export *` al barrel. Nunca usar string literals para trackEvent. |
+| **Sin circular deps** | Los modulos de constantes usan `import type` para tipos de `src/types/`. Los tipos no importan logica de constantes. `types/index.ts` es un barrel que re-exporta desde archivos de dominio (business, user, social, lists, feedback, notifications, rankings, navigation, discovery) + los existentes (offline, admin). Dependencias cruzadas entre archivos de types usan `import type`. CATEGORY_LABELS se importa directamente de `constants/business`. |
 | **Constants Dashboard (DEV)** | `/dev/constants` — registry auto-descubre constantes via `Object.entries`. Solo en bundle DEV (lazy-loaded). |
 
 ## Datos y estado
@@ -23,7 +23,7 @@
 | Patron | Descripcion |
 |--------|-------------|
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
-| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore` directamente para escrituras. Solo `src/services/`, `src/config/`, `src/context/` y `src/hooks/` pueden importar de `firebase/firestore`. Enforced por architecture agent y PR reviewer. |
+| **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore`, `firebase/functions` ni `firebase/storage` directamente. Solo `src/services/`, `src/config/` y `src/hooks/` pueden importar de Firebase SDK. Contexts (como AuthContext) usan servicios para writes — no importan `firebase/firestore` directamente. Enforced por architecture agent y PR reviewer. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
@@ -41,6 +41,7 @@
 | **Business data cache** | `useBusinessDataCache.ts` — cache module-level (`Map`) con TTL de 5 min para las 7 queries del business view. Se invalida en cada write. |
 | **First-page query cache** | `usePaginatedQuery.ts` exporta `invalidateQueryCache()`. Cache module-level (`Map`) con TTL de 2 min para la primera pagina de listas paginadas. |
 | **Firestore persistent cache (prod)** | En produccion se usa `initializeFirestore` con `persistentLocalCache` + `persistentMultipleTabManager` para cachear datos en IndexedDB. |
+| **Verification badges cache** | `useVerificationBadges` cachea resultados en localStorage con key `mm_verification_badges_{userId}` y TTL 24h. Calculo client-side usa datos de Firestore (ratings, check-ins) + static business data. Sin writes a Firestore. El hook es un orquestador que delega a 3 calculadores puros (`calcLocalGuide`, `calcVerifiedVisitor`, `calcTrustedReviewer`) y obtiene datos via service layer (`fetchUserRatings`, `fetchRatingsByBusinessIds` en `services/ratings.ts`, `fetchUserCheckIns` en `services/checkins.ts`). |
 | **usePaginatedQuery** | Hook generico para paginacion con cursores Firestore. Usado en FavoritesList, CommentsList, RatingsList. Boton "Cargar mas". |
 
 ## UI patterns
@@ -63,6 +64,7 @@
 | **Swipe actions (`useSwipeActions`)** | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
 | **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheet (via `useBusinessData`). No hacen queries internas. |
+| **HOME_SECTIONS registry** | Array declarativo en `components/home/homeSections.ts` con interface `HomeSection` (`id`, `component` lazy-loaded via `React.lazy()`, `hasDividerAfter?`). `HomeScreen` itera el array con `Suspense` fallback. Agregar seccion nueva = agregar entrada al array, sin tocar JSX del orquestador. |
 | **Anti-sabana (max 5 secciones)** | Un componente orquestador (Sheet, Screen, Panel) no debe renderizar mas de 5 secciones verticales con Dividers. Si crece mas, reorganizar con tabs, accordion, o sticky header + section navigation. Enforcement: architecture agent + specs-plan-writer checklist + merge Phase 1i. Caso de estudio: BusinessSheet crecia a 8 secciones antes del refactor a sticky header + 2 tabs (Info/Opiniones). |
 | **Admin panel pattern** | Todos los paneles admin usan `useAsyncData` + `AdminPanelWrapper` para estados loading/error. |
 | **`component="span"`** | En MUI `ListItemText` secondary, para evitar `<p>` dentro de `<p>`. Se usa `display: block` en spans. |
@@ -128,11 +130,12 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers) + Cloud Functions callable (Firestore-backed, 5/min/user). |
+| **Rate limiting (3 capas)** | Client-side (UI) + server-side (Cloud Functions triggers via `checkRateLimit`) + Cloud Functions callable (Firestore-backed via `checkCallableRateLimit` en `functions/src/utils/callableRateLimit.ts`, transaccion atomica con ventana diaria). |
 | **Moderacion de contenido** | Cloud Functions filtran texto con lista de banned words (configurable en `config/moderation`). Normalizacion de acentos + word boundary. |
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
 | **Force app update (#191)** | CI/CD escribe `config/appVersion.minVersion` tras deploy (solo si cambian `src/` o `functions/`). Cliente usa `useForceUpdate` hook que compara con `__APP_VERSION__` al montar + cada 30 min. Si servidor > cliente: desregistra SW, limpia caches, hard refresh. Cooldown de 5 min en sessionStorage previene loops. Cero dependencias nuevas. |
+| **withCronHeartbeat (#257)** | `functions/src/utils/cronHeartbeat.ts` — wrapper para scheduled functions que escribe heartbeat a `_cronRuns/{cronName}` con `lastRunAt`, `result` (success/error), `detail`, `durationMs`. Try/catch: success path escribe resultado, error path escribe error y re-throws. Las 9 scheduled functions (7 archivos) wrappean su logica interna con este helper. Dashboard admin lee heartbeats via `fetchCronHealthStatus`. |
 
 ## TypeScript y build
 
@@ -146,7 +149,10 @@
 | **Emuladores en DEV** | `firebase.ts` conecta a emuladores solo en `import.meta.env.DEV`. |
 | **Logger centralizado** | `src/utils/logger.ts` — `logger.error()`, `.warn()`, `.log()`. En DEV: console. En PROD: errors a Sentry, warn/log silenciados. Nunca usar `console.*` directamente. |
 | **No silent .catch(() => {})** | ESLint rule `@typescript-eslint/no-empty-function: error` previene `.catch(() => {})`. Usar `.catch((e) => logger.warn(...))` como minimo. `pre-staging-check.sh` lo valida tambien en CI. PR reviewer lo flaggea como cambio solicitado. |
+| **Regla de no-append (worktrees)** | En trabajo paralelo (worktrees), nunca appendear a barrel files (`index.ts`) ni archivos compartidos. Crear archivos por dominio y dejar la integracion al merge. Referencia completa: [`docs/procedures/worktree-workflow.md`](../procedures/worktree-workflow.md) seccion "Regla de no-append". |
 | **Context-first data access** | Si un dato ya esta disponible en un Context (AuthContext, SelectionContext, etc.), consumirlo de ahi. NO hacer `getDoc` para leer datos que el context ya carga al montar. Ejemplo: `avatarId` debe venir de AuthContext, no de un getDoc extra en ProfileScreen. Architecture agent lo detecta. |
+| **Split State/Actions contexts** | AuthContext esta internamente splitado en `AuthStateContext` (7 campos de estado: user, displayName, avatarId, isLoading, authError, authMethod, emailVerified) y `AuthActionsContext` (10 funciones mutadoras). `useAuth()` es un wrapper backward-compatible que consume ambos. `useAuthState()` y `useAuthActions()` disponibles para consumidores que solo necesitan uno u otro (reduce re-renders). Migracion gradual — consumidores existentes pueden seguir usando `useAuth()`. |
+| **Dynamic import for heavy deps** | Dependencias pesadas que solo se usan en flujos especificos se cargan con `await import()` dentro del handler. Ejemplos: `browser-image-compression` en `MenuPhotoUpload.handleSubmit`, servicios de Firestore en `SyncEngine`, Sentry SDK. `import type` para tipos (se elimina en build). El `catch` existente del handler cubre errores de carga offline. |
 
 ## Dark mode
 
@@ -154,13 +160,15 @@
 |--------|-------------|
 | **Dark mode** | `ColorModeContext` + `useColorMode` hook. Persiste en `localStorage`, respeta `prefers-color-scheme`. Toggle en SettingsPanel seccion "Apariencia" (entre Ubicacion y Privacidad). |
 | **Theme playground (DEV)** | `/dev/theme` — palette generator, side-by-side light/dark preview, sticky output panel. Solo en `import.meta.env.DEV`. |
+| **Overlay adaptativo** | Overlays sobre imagenes usan `alpha()` de `@mui/material/styles` con `theme.palette.mode` para elegir color base. Light: `alpha(common.black, 0.55)`. Dark: `alpha(common.white, 0.15)`. Hover incrementa opacidad (0.75/0.25). Patron usado en `MenuPhotoSection`. |
+| **Sin hex hardcodeados** | Colores en `sx` deben usar tokens del tema (`'primary.dark'`, `'common.white'`, `'background.paper'`) o `alpha()` con `theme.palette.*`. Nunca hex literales como `'#fff'` o `'#1565c0'`. Esto permite adaptacion automatica a dark mode. |
 
 ## Offline queue
 
 | Patron | Descripcion |
 |--------|-------------|
 | **withOfflineSupport wrapper** | Componentes wrappean llamadas a servicios con `withOfflineSupport(isOffline, type, meta, payload, onlineAction, onEnqueued)`. Si offline, encola en IndexedDB. Si online, ejecuta la accion. Servicios no se modifican. |
-| **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook. |
+| **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook directamente desde `context/ConnectivityContext.tsx` (el wrapper `hooks/useConnectivity.ts` fue eliminado). |
 | **IndexedDB nativa** | `offlineQueue.ts` usa IndexedDB API directamente (sin idb/Dexie). Singleton DB, subscribe/notify pattern, indexes por status y createdAt. |
 | **SyncEngine dynamic imports** | `syncEngine.ts` usa `await import()` para cargar servicios bajo demanda, evitando que el import chain tire de firebase.ts en tests. |
 | **Offline action types** | Union discriminada `OfflineActionType` con 9 tipos. Payloads tipados por tipo de accion en `types/offline.ts`. |
@@ -171,8 +179,9 @@
 
 | Patron | Descripcion |
 |--------|-------------|
-| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`, `formatDateFull`. Reemplaza duplicados en paneles admin, converters y componentes. |
-| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`. |
+| **Shared date utils** | `src/utils/formatDate.ts` centraliza `toDate`, `formatDateShort`, `formatDateMedium`, `formatRelativeTime`. Reemplaza duplicados en paneles admin, converters y componentes. |
+| **Shared distance utils** | `src/utils/distance.ts` exporta `distanceKm` (Haversine) y `formatDistance` ("a 300m" / "a 1.2km"). Usado por `useSuggestions`, `FavoritesList`, `useLocalTrending`. |
+| **Progressive radius filtering** | `useLocalTrending` filtra trending businesses por proximidad con expansion progresiva de radio (1km → 2km → 5km) para garantizar minimo de resultados. Patron reutilizable para cualquier filtrado geolocal client-side. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
 
 ## Codigo compartido frontend/functions

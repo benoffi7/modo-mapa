@@ -86,18 +86,18 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 |-----------|------|--------|--------|--------|
 | `users` | auth | owner, `keys().hasOnly(['displayName','displayNameLower','avatarId','createdAt'])` | owner, `affectedKeys().hasOnly(['displayName','displayNameLower','avatarId'])` | — |
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
-| `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner (userId immutability, score + updatedAt + criteria) | owner |
+| `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner, `affectedKeys().hasOnly(['score','updatedAt','criteria'])` | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
-| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner (userId immutability) | owner |
+| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
-| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only | Functions only | Functions only |
-| `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner (userId immutability, level + updatedAt) | owner |
+| `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only, storagePath regex validated (`^menus/{uid}/biz_NNN/...`), thumbnailPath must be empty | Functions only | Functions only | Rate limit 10/día |
+| `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner, `affectedKeys().hasOnly(['level','updatedAt'])` | owner |
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
 | `abuseLogs` | admin | Functions | — | — |
-| `userSettings` | auth (expone locality a otros; necesario para profilePublic check) | owner, `keys().hasOnly()` | owner, `keys().hasOnly()` | — |
+| `userSettings` | auth (expone locality a otros; necesario para profilePublic check) | owner, `keys().hasOnly()` (includes followedTags fields), notifyFollowers/notifyRecommendations validated as bool, notificationDigest validated as string<=10, followedTags validated as list<=20 | owner, `keys().hasOnly()` | — |
 | `userRankings` | auth | Functions | Functions | — |
 | `notifications` | owner | — | owner (`affectedKeys().hasOnly(['read'])`) | — |
 | `_rateLimits` | — | Functions | Functions | — |
@@ -105,10 +105,11 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 ### Patrones de seguridad en rules
 
 - **`keys().hasOnly()`**: todas las reglas de `create` (y `write` en userSettings) restringen los campos permitidos para prevenir inyección de datos arbitrarios.
-- **`affectedKeys().hasOnly()`**: comments update y notifications update restringen qué campos pueden cambiar, previniendo que el cliente manipule campos server-side como `replyCount`, `flagged`, `likeCount`.
-- **userId inmutabilidad**: ratings, customTags y priceLevels update verifican `request.resource.data.userId == resource.data.userId`.
+- **`affectedKeys().hasOnly()`**: ratings, customTags, priceLevels, comments, notifications y feedback update restringen qué campos pueden cambiar, previniendo que el cliente manipule campos server-side como `replyCount`, `flagged`, `likeCount`, `businessId`, `userId`, `createdAt`.
 - **Ownership en update/delete**: siempre se chequea `resource.data.userId == request.auth.uid` (no el request data).
 - **replyCount server-only**: gestionado exclusivamente por Cloud Functions (`onCommentCreated`/`onCommentDeleted`). El cliente no puede modificar este campo.
+- **storagePath validation (#250)**: menuPhotos create rule validates storagePath with regex `^menus/{auth.uid}/biz_NNN/[a-zA-Z0-9_-]+$` preventing path traversal and proxy attacks. Defense-in-depth: trigger also validates and rejects with abuse logging.
+- **Type validation (#251)**: userSettings validates notifyFollowers/notifyRecommendations as bool, notificationDigest as string<=10, followedTags as list<=20 with timestamp fields. sharedLists validates color (string<=20) and icon (string<=50) on create and update. listItems rate limit now deletes the offending document.
 
 ---
 
@@ -120,7 +121,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 2. **Rate limiting client-side:** Limitar cantidad de escrituras por usuario/día.
 3. **Optimistic updates:** Actualizar UI inmediatamente pero manejar el rollback si falla.
 4. **Loading state:** Deshabilitar el botón/control durante la operación.
-5. **Tipado con converters:** Usar `withConverter<T>()` de `src/config/converters.ts`.
+5. **Tipado con converters:** Usar `withConverter<T>()` de `src/config/converters/`.
 
 ### Lectura de Firestore (read/query)
 
@@ -173,7 +174,27 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `ratings` | 30/día por usuario |
 | `userTags` | 100/día por usuario |
 | `feedback` | 5/día por usuario |
+| `menuPhotos` | 10/día por usuario |
+| `listItems` | 100/día por usuario (campo `addedBy`) — document deleted on exceed |
 | `notifications` | 50/día por destinatario (admin types exempt) |
+
+### Rate limiting server-side (callables)
+
+| Callable | Límite | Clave `_rateLimits` |
+|----------|--------|---------------------|
+| `inviteListEditor` | 10/día por usuario | `editors_invite_{userId}` |
+| `removeListEditor` | 10/día por usuario | `editors_remove_{userId}` |
+| `backups` (admin) | 5/min por usuario | `backup_{userId}` |
+| `deleteUserAccount` | 1/min por usuario | `delete_{userId}` |
+| `cleanAnonymousData` | 1/min por usuario | `clean_{userId}` |
+| `writePerfMetrics` | 5/día por usuario | `perf_{userId}` |
+
+Los callables de editores usan `checkCallableRateLimit()` de `functions/src/utils/callableRateLimit.ts` con transacción atómica y ventana diaria.
+
+### UID leak prevention
+
+- `inviteListEditor` response no incluye `targetUid` (solo `{ success: true }`)
+- `EditorsDialog` muestra "Editor" como secondary text en vez de UID parcial
 
 ### IP-based rate limiting
 
@@ -294,7 +315,7 @@ COLLECTIONS.CUSTOM_TAGS  → auth para leer, ownership + validación de label + 
 
 ### Converters tipados
 
-Todas las lecturas de Firestore usan `withConverter<T>()` desde `src/config/converters.ts`:
+Todas las lecturas de Firestore usan `withConverter<T>()` desde `src/config/converters/`:
 
 ```typescript
 // Lectura tipada (sin d.data() as any)

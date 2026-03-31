@@ -49,7 +49,9 @@ function createMockSetup(docs: Array<{ parentPath: string }>, empty = false) {
   const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
   const mockCollectionGroup = vi.fn().mockReturnValue({ where: mockWhere });
 
-  const db = { collectionGroup: mockCollectionGroup, batch: mockBatch };
+  const mockHeartbeatSet = vi.fn().mockResolvedValue(undefined);
+  const mockHeartbeatDoc = vi.fn().mockReturnValue({ set: mockHeartbeatSet });
+  const db = { collectionGroup: mockCollectionGroup, batch: mockBatch, doc: mockHeartbeatDoc };
   mockGetDb.mockReturnValue(db);
 
   return { db, mockBatchDelete, mockBatchCommit, mockCollectionGroup };

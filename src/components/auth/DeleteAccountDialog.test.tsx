@@ -102,7 +102,7 @@ describe('DeleteAccountDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar cuenta permanentemente' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Error al eliminar la cuenta. Intentá de nuevo.')).toBeInTheDocument();
+      expect(screen.getByText('No se pudo eliminar la cuenta. Intentá de nuevo.')).toBeInTheDocument();
     });
   });
 

@@ -1,5 +1,5 @@
 /** Notification polling interval */
-export const POLL_INTERVAL_MS = 60_000; // 60s
+export const POLL_INTERVAL_MS = 300_000; // 5 min (reduced from 60s for #203)
 
 /** Auto-dismiss duration for snackbar messages */
 export const AUTO_DISMISS_MS = 5_000; // 5s

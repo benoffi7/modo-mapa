@@ -1,4 +1,4 @@
-/** Business data cache TTL (useBusinessDataCache) */
+/** Business data cache TTL (businessDataCache) */
 export const BUSINESS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
 
 /** Paginated query first-page cache TTL (usePaginatedQuery) */

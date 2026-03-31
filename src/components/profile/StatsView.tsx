@@ -20,7 +20,7 @@ export default function StatsView() {
     return (
       <Box sx={{ p: 2 }}>
         <Typography variant="body2" color="error">
-          Error cargando estadísticas.
+          No se pudieron cargar las estadísticas.
         </Typography>
       </Box>
     );

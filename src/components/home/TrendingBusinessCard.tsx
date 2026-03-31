@@ -7,7 +7,7 @@ import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import { MEDALS } from '../../constants/rankings';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_BUSINESS_CLICKED } from '../../constants/analyticsEvents';
 import type { TrendingBusiness, Business, BusinessCategory } from '../../types';

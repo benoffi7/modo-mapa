@@ -6,7 +6,7 @@ import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from 
 
 export type BusinessDataCollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
 
-export interface BusinessDataResult {
+interface BusinessDataResult {
   isFavorite: boolean;
   ratings: Rating[];
   comments: Comment[];
@@ -25,12 +25,17 @@ export async function fetchUserLikes(uid: string, commentIds: string[]): Promise
   const BATCH_SIZE = 30;
   const liked = new Set<string>();
 
+  const batches: string[][] = [];
   for (let i = 0; i < docIds.length; i += BATCH_SIZE) {
-    const batch = docIds.slice(i, i + BATCH_SIZE);
-    const snap = await getDocs(query(
+    batches.push(docIds.slice(i, i + BATCH_SIZE));
+  }
+  const snaps = await Promise.all(batches.map((batch) =>
+    getDocs(query(
       collection(db, COLLECTIONS.COMMENT_LIKES),
       where(documentId(), 'in', batch),
-    ));
+    ))
+  ));
+  for (const snap of snaps) {
     for (const d of snap.docs) {
       const commentId = d.id.split('__')[1];
       liked.add(commentId);

@@ -8,7 +8,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { CATEGORY_LABELS } from '../../types';
+import { CATEGORY_LABELS } from '../../constants/business';
 import type { BusinessCategory } from '../../types';
 import { SCORE_OPTIONS } from '../../constants/validation';
 import type { SortOption } from '../../hooks/useListFilters';

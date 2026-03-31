@@ -10,7 +10,7 @@ import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import type { CheckIn } from '../types';
 
-export function getCheckinsCollection(): CollectionReference<CheckIn> {
+function getCheckinsCollection(): CollectionReference<CheckIn> {
   return collection(db, COLLECTIONS.CHECKINS).withConverter(checkinConverter) as CollectionReference<CheckIn>;
 }
 
@@ -75,4 +75,11 @@ export async function deleteCheckIn(userId: string, checkInId: string): Promise<
   await deleteDoc(doc(db, COLLECTIONS.CHECKINS, checkInId));
   invalidateQueryCache(COLLECTIONS.CHECKINS, userId);
   trackEvent('checkin_deleted', { checkin_id: checkInId });
+}
+
+export async function fetchUserCheckIns(userId: string): Promise<CheckIn[]> {
+  const snap = await getDocs(
+    query(getCheckinsCollection(), where('userId', '==', userId)),
+  );
+  return snap.docs.map((d) => d.data());
 }

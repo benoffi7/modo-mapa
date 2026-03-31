@@ -3,7 +3,14 @@ import type {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import type { AdminCounters, DailyMetrics, AbuseLog } from '../types/admin';
+import type {
+  AdminCounters,
+  DailyMetrics,
+  AbuseLog,
+  ModerationLog,
+  ModerationAction,
+  ModerationTargetCollection,
+} from '../types/admin';
 import type { PerfMetricsDoc } from '../types/perfMetrics';
 import { toDate } from '../utils/formatDate';
 
@@ -135,6 +142,26 @@ export const perfMetricsConverter: FirestoreDataConverter<PerfMetricsDoc> = {
         connection: String(device.connection ?? 'unknown'),
       },
       appVersion: String(d.appVersion ?? ''),
+    };
+  },
+};
+
+export const moderationLogConverter: FirestoreDataConverter<ModerationLog> = {
+  toFirestore(data: ModerationLog) {
+    return { ...data };
+  },
+  fromFirestore(snap: QueryDocumentSnapshot, options?: SnapshotOptions): ModerationLog {
+    const d = snap.data(options);
+    return {
+      id: snap.id,
+      adminId: String(d.adminId ?? ''),
+      action: String(d.action ?? 'delete') as ModerationAction,
+      targetCollection: String(d.targetCollection ?? 'comments') as ModerationTargetCollection,
+      targetDocId: String(d.targetDocId ?? ''),
+      targetUserId: String(d.targetUserId ?? ''),
+      reason: d.reason ? String(d.reason) : undefined,
+      snapshot: (d.snapshot && typeof d.snapshot === 'object') ? d.snapshot as Record<string, unknown> : {},
+      timestamp: toDate(d.timestamp),
     };
   },
 };

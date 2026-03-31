@@ -63,13 +63,15 @@ export default function SpecialsSection() {
   }, [selectedSpecial]);
 
   useEffect(() => {
+    let cancelled = false;
     fetchActiveSpecials()
       .then((data) => {
-        if (data.length > 0) {
+        if (!cancelled && data.length > 0) {
           setSpecials(data);
         }
       })
       .catch((err) => { logger.warn('[SpecialsSection] Failed to load from Firestore, using fallback:', err); });
+    return () => { cancelled = true; };
   }, []);
 
   return (

@@ -31,6 +31,11 @@ vi.mock('firebase-admin/auth', () => ({
   getAuth: () => ({ getUserByEmail: mockGetUserByEmail }),
 }));
 
+const mockCheckCallableRateLimit = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../utils/callableRateLimit', () => ({
+  checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
+}));
+
 import { inviteListEditor } from '../../callable/inviteListEditor';
 
 const handler = inviteListEditor as unknown as (req: unknown) => Promise<unknown>;
@@ -88,11 +93,27 @@ describe('inviteListEditor', () => {
       .rejects.toThrow('Máximo 5 editores por lista');
   });
 
-  it('succeeds and returns targetUid', async () => {
+  it('succeeds and returns success without targetUid', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
     mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
     const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } });
-    expect(result).toEqual({ success: true, targetUid: 'u2' });
+    expect(result).toEqual({ success: true });
+    expect(result).not.toHaveProperty('targetUid');
     expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it('calls checkCallableRateLimit with correct key and limit', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } });
+    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_invite_u1', 10, 'u1');
+  });
+
+  it('rejects with resource-exhausted when rate limited', async () => {
+    mockCheckCallableRateLimit.mockRejectedValueOnce(
+      Object.assign(new Error('Limite diario alcanzado. Intenta manana.'), { code: 'resource-exhausted' }),
+    );
+    await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } }))
+      .rejects.toThrow('Limite diario alcanzado');
   });
 });

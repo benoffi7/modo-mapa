@@ -34,10 +34,10 @@ export interface CommentRowProps {
   isSavingEdit?: boolean;
   isProfilePublic: boolean;
   onToggleLike: (commentId: string) => void;
-  onStartEdit?: (comment: Comment) => void;
-  onSaveEdit?: () => void;
-  onCancelEdit?: () => void;
-  onEditTextChange?: (text: string) => void;
+  onStartEdit?: ((comment: Comment) => void) | undefined;
+  onSaveEdit?: (() => void) | undefined;
+  onCancelEdit?: (() => void) | undefined;
+  onEditTextChange?: ((text: string) => void) | undefined;
   onDelete: (comment: Comment) => void;
   onReply?: ((comment: Comment) => void) | undefined;
   onShowProfile?: ((userId: string, userName: string) => void) | undefined;

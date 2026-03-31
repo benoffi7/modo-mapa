@@ -63,7 +63,7 @@ describe('createRecommendation', () => {
 
   it('throws when sender and recipient are the same', async () => {
     await expect(createRecommendation('u1', 'Ana', 'u1', 'b1', 'Cafe', 'msg'))
-      .rejects.toThrow('No podes recomendarte a vos mismo');
+      .rejects.toThrow('No podés recomendarte a vos mismo');
   });
 
   it('creates document, invalidates cache, and tracks event', async () => {

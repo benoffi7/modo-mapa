@@ -2,8 +2,10 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
+import { checkCallableRateLimit } from '../utils/callableRateLimit';
 
 const MAX_EDITORS = 5;
+const DAILY_INVITE_LIMIT = 10;
 
 export const inviteListEditor = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK },
@@ -19,6 +21,9 @@ export const inviteListEditor = onCall(
     }
 
     const db = getDb(databaseId);
+
+    await checkCallableRateLimit(db, `editors_invite_${request.auth.uid}`, DAILY_INVITE_LIMIT, request.auth.uid);
+
     const listSnap = await db.doc(`sharedLists/${listId}`).get();
     if (!listSnap.exists) throw new HttpsError('not-found', 'Lista no encontrada');
 
@@ -52,6 +57,6 @@ export const inviteListEditor = onCall(
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return { success: true, targetUid };
+    return { success: true };
   },
 );

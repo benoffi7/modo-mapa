@@ -18,10 +18,10 @@ export type OfflineActionType =
   | 'recommendation_create'
   | 'recommendation_read';
 
-/** Status de una accion en cola */
+/** Status de una acción en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
 
-/** Estructura de una accion encolada en IndexedDB */
+/** Estructura de una acción encolada en IndexedDB */
 export interface OfflineAction {
   id: string;
   type: OfflineActionType;
@@ -36,7 +36,7 @@ export interface OfflineAction {
   status: OfflineActionStatus;
 }
 
-/** Union de payloads por tipo de accion. userId/businessId are on OfflineAction, not here. */
+/** Union de payloads por tipo de acción. userId/businessId are on OfflineAction, not here. */
 export type OfflineActionPayload =
   | RatingUpsertPayload
   | RatingDeletePayload

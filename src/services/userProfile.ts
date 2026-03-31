@@ -3,10 +3,14 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
   query,
   where,
   orderBy,
 } from 'firebase/firestore';
+import type { UserProfile } from '../types';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import {
@@ -118,4 +122,40 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
     recentComments,
     rankingPosition,
   };
+}
+
+/**
+ * Fetch a single user profile doc (lightweight — no aggregation).
+ * Used by AuthContext on auth state change.
+ */
+export async function fetchUserProfileDoc(uid: string): Promise<UserProfile | null> {
+  const ref = doc(db, COLLECTIONS.USERS, uid).withConverter(userProfileConverter);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data() : null;
+}
+
+/**
+ * Update user display name. Creates the doc if it doesn't exist.
+ * Receives an already-validated/trimmed name.
+ */
+export async function updateUserDisplayName(uid: string, name: string): Promise<void> {
+  const ref = doc(db, COLLECTIONS.USERS, uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await updateDoc(ref, { displayName: name, displayNameLower: name.toLowerCase() });
+  } else {
+    await setDoc(ref, {
+      displayName: name,
+      displayNameLower: name.toLowerCase(),
+      createdAt: serverTimestamp(),
+    });
+  }
+}
+
+/**
+ * Update user avatar ID.
+ */
+export async function updateUserAvatar(uid: string, avatarId: string): Promise<void> {
+  const ref = doc(db, COLLECTIONS.USERS, uid);
+  await updateDoc(ref, { avatarId });
 }

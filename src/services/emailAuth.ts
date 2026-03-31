@@ -29,7 +29,7 @@ import {
   STORAGE_KEY_REMEMBERED_EMAIL,
 } from '../constants/storage';
 import { invalidateAllQueryCache } from './queryCache';
-import { clearAllBusinessCache } from '../hooks/useBusinessDataCache';
+import { clearAllBusinessCache } from './businessDataCache';
 import { clearReadCache } from './readCache';
 
 /** Traduce un error de Firebase Auth a un mensaje en español */

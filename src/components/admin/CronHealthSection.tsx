@@ -1,47 +1,39 @@
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import { logger } from '../../utils/logger';
-import Box from '@mui/material/Box';
-import { fetchLatestRanking, fetchTrendingCurrent } from '../../services/admin';
+import { fetchLatestRanking, fetchTrendingCurrent, fetchCronHealthStatus } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { getBusinessName } from '../../utils/businessHelpers';
 import { PieChartCard, TopList } from '../stats';
-import HealthIndicator from './HealthIndicator';
 import AdminPanelWrapper from './AdminPanelWrapper';
-import type { HealthStatus } from '../../types/admin';
+import CronCard from './CronCard';
+import { CRON_CONFIGS } from '../../constants/admin';
+import type { CronRunStatus } from '../../types/admin';
 import type { TrendingData, UserRanking } from '../../types';
 import { getUserTier } from '../../constants/rankings';
 
-function computeFreshness(date: Date, thresholdHours: number, warningHours: number): HealthStatus {
-  const ageMs = Date.now() - date.getTime();
-  const ageHours = ageMs / (1000 * 60 * 60);
-  if (ageHours <= thresholdHours) return 'ok';
-  if (ageHours <= warningHours) return 'warning';
-  return 'error';
-}
-
 interface CronData {
+  cronRuns: CronRunStatus[];
   ranking: UserRanking | null;
   trending: TrendingData | null;
 }
 
 export default function CronHealthSection() {
   const fetcher = useCallback(async (): Promise<CronData> => {
-    const [ranking, trending] = await Promise.all([
+    const [cronRuns, ranking, trending] = await Promise.all([
+      fetchCronHealthStatus().catch((err) => { logger.error('[CronHealthSection] fetchCronHealthStatus failed:', err); return [] as CronRunStatus[]; }),
       fetchLatestRanking().catch((err) => { logger.error('[CronHealthSection] fetchLatestRanking failed:', err); return null; }),
       fetchTrendingCurrent().catch((err) => { logger.error('[CronHealthSection] fetchTrendingCurrent failed:', err); return null; }),
     ]);
-    return { ranking, trending };
+    return { cronRuns, ranking, trending };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
 
   if (loading || error) {
     return (
-      <AdminPanelWrapper loading={loading} error={error} errorMessage="Error cargando estado de crons.">
+      <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudo cargar el estado de crons.">
         {null}
       </AdminPanelWrapper>
     );
@@ -49,12 +41,7 @@ export default function CronHealthSection() {
 
   if (!data) return null;
 
-  const { ranking, trending } = data;
-
-  // Rankings health
-  const rankingHealth: HealthStatus = ranking
-    ? computeFreshness(ranking.endDate, 7 * 24, 14 * 24)
-    : 'error';
+  const { cronRuns, ranking, trending } = data;
 
   const tierDistribution = ranking
     ? (() => {
@@ -74,11 +61,6 @@ export default function CronHealthSection() {
       }))
     : [];
 
-  // Trending health (cron runs at 3 AM ART daily)
-  const trendingHealth: HealthStatus = trending
-    ? computeFreshness(trending.computedAt, 26, 48)
-    : 'error';
-
   const trendingItems = trending
     ? trending.businesses.map((b) => ({
         label: getBusinessName(b.businessId) || b.name,
@@ -91,75 +73,39 @@ export default function CronHealthSection() {
     <>
       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Estado de Crons</Typography>
       <Grid container spacing={2}>
-        {/* Rankings */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle2">Rankings</Typography>
-                <HealthIndicator status={rankingHealth} />
-              </Box>
-              {ranking ? (
-                <>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Periodo: {ranking.period} — {ranking.totalParticipants} participantes
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Hasta: {ranking.endDate.toLocaleDateString()}
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">Sin datos de ranking</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Trending */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="subtitle2">Trending</Typography>
-                <HealthIndicator status={trendingHealth} />
-              </Box>
-              {trending ? (
-                <>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {trending.businesses.length} comercios trending
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Actualizado: {trending.computedAt.toLocaleDateString()} {trending.computedAt.toLocaleTimeString()}
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">Sin datos de trending</Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Tier distribution */}
-        {tierDistribution.length > 0 && (
-          <Grid size={{ xs: 12, md: 4 }}>
-            <PieChartCard title="Distribucion de Tiers" data={tierDistribution} />
+        {CRON_CONFIGS.map((config) => (
+          <Grid key={config.name} size={{ xs: 12, sm: 6, md: 4 }}>
+            <CronCard
+              config={config}
+              run={cronRuns.find((r) => r.cronName === config.name) ?? null}
+            />
           </Grid>
-        )}
-
-        {/* Top ranking */}
-        {topRanking.length > 0 && (
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TopList title="Top 5 Ranking" items={topRanking} />
-          </Grid>
-        )}
-
-        {/* Trending list */}
-        {trendingItems.length > 0 && (
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TopList title="Comercios Trending" items={trendingItems} />
-          </Grid>
-        )}
+        ))}
       </Grid>
+
+      {/* Datos adicionales */}
+      {(tierDistribution.length > 0 || topRanking.length > 0 || trendingItems.length > 0) && (
+        <>
+          <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>Datos adicionales</Typography>
+          <Grid container spacing={2}>
+            {tierDistribution.length > 0 && (
+              <Grid size={{ xs: 12, md: 4 }}>
+                <PieChartCard title="Distribucion de Tiers" data={tierDistribution} />
+              </Grid>
+            )}
+            {topRanking.length > 0 && (
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TopList title="Top 5 Ranking" items={topRanking} />
+              </Grid>
+            )}
+            {trendingItems.length > 0 && (
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TopList title="Comercios Trending" items={trendingItems} />
+              </Grid>
+            )}
+          </Grid>
+        </>
+      )}
     </>
   );
 }

@@ -1,16 +1,15 @@
+import { memo } from 'react';
 import { Button } from '@mui/material';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import { trackEvent } from '../../utils/analytics';
 import type { Business } from '../../types';
-import { useFilters } from '../../context/FiltersContext';
 
 interface Props {
   business: Business;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
-export default function DirectionsButton({ business }: Props) {
-  const { userLocation } = useFilters();
-
+export default memo(function DirectionsButton({ business, userLocation }: Props) {
   const handleClick = () => {
     let url: string;
     if (userLocation) {
@@ -38,4 +37,4 @@ export default function DirectionsButton({ business }: Props) {
       Cómo llegar
     </Button>
   );
-}
+});

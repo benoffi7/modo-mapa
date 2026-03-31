@@ -26,6 +26,11 @@ vi.mock('firebase-admin/firestore', () => ({
   },
 }));
 
+const mockCheckCallableRateLimit = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../utils/callableRateLimit', () => ({
+  checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
+}));
+
 import { removeListEditor } from '../../callable/removeListEditor';
 
 const handler = removeListEditor as unknown as (req: unknown) => Promise<unknown>;
@@ -54,5 +59,19 @@ describe('removeListEditor', () => {
     const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
     expect(result).toEqual({ success: true });
     expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it('calls checkCallableRateLimit with correct key and limit', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1' }) });
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
+    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_remove_u1', 10, 'u1');
+  });
+
+  it('rejects with resource-exhausted when rate limited', async () => {
+    mockCheckCallableRateLimit.mockRejectedValueOnce(
+      Object.assign(new Error('Limite diario alcanzado. Intenta manana.'), { code: 'resource-exhausted' }),
+    );
+    await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } }))
+      .rejects.toThrow('Limite diario alcanzado');
   });
 });

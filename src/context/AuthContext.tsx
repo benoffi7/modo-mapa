@@ -8,10 +8,8 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
-import { userProfileConverter } from '../config/converters';
+import { auth } from '../config/firebase';
+import { fetchUserProfileDoc, updateUserDisplayName, updateUserAvatar } from '../services/userProfile';
 import { setUserProperty, trackEvent } from '../utils/analytics';
 import { MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import { logger } from '../utils/logger';
@@ -35,19 +33,22 @@ function getAuthMethod(user: User | null): AuthMethod {
   return 'anonymous';
 }
 
-interface AuthContextType {
+export interface AuthStateContextType {
   user: User | null;
   displayName: string | null;
-  setDisplayName: (name: string) => Promise<void>;
   avatarId: string | null;
-  setAvatarId: (id: string) => Promise<void>;
   isLoading: boolean;
   authError: string | null;
+  authMethod: AuthMethod;
+  emailVerified: boolean;
+}
+
+export interface AuthActionsContextType {
+  setDisplayName: (name: string) => Promise<void>;
+  setAvatarId: (id: string) => Promise<void>;
   clearAuthError: () => void;
   signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
-  authMethod: AuthMethod;
-  emailVerified: boolean;
   linkEmailPassword: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   resendVerification: () => Promise<void>;
@@ -55,19 +56,24 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+type AuthContextType = AuthStateContextType & AuthActionsContextType;
+
+const AuthStateContext = createContext<AuthStateContextType>({
   user: null,
   displayName: null,
-  setDisplayName: async () => {},
   avatarId: null,
-  setAvatarId: async () => {},
   isLoading: true,
   authError: null,
+  authMethod: 'anonymous',
+  emailVerified: false,
+});
+
+const AuthActionsContext = createContext<AuthActionsContextType>({
+  setDisplayName: async () => {},
+  setAvatarId: async () => {},
   clearAuthError: () => {},
   signInWithGoogle: async () => null,
   signOut: async () => {},
-  authMethod: 'anonymous',
-  emailVerified: false,
   linkEmailPassword: async () => {},
   signInWithEmail: async () => {},
   resendVerification: async () => {},
@@ -95,11 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthMethod(method);
         setEmailVerified(firebaseUser.emailVerified);
         setUserProperty('auth_type', method);
-        const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid).withConverter(userProfileConverter));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setDisplayNameState(data.displayName || null);
-          setAvatarIdState(data.avatarId ?? null);
+        const profile = await fetchUserProfileDoc(firebaseUser.uid);
+        if (profile) {
+          setDisplayNameState(profile.displayName || null);
+          setAvatarIdState(profile.avatarId ?? null);
         }
       } else {
         const isAdminRoute = pathnameRef.current.startsWith('/admin');
@@ -122,17 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const trimmed = name.trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
     if (!trimmed) return;
-    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      await updateDoc(userRef, { displayName: trimmed, displayNameLower: trimmed.toLowerCase() });
-    } else {
-      await setDoc(userRef, {
-        displayName: trimmed,
-        displayNameLower: trimmed.toLowerCase(),
-        createdAt: serverTimestamp(),
-      });
-    }
+    await updateUserDisplayName(user.uid, trimmed);
     setDisplayNameState(trimmed);
   }, [user]);
 
@@ -142,8 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const prev = avatarId;
     setAvatarIdState(id);
     try {
-      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      await updateDoc(userRef, { avatarId: id });
+      await updateUserAvatar(user.uid, id);
     } catch (error) {
       setAvatarIdState(prev);
       if (import.meta.env.DEV) logger.error('Error setting avatar:', error);
@@ -159,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al iniciar sesión con Google';
+      const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión con Google';
       setAuthError(message);
       if (import.meta.env.DEV) logger.error('Error signing in with Google:', error);
       return null;
@@ -241,19 +235,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [authMethod]);
 
-  const value = useMemo<AuthContextType>(() => ({
-    user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
-    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
-    resendVerification, refreshEmailVerified, changePassword,
-  }), [user, displayName, setDisplayName, avatarId, setAvatarId, isLoading, authError, clearAuthError, signInWithGoogle, signOut,
-    authMethod, emailVerified, linkEmailPassword, signInWithEmail,
-    resendVerification, refreshEmailVerified, changePassword]);
+  const stateValue = useMemo<AuthStateContextType>(() => ({
+    user, displayName, avatarId, isLoading, authError, authMethod, emailVerified,
+  }), [user, displayName, avatarId, isLoading, authError, authMethod, emailVerified]);
+
+  const actionsValue = useMemo<AuthActionsContextType>(() => ({
+    setDisplayName, setAvatarId, clearAuthError, signInWithGoogle, signOut,
+    linkEmailPassword, signInWithEmail, resendVerification, refreshEmailVerified, changePassword,
+  }), [setDisplayName, setAvatarId, clearAuthError, signInWithGoogle, signOut,
+    linkEmailPassword, signInWithEmail, resendVerification, refreshEmailVerified, changePassword]);
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuthState = (): AuthStateContextType => useContext(AuthStateContext);
+
+export const useAuthActions = (): AuthActionsContextType => useContext(AuthActionsContext);
+
+export const useAuth = (): AuthContextType => {
+  const state = useAuthState();
+  const actions = useAuthActions();
+  return { ...state, ...actions };
+};

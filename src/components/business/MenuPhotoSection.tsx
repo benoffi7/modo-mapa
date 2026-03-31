@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Chip, IconButton } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { getUserPendingPhotos } from '../../services/menuPhotos';
+import { getUserPendingPhotos, getMenuPhotoUrl } from '../../services/menuPhotos';
 import { formatDateMedium } from '../../utils/formatDate';
 import MenuPhotoUpload from './MenuPhotoUpload';
 import MenuPhotoViewer from './MenuPhotoViewer';
@@ -34,9 +33,11 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     }
     const path = menuPhoto.thumbnailPath || menuPhoto.storagePath;
     if (!path) return;
-    getDownloadURL(ref(storage, path))
-      .then(setPhotoUrl)
-      .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
+    let cancelled = false;
+    getMenuPhotoUrl(path)
+      .then((url) => { if (!cancelled) setPhotoUrl(url); })
+      .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); if (!cancelled) setPhotoUrl(null); });
+    return () => { cancelled = true; };
   }, [menuPhoto]);
 
   // Check if user has pending photos
@@ -45,9 +46,11 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
       setHasPending(false); // eslint-disable-line react-hooks/set-state-in-effect -- guard clause
       return;
     }
+    let cancelled = false;
     getUserPendingPhotos(user.uid, businessId)
-      .then((photos) => setHasPending(photos.length > 0))
-      .catch((err) => { logger.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); setHasPending(false); });
+      .then((photos) => { if (!cancelled) setHasPending(photos.length > 0); })
+      .catch((err) => { logger.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); if (!cancelled) setHasPending(false); });
+    return () => { cancelled = true; };
   }, [user, businessId]);
 
   // Staleness is based on reviewedAt which is stable per photo — safe to derive
@@ -88,9 +91,17 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
                   position: 'absolute',
                   bottom: 6,
                   right: 6,
-                  bgcolor: 'rgba(0,0,0,0.55)',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light'
+                      ? alpha(theme.palette.common.black, 0.55)
+                      : alpha(theme.palette.common.white, 0.15),
                   color: 'white',
-                  '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+                  '&:hover': {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'light'
+                        ? alpha(theme.palette.common.black, 0.75)
+                        : alpha(theme.palette.common.white, 0.25),
+                  },
                 }}
               >
                 <CameraAltIcon sx={{ fontSize: 18 }} />

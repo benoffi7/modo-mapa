@@ -48,20 +48,3 @@ export function formatRelativeTime(date: Date): string {
   if (diffDays < 7) return `hace ${diffDays} días`;
   return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
 }
-
-/** Format a date string (ISO) to Argentine locale with full date+time. */
-export function formatDateFull(dateStr: string): string {
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    return date.toLocaleString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return dateStr;
-  }
-}

@@ -21,12 +21,14 @@
 - **Layout**: sticky header + 2 tabs (Info / Opiniones). Header siempre visible sin scroll con nombre, categoria, trending badge, action buttons y rating compacto. Tabs sticky debajo del header. Contenido de tab inactivo oculto con `display: none` para preservar estado interno (scroll, threads expandidos). Analytics: `business_sheet_tab_changed`. Deep link: `?business={id}&sheetTab=info|opiniones`
 - Nombre, categoria, direccion, telefono (link `tel:`)
 - Boton favorito (toggle corazon). Optimistic UI con derived state pattern. Toast de exito/error via `useToast()`. Color theme-aware (`error.main`)
+- Boton check-in y boton direcciones en la misma fila (50/50 en mobile, centrado en desktop)
 - Boton direcciones (abre Google Maps)
 - Boton recomendar (abre `RecommendDialog` para enviar recomendacion a otro usuario). Solo visible para usuarios autenticados no anonimos. Lazy-loaded con Suspense
 - Boton compartir (Web Share API con fallback a clipboard). Deep link via `?business={id}`
 - **Rating**: promedio + estrellas del usuario (1-5) en header. Logica extraida a `useBusinessRating` hook. Optimistic UI con `pendingRating`. Boton X para borrar calificacion. Multi-criterio expandible en tab Info via `CriteriaSection` (comida, atencion, precio, ambiente, rapidez) con promedios por criterio. Criterios definidos en `constants/criteria.ts` (`RATING_CRITERIA`). Seccion multi-criterio deshabilitada hasta que el usuario tenga un rating global. Campo `criteria?: RatingCriteria` en tipo `Rating`. Toast de error via `useToast()` si falla la operacion
-- **Tags predefinidos**: vote count + toggle del usuario
-- **Tags custom**: crear, editar, eliminar (privados por usuario)
+- **Tags predefinidos**: vote count + toggle del usuario. Chips con `borderRadius: 1` (design system)
+- **Tags custom**: crear, editar, eliminar (privados por usuario). Chips con `borderRadius: 1`
+- **Detalle por criterio**: chip expandible con `borderRadius: 1` (design system)
 - **Comentarios y Preguntas** (tab Opiniones): sub-tabs "Comentarios" / "Preguntas" dentro del tab Opiniones. Logica compartida extraida a `useCommentListBase` hook. Tab Comentarios: lista + formulario + editar propios + undo delete (5s, multiples pendientes simultaneas) + likes (otros, logica optimistica inlined en componentes) + sorting (Recientes/Antiguos/Utiles, logica inlined en componentes). Flaggeados ocultos. Indicador "(editado)". Threads: responder a comentarios (1 nivel), colapsables con "Ver N respuestas" (logica inlined en componentes). Edicion via `useCommentEdit` hook. `replyCount` gestionado exclusivamente por Cloud Functions (increment en create, decrement con floor en 0 en delete). Cascade delete de replies huerfanas en `onCommentDeleted`. Campos thread: `parentId` (opcional), `replyCount` (opcional, solo en root, server-managed). **Rate limit precheck**: si el usuario alcanzo 20 comentarios/dia, el input se reemplaza por Alert informativo. Contador "X/20 comentarios hoy" en helperText con `aria-live="polite"` (solo si >0). Warning visual cuando quedan <=3. Toast de exito/error en submit/edit/reply via `useToast()`. **Tab Preguntas** (#127): seccion Q&A que reutiliza infraestructura de comentarios con campo `type: 'question'`. Formulario de pregunta integrado en componente (nota: `QuestionInput` y `useQuestionThreads` eliminados como archivos independientes en #232, logica inlined). Crear preguntas, responder preguntas de otros. Respuestas ordenadas por likes (mejor respuesta primero). Badge "Mejor respuesta" si likeCount >= 1 y es la mas votada. Rate limit compartido con comentarios (20/dia). Analytics: `question_created`, `question_answered`, `question_viewed`. En el menu lateral, las preguntas muestran badge "Pregunta" en la seccion Comentarios
 - **Nivel de gasto**: $/$$/$$$ con votos y promedio. Optimistic UI con `pendingLevel`. Toggle: click en el mismo nivel remueve el voto (`deletePriceLevel`). Reset via `key={businessId}` en parent para forzar remount
 - **Foto de menu**: preview con thumbnail, staleness chip si >6 meses. Upload con compresion + progress + cancel (AbortController). Viewer fullscreen con boton reportar. Overlay camera icon para subir nueva foto (reemplaza boton separado)
@@ -74,7 +76,10 @@
 - Drawer con lista de notificaciones, tiempo relativo ("hace 2 min", "ayer")
 - Marcar como leida individual o todas a la vez
 - Click en notificacion navega al comercio relacionado
-- Polling cada 60s para unread count (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries)
+- Polling cada 300s (5 min) para unread count en modo `realtime` (con visibility awareness: se pausa cuando el tab esta oculto para ahorrar queries). Sin polling en modos `daily`/`weekly` (carga unica al abrir)
+- **Digest frequency** (`notificationDigest`): preferencia del usuario en `userSettings`. Valores: `realtime` (default, polling 5min), `daily` (carga unica/dia), `weekly` (carga unica/semana). Selector con chips en SettingsPanel
+- **ActivityDigestSection**: seccion en Home despues de ForYouSection. Muestra hasta 3 grupos de notificaciones no leidas agrupadas por tipo (ej: "3 respuestas a tus comentarios"). Estado vacio con CTA "Explorar negocios". Analytics: `digest_section_viewed`, `digest_item_tapped`, `digest_cta_tapped`, `digest_frequency_changed`
+- **useNotificationDigest hook**: agrupa notificaciones no leidas por tipo, genera labels singular/plural, retorna max 3 grupos ordenados por fecha
 - Tipos: `like`, `photo_approved`, `photo_rejected`, `ranking`, `feedback_response`, `comment_reply`, `new_follower`, `recommendation`
 - Generadas automaticamente por Cloud Functions triggers
 - `comment_reply`: notifica al autor del comentario padre cuando alguien responde. Generada por `onCommentCreated` cuando el comentario tiene `parentId`. Respeta setting `notifyReplies` del usuario destinatario. NotificationItem muestra `ReplyIcon` para este tipo
@@ -192,11 +197,11 @@
 
 - Login con Google Sign-In (solo `benoffi11@gmail.com`)
 - Verificacion en frontend (AdminGuard) y server-side (Firestore rules)
-- 13 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
+- 16 tabs con paneles que usan `useAsyncData` + `AdminPanelWrapper`:
 
 | Tab | Descripcion |
 |-----|-------------|
-| **Resumen** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback, commentLikes, check-ins, follows, recomendaciones, precios), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard), "Salud de comentarios" section, **Estado de Crons**: health indicators para Rankings (freshness, distribucion de tiers pie chart, top 5) y Trending (freshness, lista de comercios trending con scores) |
+| **Resumen** | Totales (comercios, usuarios, comentarios, ratings, favoritos, feedback, commentLikes, check-ins, follows, recomendaciones, precios), distribucion de ratings (pie), tags mas usados (pie), top 10 comercios, custom tags candidatas a promover, auth method breakdown (pie: anonimos vs email), notification read rate (StatCard), "Salud de comentarios" section, **Estado de Crons**: grilla de 9 cron cards con health indicators (freshness via `_cronRuns` heartbeats), ultima ejecucion relativa, duracion, resultado (success/error con detail en tooltip). Crons monitoreados: computeWeeklyRanking, computeMonthlyRanking, computeAlltimeRanking, computeTrendingBusinesses, dailyMetrics, cleanupRejectedPhotos, cleanupExpiredNotifications, cleanupActivityFeed, generateFeaturedLists. **Datos adicionales**: distribucion de tiers pie chart, top 5 ranking, comercios trending con scores |
 | **Actividad** | Feed por seccion (comentarios, ratings, favoritos, tags, price levels, comment likes) con ultimos 20 items, indicador de flagged. Comentarios: columnas Likes y Resp. (replyCount), chips "editado" (si `updatedAt`) y "Respuesta" (si `parentId`) |
 | **Feedback** | Tabla de feedback con categoria, mensaje, status (pending/viewed/responded/resolved), filtro por status. Columna "Comercio" con chip clickeable que abre dialog con detalles (nombre, ID, dirección, tags). Filtro por comercio (Autocomplete). Preview de PDF adjunto como link. Acciones admin: responder (respondToFeedback callable), resolver (resolveFeedback callable), crear issue en GitHub (createGithubIssueFromFeedback callable). Link a GitHub issue si existe |
 | **Tendencias** | Graficos de evolucion temporal con selector dia/semana/mes/ano — actividad por tipo (incl. commentLikes line), usuarios activos, total escrituras, new accounts trend. Click en leyenda para mostrar/ocultar series |
@@ -209,6 +214,9 @@
 | **Listas** | Stats globales (total, publicas, privadas, colaborativas, total items, promedio items/lista), top 10 listas por tamano. Toggle listas destacadas (callable getPublicLists/toggleFeaturedList) |
 | **Funcionalidades** | Metricas por funcionalidad: cards con numero de hoy (prominente) + total acumulado. Tendencia vs ayer (flecha). Click expande grafico lineal 30 dias. Features Firestore: ratings, comments, likes, favorites, tags, feedback, check-ins, follows, recomendaciones, nivel de gasto. Features GA4: Sorprendeme, listas, busqueda, compartir, fotos, dark mode, preguntas Q&A. Cache en `config/analyticsCache` con TTL 1h. Graceful degradation si GA4 API falla. Seccion Adopcion: usuarios totales, activos hoy, tasa de actividad |
 | **Notificaciones** | Stats globales (total, leidas, no leidas, tasa de lectura). Tabla desglose por tipo (8 tipos) con total, leidas, tasa de lectura con barra de progreso. Highlight rojo si tasa <20% |
+| **Social** | Panel de metricas sociales (follows, activity feed, recomendaciones). Stats y actividad reciente |
+| **Especiales** | CRUD de tarjetas especiales para la pantalla Inicio. Campos: titulo, subtitulo, icono, tipo, referenceId, orden, activo |
+| **Logros** | CRUD de definiciones de logros. Campos: label, descripcion, icono, condicion (metrica+umbral), orden, activo |
 
 ---
 
@@ -380,6 +388,21 @@ Todas las callable admin:
 
 ---
 
+## HomeScreen — Trending cerca tuyo (#200)
+
+- **TrendingNearYouSection**: seccion en HomeScreen entre SpecialsSection y RecentSearches que muestra trending businesses filtrados por proximidad al usuario
+- **Ubicacion**: usa cadena de fallback existente `useSortLocation` (GPS → localidad configurada → oficina). Siempre hay datos
+- **Subtitulo dinamico**: "Cerca tuyo" (GPS), "En {localidad}" (localidad configurada), "En tu zona" (fallback oficina)
+- **Label de sugerencia**: cuando source es office, muestra caption "Configura tu localidad para resultados mas precisos". Dismisseable (localStorage)
+- **Carrusel horizontal**: reutiliza `TrendingBusinessCard`. Maximo 8 resultados
+- **Radio progresivo**: intenta 1km, si < 5 resultados expande a 2km, luego 5km. Filtrado client-side con haversine sobre trending data cacheado
+- **Hook**: `useLocalTrending` — consume `useTrending`, `useSortLocation`, `useUserSettings`, `useFilters`. Retorna `{ businesses, source, localityName, radiusKm, loading }`
+- **RankingsView**: chip "Mi zona" junto a chips de periodo. Cuando activo, muestra trending businesses filtrados por zona en lugar del ranking de usuarios
+- **Analytics**: `trending_near_viewed` (source, radius_km, count), `trending_near_tapped` (business_id, rank, source), `trending_near_configure_tapped`, `rankings_zone_filter` (enabled)
+- **Archivos**: `TrendingNearYouSection.tsx`, `useLocalTrending.ts`, `constants/trending.ts`
+
+---
+
 ## Nota: Badges vs Achievements
 
 La app implementa **dos sistemas separados** de gamificacion:
@@ -392,3 +415,30 @@ La app implementa **dos sistemas separados** de gamificacion:
 **Badges** (milestones de actividad): primera resena, comentarista, influencer, primera foto, fotografo, primera calificacion, critico, popular, todoterreno, podio, racha 7d.
 
 **Achievements** (progresion goal-based): Explorador (10 check-ins), Social (5 follows), Critico (10 ratings), Viajero (3 localidades), Coleccionista (20 favoritos), Fotografo (5 fotos), Embajador (10 recomendaciones), Racha (7 dias consecutivos).
+
+**Verification Badges** (#201): 3 badges de verificacion de usuario calculados client-side con cache localStorage 24h. Hook: `useVerificationBadges(userId, locality?)`. Componente: `VerificationBadge` (compact chip o card con progreso). Integrados en `BadgesList`, `AchievementsGrid` y `UserProfileModal`.
+
+| Badge | Criterio | Constante |
+|-------|----------|-----------|
+| Local Guide | 50+ ratings en negocios de la misma ciudad/localidad del usuario | `constants/verificationBadges.ts` |
+| Visitante Verificado | 5+ check-ins desde < 100m del negocio | `constants/verificationBadges.ts` |
+| Opinion Confiable | 80%+ de ratings dentro de +-0.5 del promedio del negocio | `constants/verificationBadges.ts` |
+
+- Badges earned: borde dorado (#FFD700), fondo sutil dorado
+- Badges no earned: borde gris, progreso visible, incentiva completar
+- Analytics: `verification_badge_earned`, `verification_badge_viewed`, `verification_badge_tooltip`
+- Sin writes a Firestore, sin Cloud Functions, sin cambios a Firestore rules
+
+---
+
+## Seguir Tags / Tus Intereses (#205)
+
+- **useFollowedTags hook** (`hooks/useFollowedTags.ts`): CRUD de tags seguidos con persistencia en `userSettings.followedTags`. Optimistic updates, limite de 20 tags, analytics con source tracking
+- **useInterestsFeed hook** (`hooks/useInterestsFeed.ts`): filtra `allBusinesses` por tags seguidos, agrupa por tag, limita a 5 negocios por tag. Client-side matching O(n*m)
+- **YourInterestsSection** (`components/home/YourInterestsSection.tsx`): seccion en HomeScreen con chips de tags seguidos y lista de negocios. Empty state con suggested tags y CTA
+- **FollowTagChip** (`components/common/FollowTagChip.tsx`): chip reutilizable con toggle filled/outlined y badge numerico opcional
+- **InterestsSection** (`components/profile/InterestsSection.tsx`): sub-seccion en ProfileScreen para gestionar tags seguidos (follow/unfollow completo)
+- **BusinessTags integration**: icono bookmark junto a cada tag predefinido para follow/unfollow desde la ficha del negocio
+- **Modelo de datos**: campos `followedTags`, `followedTagsUpdatedAt`, `followedTagsLastSeenAt` en `UserSettings`
+- **Constantes**: `MAX_FOLLOWED_TAGS=20`, `INTERESTS_MAX_BUSINESSES_PER_TAG=5`, `SUGGESTED_TAGS` en `constants/interests.ts`
+- **Analytics**: 6 eventos (`tag_followed`, `tag_unfollowed`, `interests_section_viewed`, `interests_business_tapped`, `interests_cta_tapped`, `interests_suggested_tapped`)

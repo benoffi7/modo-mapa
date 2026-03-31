@@ -23,16 +23,83 @@ interface AnalyticsReportResponse {
 // ── Constants ─────────────────────────────────────────────────────────
 
 const GA4_EVENT_NAMES = [
+  // Existing
   'surprise_me',
   'list_created',
   'list_item_added',
+  'list_icon_changed',
   'business_search',
   'business_share',
   'menu_photo_upload',
   'dark_mode_toggle',
-  'side_menu_section',
   'business_view',
-  'business_filter_tag',
+  'question_created',
+  'question_answered',
+  // Onboarding
+  'onboarding_banner_shown',
+  'onboarding_banner_clicked',
+  'onboarding_banner_dismissed',
+  'benefits_screen_shown',
+  'benefits_screen_continue',
+  'activity_reminder_shown',
+  'activity_reminder_clicked',
+  'verification_nudge_shown',
+  'verification_nudge_resend',
+  'verification_nudge_dismissed',
+  // Trending
+  'trending_viewed',
+  'trending_business_clicked',
+  'trending_near_viewed',
+  'trending_near_tapped',
+  'trending_near_configure_tapped',
+  'rankings_zone_filter',
+  // Home engagement
+  'special_tapped',
+  'for_you_tapped',
+  'quick_action_tapped',
+  'recent_search_tapped',
+  // Interests
+  'tag_followed',
+  'tag_unfollowed',
+  'interests_section_viewed',
+  'interests_business_tapped',
+  'interests_cta_tapped',
+  'interests_suggested_tapped',
+  // Digest
+  'digest_section_viewed',
+  'digest_item_tapped',
+  'digest_cta_tapped',
+  'digest_frequency_changed',
+  // Offline
+  'offline_action_queued',
+  'offline_sync_completed',
+  'offline_sync_failed',
+  'offline_action_discarded',
+  // Business
+  'business_directions',
+  'rating_prompt_shown',
+  'rating_prompt_clicked',
+  'rating_prompt_dismissed',
+  'rating_prompt_converted',
+  'business_sheet_phase1_ms',
+  'business_sheet_phase2_ms',
+  'business_sheet_cache_hit',
+  // Social
+  'follow',
+  'unfollow',
+  'feed_viewed',
+  'feed_item_clicked',
+  'recommendation_sent',
+  'recommendation_opened',
+  'recommendation_list_viewed',
+  // System
+  'force_update_triggered',
+  'force_update_limit_reached',
+  'account_deleted',
+  // Navigation
+  'tab_switched',
+  'sub_tab_switched',
+  'business_sheet_tab_changed',
 ] as const;
 
 const CACHE_TTL_MS = 3_600_000; // 1 hour

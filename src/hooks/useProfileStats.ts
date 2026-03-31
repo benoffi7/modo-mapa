@@ -20,13 +20,15 @@ export function useProfileStats(): ProfileStats {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     const uid = user.uid;
 
     Promise.all([
       getCountOfflineSafe(query(collection(db, COLLECTIONS.RATINGS), where('userId', '==', uid))),
       getCountOfflineSafe(query(collection(db, COLLECTIONS.FAVORITES), where('userId', '==', uid))),
       getCountOfflineSafe(query(collection(db, COLLECTIONS.FOLLOWS), where('followedId', '==', uid))),
-    ]).then(([r, f, fl]) => setCounts({ reviews: r, favorites: f, followers: fl }));
+    ]).then(([r, f, fl]) => { if (!cancelled) setCounts({ reviews: r, favorites: f, followers: fl }); });
+    return () => { cancelled = true; };
   }, [user]);
 
   return {

@@ -66,10 +66,10 @@ export default function DeleteAccountDialog({ open, onClose }: DeleteAccountDial
         } else if (code === 'auth/too-many-requests') {
           setError('Demasiados intentos. Esperá unos minutos.');
         } else {
-          setError('Error al eliminar la cuenta. Intentá de nuevo.');
+          setError('No se pudo eliminar la cuenta. Intentá de nuevo.');
         }
       } else {
-        setError('Error al eliminar la cuenta. Intentá de nuevo.');
+        setError('No se pudo eliminar la cuenta. Intentá de nuevo.');
       }
     } finally {
       setLoading(false);

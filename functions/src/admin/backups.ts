@@ -82,7 +82,7 @@ async function checkRateLimit(uid: string): Promise<void> {
     const data = snap.data() as { count: number; resetAt: number } | undefined;
 
     if (!data || now >= data.resetAt) {
-      tx.set(docRef, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+      tx.set(docRef, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS, userId: uid });
       return;
     }
 

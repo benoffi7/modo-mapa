@@ -34,7 +34,7 @@ vi.mock('firebase/firestore', () => ({
 
 import {
   followUser, unfollowUser, isFollowing,
-  fetchFollowing, fetchFollowers,
+  fetchFollowing,
 } from './follows';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
@@ -130,28 +130,6 @@ describe('fetchFollowing', () => {
 
     const result = await fetchFollowing('u1', 2);
     expect(result.docs).toHaveLength(2);
-    expect(result.hasMore).toBe(true);
-  });
-});
-
-describe('fetchFollowers', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('returns docs and hasMore=false when fewer results than pageSize', async () => {
-    const fakeDocs = [{ id: '1' }];
-    mockGetDocs.mockResolvedValueOnce({ docs: fakeDocs });
-
-    const result = await fetchFollowers('u1', 5);
-    expect(result.docs).toHaveLength(1);
-    expect(result.hasMore).toBe(false);
-  });
-
-  it('returns hasMore=true when results exceed pageSize', async () => {
-    const fakeDocs = [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }];
-    mockGetDocs.mockResolvedValueOnce({ docs: fakeDocs });
-
-    const result = await fetchFollowers('u1', 3);
-    expect(result.docs).toHaveLength(3);
     expect(result.hasMore).toBe(true);
   });
 });

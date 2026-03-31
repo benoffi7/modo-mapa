@@ -3,6 +3,11 @@ import { getStorage } from 'firebase-admin/storage';
 import { getDb } from '../helpers/env';
 import sharp from 'sharp';
 import { incrementCounter, trackWrite } from '../utils/counters';
+import { checkRateLimit } from '../utils/rateLimiter';
+import { logAbuse } from '../utils/abuseLogger';
+
+// Regex for valid storagePath: menus/{userId}/{bizId}/{fileName}
+const STORAGE_PATH_REGEX = /^menus\/[a-zA-Z0-9]+\/biz_\d{1,6}\/[a-zA-Z0-9_-]+$/;
 
 export const onMenuPhotoCreated = onDocumentCreated(
   'menuPhotos/{photoId}',
@@ -12,6 +17,49 @@ export const onMenuPhotoCreated = onDocumentCreated(
     const data = snap.data();
     const photoId = event.params.photoId;
     const db = getDb();
+    const userId = data.userId as string;
+    const storagePath = data.storagePath as string;
+    const businessId = data.businessId as string;
+
+    // Validate storagePath format (defense in depth — rules also validate)
+    if (!storagePath || !STORAGE_PATH_REGEX.test(storagePath)) {
+      await snap.ref.update({ status: 'rejected', rejectionReason: 'invalid_storage_path' });
+      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `Invalid storagePath: ${storagePath}` });
+      return;
+    }
+
+    // Validate userId in path matches document userId
+    const pathSegments = storagePath.split('/');
+    if (pathSegments[1] !== userId) {
+      await snap.ref.update({ status: 'rejected', rejectionReason: 'storage_path_user_mismatch' });
+      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `storagePath userId mismatch: path=${pathSegments[1]}, doc=${userId}` });
+      return;
+    }
+
+    // Validate businessId in path matches document businessId
+    if (pathSegments[2] !== businessId) {
+      await snap.ref.update({ status: 'rejected', rejectionReason: 'storage_path_business_mismatch' });
+      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `storagePath businessId mismatch: path=${pathSegments[2]}, doc=${businessId}` });
+      return;
+    }
+
+    // Rate limit: 10 menuPhotos per day per user
+    // Don't delete doc (allow delete: if false in rules), just skip processing
+    const exceeded = await checkRateLimit(
+      db,
+      { collection: 'menuPhotos', limit: 10, windowType: 'daily' },
+      userId,
+    );
+
+    if (exceeded) {
+      await logAbuse(db, {
+        userId,
+        type: 'rate_limit',
+        collection: 'menuPhotos',
+        detail: 'Exceeded 10 menuPhotos/day',
+      });
+      return;
+    }
 
     // Generate thumbnail
     try {

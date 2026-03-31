@@ -4,6 +4,9 @@ import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { deleteAllUserData } from '../utils/deleteUserData';
+import { logAbuse } from '../utils/abuseLogger';
+import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
+import type { DeletionStatus } from '../utils/deleteUserData';
 
 const RATE_LIMIT_SECONDS = 60;
 
@@ -41,13 +44,54 @@ export const cleanAnonymousData = onCall(
     await rateLimitRef.set({ lastAttempt: FieldValue.serverTimestamp(), userId: uid });
 
     // Delete all user data (aggregates, collections, storage)
-    await deleteAllUserData(db, uid);
+    const result = await deleteAllUserData(db, uid);
 
     // Do NOT delete Firebase Auth user — anonymous accounts auto-expire
     // The client will signOut after this succeeds, creating a fresh anonymous session
 
     const uidHash = createHash('sha256').update(uid).digest('hex').slice(0, 12);
-    logger.info('anonymous_data_cleaned', { uidHash, timestamp: new Date().toISOString() });
+
+    // Determine status from result
+    const status: DeletionStatus =
+      result.collectionsFailed.length === 0 && result.aggregatesCorrected
+        ? 'success'
+        : result.collectionsFailed.length === USER_OWNED_COLLECTIONS.length
+          ? 'failure'
+          : 'partial_failure';
+
+    // Persist audit log (best-effort)
+    try {
+      await db.collection('deletionAuditLogs').add({
+        uidHash,
+        type: 'anonymous_clean',
+        status,
+        collectionsProcessed: result.collectionsProcessed,
+        collectionsFailed: result.collectionsFailed,
+        storageFilesDeleted: result.storageFilesDeleted,
+        storageFilesFailed: result.storageFilesFailed,
+        aggregatesCorrected: result.aggregatesCorrected,
+        durationMs: result.durationMs,
+        triggeredBy: 'user',
+        timestamp: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      logger.error('Failed to persist deletion audit log', { uidHash, error: String(err) });
+    }
+
+    // Log abuse on failure
+    if (status !== 'success') {
+      try {
+        await logAbuse(db, {
+          userId: uidHash,
+          type: 'deletion_failure',
+          detail: `anonymous_clean ${status}: ${result.collectionsFailed.length} collections failed [${result.collectionsFailed.join(', ')}], aggregates=${result.aggregatesCorrected}`,
+        });
+      } catch (err) {
+        logger.error('Failed to log deletion abuse', { uidHash, error: String(err) });
+      }
+    }
+
+    logger.info('anonymous_data_cleaned', { uidHash, status, timestamp: new Date().toISOString() });
 
     return { success: true };
   },

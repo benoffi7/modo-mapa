@@ -97,13 +97,19 @@
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `converters.ts` | `converters.test.ts` | 42 | 100% |
+| `converters/userConverters.ts` | `converters/userConverters.test.ts` | 5 | 100% |
+| `converters/businessConverters.ts` | `converters/businessConverters.test.ts` | 23 | 100% |
+| `converters/socialConverters.ts` | `converters/socialConverters.test.ts` | 12 | 100% |
+| `converters/listConverters.ts` | `converters/listConverters.test.ts` | 6 | 100% |
+| `converters/rankingConverters.ts` | `converters/rankingConverters.test.ts` | 10 | 100% |
+| `converters/feedbackConverters.ts` | `converters/feedbackConverters.test.ts` | 6 | 100% |
 
 ### React App — Servicios (`src/services/`)
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `ratings.ts` | `ratings.test.ts` | 13 | 100% |
+| `ratings.ts` | `ratings.test.ts` | 17 | 100% (incluye fetchUserRatings, fetchRatingsByBusinessIds) |
+| `checkins.ts` | `checkins.test.ts` | 13 | 100% (incluye fetchUserCheckIns) |
 | `emailAuth.ts` | `emailAuth.test.ts` | 14 | 100% |
 | `comments.ts` | `comments.test.ts` | 16 | 100% |
 | `favorites.ts` | `favorites.test.ts` | 7 | 100% |
@@ -112,14 +118,14 @@
 | `rankings.ts` | `rankings.test.ts` | 26 | 98% stmts, 89% branches |
 | `queryCache.ts` | `queryCache.test.ts` | 7 | 100% |
 | `sharedLists.ts` | `sharedLists.test.ts` | — | Parcial (createList, updateList con icon) |
-| `userProfile.ts` | — | — | ⏳ Complex aggregation, 7 parallel queries |
+| `userProfile.ts` | `__tests__/userProfile.test.ts` | 8 | Parcial (fetchUserProfileDoc, updateUserDisplayName, updateUserAvatar) |
 | `userSettings.ts` | — | — | ⏳ Optimistic update rollback |
 | `suggestions.ts` | — | — | 🔻 Baja prioridad (simple aggregation) |
 | `feedback.ts` | — | — | ⏳ |
 | `notifications.ts` | — | — | ⏳ |
 | `admin.ts` | — | — | ⏳ |
 | `adminFeedback.ts` | — | — | ⏳ |
-| `menuPhotos.ts` | — | — | ⏳ |
+| `menuPhotos.ts` | `__tests__/menuPhotos.test.ts` | 4 | Parcial (reportMenuPhoto, getMenuPhotoUrl) |
 
 ### React App — Hooks (`src/hooks/`)
 
@@ -131,6 +137,11 @@
 | `usePaginatedQuery.ts` | `usePaginatedQuery.test.ts` | 11 | 100% |
 | `useSuggestions.ts` | `useSuggestions.test.ts` | 10 | 100% |
 | `usePriceLevelFilter.ts` | `usePriceLevelFilter.test.ts` | 7 | 100% stmts/lines, 93% branches |
+| `useLocalGuideBadge.ts` | `useLocalGuideBadge.test.ts` | 9 | 100% (funcion pura calcLocalGuide) |
+| `useVerifiedVisitorBadge.ts` | `useVerifiedVisitorBadge.test.ts` | 7 | 100% (funcion pura calcVerifiedVisitor) |
+| `useTrustedReviewerBadge.ts` | `useTrustedReviewerBadge.test.ts` | 7 | 100% (funcion async calcTrustedReviewer) |
+| `useVerificationBadges.ts` | `useVerificationBadges.test.ts` | 6 | 100% (orquestador con mocks de servicios) |
+| `useFollowedTags.ts` | `useFollowedTags.test.ts` | 10 | 100% |
 | `useUndoDelete.ts` | — | — | ⏳ Timer management, ref sync |
 | `useAsyncData.ts` | — | — | ⏳ Race conditions, cleanup |
 | `useUnsavedChanges.ts` | — | — | ⏳ Dialog state machine |
@@ -156,6 +167,7 @@
 | `EmailPasswordDialog.tsx` | `EmailPasswordDialog.test.tsx` | 17 | 100% |
 | `ErrorBoundary.tsx` | `ErrorBoundary.test.tsx` | 3 | 100% |
 | `OfflineIndicator.tsx` | `OfflineIndicator.test.tsx` | 5 | 100% |
+| `EditorsDialog.tsx` | `EditorsDialog.test.tsx` | 2 | 100% (UID leak + secondary text) |
 | otros (87 componentes) | — | — | 🔻 Mayoria visual |
 
 ### Cloud Functions — Utils (`functions/src/utils/`)
@@ -166,6 +178,7 @@
 | `moderator.ts` | `moderator.test.ts` | 6 | 95% stmts, 63% branches |
 | `notifications.ts` | `notifications.test.ts` | 9 | 100% stmts, 86% branches |
 | `rateLimiter.ts` | `rateLimiter.test.ts` | 4 | 100% stmts, 83% branches |
+| `callableRateLimit.ts` | `callableRateLimit.test.ts` | 4 | 100% |
 | `aggregates.ts` | `aggregates.test.ts` | 6 | 100% |
 | `abuseLogger.ts` | `abuseLogger.test.ts` | 5 | 100% stmts, 50% branches |
 | `perfTracker.ts` | `perfTracker.test.ts` | 15 | 100% |
@@ -190,6 +203,14 @@
 | `menuPhotos.ts` | — | — | ⏳ Cloud Storage I/O |
 | `users.ts` | — | — | 🔻 Simple counter |
 | `priceLevels.ts` | — | — | 🔻 Simple counter |
+
+### Cloud Functions — Callables (`functions/src/callable/`)
+
+| Archivo | Test | Cases | Cobertura |
+|---------|------|-------|-----------|
+| `inviteListEditor.ts` | `inviteListEditor.test.ts` | 11 | 100% |
+| `removeListEditor.ts` | `removeListEditor.test.ts` | 6 | 100% |
+| `deleteUserAccount.ts` | `deleteUserAccount.test.ts` | — | ⏳ |
 
 ### Cloud Functions — Admin (`functions/src/admin/`)
 

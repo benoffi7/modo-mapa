@@ -16,4 +16,6 @@
 | DevOps | [devops.md](devops.md) |
 | Issues | [issues.md](issues.md) |
 | Workflow | [workflow.md](workflow.md) |
+| Staging | [staging.md](staging.md) |
+| Design System | [design-system.md](design-system.md) |
 | File Size Directive | [file-size-directive.md](file-size-directive.md) |

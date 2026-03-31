@@ -29,7 +29,7 @@ vi.mock('../context/ToastContext', () => ({
 }));
 
 let mockIsOffline = false;
-vi.mock('./useConnectivity', () => ({
+vi.mock('../context/ConnectivityContext', () => ({
   useConnectivity: () => ({ isOffline: mockIsOffline }),
 }));
 
@@ -128,7 +128,7 @@ describe('useFollow', () => {
     await act(async () => { await result.current.toggle(); });
 
     expect(result.current.following).toBe(false);
-    expect(mockToastError).toHaveBeenCalledWith('Error al actualizar seguimiento');
+    expect(mockToastError).toHaveBeenCalledWith('No se pudo actualizar el seguimiento');
   });
 
   it('prevents toggle when isSelf', async () => {

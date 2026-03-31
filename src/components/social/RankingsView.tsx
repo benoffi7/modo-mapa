@@ -4,28 +4,54 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
-import PublicIcon from '@mui/icons-material/Public';
+import PlaceIcon from '@mui/icons-material/Place';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../../context/AuthContext';
 import { useRankings } from '../../hooks/useRankings';
 import { fetchUserLiveScore } from '../../services/rankings';
+import { useLocalTrending } from '../../hooks/useLocalTrending';
+import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
+import { allBusinesses } from '../../hooks/useBusinesses';
+import { trackEvent } from '../../utils/analytics';
+import { EVT_RANKINGS_ZONE_FILTER, EVT_TRENDING_NEAR_TAPPED } from '../../constants/analyticsEvents';
 import RankingItem from './RankingItem';
 import RankingsEmptyState from './RankingsEmptyState';
 import UserProfileModal from './UserProfileModal';
 import UserScoreCard from './UserScoreCard';
+import TrendingBusinessCard from '../home/TrendingBusinessCard';
 import { PERIOD_OPTIONS } from '../../constants/rankings';
 import { STORAGE_KEY_ONBOARDING_RANKING_VIEWED } from '../../constants/storage';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import { NAV_CHIP_SX } from '../../constants/ui';
-import type { UserRankingEntry } from '../../types';
+import type { UserRankingEntry, Business } from '../../types';
 import { logger } from '../../utils/logger';
 
 export default function RankingsView() {
   const { user, displayName } = useAuth();
   const { ranking, loading, error, periodType, setPeriodType, refetch, positionChanges } = useRankings();
   const [selectedProfile, setSelectedProfile] = useState<{ entry: UserRankingEntry; position: number } | null>(null);
+  const [zoneFilter, setZoneFilter] = useState(false);
+  const { businesses: zoneTrending, source: zoneSource, loading: zoneLoading } = useLocalTrending();
+  const { navigateToBusiness } = useNavigateToBusiness();
+
+  const businessMap = new Map(allBusinesses.map((b) => [b.id, b]));
+
+  const handleToggleZone = () => {
+    const next = !zoneFilter;
+    setZoneFilter(next);
+    trackEvent(EVT_RANKINGS_ZONE_FILTER, { enabled: next });
+  };
+
+  const handleZoneBusinessSelect = (business: Business) => {
+    const biz = zoneTrending.find((b) => b.businessId === business.id);
+    trackEvent(EVT_TRENDING_NEAR_TAPPED, {
+      business_id: business.id,
+      rank: biz?.rank ?? 0,
+      source: zoneSource,
+    });
+    navigateToBusiness(business);
+  };
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_ONBOARDING_RANKING_VIEWED, 'true');
@@ -79,14 +105,16 @@ export default function RankingsView() {
             sx={NAV_CHIP_SX}
           />
         ))}
+        <Chip
+          icon={<PlaceIcon sx={{ fontSize: 16 }} />}
+          label="Mi zona"
+          size="small"
+          color={zoneFilter ? 'primary' : 'default'}
+          variant={zoneFilter ? 'filled' : 'outlined'}
+          onClick={handleToggleZone}
+          sx={NAV_CHIP_SX}
+        />
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.25 }}>
-          <Tooltip title="Filtro por zona (próximamente)">
-            <span>
-              <IconButton size="small" disabled>
-                <PublicIcon fontSize="small" />
-              </IconButton>
-            </span>
-          </Tooltip>
           <IconButton size="small" onClick={refetch} disabled={loading} aria-label="Actualizar ranking">
             <RefreshIcon fontSize="small" />
           </IconButton>
@@ -95,45 +123,79 @@ export default function RankingsView() {
 
       {/* Content */}
       <PullToRefreshWrapper onRefresh={handleRefresh}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress size={32} />
-          </Box>
-        )}
-
-        {error && (
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2" color="error">
-              Error cargando el ranking.
-            </Typography>
-          </Box>
-        )}
-
-        {!loading && !error && !ranking && (
-          <RankingsEmptyState noRankingData />
-        )}
-
-        {!loading && !error && ranking && (
+        {zoneFilter ? (
+          // Zone trending view
           <>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pb: 1.5 }}>
-              {ranking.rankings.map((entry, i) => (
-                <RankingItem
-                  key={entry.userId}
-                  entry={entry}
-                  position={i + 1}
-                  maxScore={maxScore}
-                  isCurrentUser={entry.userId === user?.uid}
-                  animationIndex={i}
-                  positionChange={positionChanges.get(entry.userId)}
-                  onClick={() => setSelectedProfile({ entry, position: i + 1 })}
-                />
-              ))}
-            </Box>
+            {zoneLoading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress size={32} />
+              </Box>
+            )}
+            {!zoneLoading && zoneTrending.length === 0 && (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No hay comercios en tendencia en tu zona.
+                </Typography>
+              </Box>
+            )}
+            {!zoneLoading && zoneTrending.length > 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', pb: 1.5 }}>
+                {zoneTrending.map((biz) => (
+                  <TrendingBusinessCard
+                    key={biz.businessId}
+                    business={biz}
+                    fullBusiness={businessMap.get(biz.businessId)}
+                    rank={biz.rank}
+                    onSelectBusiness={handleZoneBusinessSelect}
+                  />
+                ))}
+              </Box>
+            )}
+          </>
+        ) : (
+          // Standard user rankings view
+          <>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress size={32} />
+              </Box>
+            )}
 
-            {ranking.totalParticipants > ranking.rankings.length && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', pb: 1 }}>
-                Mostrando top {ranking.rankings.length} de {ranking.totalParticipants} participantes
-              </Typography>
+            {error && (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="error">
+                  No se pudo cargar el ranking.
+                </Typography>
+              </Box>
+            )}
+
+            {!loading && !error && !ranking && (
+              <RankingsEmptyState noRankingData />
+            )}
+
+            {!loading && !error && ranking && (
+              <>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pb: 1.5 }}>
+                  {ranking.rankings.map((entry, i) => (
+                    <RankingItem
+                      key={entry.userId}
+                      entry={entry}
+                      position={i + 1}
+                      maxScore={maxScore}
+                      isCurrentUser={entry.userId === user?.uid}
+                      animationIndex={i}
+                      positionChange={positionChanges.get(entry.userId)}
+                      onClick={() => setSelectedProfile({ entry, position: i + 1 })}
+                    />
+                  ))}
+                </Box>
+
+                {ranking.totalParticipants > ranking.rankings.length && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', pb: 1 }}>
+                    Mostrando top {ranking.rankings.length} de {ranking.totalParticipants} participantes
+                  </Typography>
+                )}
+              </>
             )}
           </>
         )}

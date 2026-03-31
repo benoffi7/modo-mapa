@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { UserSearchField } from '../UserSearchField';
 import { createRecommendation, countRecommendationsSentToday } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
@@ -36,11 +36,13 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
 
   useEffect(() => {
     if (!open || !userId) return;
+    let cancelled = false;
     setLoadingCount(true);
     countRecommendationsSentToday(userId)
-      .then(setSentToday)
+      .then((count) => { if (!cancelled) setSentToday(count); })
       .catch((err) => { if (import.meta.env.DEV) logger.error('count failed:', err); })
-      .finally(() => setLoadingCount(false));
+      .finally(() => { if (!cancelled) setLoadingCount(false); });
+    return () => { cancelled = true; };
   }, [open, userId]);
 
   const handleSubmit = useCallback(async () => {

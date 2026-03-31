@@ -1,7 +1,7 @@
 import { Chip } from '@mui/material';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import SyncIcon from '@mui/icons-material/Sync';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { MSG_OFFLINE } from '../../constants/messages';
 
 export function OfflineIndicator() {
