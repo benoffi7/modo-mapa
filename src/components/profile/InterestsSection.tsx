@@ -24,7 +24,7 @@ export default function InterestsSection() {
             {tags.map((tag) => (
               <Box key={tag} sx={{ display: 'inline-flex', alignItems: 'center' }}>
                 <FollowTagChip tag={tag} followed onToggle={() => {/* no-op, use X */}} />
-                <IconButton size="small" onClick={() => unfollowTag(tag, 'profile')} sx={{ ml: -0.5, p: 0.25 }}>
+                <IconButton size="small" onClick={() => unfollowTag(tag, 'profile')} aria-label={`Dejar de seguir ${tag}`} sx={{ ml: -0.5, minWidth: 44, minHeight: 44 }}>
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </Box>
