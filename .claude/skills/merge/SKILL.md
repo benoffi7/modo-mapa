@@ -28,6 +28,19 @@ echo "Working directory: $WORKDIR"
 
 Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
+## Phase 0: Pre-implementation gate (feat/ branches only)
+
+For `feat/` branches, verify that PRD, specs, and plan exist and were approved before merging implementation work:
+
+Launch a **pre-implementation-gate** agent with the branch name and issue number. The agent checks:
+1. PRD exists in `docs/feat/{category}/{slug}/prd.md`
+2. Specs exist in `docs/feat/{category}/{slug}/specs.md`
+3. Plan exists in `docs/feat/{category}/{slug}/plan.md`
+
+If any are missing → **WARN** (not blocker, but report prominently). This catches features that bypassed the PRD workflow.
+
+Skip this phase for `fix/`, `chore/`, and `docs/` branches.
+
 ## Phase 1: Quality gates (abort on failure)
 
 Run these sequentially — any failure aborts the merge:
@@ -317,8 +330,8 @@ If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 Determine branch type from the branch name prefix:
 
-- **`feat/`** — Full audit (all 7 agents below)
-- **`fix/`** — Reduced audit: security + architecture + performance only (3 agents)
+- **`feat/`** — Full audit (all 8 core agents below + conditional agents 9-11 based on changed files)
+- **`fix/`** — Reduced audit: security + architecture + performance only (3 agents) + conditional agents if triggered
 - **`chore/` or `docs/`** — Minimal audit: security + architecture only (2 agents). These branches refactor existing code or update docs — UI, dark mode, offline, and privacy audits add no value since user-visible behavior doesn't change
 
 ### Full audit agents
@@ -333,6 +346,27 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 6. **privacy-policy** — check for new logEvent/addDoc/setDoc/collection/localStorage in diff
 7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
 8. **copy-auditor** — scan changed `.tsx` files for spelling errors, missing tildes, inconsistent tone in user-facing strings (toasts, labels, Typography text, placeholders, dialog titles)
+
+### Conditional audit agents (launch in parallel with the above, only when relevant files changed)
+
+9. **perf-auditor** — verify Firestore query instrumentation (measureAsync) and Cloud Function trigger timing (trackFunctionTiming). **Trigger:** changes in `src/hooks/`, `src/services/`, `functions/src/triggers/`, `src/utils/perfMetrics.ts`, or `functions/src/utils/perfTracker.ts`
+10. **admin-metrics-auditor** — verify new data collections/analytics events have corresponding admin dashboard visibility. **Trigger:** changes in `src/components/admin/`, or diff contains new `logEvent`/`addDoc`/`setDoc`/`collection(` calls
+11. **help-docs-reviewer** — validate HelpSection content matches features.md. **Trigger:** changes in `src/components/menu/HelpSection.tsx` or `docs/reference/features.md`
+
+```bash
+# Determine which conditional agents to launch
+CHANGED=$(git diff --name-only origin/new-home)
+
+# perf-auditor: hooks, services, or function triggers changed
+echo "$CHANGED" | grep -qE '(src/hooks/|src/services/|functions/src/triggers/|perfMetrics|perfTracker)' && LAUNCH_PERF_AUDITOR=true
+
+# admin-metrics-auditor: admin components changed OR new data collection patterns
+echo "$CHANGED" | grep -qE '(src/components/admin/)' && LAUNCH_ADMIN_AUDITOR=true
+git diff origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -qE '^\+.*(logEvent|addDoc|setDoc|collection\()' && LAUNCH_ADMIN_AUDITOR=true
+
+# help-docs-reviewer: HelpSection or features.md changed
+echo "$CHANGED" | grep -qE '(HelpSection|features\.md)' && LAUNCH_HELP_REVIEWER=true
+```
 
 Get changed files with: `git diff --name-only origin/new-home -- 'src/**/*.tsx' 'src/**/*.ts'`
 
@@ -485,6 +519,10 @@ Output a final summary:
 | performance | ... |
 | privacy-policy | ... |
 | offline-auditor | ... |
+| copy-auditor | ... |
+| perf-auditor | ... (if triggered) |
+| admin-metrics | ... (if triggered) |
+| help-docs | ... (if triggered) |
 
 ### Docs updated
 - features.md, patterns.md, project-reference.md, HelpSection.tsx
@@ -537,17 +575,19 @@ gh issue create --title "Tech debt: <summary>" --body "<consolidated list>" --la
 
 Do NOT just report tech debt in the merge summary — create a trackable issue.
 
-### 8b. Self-reflection
+### 8b. Self-reflection (continuous-improvement agent)
 
-Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
+Launch a **continuous-improvement** agent with a summary of this merge (branch name, audits run, issues found, friction points encountered). The agent will:
 
-1. List 2-3 concrete improvements observed during this merge
-2. For each: classify as "agent fix", "skill update", "doc update", or "memory"
-3. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
-4. Save only non-formalizable insights to memory (user preferences, operational learnings)
-5. Report the summary to the user
+1. Analyze the merge process for friction, failures, or missed catches
+2. List 2-3 concrete improvements observed
+3. Classify each as "agent fix", "skill update", "doc update", or "memory"
+4. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
+5. Save only non-formalizable insights to memory (user preferences, operational learnings)
 
 **Prefer formalizing improvements in agents/skills/docs over saving to memory.** Memory is for context that can't live elsewhere.
+
+If the agent fails or times out, do the self-reflection manually with the 5 steps above.
 
 ### 8c. Ask the user
 
