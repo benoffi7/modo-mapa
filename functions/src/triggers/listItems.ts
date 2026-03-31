@@ -29,11 +29,13 @@ export const onListItemCreated = onDocumentCreated(
     const exceeded = snapshot.data().count > 100;
 
     if (exceeded) {
+      // Delete the offending document FIRST (admin SDK bypasses rules)
+      await snap.ref.delete();
       await logAbuse(db, {
         userId: addedBy,
         type: 'rate_limit',
         collection: 'listItems',
-        detail: 'Exceeded 100 listItems/day',
+        detail: 'Exceeded 100 listItems/day — document deleted',
       });
     }
   },
