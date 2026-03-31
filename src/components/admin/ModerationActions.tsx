@@ -9,8 +9,8 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
-import { useToast } from '../../hooks/useToast';
-import { useConnectivity } from '../../hooks/useConnectivity';
+import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { moderateComment, moderateRating, moderateCustomTag } from '../../services/admin';
 import { MODERATION_TARGET_LABELS } from '../../constants/admin';
 import { MSG_ADMIN } from '../../constants/messages/admin';
@@ -35,7 +35,7 @@ export default function ModerationActions({
 }: ModerationActionsProps) {
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ModerationAction | null>(null);
-  const { showToast } = useToast();
+  const toast = useToast();
   const { isOffline } = useConnectivity();
 
   const targetLabel = MODERATION_TARGET_LABELS[targetCollection];
@@ -57,7 +57,7 @@ export default function ModerationActions({
         ? MSG_ADMIN.moderateDeleteSuccess(targetLabel)
         : MSG_ADMIN.moderateHideSuccess(targetLabel);
       
-      showToast(successMsg, 'success');
+      toast.success(successMsg);
       
       if (confirmAction === 'delete') {
         onDeleted?.(itemId);
@@ -66,7 +66,7 @@ export default function ModerationActions({
       }
     } catch (err) {
       console.error('Moderation error:', err);
-      showToast(MSG_ADMIN.moderateError, 'error');
+      toast.error(MSG_ADMIN.moderateError);
     } finally {
       setLoading(false);
       setConfirmAction(null);
