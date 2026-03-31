@@ -69,6 +69,20 @@ If a query reads from a collection the caller doesn't own, this MUST be flagged.
 {Any triggers, scheduled functions, or callable functions needed.
 Specify the trigger path, logic, and output.}
 
+## Seed Data
+
+{MANDATORY if the feature creates new Firestore collections or adds required fields to existing ones. Omit only if no schema changes.}
+
+### Emulator seed (`scripts/seed-admin-data.ts`)
+- Collection: <name>
+- Documents: <count> with fields <list>
+- Example: { ... }
+
+### Staging seed (`scripts/seed-staging.ts`)
+- Collection: <name>
+- Documents: <count> with fields <list>
+- Example: { ... }
+
 ## Componentes
 
 {New or modified React components.
@@ -300,6 +314,7 @@ Before finishing, verify:
 - [ ] Monolith % guard — verify: (1) no component imports `firebase/firestore` directly, (2) new files go in domain-aligned folder (NOT `components/menu/`), (3) no new god-context, (4) business logic in hooks/services not components. If any check fails, add remediation step to the plan
 - [ ] Security hardening — verify: (1) every new writable collection has `hasOnly()` + rate limit + moderation if text, (2) every new readable collection evaluates scraping risk, (3) no new secrets in committed files, (4) `mediaUrl`/`href` fields validated. Reference: open security issues via `gh issue list --label security --state open`
 - [ ] Tech debt non-aggravation — if the plan touches a file with known tech debt (check `gh issue list --label "tech debt" --state open`), include the fix in the plan. Never make existing debt worse
+- [ ] Seed data section — if the feature introduces new Firestore collections or adds required fields to existing ones, the specs MUST include a "Seed Data" section with example documents for both `seed-admin-data.ts` and `seed-staging.ts`
 
 ## After creating
 
