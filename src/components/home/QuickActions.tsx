@@ -41,12 +41,12 @@ const CATEGORY_ICONS: Record<BusinessCategory, React.ReactElement> = {
 
 const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
   { id: 'restaurant', label: 'Restaurante', icon: CATEGORY_ICONS.restaurant, type: 'category' },
-  { id: 'cafe', label: 'Cafe', icon: CATEGORY_ICONS.cafe, type: 'category' },
+  { id: 'cafe', label: 'Café', icon: CATEGORY_ICONS.cafe, type: 'category' },
   { id: 'bar', label: 'Bar', icon: CATEGORY_ICONS.bar, type: 'category' },
-  { id: 'pizza', label: 'Pizzeria', icon: CATEGORY_ICONS.pizza, type: 'category' },
-  { id: 'fastfood', label: 'Rapida', icon: CATEGORY_ICONS.fastfood, type: 'category' },
-  { id: 'bakery', label: 'Panaderia', icon: CATEGORY_ICONS.bakery, type: 'category' },
-  { id: 'icecream', label: 'Heladeria', icon: CATEGORY_ICONS.icecream, type: 'category' },
+  { id: 'pizza', label: 'Pizzería', icon: CATEGORY_ICONS.pizza, type: 'category' },
+  { id: 'fastfood', label: 'Rápida', icon: CATEGORY_ICONS.fastfood, type: 'category' },
+  { id: 'bakery', label: 'Panadería', icon: CATEGORY_ICONS.bakery, type: 'category' },
+  { id: 'icecream', label: 'Heladería', icon: CATEGORY_ICONS.icecream, type: 'category' },
   { id: 'sorprendeme', label: 'Sorpresa', icon: <CasinoIcon />, type: 'action' },
   { id: 'favoritos', label: 'Favoritos', icon: <FavoriteIcon />, type: 'shortcut' },
   { id: 'recientes', label: 'Recientes', icon: <HistoryIcon />, type: 'shortcut' },

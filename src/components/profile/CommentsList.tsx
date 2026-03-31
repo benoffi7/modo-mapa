@@ -149,8 +149,8 @@ export default function CommentsList({ onSelectBusiness }: Props) {
       hasMore={hasMore && !searchInput}
       isLoadingMore={isLoadingMore}
       emptyIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 48 }} />}
-      emptyMessage="No dejaste comentarios todavia"
-      emptySubtext="Toca un comercio en el mapa para dejar tu opinion"
+      emptyMessage="No dejaste comentarios todavía"
+      emptySubtext="Tocá un comercio en el mapa para dejar tu opinión"
       noResultsMessage={
         deferredSearch
           ? `No se encontraron resultados para "${truncate(deferredSearch, 30)}"`

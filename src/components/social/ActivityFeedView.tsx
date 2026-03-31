@@ -44,7 +44,7 @@ export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
           isLoadingMore={isLoadingMore}
           emptyIcon={<RssFeedIcon sx={{ fontSize: 48 }} />}
           emptyMessage={MSG_SOCIAL.emptyActivity}
-          emptySubtext="Segui a otros usuarios para ver su actividad aca"
+          emptySubtext="Seguí a otros usuarios para ver su actividad acá"
           onRetry={reload}
           onLoadMore={loadMore}
         >
