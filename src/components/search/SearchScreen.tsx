@@ -46,7 +46,7 @@ function MapHint() {
         severity="info"
         variant="filled"
         action={
-          <IconButton size="small" color="inherit" onClick={dismiss}>
+          <IconButton size="small" color="inherit" aria-label="Cerrar aviso" onClick={dismiss}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }

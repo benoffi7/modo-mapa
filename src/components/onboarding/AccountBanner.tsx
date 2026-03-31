@@ -74,7 +74,7 @@ export default function AccountBanner({ onCreateAccount }: Props) {
             <Button color="inherit" size="small" onClick={handleClick} sx={{ fontWeight: 600 }}>
               Crear cuenta
             </Button>
-            <IconButton size="small" color="inherit" onClick={handleDismiss}>
+            <IconButton size="small" color="inherit" aria-label="Cerrar aviso" onClick={handleDismiss}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </>
