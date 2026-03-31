@@ -127,7 +127,7 @@ const CommentsListItem = memo(function CommentsListItem({
                       color="primary"
                       onClick={(e) => { e.stopPropagation(); onSaveEdit(); }}
                       disabled={isSavingEdit || !editText.trim()}
-                      aria-label="Guardar edicion"
+                      aria-label="Guardar edición"
                     >
                       <CheckIcon fontSize="small" />
                     </IconButton>
@@ -135,7 +135,7 @@ const CommentsListItem = memo(function CommentsListItem({
                       size="small"
                       onClick={(e) => { e.stopPropagation(); onCancelEdit(); }}
                       disabled={isSavingEdit}
-                      aria-label="Cancelar edicion"
+                      aria-label="Cancelar edición"
                     >
                       <CloseIcon fontSize="small" />
                     </IconButton>
