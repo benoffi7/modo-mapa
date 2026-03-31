@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, LinearProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
 import { logger } from '../../utils/logger';
 
@@ -13,6 +14,7 @@ interface Props {
 
 export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }: Props) {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -136,7 +138,8 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!selectedFile || uploading}
+          disabled={!selectedFile || uploading || isOffline}
+          title={isOffline ? 'Requiere conexion' : undefined}
         >
           Enviar
         </Button>
