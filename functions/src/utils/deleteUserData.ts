@@ -6,6 +6,22 @@ import { incrementCounter } from './counters';
 import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
 import type { UserOwnedCollection } from '../shared/userOwnedCollections';
 
+// ── Types ─────────────────────────────────────────────────────────────
+
+export type DeletionType = 'account_delete' | 'anonymous_clean';
+export type DeletionStatus = 'success' | 'partial_failure' | 'failure';
+
+export interface DeletionResult {
+  collectionsProcessed: number;
+  collectionsFailed: string[];
+  storageFilesDeleted: number;
+  storageFilesFailed: number;
+  aggregatesCorrected: boolean;
+  durationMs: number;
+}
+
+// ── Constants ─────────────────────────────────────────────────────────
+
 const BATCH_SIZE = 500;
 const CONCURRENCY = 5;
 
@@ -144,9 +160,13 @@ async function correctAggregates(db: Firestore, uid: string): Promise<void> {
   for (const doc of commentLikesSnap.docs) {
     const data = doc.data();
     if (data.commentId) {
-      await db.doc(`comments/${data.commentId}`).update({
-        likeCount: FieldValue.increment(-1),
-      }).catch(() => {});
+      try {
+        await db.doc(`comments/${data.commentId}`).update({
+          likeCount: FieldValue.increment(-1),
+        });
+      } catch {
+        // Target comment may have been deleted already — not a critical failure
+      }
     }
   }
 
@@ -154,17 +174,25 @@ async function correctAggregates(db: Firestore, uid: string): Promise<void> {
   for (const doc of followsAsFollower.docs) {
     const followedId = doc.data().followedId;
     if (followedId) {
-      await db.doc(`users/${followedId}`).update({
-        followersCount: FieldValue.increment(-1),
-      }).catch(() => {});
+      try {
+        await db.doc(`users/${followedId}`).update({
+          followersCount: FieldValue.increment(-1),
+        });
+      } catch {
+        // Target user may have been deleted already
+      }
     }
   }
   for (const doc of followsAsFollowed.docs) {
     const followerId = doc.data().followerId;
     if (followerId) {
-      await db.doc(`users/${followerId}`).update({
-        followingCount: FieldValue.increment(-1),
-      }).catch(() => {});
+      try {
+        await db.doc(`users/${followerId}`).update({
+          followingCount: FieldValue.increment(-1),
+        });
+      } catch {
+        // Target user may have been deleted already
+      }
     }
   }
 }
@@ -172,35 +200,83 @@ async function correctAggregates(db: Firestore, uid: string): Promise<void> {
 /**
  * Deletes all user-owned data from Firestore and Storage.
  * Shared by deleteUserAccount (email users) and cleanAnonymousData (anonymous users).
+ *
+ * Returns a `DeletionResult` summarising what was processed and what failed,
+ * so callers can persist an audit log entry.
  */
-export async function deleteAllUserData(db: Firestore, uid: string): Promise<void> {
+export async function deleteAllUserData(db: Firestore, uid: string): Promise<DeletionResult> {
+  const startMs = Date.now();
   const storagePaths: string[] = [];
+  const collectionsFailed: string[] = [];
+  let collectionsProcessed = 0;
+  let aggregatesCorrected = true;
 
   // Correct aggregates before deletion
-  await correctAggregates(db, uid);
+  try {
+    await correctAggregates(db, uid);
+  } catch {
+    aggregatesCorrected = false;
+  }
 
   // Process cascade collections first
   const cascadeEntries = USER_OWNED_COLLECTIONS.filter((e) => e.cascade);
   const otherEntries = USER_OWNED_COLLECTIONS.filter((e) => !e.cascade);
 
   for (const entry of cascadeEntries) {
-    await processCollection(db, entry, uid, storagePaths);
+    try {
+      await processCollection(db, entry, uid, storagePaths);
+      collectionsProcessed++;
+    } catch {
+      collectionsFailed.push(entry.collection);
+    }
   }
 
   // Process remaining in parallel
   for (let i = 0; i < otherEntries.length; i += CONCURRENCY) {
     const chunk = otherEntries.slice(i, i + CONCURRENCY);
-    await Promise.all(chunk.map((entry) => processCollection(db, entry, uid, storagePaths)));
+    const results = await Promise.allSettled(
+      chunk.map((entry) => processCollection(db, entry, uid, storagePaths)),
+    );
+    for (let j = 0; j < results.length; j++) {
+      if (results[j].status === 'fulfilled') {
+        collectionsProcessed++;
+      } else {
+        collectionsFailed.push(chunk[j].collection);
+      }
+    }
   }
 
-  // Storage cleanup (best-effort)
+  // Storage cleanup
+  let storageFilesDeleted = 0;
+  let storageFilesFailed = 0;
+
   try {
     const bucket = getStorage().bucket();
-    await Promise.all([
-      bucket.deleteFiles({ prefix: `feedback-media/${uid}/` }).catch(() => {}),
-      ...storagePaths.map((p) => bucket.file(p).delete().catch(() => {})),
-    ]);
+    // Feedback media folder
+    try {
+      await bucket.deleteFiles({ prefix: `feedback-media/${uid}/` });
+      storageFilesDeleted++;
+    } catch {
+      storageFilesFailed++;
+    }
+    // Individual storage paths (photos, etc.)
+    const storageResults = await Promise.allSettled(
+      storagePaths.map((p) => bucket.file(p).delete()),
+    );
+    for (const r of storageResults) {
+      if (r.status === 'fulfilled') storageFilesDeleted++;
+      else storageFilesFailed++;
+    }
   } catch {
-    // best-effort
+    storageFilesFailed += storagePaths.length + 1;
   }
+
+  return {
+    collectionsProcessed,
+    collectionsFailed,
+    storageFilesDeleted,
+    storageFilesFailed,
+    aggregatesCorrected,
+    durationMs: Date.now() - startMs,
+  };
 }

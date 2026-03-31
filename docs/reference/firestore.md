@@ -30,6 +30,7 @@
 | `listItems` | auto-generated | listId, businessId, addedBy?, createdAt | Read auth (si parent list es owner/editor/public/featured); create auth (`keys().hasOnly`, addedBy==auth.uid si presente, caller es owner o editor del list); delete auth (caller es owner o editor del list). Rate limit: 100/day per user, doc deleted on exceed |
 | `specials` | auto-generated | title, subtitle, icon, type ('featured_list'/'trending'/'custom_link'), referenceId, order, active | Read auth; write admin only |
 | `achievements` | auto-generated | label, description, icon, condition (map: metric+threshold), order, active | Read auth; write admin only |
+| `_cronRuns` | `{cronName}` | lastRunAt (timestamp), result ('success'/'error'), detail? (string), durationMs? (number) | Admin read; write false (Cloud Functions write via admin SDK). Heartbeat de ejecucion de scheduled functions. |
 | `_ipRateLimits` | variable | (interno — rate limits por IP) | No client access; Functions write (admin SDK) |
 
 ### Subcollections

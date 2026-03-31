@@ -37,4 +37,18 @@ export {
   fetchPerfMetrics,
   fetchStorageStats,
   fetchAnalyticsReport,
+  fetchCronHealthStatus,
 } from './content';
+export {
+  moderateComment,
+  moderateRating,
+  moderateCustomTag,
+  fetchModerationLogs,
+} from './moderation';
+export {
+  fetchConfigDocs,
+  fetchConfigDoc,
+  updateModerationBannedWords,
+  fetchActivityFeedDiag,
+} from './config';
+export { fetchDeletionAuditLogs } from './audit';

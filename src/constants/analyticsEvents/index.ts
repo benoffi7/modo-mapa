@@ -7,3 +7,4 @@ export * from './system';
 export * from './business';
 export * from './digest';
 export * from './interests';
+export * from './admin';

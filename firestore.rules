@@ -244,6 +244,13 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Audit logs de eliminacion — solo admin puede leer.
+    // Cloud Functions escribe con admin SDK.
+    match /deletionAuditLogs/{docId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
     // Fotos de menú — cualquier usuario autenticado puede leer.
     // Owner puede crear con status 'pending' y timestamp validado.
     // Solo Cloud Functions (admin SDK) puede update/delete.
@@ -543,6 +550,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Cron heartbeats — admin read for dashboard, Cloud Functions write via admin SDK.
+    match /_cronRuns/{cronName} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_rateLimits/{docId} {
       allow read, write: if false;
@@ -551,6 +564,13 @@ service cloud.firestore {
     // IP rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_ipRateLimits/{docId} {
       allow read, write: if false;
+    }
+
+    // Logs de moderación — solo admin puede leer.
+    // Cloud Functions escribe con admin SDK.
+    match /moderationLogs/{docId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
     }
   }
 }

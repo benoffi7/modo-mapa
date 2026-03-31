@@ -2,6 +2,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 import { TRENDING_SCORING, TRENDING_MAX_BUSINESSES, TRENDING_WINDOW_DAYS } from '../constants/trending';
+import { withCronHeartbeat } from '../utils/cronHeartbeat';
 
 export interface BusinessAccumulator {
   ratings: number;
@@ -88,49 +89,55 @@ export function computeScores(
   return scored.slice(0, TRENDING_MAX_BUSINESSES);
 }
 
+async function runTrending(): Promise<string> {
+  const db = getDb();
+  const now = new Date();
+  const since = new Date(now);
+  since.setDate(since.getDate() - TRENDING_WINDOW_DAYS);
+
+  const [ratings, comments, userTags, priceLevels, listItems] = await Promise.all([
+    countByBusiness(db, 'ratings', since),
+    countByBusiness(db, 'comments', since),
+    countByBusiness(db, 'userTags', since),
+    countByBusiness(db, 'priceLevels', since),
+    countByBusiness(db, 'listItems', since),
+  ]);
+
+  const top = computeScores(ratings, comments, userTags, priceLevels, listItems);
+
+  const nameMap = await getBusinessNames(
+    db,
+    top.map((s) => s.businessId),
+  );
+
+  const businesses = top.map((s, i) => {
+    const info = nameMap.get(s.businessId) ?? { name: 'Sin nombre', category: '' };
+    return {
+      businessId: s.businessId,
+      name: info.name,
+      category: info.category,
+      score: s.score,
+      breakdown: s.breakdown,
+      rank: i + 1,
+    };
+  });
+
+  await db.doc('trendingBusinesses/current').set({
+    businesses,
+    computedAt: Timestamp.fromDate(now),
+    periodStart: Timestamp.fromDate(since),
+    periodEnd: Timestamp.fromDate(now),
+  });
+
+  return `Computed trending: ${businesses.length} businesses`;
+}
+
 export const computeTrendingBusinesses = onSchedule(
   {
     schedule: '0 3 * * *',
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getDb();
-    const now = new Date();
-    const since = new Date(now);
-    since.setDate(since.getDate() - TRENDING_WINDOW_DAYS);
-
-    const [ratings, comments, userTags, priceLevels, listItems] = await Promise.all([
-      countByBusiness(db, 'ratings', since),
-      countByBusiness(db, 'comments', since),
-      countByBusiness(db, 'userTags', since),
-      countByBusiness(db, 'priceLevels', since),
-      countByBusiness(db, 'listItems', since),
-    ]);
-
-    const top = computeScores(ratings, comments, userTags, priceLevels, listItems);
-
-    const nameMap = await getBusinessNames(
-      db,
-      top.map((s) => s.businessId),
-    );
-
-    const businesses = top.map((s, i) => {
-      const info = nameMap.get(s.businessId) ?? { name: 'Sin nombre', category: '' };
-      return {
-        businessId: s.businessId,
-        name: info.name,
-        category: info.category,
-        score: s.score,
-        breakdown: s.breakdown,
-        rank: i + 1,
-      };
-    });
-
-    await db.doc('trendingBusinesses/current').set({
-      businesses,
-      computedAt: Timestamp.fromDate(now),
-      periodStart: Timestamp.fromDate(since),
-      periodEnd: Timestamp.fromDate(now),
-    });
+    await withCronHeartbeat('computeTrendingBusinesses', runTrending);
   },
 );
