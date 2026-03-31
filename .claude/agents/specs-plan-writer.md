@@ -170,6 +170,38 @@ Mock strategy.}
 
 ---
 
+## Accesibilidad y UI mobile
+
+{Para cada componente nuevo con elementos interactivos, especificar:}
+
+| Componente | Elemento | aria-label | Min touch target | Error state |
+|-----------|----------|------------|-----------------|-------------|
+| {ej: FavoritesList} | {IconButton delete} | {"Eliminar de favoritos"} | {44x44px} | {PaginatedListShell error} |
+
+### Reglas
+- Todo `<IconButton>` → `aria-label` obligatorio
+- Nunca `<Typography onClick>` → usar `<Button variant="text">`
+- Touch targets: minimo 44x44px (no `p: 0.25`, no `width: 32`)
+- Componentes con fetch → DEBEN tener error state con retry (no skeleton forever)
+- `<img>` con URL dinamica → DEBEN tener `onError` fallback
+
+## Textos y copy
+
+{Listar TODOS los textos nuevos visibles al usuario con ortografia verificada:}
+
+| Texto | Donde | Regla aplicada |
+|-------|-------|----------------|
+| {ej: "Agregá a favoritos"} | {toast en FavoriteButton} | {voseo, tilde en á} |
+
+### Reglas de copy
+- Voseo siempre: Buscá, Dejá, Calificá, Agregá, Seguí (nunca Busca, Deja, Califica)
+- Tildes obligatorias: búsqueda, café, pizzería, panadería, heladería, reseña, edición, opinión, todavía, más, información, dirección, ubicación, configuración, sincronización
+- Terminologia: "comercios" (no "negocios"), "reseñas" (no "reviews")
+- Constante `ANONYMOUS_DISPLAY_NAME` para comparar nombre anonimo (nunca hardcodear string)
+- Strings reutilizables en `src/constants/messages/`
+
+---
+
 ## Decisiones tecnicas
 
 {Key technical decisions and their rationale.
@@ -270,6 +302,33 @@ Which files must be created/modified first.}
 - [ ] Logica de negocio en hooks/services, no en componentes
 - [ ] Si se toca un archivo con deuda tecnica, se incluye el fix en el plan
 - [ ] Ningun archivo resultante supera 400 lineas
+
+## Guardrails de seguridad
+
+- [ ] Toda coleccion nueva tiene `hasOnly()` en create + `affectedKeys().hasOnly()` en update
+- [ ] Todo campo string tiene `.size() <= N` en rules
+- [ ] Todo campo list tiene `.size() <= N` en rules
+- [ ] Admin writes tambien tienen validacion de campos (defense contra admin comprometido)
+- [ ] Counter decrements en triggers usan `Math.max(0, ...)` (nunca negativo)
+- [ ] Rate limits llaman `snap.ref.delete()` cuando exceden (log-only no es enforcement)
+- [ ] No hay secrets, admin emails, ni credenciales en archivos commiteados
+- [ ] `getCountFromServer` → usar `getCountOfflineSafe` siempre
+
+## Guardrails de accesibilidad y UI
+
+- [ ] Todo `<IconButton>` tiene `aria-label`
+- [ ] No hay `<Typography onClick>` — usar `<Button variant="text">`
+- [ ] Touch targets minimo 44x44px (no `p: 0.25`, no `width: 32`)
+- [ ] Componentes con fetch tienen error state con retry
+- [ ] `<img>` con URL dinamica tienen `onError` fallback
+- [ ] httpsCallable en componentes user-facing tienen guard offline (`useConnectivity`)
+
+## Guardrails de copy
+
+- [ ] Todos los textos nuevos usan voseo (Buscá, no Busca)
+- [ ] Tildes correctas en todos los textos en espanol
+- [ ] Terminologia consistente: "comercios" no "negocios"
+- [ ] Strings reutilizables en `src/constants/messages/`
 
 ## Fase final: Documentacion (OBLIGATORIA)
 

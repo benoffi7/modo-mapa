@@ -233,6 +233,37 @@ done
 
 If violations found: move the Firebase call to a service function. Components must stay Firebase-agnostic to keep the monolith % low.
 
+### 1k1b. Offline safety guard
+
+**WARN:** New or modified code that uses `httpsCallable` or `getCountFromServer` must have offline protection.
+
+```bash
+# getCountFromServer without offline-safe wrapper
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.' | grep -v 'getCountOfflineSafe'); do
+  if [ -f "$f" ]; then
+    if grep -q 'getCountFromServer' "$f" 2>/dev/null; then
+      echo "OFFLINE UNSAFE: $f uses getCountFromServer directly — use getCountOfflineSafe"
+    fi
+  fi
+done
+
+# httpsCallable in user-facing components without offline guard
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -q 'httpsCallable' "$f" 2>/dev/null; then
+      if ! grep -qE 'isOffline|useConnectivity|navigator\.onLine' "$f" 2>/dev/null; then
+        echo "NO OFFLINE GUARD: $f uses httpsCallable without connectivity check"
+      fi
+    fi
+  fi
+done
+```
+
+Rules:
+- `getCountFromServer` → always use `getCountOfflineSafe` wrapper
+- `httpsCallable` in user-facing components → must check connectivity (disable button, show message, or cache fallback)
+- `<img>` with dynamic URLs → must have `onError` fallback for offline/broken images
+
 ### 1k2. Layer boundary guard
 
 **WARN:** Check that new files in `src/hooks/` actually use React hooks. Files without `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, or `useContext` belong in `src/services/` or `src/utils/`.
@@ -279,6 +310,72 @@ done
 
 Pattern to use: `let cancelled = false; ... if (!cancelled) setState(...); return () => { cancelled = true; }`
 
+### 1k4. Touch target minimum guard
+
+**WARN:** New or modified IconButtons and interactive elements must meet the 44x44px minimum touch target for mobile.
+
+```bash
+# Check for dangerously small padding on IconButtons
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'p:\s*0\.(25|5)\b|padding:\s*[0-2]px' "$f" 2>/dev/null; then
+      echo "SMALL TOUCH TARGET: $f — IconButton padding below 44px minimum"
+    fi
+  fi
+done
+```
+
+Interactive elements with `width/height: 32` or `p: 0.25` produce ~20-32px targets. Minimum is `minWidth: 44, minHeight: 44` or `p: 1.25` with 24px icon.
+
+### 1k5. Accessibility guard
+
+**WARN:** New or modified interactive elements must have proper accessibility attributes.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    # IconButtons without aria-label
+    if grep -qE '<IconButton[^>]*>' "$f" 2>/dev/null; then
+      count_buttons=$(grep -c '<IconButton' "$f" 2>/dev/null)
+      count_labels=$(grep -c 'aria-label' "$f" 2>/dev/null)
+      if [ "$count_labels" -lt "$count_buttons" ]; then
+        echo "MISSING ARIA-LABEL: $f ($count_buttons IconButtons, $count_labels aria-labels)"
+      fi
+    fi
+    # Typography used as button (onClick without role="button")
+    if grep -qE '<Typography[^>]*onClick' "$f" 2>/dev/null; then
+      echo "TYPOGRAPHY AS BUTTON: $f — use Button variant='text' instead"
+    fi
+  fi
+done
+```
+
+Rules:
+- Every `<IconButton>` MUST have `aria-label`
+- Never use `<Typography onClick>` for interactive elements — use `<Button variant="text">` or `<Link component="button">`
+- New components with loading data MUST have error states (not just skeleton forever)
+
+### 1k6. String consistency guard
+
+**WARN:** New or modified user-facing strings must follow copy conventions.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    # Check for common missing tildes in Spanish
+    if grep -qEi "'[^']*\b(dia|dias|busqueda|cafe|pizzeria|rapida|panaderia|heladeria|resena|edicion|opinion|todavia|mas|informacion|direccion|ubicacion|configuracion|sincronizacion)\b[^']*'" "$f" 2>/dev/null; then
+      echo "POSSIBLE MISSING TILDE: $f"
+    fi
+    # Check for "negocios" (should be "comercios")
+    if grep -qi 'negocios' "$f" 2>/dev/null; then
+      echo "TERMINOLOGY: $f uses 'negocios' — should be 'comercios'"
+    fi
+  fi
+done
+```
+
+Conventions: voseo (Buscá, Dejá, Calificá), "comercios" not "negocios", all Spanish words must have proper tildes.
+
 ### 1l. Billing impact guard
 
 **WARN:** If the branch adds new Cloud Function triggers or new writable Firestore collections, evaluate billing impact.
@@ -310,15 +407,89 @@ git diff origin/new-home -- 'firestore.rules' | grep -E '^\+.*match /' | grep -v
 For each new collection, verify ALL of these exist:
 - [ ] `hasOnly()` on create rule (prevents field injection)
 - [ ] `hasOnly()` or `affectedKeys().hasOnly()` on update rule
-- [ ] Type/range validation on every field
+- [ ] Type validation on every field (`is string`, `is bool`, `is int`, `is list`, `is timestamp`)
+- [ ] `.size() <= N` on every string field (prevents storage DoS)
+- [ ] `.size() <= N` on every list field
 - [ ] `createdAt == request.time` on create
 - [ ] Ownership check (`userId == request.auth.uid`) on writes
 - [ ] Rate limit in Cloud Function trigger (if user-facing writes)
+- [ ] Rate limit calls `snap.ref.delete()` on excess (log-only is not enforcement)
+- [ ] Counter decrements use `Math.max(0, ...)` floor (prevents negative counts)
 - [ ] Content moderation via `checkModeration()` (if collection has text fields)
 - [ ] Seed data entry (check with seed-manager agent in Phase 3c)
 - [ ] Privacy policy mention (if collection stores user data)
+- [ ] Admin writes also have field validation (compromised admin defense)
 
 If any item is missing → **BLOCKER**: the collection is not hardened. Fix before merging.
+
+### 1n. Secrets and credentials guard
+
+**BLOCKER:** Scan all changed and new files for accidentally committed secrets, credentials, or sensitive config.
+
+```bash
+# Check for common secret patterns in changed files
+for f in $(git diff --name-only origin/new-home); do
+  if [ -f "$f" ]; then
+    if grep -qEi '(client_secret|private_key|api_key|secret_key|password|token).*[:=].*["\x27][A-Za-z0-9_\-]{10,}' "$f" 2>/dev/null; then
+      echo "POTENTIAL SECRET: $f"
+    fi
+  fi
+done
+
+# Check for SA key files on disk (even if gitignored)
+ls -la sa-key*.json *-credentials.json service-account*.json 2>/dev/null && echo "WARN: Service account key files found on disk"
+```
+
+If potential secrets found → **BLOCKER**. Refactor to use environment variables, Secret Manager, or `gcloud auth application-default login`. Never commit secrets even to non-public repos.
+
+### 1o. Firestore rules hardening guard
+
+**BLOCKER if firestore.rules changed:** Verify all rules follow security best practices:
+
+```bash
+if git diff --name-only origin/new-home | grep -q 'firestore.rules'; then
+  echo "=== Rules without field validation on write ==="
+  # Check all allow write/create/update for hasOnly
+  grep -n 'allow \(write\|create\|update\)' firestore.rules | while read line; do
+    linenum=$(echo "$line" | cut -d: -f1)
+    block=$(sed -n "${linenum},$((linenum+15))p" firestore.rules)
+    echo "$block" | grep -q 'hasOnly\|affectedKeys' || echo "MISSING VALIDATION: $line"
+  done
+
+  echo "=== String fields without size limits ==="
+  grep -n 'is string' firestore.rules | while read line; do
+    linenum=$(echo "$line" | cut -d: -f1)
+    field=$(echo "$line" | grep -oP '\w+(?=\s+is string)')
+    nearby=$(sed -n "$((linenum-2)),$((linenum+2))p" firestore.rules)
+    echo "$nearby" | grep -q '\.size()' || echo "NO SIZE LIMIT: $line"
+  done
+
+  echo "=== Counter decrements without floor-at-zero ==="
+  git diff origin/new-home -- 'functions/src/triggers/**' | grep -E '^\+.*increment\(-' | head -10
+fi
+```
+
+Checklist for every write rule:
+- [ ] `keys().hasOnly()` or `affectedKeys().hasOnly()` present
+- [ ] Every `is string` field has `.size() <= N` limit
+- [ ] Every `is list` field has `.size() <= N` limit
+- [ ] Admin-only writes still have field validation (compromised admin defense)
+- [ ] Counter decrements in triggers use `Math.max(0, ...)` floor
+- [ ] Rate limits call `snap.ref.delete()` (not just log) on excess
+
+### 1p. Sensitive data exposure guard
+
+**WARN:** Check that committed files don't expose admin emails, internal URLs, or PII.
+
+```bash
+# Admin emails in committed files
+git diff --name-only origin/new-home | xargs grep -l '@gmail.com\|@googlemail.com' 2>/dev/null | grep -v '.test.' | grep -v 'node_modules'
+
+# Internal URLs or IPs
+git diff origin/new-home | grep -E '^\+.*((192\.168|10\.|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]+|localhost:[0-9]{4,})' | grep -v '.env.example' | head -5
+```
+
+If admin emails or internal endpoints are in committed production files → **WARN**. Move to environment config or Secret Manager.
 
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
@@ -479,7 +650,7 @@ If the push still fails due to pre-push hooks, check `git stash list` — the WI
 ### 5c. Verify CI
 
 ```bash
-gh run watch $(gh run list --branch main --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+gh run watch $(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
 ```
 
 ### 5d. Clean up branches
@@ -553,7 +724,7 @@ Add the new version at the **top** of the table (newest first):
 ```bash
 git add docs/reports/backlog-producto.md docs/reports/changelog.md
 git commit -m "docs: update backlog and changelog post-merge"
-git push origin main
+git push origin new-home
 ```
 
 These files are the **single source of truth** for product roadmap and release history.

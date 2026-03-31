@@ -250,6 +250,29 @@ gh issue list --label "tech debt" --state open --json number,title
 
 ---
 
+## Accesibilidad y UI mobile
+
+{Para cada componente interactivo nuevo, evaluar:}
+
+### Checklist de accesibilidad
+
+- [ ] Todo `<IconButton>` tiene `aria-label` descriptivo
+- [ ] Elementos interactivos usan semantica correcta (`<Button>`, no `<Typography onClick>`)
+- [ ] Touch targets minimo 44x44px en mobile (no usar `p: 0.25` en IconButtons)
+- [ ] Componentes con carga de datos tienen error state (no solo skeleton forever)
+- [ ] Imagenes con URLs dinamicas tienen `onError` fallback
+- [ ] Formularios tienen labels visibles o aria-labels
+
+### Checklist de copy
+
+- [ ] Todos los textos en espanol con tildes correctas
+- [ ] Tono consistente: voseo (Buscá, Dejá, Calificá), no tuteo (Busca, Deja, Califica)
+- [ ] Terminologia: "comercios" (no "negocios"), "reseñas" (no "reviews")
+- [ ] Strings reutilizables centralizados en `src/constants/messages/`
+- [ ] Mensajes de error accionables (no solo "Error" generico)
+
+---
+
 ## Success Criteria
 
 {4-5 numbered criteria}
