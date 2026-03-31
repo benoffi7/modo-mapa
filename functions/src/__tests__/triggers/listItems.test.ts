@@ -92,23 +92,59 @@ describe('onListItemCreated', () => {
     expect(mockLogAbuse).not.toHaveBeenCalled();
   });
 
-  it('increments counters and logs abuse when rate limit exceeded', async () => {
+  it('deletes document and logs abuse when rate limit exceeded', async () => {
     mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 101 }) });
+    const mockDelete = vi.fn().mockResolvedValue(undefined);
 
     await onCreated()({
       params: { itemId: 'i1' },
       data: {
         data: () => ({ listId: 'list1', businessId: 'biz1', addedBy: 'user1' }),
+        ref: { delete: mockDelete },
       },
     });
 
     expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'listItems', 1);
     expect(mockTrackWrite).toHaveBeenCalledWith(expect.anything(), 'listItems');
+    expect(mockDelete).toHaveBeenCalled();
     expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), {
       userId: 'user1',
       type: 'rate_limit',
       collection: 'listItems',
-      detail: 'Exceeded 100 listItems/day',
+      detail: 'Exceeded 100 listItems/day — document deleted',
     });
+  });
+
+  it('does not delete document when rate limit not exceeded', async () => {
+    mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 50 }) });
+    const mockDelete = vi.fn().mockResolvedValue(undefined);
+
+    await onCreated()({
+      params: { itemId: 'i1' },
+      data: {
+        data: () => ({ listId: 'list1', businessId: 'biz1', addedBy: 'user1' }),
+        ref: { delete: mockDelete },
+      },
+    });
+
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(mockLogAbuse).not.toHaveBeenCalled();
+  });
+
+  it('logs correct detail message mentioning document deleted', async () => {
+    mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 200 }) });
+    const mockDelete = vi.fn().mockResolvedValue(undefined);
+
+    await onCreated()({
+      params: { itemId: 'i1' },
+      data: {
+        data: () => ({ listId: 'list1', businessId: 'biz1', addedBy: 'user2' }),
+        ref: { delete: mockDelete },
+      },
+    });
+
+    expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      detail: expect.stringContaining('document deleted'),
+    }));
   });
 });

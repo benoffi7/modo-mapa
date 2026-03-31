@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../config/firebase', () => ({ db: {}, storage: {}, functions: {} }));
 vi.mock('../../config/collections', () => ({ COLLECTIONS: { MENU_PHOTOS: 'menuPhotos' } }));
 vi.mock('../../config/converters', () => ({ menuPhotoConverter: {} }));
-vi.mock('../../hooks/useBusinessDataCache', () => ({ invalidateBusinessCache: vi.fn() }));
+vi.mock('../businessDataCache', () => ({ invalidateBusinessCache: vi.fn() }));
 vi.mock('../../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
 const mockCallableFn = vi.fn();

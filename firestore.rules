@@ -255,7 +255,14 @@ service cloud.firestore {
         && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
-        && request.resource.data.reportCount == 0;
+        && request.resource.data.reportCount == 0
+        // storagePath validation: must follow menus/{uid}/{bizId}/{fileName} format
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.size() > 0
+        && request.resource.data.storagePath.size() <= 200
+        && request.resource.data.storagePath.matches('^menus/' + request.auth.uid + '/biz_[0-9]{1,6}/[a-zA-Z0-9_-]+$')
+        // thumbnailPath must be empty string on create (Cloud Function sets it)
+        && request.resource.data.thumbnailPath == '';
       allow update: if false;
       allow delete: if false;
     }
@@ -309,7 +316,7 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == userId)
                   || isAdmin();
       allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'notifyRecommendations', 'notificationDigest', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'notifyRecommendations', 'notificationDigest', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'followedTags', 'followedTagsUpdatedAt', 'followedTagsLastSeenAt', 'updatedAt'])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
@@ -318,6 +325,14 @@ service cloud.firestore {
         && request.resource.data.notifyFeedback is bool
         && request.resource.data.notifyReplies is bool
         && request.resource.data.analyticsEnabled is bool
+        // #251: type validation for notification fields
+        && (!('notifyFollowers' in request.resource.data) || request.resource.data.notifyFollowers is bool)
+        && (!('notifyRecommendations' in request.resource.data) || request.resource.data.notifyRecommendations is bool)
+        && (!('notificationDigest' in request.resource.data) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
+        // #251: followedTags fields validation
+        && (!('followedTags' in request.resource.data) || (request.resource.data.followedTags is list && request.resource.data.followedTags.size() <= 20))
+        && (!('followedTagsUpdatedAt' in request.resource.data) || request.resource.data.followedTagsUpdatedAt is timestamp)
+        && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
         && (!('locality' in request.resource.data) || request.resource.data.locality is string)
         && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
         && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
@@ -356,7 +371,10 @@ service cloud.firestore {
         && request.resource.data.isPublic is bool
         && request.resource.data.itemCount == 0
         && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        // #251: color/icon type + length validation
+        && (!('color' in request.resource.data) || (request.resource.data.color is string && request.resource.data.color.size() <= 20))
+        && (!('icon' in request.resource.data) || (request.resource.data.icon is string && request.resource.data.icon.size() <= 50));
       // Owner: can update name, description, isPublic, itemCount, updatedAt, color, icon.
       // featured and editorIds are ONLY writable via admin SDK (Cloud Functions).
       allow update: if request.auth != null
@@ -369,7 +387,10 @@ service cloud.firestore {
             && request.resource.data.name.size() > 0
             && request.resource.data.name.size() <= 50
             && request.resource.data.description is string
-            && request.resource.data.description.size() <= 200)
+            && request.resource.data.description.size() <= 200
+            // #251: color/icon type + length validation
+            && (!('color' in request.resource.data) || (request.resource.data.color is string && request.resource.data.color.size() <= 20))
+            && (!('icon' in request.resource.data) || (request.resource.data.icon is string && request.resource.data.icon.size() <= 50)))
           || (isListEditor()
               && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['itemCount', 'updatedAt']))

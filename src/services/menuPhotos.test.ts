@@ -43,7 +43,7 @@ vi.mock('../config/converters', () => ({
   menuPhotoConverter: {},
 }));
 
-vi.mock('../hooks/useBusinessDataCache', () => ({
+vi.mock('./businessDataCache', () => ({
   invalidateBusinessCache: (...args: unknown[]) => mockInvalidateBusinessCache(...args),
 }));
 

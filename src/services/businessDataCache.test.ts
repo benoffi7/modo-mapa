@@ -3,9 +3,9 @@ import {
   setBusinessCache,
   invalidateBusinessCache,
   patchBusinessCache,
-} from './useBusinessDataCache';
+} from './businessDataCache';
 
-describe('useBusinessDataCache', () => {
+describe('businessDataCache', () => {
   beforeEach(() => {
     // Clear cache between tests
     invalidateBusinessCache('biz_001');

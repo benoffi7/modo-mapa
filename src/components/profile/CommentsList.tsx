@@ -14,6 +14,9 @@ import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
+import { useToast } from '../../context/ToastContext';
+import { MSG_COMMON } from '../../constants/messages';
+import { logger } from '../../utils/logger';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
@@ -31,6 +34,7 @@ interface Props {
 
 export default function CommentsList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
   const { notifications, markRead } = useNotifications();
 
   // Data loading
@@ -44,9 +48,14 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   const onConfirmDelete = useCallback(
     async (comment: Comment) => {
       if (!user) return;
-      await deleteComment(comment.id, user.uid);
+      try {
+        await deleteComment(comment.id, user.uid);
+      } catch (err) {
+        logger.error('[CommentsList] deleteComment failed:', err);
+        toast.error(MSG_COMMON.deleteError);
+      }
     },
-    [user],
+    [user, toast],
   );
   const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete,
@@ -57,8 +66,13 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   // Edit (extracted hook)
   const handleEditSave = useCallback(async (commentId: string, newText: string) => {
     if (!user) return;
-    await editComment(commentId, user.uid, newText);
-  }, [user]);
+    try {
+      await editComment(commentId, user.uid, newText);
+    } catch (err) {
+      logger.error('[CommentsList] editComment failed:', err);
+      toast.error(MSG_COMMON.editError);
+    }
+  }, [user, toast]);
 
   const { editingId, editText, isSavingEdit, setEditText, startEdit, cancelEdit, saveEdit } = useCommentEdit({
     onSave: handleEditSave,

@@ -6,7 +6,7 @@ import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from 
 
 export type BusinessDataCollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
 
-export interface BusinessDataResult {
+interface BusinessDataResult {
   isFavorite: boolean;
   ratings: Rating[];
   comments: Comment[];

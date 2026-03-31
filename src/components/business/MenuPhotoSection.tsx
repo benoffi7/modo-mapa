@@ -33,9 +33,11 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
     }
     const path = menuPhoto.thumbnailPath || menuPhoto.storagePath;
     if (!path) return;
+    let cancelled = false;
     getMenuPhotoUrl(path)
-      .then(setPhotoUrl)
-      .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); setPhotoUrl(null); });
+      .then((url) => { if (!cancelled) setPhotoUrl(url); })
+      .catch((err) => { logger.error('[MenuPhotoSection] getDownloadURL failed:', err); if (!cancelled) setPhotoUrl(null); });
+    return () => { cancelled = true; };
   }, [menuPhoto]);
 
   // Check if user has pending photos
@@ -44,9 +46,11 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
       setHasPending(false); // eslint-disable-line react-hooks/set-state-in-effect -- guard clause
       return;
     }
+    let cancelled = false;
     getUserPendingPhotos(user.uid, businessId)
-      .then((photos) => setHasPending(photos.length > 0))
-      .catch((err) => { logger.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); setHasPending(false); });
+      .then((photos) => { if (!cancelled) setHasPending(photos.length > 0); })
+      .catch((err) => { logger.error('[MenuPhotoSection] getUserPendingPhotos failed:', err); if (!cancelled) setHasPending(false); });
+    return () => { cancelled = true; };
   }, [user, businessId]);
 
   // Staleness is based on reviewedAt which is stable per photo — safe to derive

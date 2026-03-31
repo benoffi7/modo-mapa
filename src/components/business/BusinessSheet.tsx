@@ -10,6 +10,7 @@ import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_BUSINESS_SHEET_TAB_CHANGED } from '../../constants/analyticsEvents';
+import { STORAGE_KEY_DRAG_HANDLE_SEEN } from '../../constants/storage';
 import BusinessSheetHeader from './BusinessSheetHeader';
 import InfoTab from './InfoTab';
 import OpinionesTab from './OpinionesTab';
@@ -59,7 +60,7 @@ export default function BusinessSheet() {
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
   const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
-  const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem('dragHandleSeen'));
+  const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem(STORAGE_KEY_DRAG_HANDLE_SEEN));
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -88,7 +89,7 @@ export default function BusinessSheet() {
     if (showTooltip && isOpen) {
       const timer = setTimeout(() => {
         setShowTooltip(false);
-        localStorage.setItem('dragHandleSeen', '1');
+        localStorage.setItem(STORAGE_KEY_DRAG_HANDLE_SEEN, '1');
       }, 3000);
       return () => clearTimeout(timer);
     }

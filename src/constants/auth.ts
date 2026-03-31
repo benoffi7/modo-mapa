@@ -1,7 +1,6 @@
-export const PASSWORD_MIN_LENGTH = 8;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const PASSWORD_RULES = {
+const PASSWORD_RULES = {
   minLength: 8,
   requireNumber: /\d/,
   requireUppercase: /[A-Z]/,

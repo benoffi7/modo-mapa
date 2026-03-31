@@ -10,7 +10,7 @@ import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import type { CheckIn } from '../types';
 
-export function getCheckinsCollection(): CollectionReference<CheckIn> {
+function getCheckinsCollection(): CollectionReference<CheckIn> {
   return collection(db, COLLECTIONS.CHECKINS).withConverter(checkinConverter) as CollectionReference<CheckIn>;
 }
 

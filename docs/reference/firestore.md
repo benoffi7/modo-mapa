@@ -15,9 +15,9 @@
 | `config` | `counters`, `moderation`, `perfCounters`, `appVersion` | counters: totales + daily reads/writes/deletes; moderation: bannedWords; perfCounters: Cloud Function timings (array union per function name, reset daily); appVersion: minVersion (semver string), updatedAt (timestamp) — force-update check (#191) | appVersion: public read, Admin SDK write; others: admin read, Functions write |
 | `dailyMetrics` | `YYYY-MM-DD` | ratingDistribution, tops, activeUsers, newAccounts, daily ops, byCollection, performance? (vitals/queries/functions/sampleCount) | Auth read; Functions write |
 | `abuseLogs` | auto-generated | userId, type, collection, detail, timestamp | Admin read; Functions write |
-| `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only); update/delete: Functions only |
+| `menuPhotos` | auto-generated | userId, businessId, storagePath, thumbnailPath, status, rejectionReason?, reviewedBy?, reviewedAt?, createdAt, reportCount | Read auth; create owner (pending only, storagePath regex validated `^menus/{uid}/biz_NNN/[a-zA-Z0-9_-]+$`, thumbnailPath must be `''`); update/delete: Functions only |
 | `priceLevels` | `{userId}__{businessId}` | userId, businessId, level (1-3), createdAt, updatedAt | Read auth; create/update owner, level 1-3; delete owner |
-| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, notifyFollowers, notifyRecommendations, analyticsEnabled, locality?, localityLat?, localityLng?, updatedAt | Read auth; write owner (`keys().hasOnly`) |
+| `userSettings` | `{userId}` | profilePublic, notificationsEnabled, notifyLikes, notifyPhotos, notifyRankings, notifyFeedback, notifyReplies, notifyFollowers (bool), notifyRecommendations (bool), notificationDigest? (string<=10), analyticsEnabled, locality?, localityLat?, localityLng?, followedTags? (list<=20), followedTagsUpdatedAt? (timestamp), followedTagsLastSeenAt? (timestamp), updatedAt | Read auth; write owner (`keys().hasOnly`, type validation on all fields) |
 | `userRankings` | auto-generated | userId, displayName, score, rank, badge?, period, periodStart | Read auth; write Functions only |
 | `notifications` | auto-generated | userId, type, title, body, read, relatedId?, createdAt | Read owner; update owner (read only); create/delete Functions only |
 | `perfMetrics` | auto-generated | sessionId, userId?, timestamp, vitals (lcp/inp/cls/ttfb), queries (Record name→{p50,p95,count}), device ({type,connection}), appVersion | Create/update/delete: false (no client writes); read admin. Writes only via `writePerfMetrics` callable (Admin SDK). Functions read (dailyMetrics aggregation) |
@@ -26,8 +26,8 @@
 | `checkins` | auto-generated | userId, businessId, businessName (1-100), createdAt, location? (map: lat -90..90, lng -180..180) | Read owner+admin; create owner (`keys().hasOnly`, businessId validado, createdAt==request.time); no update; delete owner. Service: `services/checkins.ts` (`createCheckIn`, `fetchMyCheckIns`, `fetchCheckInsForBusiness`, `deleteCheckIn`, `fetchUserCheckIns`) |
 | `follows` | `{followerId}__{followedId}` | followerId, followedId, createdAt | Read follower+followed+admin; create owner (followerId==auth.uid, followedId!=followerId, target no es privado via get userSettings); no update; delete owner |
 | `recommendations` | auto-generated | senderId, senderName (1-30), recipientId, businessId, businessName (1-100), message (0-200), read (false en create), createdAt | Read recipient+admin; create sender (senderId==auth.uid, sender!=recipient, businessId validado); update recipient (solo read); no delete |
-| `sharedLists` | auto-generated | ownerId, name (1-50), description (0-200), isPublic, itemCount, createdAt, updatedAt, color?, icon?, featured? (admin SDK only), editorIds? (admin SDK only) | Read auth (owner/editor/isPublic/featured/admin); create owner (`keys().hasOnly`, itemCount==0); update owner (name/desc/isPublic/itemCount/updatedAt/color/icon) o editor (solo itemCount/updatedAt); delete owner |
-| `listItems` | auto-generated | listId, businessId, addedBy?, createdAt | Read auth (si parent list es owner/editor/public/featured); create auth (`keys().hasOnly`, addedBy==auth.uid si presente, caller es owner o editor del list); delete auth (caller es owner o editor del list) |
+| `sharedLists` | auto-generated | ownerId, name (1-50), description (0-200), isPublic, itemCount, createdAt, updatedAt, color? (string<=20), icon? (string<=50), featured? (admin SDK only), editorIds? (admin SDK only) | Read auth (owner/editor/isPublic/featured/admin); create owner (`keys().hasOnly`, itemCount==0, color/icon type+length validated); update owner (name/desc/isPublic/itemCount/updatedAt/color/icon, color/icon type+length validated) o editor (solo itemCount/updatedAt); delete owner |
+| `listItems` | auto-generated | listId, businessId, addedBy?, createdAt | Read auth (si parent list es owner/editor/public/featured); create auth (`keys().hasOnly`, addedBy==auth.uid si presente, caller es owner o editor del list); delete auth (caller es owner o editor del list). Rate limit: 100/day per user, doc deleted on exceed |
 | `specials` | auto-generated | title, subtitle, icon, type ('featured_list'/'trending'/'custom_link'), referenceId, order, active | Read auth; write admin only |
 | `achievements` | auto-generated | label, description, icon, condition (map: metric+threshold), order, active | Read auth; write admin only |
 | `_ipRateLimits` | variable | (interno — rate limits por IP) | No client access; Functions write (admin SDK) |
@@ -175,6 +175,7 @@ interface UserProfile {
 }
 
 // User settings (includes notifyFeedback)
+type DigestFrequency = 'realtime' | 'daily' | 'weekly';
 interface UserSettings {
   profilePublic: boolean;
   notificationsEnabled: boolean;
@@ -189,6 +190,10 @@ interface UserSettings {
   locality?: string;                // localidad seleccionada
   localityLat?: number;             // latitud de localidad
   localityLng?: number;             // longitud de localidad
+  notificationDigest?: DigestFrequency; // frecuencia de digest de notificaciones
+  followedTags?: string[];          // tags seguidos (max 20) — pendiente rules fix #251
+  followedTagsUpdatedAt?: Date;     // ultima actualizacion de tags — pendiente rules fix #251
+  followedTagsLastSeenAt?: Date;    // ultima vez que vio el feed — pendiente rules fix #251
   updatedAt: Date;
 }
 

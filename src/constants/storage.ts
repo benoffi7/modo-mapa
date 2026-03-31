@@ -21,3 +21,4 @@ export const STORAGE_KEY_RATING_PROMPT_DISMISSED = 'rating_prompt_dismissed';
 export const STORAGE_KEY_RATING_PROMPT_SHOWN_TODAY = 'rating_prompt_shown_today';
 export const STORAGE_KEY_QUICK_ACTIONS = 'quick_actions_config';
 export const STORAGE_KEY_DISMISS_LOCALITY_HINT = 'mm_dismiss_locality_hint';
+export const STORAGE_KEY_DRAG_HANDLE_SEEN = 'dragHandleSeen';
