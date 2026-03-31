@@ -100,8 +100,14 @@
     - [Specs](/feat/infra/254-useeffect-deadcode-cleanup/specs.md)
     - [Plan](/feat/infra/254-useeffect-deadcode-cleanup/plan.md)
   - [#256 Admin Config Viewer/Editor](/feat/infra/256-admin-config-viewer/prd.md)
+    - [Specs](/feat/infra/256-admin-config-viewer/specs.md)
+    - [Plan](/feat/infra/256-admin-config-viewer/plan.md)
   - [#257 Admin Cron Health Monitoring](/feat/infra/257-admin-cron-health/prd.md)
+    - [Specs](/feat/infra/257-admin-cron-health/specs.md)
+    - [Plan](/feat/infra/257-admin-cron-health/plan.md)
   - [#259 Admin GA4 Analytics Dashboard](/feat/infra/259-admin-ga4-analytics/prd.md)
+    - [Specs](/feat/infra/259-admin-ga4-analytics/specs.md)
+    - [Plan](/feat/infra/259-admin-ga4-analytics/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
@@ -159,7 +165,11 @@
     - [Specs](/feat/security/251-usersettings-rules-fix/specs.md)
     - [Plan](/feat/security/251-usersettings-rules-fix/plan.md)
   - [#255 Admin Content Moderation](/feat/security/255-admin-content-moderation/prd.md)
+    - [Specs](/feat/security/255-admin-content-moderation/specs.md)
+    - [Plan](/feat/security/255-admin-content-moderation/plan.md)
   - [#258 Deletion Audit Log](/feat/security/258-admin-deletion-audit/prd.md)
+    - [Specs](/feat/security/258-admin-deletion-audit/specs.md)
+    - [Plan](/feat/security/258-admin-deletion-audit/plan.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
