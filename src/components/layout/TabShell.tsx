@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { Box } from '@mui/material';
 import TabBar, { TAB_BAR_HEIGHT } from './TabBar';
 import TabLoader from '../ui/TabLoader';
@@ -51,7 +51,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
 export default function TabShell() {
   const { activeTab } = useTab();
   const { notifications } = useNotifications();
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
   const { unreadCount: recoUnread } = useUnreadRecommendations();
 
   // Deep links
