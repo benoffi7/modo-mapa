@@ -58,7 +58,7 @@ describe('AccountBanner', () => {
   it('dismisses and persists to localStorage when X clicked', () => {
     localStorage.setItem('hint_shown_post_first_rating', 'true');
     render(<AccountBanner onCreateAccount={onCreateAccount} />);
-    fireEvent.click(screen.getByRole('button', { name: '' })); // IconButton with no text
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }));
     expect(localStorage.getItem('account_banner_dismissed')).toBe('true');
     expect(mockTrackEvent).toHaveBeenCalledWith('onboarding_banner_dismissed');
   });
