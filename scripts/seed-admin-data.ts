@@ -178,6 +178,9 @@ async function seed() {
     customTags: 15,
     userTags: 50,
     commentLikes: 25,
+    moderationLogs: 10,
+    deletionAuditLogs: 5,
+    cronRuns: 6,
     dailyReads: 342,
     dailyWrites: 87,
     dailyDeletes: 12,
@@ -484,7 +487,94 @@ async function seed() {
     periodEnd: new Date(),
   });
 
-  // 19. User Settings (some public, some with notifications)
+  // 19. Moderation Logs (10 total — admin audit trail)
+  console.log('Creating moderation logs...');
+  const moderationActions: Array<{ action: string; targetCollection: string; reason: string }> = [
+    { action: 'delete_comment', targetCollection: 'comments', reason: 'Contenido ofensivo reportado por múltiples usuarios' },
+    { action: 'delete_comment', targetCollection: 'comments', reason: 'Spam publicitario' },
+    { action: 'flag_user', targetCollection: 'users', reason: 'Comportamiento abusivo reiterado (3 reportes en 24h)' },
+    { action: 'delete_comment', targetCollection: 'comments', reason: 'Lenguaje inapropiado detectado por filtro automático' },
+    { action: 'restore_comment', targetCollection: 'comments', reason: 'Falso positivo del filtro de moderación' },
+    { action: 'ban_user', targetCollection: 'users', reason: 'Cuenta de spam confirmada — 15 comentarios publicitarios' },
+    { action: 'delete_photo', targetCollection: 'menuPhotos', reason: 'Imagen inapropiada reportada' },
+    { action: 'unflag_user', targetCollection: 'users', reason: 'Revisión manual: usuario legítimo, falso positivo' },
+    { action: 'delete_feedback', targetCollection: 'feedback', reason: 'Contenido abusivo dirigido al equipo' },
+    { action: 'delete_comment', targetCollection: 'comments', reason: 'Información falsa sobre el comercio' },
+  ];
+
+  for (let i = 0; i < moderationActions.length; i++) {
+    const entry = moderationActions[i];
+    const targetUserId = randomFrom(USER_IDS);
+    await db.collection('moderationLogs').add({
+      adminId: 'admin_gonzalo',
+      action: entry.action,
+      targetCollection: entry.targetCollection,
+      targetDocId: `seed_doc_${String(i + 1).padStart(3, '0')}`,
+      targetUserId,
+      reason: entry.reason,
+      snapshot: entry.targetCollection === 'comments'
+        ? { text: randomFrom(COMMENT_TEXTS), userId: targetUserId, businessId: randomFrom(BUSINESS_IDS) }
+        : entry.targetCollection === 'users'
+          ? { displayName: USER_NAMES[USER_IDS.indexOf(targetUserId)] }
+          : { referenceId: `seed_ref_${i}` },
+      timestamp: daysAgo(randomInt(0, 20)),
+    });
+  }
+
+  // 20. Deletion Audit Logs (5 total — account deletion audit trail)
+  console.log('Creating deletion audit logs...');
+  const deletionStatuses: Array<{ status: string; type: string; failed: number }> = [
+    { status: 'completed', type: 'user_requested', failed: 0 },
+    { status: 'completed', type: 'admin_initiated', failed: 0 },
+    { status: 'partial_failure', type: 'user_requested', failed: 2 },
+    { status: 'completed', type: 'user_requested', failed: 0 },
+    { status: 'failed', type: 'admin_initiated', failed: 5 },
+  ];
+
+  const deletionCollections = ['comments', 'ratings', 'favorites', 'userTags', 'customTags', 'feedback', 'notifications', 'follows', 'recommendations', 'checkins'];
+  for (let i = 0; i < deletionStatuses.length; i++) {
+    const entry = deletionStatuses[i];
+    const processedCount = deletionCollections.length - entry.failed;
+    const failedCollections = entry.failed > 0
+      ? deletionCollections.slice(-entry.failed)
+      : [];
+    await db.collection('deletionAuditLogs').add({
+      uidHash: `sha256_${Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
+      type: entry.type,
+      status: entry.status,
+      collectionsProcessed: deletionCollections.slice(0, processedCount),
+      collectionsFailed: failedCollections,
+      storageFilesDeleted: randomInt(0, 12),
+      storageFilesFailed: entry.status === 'failed' ? randomInt(1, 5) : 0,
+      aggregatesCorrected: randomInt(2, 8),
+      durationMs: randomInt(800, 4500),
+      triggeredBy: entry.type === 'admin_initiated' ? 'admin_gonzalo' : 'cloud_function',
+      timestamp: daysAgo(randomInt(1, 30)),
+    });
+  }
+
+  // 21. Cron Runs (6 entries — heartbeat status for scheduled functions)
+  console.log('Creating cron run logs...');
+  const cronJobs: Array<{ id: string; result: string; detail: string }> = [
+    { id: 'computeDailyMetrics', result: 'ok', detail: 'Processed 342 reads, 87 writes, 12 deletes' },
+    { id: 'computeWeeklyRanking', result: 'ok', detail: 'Ranked 8 active users, period 2026-W13' },
+    { id: 'computeTrending', result: 'ok', detail: '10 trending businesses computed' },
+    { id: 'cleanupExpiredNotifications', result: 'ok', detail: 'Removed 23 expired notifications' },
+    { id: 'detectAbusePatterns', result: 'ok', detail: '2 new alerts generated (1 rate_limit, 1 flagged)' },
+    { id: 'backfillAggregates', result: 'error', detail: 'Timeout after 30s — retrying next cycle' },
+  ];
+
+  for (const job of cronJobs) {
+    await db.doc(`_cronRuns/${job.id}`).set({
+      lastRunAt: daysAgo(job.result === 'error' ? randomInt(1, 3) : 0),
+      result: job.result,
+      detail: job.detail,
+      durationMs: randomInt(200, 8000),
+    });
+  }
+
+  // 22. User Settings (some public, some with notifications)
+  // NOTE: was section 19 before moderation/deletion/cron additions
   console.log('Creating user settings...');
   for (let i = 0; i < USER_IDS.length; i++) {
     const isPublic = true; // All public for testing profile sheets
@@ -519,6 +609,9 @@ async function seed() {
   console.log('- 12 recommendations');
   console.log('- 6 shared lists + items');
   console.log('- 10 trending businesses');
+  console.log('- 10 moderation logs');
+  console.log('- 5 deletion audit logs');
+  console.log('- 6 cron run heartbeats');
   console.log('- Counters and moderation config');
 
   process.exit(0);

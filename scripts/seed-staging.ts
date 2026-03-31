@@ -411,6 +411,72 @@ async function seed() {
     });
   }
 
+  // 21. Moderation Logs (#255)
+  console.log('Creating moderation logs...');
+  const moderationActions = ['delete', 'hide'] as const;
+  const moderationTargets = ['comments', 'ratings', 'customTags'] as const;
+  for (let i = 0; i < 8; i++) {
+    const target = moderationTargets[i % moderationTargets.length];
+    await db.collection('moderationLogs').add({
+      adminId: USER_IDS[0],
+      action: moderationActions[i % 2],
+      targetCollection: target,
+      targetDocId: `seed_${target}_${randomInt(1, 50)}`,
+      targetUserId: USER_IDS[randomInt(1, 9)],
+      reason: randomFrom(['Spam', 'Contenido inapropiado', 'Datos falsos', null]),
+      snapshot: target === 'comments'
+        ? { text: randomFrom(COMMENT_TEXTS), userId: USER_IDS[randomInt(0, 9)] }
+        : target === 'ratings'
+        ? { score: randomInt(1, 5), userId: USER_IDS[randomInt(0, 9)] }
+        : { label: randomFrom(['Spam tag', 'Test', 'AAAA']), userId: USER_IDS[randomInt(0, 9)] },
+      timestamp: daysAgo(randomInt(0, 14)),
+    });
+  }
+
+  // 22. Deletion Audit Logs (#258)
+  console.log('Creating deletion audit logs...');
+  const deletionStatuses = ['success', 'partial_failure', 'failure'] as const;
+  const deletionTypes = ['account_delete', 'anonymous_clean'] as const;
+  for (let i = 0; i < 5; i++) {
+    const status = deletionStatuses[i % 3];
+    await db.collection('deletionAuditLogs').add({
+      uidHash: `sha256_${Math.random().toString(36).slice(2, 14)}`,
+      type: deletionTypes[i % 2],
+      status,
+      collectionsProcessed: status === 'failure' ? randomInt(3, 8) : 15,
+      collectionsFailed: status === 'success' ? [] : ['menuPhotos', ...(status === 'failure' ? ['ratings', 'comments'] : [])],
+      storageFilesDeleted: randomInt(0, 5),
+      storageFilesFailed: status === 'success' ? 0 : randomInt(1, 3),
+      aggregatesCorrected: status !== 'failure',
+      durationMs: randomInt(800, 5000),
+      triggeredBy: 'user',
+      timestamp: daysAgo(randomInt(0, 30)),
+    });
+  }
+
+  // 23. Cron Runs (#257)
+  console.log('Creating cron run heartbeats...');
+  const cronNames = [
+    'cleanupRejectedPhotos', 'cleanupExpiredNotifications', 'cleanupActivityFeed',
+    'generateFeaturedLists', 'dailyMetrics', 'computeTrendingBusinesses',
+    'computeWeeklyRanking', 'computeMonthlyRanking', 'computeAlltimeRanking',
+  ];
+  for (const cronName of cronNames) {
+    const isError = cronName === 'cleanupActivityFeed';
+    await db.doc(`_cronRuns/${cronName}`).set({
+      lastRunAt: isError ? daysAgo(3) : daysAgo(randomInt(0, 1)),
+      result: isError ? 'error' : 'success',
+      detail: isError ? 'Timeout after 60s' : `Processed ${randomInt(5, 50)} items`,
+      durationMs: randomInt(200, 8000),
+    });
+  }
+
+  // Update counters with new collections
+  await db.doc('config/counters').update({
+    moderationLogs: 8,
+    deletionAuditLogs: 5,
+  });
+
   console.log('\nStaging seed complete!');
   console.log('Collections seeded: users, comments, ratings, favorites, userTags, customTags,');
   console.log('feedback, commentLikes, priceLevels, rankings, notifications (8 types),');
