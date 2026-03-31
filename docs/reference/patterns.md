@@ -135,6 +135,7 @@
 | **Counters server-side** | Cloud Functions triggers actualizan `config/counters` atomicamente con `FieldValue.increment`. |
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
 | **Force app update (#191)** | CI/CD escribe `config/appVersion.minVersion` tras deploy (solo si cambian `src/` o `functions/`). Cliente usa `useForceUpdate` hook que compara con `__APP_VERSION__` al montar + cada 30 min. Si servidor > cliente: desregistra SW, limpia caches, hard refresh. Cooldown de 5 min en sessionStorage previene loops. Cero dependencias nuevas. |
+| **withCronHeartbeat (#257)** | `functions/src/utils/cronHeartbeat.ts` — wrapper para scheduled functions que escribe heartbeat a `_cronRuns/{cronName}` con `lastRunAt`, `result` (success/error), `detail`, `durationMs`. Try/catch: success path escribe resultado, error path escribe error y re-throws. Las 9 scheduled functions (7 archivos) wrappean su logica interna con este helper. Dashboard admin lee heartbeats via `fetchCronHealthStatus`. |
 
 ## TypeScript y build
 

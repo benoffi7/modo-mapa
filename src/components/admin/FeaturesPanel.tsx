@@ -7,30 +7,23 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import Alert from '@mui/material/Alert';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
-import CasinoIcon from '@mui/icons-material/Casino';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import SearchIcon from '@mui/icons-material/Search';
-import ShareIcon from '@mui/icons-material/Share';
-import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import RecommendOutlinedIcon from '@mui/icons-material/RecommendOutlined';
 import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { fetchDailyMetrics, fetchCounters, fetchAnalyticsReport } from '../../services/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import LineChartCard from './charts/LineChartCard';
+import TrendIcon from './features/TrendIcon';
+import GA4CategorySection from './features/GA4CategorySection';
+import { GA4_FEATURE_CATEGORIES } from './features/ga4FeatureDefinitions';
 import type { ReactElement } from 'react';
 import type { AdminCounters, DailyMetrics, GA4EventCount } from '../../types/admin';
 
@@ -58,34 +51,6 @@ const FEATURES: FeatureDef[] = [
   { key: 'priceLevels', name: 'Nivel de gasto', icon: <AttachMoneyOutlinedIcon />, getValue: (c) => c.priceLevels, collectionKey: 'priceLevels', color: '#4CAF50' },
 ];
 
-// ── GA4 feature definitions ───────────────────────────────────────────
-
-interface GA4FeatureDef {
-  key: string;
-  name: string;
-  icon: ReactElement;
-  eventNames: string[];
-  color: string;
-}
-
-const GA4_FEATURES: GA4FeatureDef[] = [
-  { key: 'surprise', name: 'Sorprendeme!', icon: <CasinoIcon />, eventNames: ['surprise_me'], color: '#FF5722' },
-  { key: 'lists', name: 'Listas', icon: <BookmarkBorderIcon />, eventNames: ['list_created', 'list_item_added'], color: '#795548' },
-  { key: 'search', name: 'Búsqueda', icon: <SearchIcon />, eventNames: ['business_search'], color: '#607D8B' },
-  { key: 'share', name: 'Compartir', icon: <ShareIcon />, eventNames: ['business_share'], color: '#00BCD4' },
-  { key: 'photos', name: 'Fotos', icon: <CameraAltOutlinedIcon />, eventNames: ['menu_photo_upload'], color: '#8BC34A' },
-  { key: 'darkMode', name: 'Dark Mode', icon: <DarkModeOutlinedIcon />, eventNames: ['dark_mode_toggle'], color: '#424242' },
-  { key: 'questions', name: 'Preguntas', icon: <HelpOutlineIcon />, eventNames: ['question_created', 'question_answered'], color: '#00BCD4' },
-];
-
-// ── Shared components ─────────────────────────────────────────────────
-
-function TrendIcon({ today, yesterday }: { today: number; yesterday: number }) {
-  if (today > yesterday) return <TrendingUpIcon fontSize="small" sx={{ color: 'success.main' }} />;
-  if (today < yesterday) return <TrendingDownIcon fontSize="small" sx={{ color: 'error.main' }} />;
-  return <TrendingFlatIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function buildFeatureTrend(metrics: DailyMetrics[], collectionKey: string): { date: string; value: number }[] {
@@ -95,7 +60,8 @@ function buildFeatureTrend(metrics: DailyMetrics[], collectionKey: string): { da
   }));
 }
 
-function buildGA4FeatureData(
+// eslint-disable-next-line react-refresh/only-export-components
+export function buildGA4FeatureData(
   events: GA4EventCount[],
   eventNames: string[],
 ): { today: number; yesterday: number; total: number; trend: { date: string; value: number }[] } {
@@ -223,58 +189,24 @@ export default function FeaturesPanel() {
                 </Grid>
               );
             })}
-
-            {/* GA4 features */}
-            {data.ga4Error && (
-              <Grid size={{ xs: 12 }}>
-                <Alert severity="warning">
-                  No se pudieron cargar las métricas de GA4. Los datos de colecciones están disponibles.
-                </Alert>
-              </Grid>
-            )}
-            {data.analyticsReport && GA4_FEATURES.map((feature) => {
-              const ga4Data = buildGA4FeatureData(data.analyticsReport!.events, feature.eventNames);
-              const isExpanded = expandedFeature === feature.key;
-
-              return (
-                <Grid key={feature.key} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card
-                    variant="outlined"
-                    sx={{ borderLeft: `4px solid ${feature.color}`, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 2 } }}
-                    onClick={() => setExpandedFeature(isExpanded ? null : feature.key)}
-                  >
-                    <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Box sx={{ color: feature.color }}>{feature.icon}</Box>
-                        <Typography variant="subtitle2">{feature.name}</Typography>
-                        {(ga4Data.today > 0 || ga4Data.yesterday > 0) && (
-                          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <TrendIcon today={ga4Data.today} yesterday={ga4Data.yesterday} />
-                          </Box>
-                        )}
-                      </Box>
-                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                        {ga4Data.today}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        hoy (GA4) · {ga4Data.total.toLocaleString()} últimos 30d
-                      </Typography>
-                    </CardContent>
-                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                      <Box sx={{ px: 2, pb: 2 }}>
-                        <LineChartCard
-                          title={`${feature.name} — últimos 30 días`}
-                          data={ga4Data.trend}
-                          lines={[{ dataKey: 'value', color: feature.color, label: feature.name }]}
-                          xAxisKey="date"
-                        />
-                      </Box>
-                    </Collapse>
-                  </Card>
-                </Grid>
-              );
-            })}
           </Grid>
+
+          {/* GA4 features */}
+          {data.ga4Error && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              No se pudieron cargar las métricas de GA4. Los datos de colecciones están disponibles.
+            </Alert>
+          )}
+          {data.analyticsReport && GA4_FEATURE_CATEGORIES.map((category, idx) => (
+            <GA4CategorySection
+              key={category.id}
+              category={category}
+              events={data.analyticsReport!.events}
+              expandedFeature={expandedFeature}
+              onToggleFeature={(key) => setExpandedFeature(expandedFeature === key ? null : key)}
+              defaultExpanded={idx === 0}
+            />
+          ))}
 
           {/* Adoption */}
           <Typography variant="h6" gutterBottom>Adopción</Typography>

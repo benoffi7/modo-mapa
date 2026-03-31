@@ -4,7 +4,7 @@ import { db, functions } from '../../config/firebase';
 import { COLLECTIONS } from '../../config/collections';
 import { feedbackConverter, menuPhotoConverter, trendingDataConverter, userRankingConverter, sharedListConverter } from '../../config/converters';
 import { abuseLogConverter, perfMetricsConverter } from '../../config/adminConverters';
-import type { AbuseLog, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats } from '../../types/admin';
+import type { AbuseLog, StorageStats, AnalyticsReportResponse, NotificationDetails, NotificationTypeBreakdown, ListStats, CronRunStatus } from '../../types/admin';
 import type { PerfMetricsDoc } from '../../types/perfMetrics';
 import type { Feedback, MenuPhoto, TrendingData, UserRanking } from '../../types';
 
@@ -196,4 +196,20 @@ export async function fetchAnalyticsReport(): Promise<AnalyticsReportResponse> {
   const fn = httpsCallable<void, AnalyticsReportResponse>(functions, 'getAnalyticsReport');
   const result = await fn();
   return result.data;
+}
+
+// ── Cron Health ──────────────────────────────────────────────────────
+
+export async function fetchCronHealthStatus(): Promise<CronRunStatus[]> {
+  const snap = await getDocs(collection(db, COLLECTIONS.CRON_RUNS));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      cronName: d.id,
+      lastRunAt: data.lastRunAt?.toDate?.() ?? null,
+      result: data.result ?? null,
+      detail: data.detail,
+      durationMs: data.durationMs,
+    };
+  });
 }

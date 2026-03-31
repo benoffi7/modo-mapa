@@ -265,7 +265,8 @@ describe('computeTrendingBusinesses handler', () => {
     await handlerHolder.fn!();
 
     expect(mockDocRef).toHaveBeenCalledWith('trendingBusinesses/current');
-    expect(mockSet).toHaveBeenCalledTimes(1);
+    // 2 calls: one for trending data, one for cron heartbeat
+    expect(mockSet).toHaveBeenCalledTimes(2);
 
     const written = mockSet.mock.calls[0][0];
     expect(written.businesses).toHaveLength(2);

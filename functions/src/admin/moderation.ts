@@ -3,7 +3,6 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { assertAdmin } from '../helpers/assertAdmin';
 import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 import { checkCallableRateLimit } from '../utils/callableRateLimit';
-import { COLLECTIONS } from '../shared/collections';
 import type { ModerationAction, ModerationTargetCollection } from '../shared/types/admin';
 
 /**
@@ -19,7 +18,7 @@ async function writeModerationLog(
   reason?: string
 ) {
   const db = getDb();
-  await db.collection(COLLECTIONS.MODERATION_LOGS).add({
+  await db.collection('moderationLogs').add({
     adminId,
     action,
     targetCollection,
@@ -52,7 +51,7 @@ export const moderateComment = onCall<{
 
   await checkCallableRateLimit(db, `moderate_${auth!.uid}`, 10, auth!.uid);
 
-  const commentRef = db.collection(COLLECTIONS.COMMENTS).doc(data.commentId);
+  const commentRef = db.collection('comments').doc(data.commentId);
   const commentSnap = await commentRef.get();
 
   if (!commentSnap.exists) {
@@ -80,7 +79,7 @@ export const moderateComment = onCall<{
 
   // 1. Delete replies
   const repliesSnap = await db
-    .collection(COLLECTIONS.COMMENTS)
+    .collection('comments')
     .where('parentId', '==', data.commentId)
     .get();
   
@@ -88,7 +87,7 @@ export const moderateComment = onCall<{
 
   // 2. Delete likes
   const likesSnap = await db
-    .collection(COLLECTIONS.COMMENT_LIKES)
+    .collection('commentLikes')
     .where('commentId', '==', data.commentId)
     .get();
   
@@ -96,7 +95,7 @@ export const moderateComment = onCall<{
 
   // 3. Decrement parent replyCount if it's a reply
   if (commentData.parentId) {
-    const parentRef = db.collection(COLLECTIONS.COMMENTS).doc(commentData.parentId);
+    const parentRef = db.collection('comments').doc(commentData.parentId);
     batch.update(parentRef, {
       replyCount: FieldValue.increment(-1),
       updatedAt: FieldValue.serverTimestamp(),
@@ -140,7 +139,7 @@ export const moderateRating = onCall<{
 
   await checkCallableRateLimit(db, `moderate_${auth!.uid}`, 10, auth!.uid);
 
-  const ratingRef = db.collection(COLLECTIONS.RATINGS).doc(data.ratingId);
+  const ratingRef = db.collection('ratings').doc(data.ratingId);
   const ratingSnap = await ratingRef.get();
 
   if (!ratingSnap.exists) {
@@ -183,7 +182,7 @@ export const moderateCustomTag = onCall<{
 
   await checkCallableRateLimit(db, `moderate_${auth!.uid}`, 10, auth!.uid);
 
-  const tagRef = db.collection(COLLECTIONS.CUSTOM_TAGS).doc(data.tagId);
+  const tagRef = db.collection('customTags').doc(data.tagId);
   const tagSnap = await tagRef.get();
 
   if (!tagSnap.exists) {

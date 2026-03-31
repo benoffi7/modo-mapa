@@ -12,6 +12,11 @@ export const SEVERITY_MAP: Record<AbuseLog['type'], AbuseSeverity> = {
   rate_limit: 'low',
   top_writers: 'medium',
   flagged: 'high',
+  recipient_flood: 'medium',
+  anon_flood: 'high',
+  ip_rate_limit: 'medium',
+  config_edit: 'low',
+  deletion_failure: 'high',
 };
 
 export function getSeverity(log: AbuseLog): AbuseSeverity {
@@ -31,7 +36,7 @@ export const SEVERITY_FILTER_OPTIONS: { key: SeverityFilter; label: string }[] =
   { key: 'low', label: 'Baja' },
 ];
 
-export const ALL_TYPES: AbuseType[] = ['rate_limit', 'flagged', 'top_writers'];
+export const ALL_TYPES: AbuseType[] = ['rate_limit', 'flagged', 'top_writers', 'recipient_flood', 'anon_flood', 'ip_rate_limit', 'config_edit', 'deletion_failure'];
 export const PAGE_SIZE = 20;
 
 export const DATE_PRESETS: { key: DatePreset; label: string }[] = [

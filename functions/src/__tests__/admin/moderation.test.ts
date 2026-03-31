@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const {
   handlers,
   mockGetFirestore,
@@ -51,15 +53,7 @@ vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: any[]) => mockCheckCallableRateLimit(...args),
 }));
 
-vi.mock('../../shared/collections', () => ({
-  COLLECTIONS: {
-    COMMENTS: 'comments',
-    COMMENT_LIKES: 'commentLikes',
-    RATINGS: 'ratings',
-    CUSTOM_TAGS: 'customTags',
-    MODERATION_LOGS: 'moderationLogs',
-  },
-}));
+vi.mock('../../shared/types/admin', () => ({}));
 
 function createMockDb(overrides?: {
   commentExists?: boolean;

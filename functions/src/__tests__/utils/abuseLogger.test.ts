@@ -66,6 +66,18 @@ describe('logAbuse', () => {
     );
   });
 
+  it('maps deletion_failure to high severity', async () => {
+    const db = mockDb();
+    await logAbuse(db as never, {
+      userId: 'u1',
+      type: 'deletion_failure',
+      detail: 'partial failure in deletion',
+    });
+    expect(db._add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'high' }),
+    );
+  });
+
   it('includes all entry fields and timestamp', async () => {
     const db = mockDb();
     await logAbuse(db as never, {

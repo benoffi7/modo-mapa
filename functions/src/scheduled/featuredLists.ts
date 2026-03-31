@@ -1,7 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
-import { logger } from 'firebase-functions/v2';
+import { withCronHeartbeat } from '../utils/cronHeartbeat';
 
 const SYSTEM_OWNER = 'system';
 const MIN_RATINGS_FOR_TOP = 3;
@@ -45,44 +45,48 @@ export function buildFeaturedLists(agg: Record<string, unknown>): FeaturedListDe
   ];
 }
 
+async function run(): Promise<string> {
+  const db = getDb();
+
+  const aggSnap = await db.doc('config/aggregates').get();
+  const agg = (aggSnap.data() ?? {}) as Record<string, unknown>;
+
+  const lists = buildFeaturedLists(agg);
+
+  for (const list of lists) {
+    const listRef = db.doc(`sharedLists/${list.key}`);
+    await listRef.set({
+      ownerId: SYSTEM_OWNER,
+      name: list.name,
+      description: list.desc,
+      isPublic: true,
+      featured: true,
+      itemCount: list.items.length,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    // Replace items: delete old, create new
+    const oldItems = await db.collection('listItems')
+      .where('listId', '==', list.key).get();
+    const batch = db.batch();
+    oldItems.docs.forEach((d) => batch.delete(d.ref));
+    for (const bizId of list.items) {
+      batch.set(db.doc(`listItems/${list.key}__${bizId}`), {
+        listId: list.key,
+        businessId: bizId,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
+
+  return `Featured lists regenerated: ${lists.map((l) => `${l.key}(${l.items.length})`).join(', ')}`;
+}
+
 export const generateFeaturedLists = onSchedule(
   { schedule: '0 5 * * 1', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    const db = getDb();
-
-    const aggSnap = await db.doc('config/aggregates').get();
-    const agg = (aggSnap.data() ?? {}) as Record<string, unknown>;
-
-    const lists = buildFeaturedLists(agg);
-
-    for (const list of lists) {
-      const listRef = db.doc(`sharedLists/${list.key}`);
-      await listRef.set({
-        ownerId: SYSTEM_OWNER,
-        name: list.name,
-        description: list.desc,
-        isPublic: true,
-        featured: true,
-        itemCount: list.items.length,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-
-      // Replace items: delete old, create new
-      const oldItems = await db.collection('listItems')
-        .where('listId', '==', list.key).get();
-      const batch = db.batch();
-      oldItems.docs.forEach((d) => batch.delete(d.ref));
-      for (const bizId of list.items) {
-        batch.set(db.doc(`listItems/${list.key}__${bizId}`), {
-          listId: list.key,
-          businessId: bizId,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-      }
-      await batch.commit();
-    }
-
-    logger.info(`Featured lists regenerated: ${lists.map((l) => `${l.key}(${l.items.length})`).join(', ')}`);
+    await withCronHeartbeat('generateFeaturedLists', run);
   },
 );

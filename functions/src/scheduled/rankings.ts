@@ -1,6 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
+import { withCronHeartbeat } from '../utils/cronHeartbeat';
 
 const SCORING = {
   comments: 3,
@@ -153,32 +154,62 @@ function getISOWeekKey(date: Date): string {
   return `weekly_${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
+async function runWeeklyRanking(): Promise<string> {
+  const db = getDb();
+  const now = new Date();
+
+  // Compute for the previous week
+  const thisMonday = getWeekStart(now);
+  const lastMonday = new Date(thisMonday);
+  lastMonday.setDate(lastMonday.getDate() - 7);
+
+  const periodKey = getISOWeekKey(lastMonday);
+  const { scores, totalParticipants } = await computeRanking(db, lastMonday, thisMonday);
+
+  await db.doc(`userRankings/${periodKey}`).set({
+    period: periodKey,
+    startDate: Timestamp.fromDate(lastMonday),
+    endDate: Timestamp.fromDate(thisMonday),
+    rankings: scores,
+    totalParticipants,
+  });
+
+  return `Weekly ranking ${periodKey}: ${totalParticipants} participants`;
+}
+
 export const computeWeeklyRanking = onSchedule(
   {
     schedule: '0 4 * * 1',
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getDb();
-    const now = new Date();
-
-    // Compute for the previous week
-    const thisMonday = getWeekStart(now);
-    const lastMonday = new Date(thisMonday);
-    lastMonday.setDate(lastMonday.getDate() - 7);
-
-    const periodKey = getISOWeekKey(lastMonday);
-    const { scores, totalParticipants } = await computeRanking(db, lastMonday, thisMonday);
-
-    await db.doc(`userRankings/${periodKey}`).set({
-      period: periodKey,
-      startDate: Timestamp.fromDate(lastMonday),
-      endDate: Timestamp.fromDate(thisMonday),
-      rankings: scores,
-      totalParticipants,
-    });
+    await withCronHeartbeat('computeWeeklyRanking', runWeeklyRanking);
   },
 );
+
+async function runMonthlyRanking(): Promise<string> {
+  const db = getDb();
+  const now = new Date();
+
+  // Compute for the previous month
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const month = String(startOfLastMonth.getMonth() + 1).padStart(2, '0');
+  const periodKey = `monthly_${startOfLastMonth.getFullYear()}-${month}`;
+
+  const { scores, totalParticipants } = await computeRanking(db, startOfLastMonth, startOfThisMonth);
+
+  await db.doc(`userRankings/${periodKey}`).set({
+    period: periodKey,
+    startDate: Timestamp.fromDate(startOfLastMonth),
+    endDate: Timestamp.fromDate(startOfThisMonth),
+    rankings: scores,
+    totalParticipants,
+  });
+
+  return `Monthly ranking ${periodKey}: ${totalParticipants} participants`;
+}
 
 export const computeMonthlyRanking = onSchedule(
   {
@@ -186,27 +217,28 @@ export const computeMonthlyRanking = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    const db = getDb();
-    const now = new Date();
-
-    // Compute for the previous month
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-    const month = String(startOfLastMonth.getMonth() + 1).padStart(2, '0');
-    const periodKey = `monthly_${startOfLastMonth.getFullYear()}-${month}`;
-
-    const { scores, totalParticipants } = await computeRanking(db, startOfLastMonth, startOfThisMonth);
-
-    await db.doc(`userRankings/${periodKey}`).set({
-      period: periodKey,
-      startDate: Timestamp.fromDate(startOfLastMonth),
-      endDate: Timestamp.fromDate(startOfThisMonth),
-      rankings: scores,
-      totalParticipants,
-    });
+    await withCronHeartbeat('computeMonthlyRanking', runMonthlyRanking);
   },
 );
+
+async function runAlltimeRanking(): Promise<string> {
+  const db = getDb();
+  const allTimeStart = new Date(2020, 0, 1);
+  const now = new Date();
+  const endDate = new Date(now.getFullYear() + 1, 0, 1);
+
+  const { scores, totalParticipants } = await computeRanking(db, allTimeStart, endDate);
+
+  await db.doc('userRankings/alltime').set({
+    period: 'alltime',
+    startDate: Timestamp.fromDate(allTimeStart),
+    endDate: Timestamp.fromDate(now),
+    rankings: scores,
+    totalParticipants,
+  });
+
+  return `All-time ranking: ${totalParticipants} participants`;
+}
 
 export const computeAlltimeRanking = onSchedule(
   {
@@ -216,19 +248,6 @@ export const computeAlltimeRanking = onSchedule(
     timeoutSeconds: 540,
   },
   async () => {
-    const db = getDb();
-    const allTimeStart = new Date(2020, 0, 1);
-    const now = new Date();
-    const endDate = new Date(now.getFullYear() + 1, 0, 1);
-
-    const { scores, totalParticipants } = await computeRanking(db, allTimeStart, endDate);
-
-    await db.doc('userRankings/alltime').set({
-      period: 'alltime',
-      startDate: Timestamp.fromDate(allTimeStart),
-      endDate: Timestamp.fromDate(now),
-      rankings: scores,
-      totalParticipants,
-    });
+    await withCronHeartbeat('computeAlltimeRanking', runAlltimeRanking);
   },
 );

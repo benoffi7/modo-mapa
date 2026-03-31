@@ -64,6 +64,10 @@ describe('analyticsEvents barrel', () => {
     'EVT_INTERESTS_BUSINESS_TAPPED',
     'EVT_INTERESTS_CTA_TAPPED',
     'EVT_INTERESTS_SUGGESTED_TAPPED',
+    // admin
+    'ADMIN_CONFIG_VIEWED',
+    'ADMIN_MODERATION_UPDATED',
+    'ADMIN_ACTIVITY_FEED_DIAG',
   ] as const;
 
   it.each(expectedExports)('exports %s', (name) => {

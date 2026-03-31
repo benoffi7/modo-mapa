@@ -55,7 +55,7 @@ export type AbuseSeverity = 'low' | 'medium' | 'high';
 export interface AbuseLog {
   id: string;
   userId: string;
-  type: 'rate_limit' | 'flagged' | 'top_writers';
+  type: 'rate_limit' | 'flagged' | 'top_writers' | 'recipient_flood' | 'anon_flood' | 'ip_rate_limit' | 'config_edit' | 'deletion_failure';
   collection: string;
   detail: string;
   timestamp: Date;
@@ -63,6 +63,21 @@ export interface AbuseLog {
   dismissed?: boolean | undefined;
   reviewedAt?: Date | undefined;
   severity?: AbuseSeverity | undefined;
+}
+
+export interface DeletionAuditLogEntry {
+  id: string;
+  uidHash: string;
+  type: 'account_delete' | 'anonymous_clean';
+  status: 'success' | 'partial_failure' | 'failure';
+  collectionsProcessed: number;
+  collectionsFailed: string[];
+  storageFilesDeleted: number;
+  storageFilesFailed: number;
+  aggregatesCorrected: boolean;
+  durationMs: number;
+  triggeredBy: 'user';
+  timestamp: Date;
 }
 
 export interface StorageStats {
@@ -84,6 +99,14 @@ export interface AnalyticsReportResponse {
 }
 
 export type HealthStatus = 'ok' | 'warning' | 'error';
+
+export interface CronRunStatus {
+  cronName: string;
+  lastRunAt: Date | null;
+  result: 'success' | 'error' | null;
+  detail?: string | undefined;
+  durationMs?: number | undefined;
+}
 
 export interface NotificationTypeBreakdown {
   type: string;
@@ -132,6 +155,36 @@ export interface Achievement {
   condition: AchievementCondition;
   order: number;
   active: boolean;
+}
+
+/** Generic config document — key/value pairs with unknown structure */
+export interface ConfigDocument {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+/** Typed moderation config */
+export interface ModerationConfig {
+  bannedWords: string[];
+}
+
+/** Activity feed diagnostic item (returned by callable) */
+export interface ActivityFeedDiagItem {
+  id: string;
+  actorId: string;
+  actorName: string;
+  type: 'rating' | 'comment' | 'favorite';
+  businessId: string;
+  businessName: string;
+  referenceId: string;
+  createdAt: string;
+  expiresAt: string;
+  isExpired: boolean;
+}
+
+export interface ActivityFeedDiagResponse {
+  items: ActivityFeedDiagItem[];
+  total: number;
 }
 
 export type ModerationAction = 'delete' | 'hide';

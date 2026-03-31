@@ -3,7 +3,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 
 export interface AbuseLogEntry {
   userId: string;
-  type: 'rate_limit' | 'flagged' | 'top_writers' | 'recipient_flood' | 'anon_flood' | 'ip_rate_limit';
+  type: 'rate_limit' | 'flagged' | 'top_writers' | 'recipient_flood' | 'anon_flood' | 'ip_rate_limit' | 'config_edit' | 'deletion_failure';
   collection?: string;
   detail: string;
   severity?: 'low' | 'medium' | 'high';
@@ -16,6 +16,8 @@ const SEVERITY_MAP: Record<AbuseLogEntry['type'], 'low' | 'medium' | 'high'> = {
   recipient_flood: 'medium',
   anon_flood: 'high',
   ip_rate_limit: 'medium',
+  config_edit: 'low',
+  deletion_failure: 'high',
 };
 
 export async function logAbuse(

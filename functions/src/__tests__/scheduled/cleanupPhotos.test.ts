@@ -41,7 +41,9 @@ function createMockSetup(docs: Array<{ storagePath: string; thumbnailPath?: stri
   const mockWhere = vi.fn().mockReturnValue({ where: mockWhere2 });
   const mockCollection = vi.fn().mockReturnValue({ where: mockWhere });
 
-  const db = { collection: mockCollection };
+  const mockHeartbeatSet = vi.fn().mockResolvedValue(undefined);
+  const mockHeartbeatDoc = vi.fn().mockReturnValue({ set: mockHeartbeatSet });
+  const db = { collection: mockCollection, doc: mockHeartbeatDoc };
   mockGetDb.mockReturnValue(db);
 
   const mockFileDelete = vi.fn().mockResolvedValue(undefined);

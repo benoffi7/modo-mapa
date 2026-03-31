@@ -11,4 +11,8 @@ export const MSG_ADMIN = {
     `Esta acción eliminará el ${target} y todas sus respuestas de forma permanente.`,
   moderateConfirmHideBody: (target: string) =>
     `El ${target} dejará de ser visible para los usuarios, pero se conservará en la base de datos.`,
+  moderationSaveSuccess: 'Cambios guardados',
+  moderationSaveError: 'No se pudieron guardar los cambios',
+  moderationConfirmTitle: 'Confirmar cambios de moderación',
+  moderationConfirmBody: 'Estás por modificar la lista de palabras baneadas. Esta acción afecta la moderación de contenido.',
 } as const;

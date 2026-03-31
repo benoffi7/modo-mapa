@@ -35,7 +35,9 @@ function createMockSetup(docCount: number) {
   const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
   const mockCollection = vi.fn().mockReturnValue({ where: mockWhere });
 
-  const db = { collection: mockCollection, batch: mockBatch };
+  const mockHeartbeatSet = vi.fn().mockResolvedValue(undefined);
+  const mockHeartbeatDoc = vi.fn().mockReturnValue({ set: mockHeartbeatSet });
+  const db = { collection: mockCollection, batch: mockBatch, doc: mockHeartbeatDoc };
   mockGetDb.mockReturnValue(db);
 
   return { db, mockBatchDelete, mockBatchCommit, mockBatch };

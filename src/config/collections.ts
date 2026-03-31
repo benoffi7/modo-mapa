@@ -26,5 +26,7 @@ export const COLLECTIONS = {
   SPECIALS: 'specials',
   ACHIEVEMENTS: 'achievements',
   RATE_LIMITS: '_rateLimits',
+  CRON_RUNS: '_cronRuns',
   MODERATION_LOGS: 'moderationLogs',
+  DELETION_AUDIT_LOGS: 'deletionAuditLogs',
 } as const;

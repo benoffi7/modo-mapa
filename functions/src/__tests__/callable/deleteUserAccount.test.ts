@@ -16,11 +16,13 @@ const mockCollectionGet = vi.fn();
 const mockSubCollectionGet = vi.fn();
 const mockWhere = vi.fn();
 
+const mockCollectionAdd = vi.fn().mockResolvedValue({ id: 'audit1' });
 const mockDb = {
   doc: vi.fn(() => mockDocRef),
   collection: vi.fn(() => ({
     where: mockWhere,
     get: mockCollectionGet,
+    add: mockCollectionAdd,
   })),
   batch: () => mockBatch,
 };
@@ -69,7 +71,11 @@ vi.mock('firebase-admin/storage', () => ({
 }));
 
 vi.mock('firebase-functions', () => ({
-  logger: { info: vi.fn() },
+  logger: { info: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('../../utils/abuseLogger', () => ({
+  logAbuse: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { deleteUserAccount } from '../../callable/deleteUserAccount';
@@ -226,5 +232,42 @@ describe('deleteUserAccount', () => {
   it('returns { success: true } on completion', async () => {
     const result = await handler(makeAuthRequest('uid1'));
     expect(result).toEqual({ success: true });
+  });
+
+  it('persists audit log in deletionAuditLogs collection', async () => {
+    mockDocGet.mockResolvedValue({ exists: false });
+    mockCollectionGet.mockResolvedValue({ empty: true, docs: [] });
+
+    await handler(makeAuthRequest('uid1'));
+
+    // Should have called db.collection('deletionAuditLogs').add(...)
+    const collCalls = mockDb.collection.mock.calls.map((c: unknown[]) => c[0]);
+    expect(collCalls).toContain('deletionAuditLogs');
+    expect(mockCollectionAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'account_delete',
+        status: 'success',
+        triggeredBy: 'user',
+      }),
+    );
+  });
+
+  it('logs abuse when deletion has partial failure', async () => {
+    // Make one collection fail
+    let callCount = 0;
+    mockDocGet.mockResolvedValue({ exists: false });
+    mockCollectionGet.mockImplementation(() => {
+      callCount++;
+      if (callCount === 7) return Promise.reject(new Error('fail'));
+      return Promise.resolve({ empty: true, docs: [] });
+    });
+
+    const { logAbuse } = await import('../../utils/abuseLogger');
+    await handler(makeAuthRequest('uid1'));
+
+    expect(logAbuse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: 'deletion_failure' }),
+    );
   });
 });

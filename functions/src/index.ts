@@ -42,6 +42,9 @@ export { writePerfMetrics } from './admin/perfMetrics';
 export { getAnalyticsReport } from './admin/analyticsReport';
 export { toggleFeaturedList, getPublicLists, getFeaturedLists } from './admin/featuredLists';
 export { moderateComment, moderateRating, moderateCustomTag } from './admin/moderation';
+export { updateModerationConfig } from './admin/moderationConfig';
+export { getActivityFeedDiag } from './admin/activityFeedDiag';
+export { fetchDeletionAuditLogs } from './admin/deletionAuditLogs';
 
 // Callable
 export { inviteListEditor } from './callable/inviteListEditor';

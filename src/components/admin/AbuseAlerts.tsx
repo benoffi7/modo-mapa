@@ -92,9 +92,11 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const kpis = useMemo(() => logs ? computeKpis(logs) : null, [logs]);
   const collections = useMemo(() => logs ? [...new Set(logs.map((l) => l.collection))].sort() : [], [logs]);
   const typeCounts = useMemo(() => {
-    if (!logs) return { rate_limit: 0, flagged: 0, top_writers: 0 };
-    const counts = { rate_limit: 0, flagged: 0, top_writers: 0 };
-    for (const log of logs) counts[log.type]++;
+    const empty: Record<string, number> = {};
+    for (const t of ALL_TYPES) empty[t] = 0;
+    if (!logs) return empty;
+    const counts = { ...empty };
+    for (const log of logs) counts[log.type] = (counts[log.type] ?? 0) + 1;
     return counts;
   }, [logs]);
 
