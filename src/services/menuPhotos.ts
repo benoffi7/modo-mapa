@@ -9,7 +9,7 @@ import type { UploadTask } from 'firebase/storage';
 import { db, storage, functions } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { menuPhotoConverter } from '../config/converters';
-import { invalidateBusinessCache } from '../hooks/useBusinessDataCache';
+import { invalidateBusinessCache } from './businessDataCache';
 import { trackEvent } from '../utils/analytics';
 import type { MenuPhoto } from '../types';
 
