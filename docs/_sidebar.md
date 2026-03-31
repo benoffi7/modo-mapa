@@ -217,6 +217,17 @@
   - [Docs Minor Fixes](/fix/docs-minor-fixes/prd.md)
     - [Specs](/fix/docs-minor-fixes/specs.md)
     - [Plan](/fix/docs-minor-fixes/plan.md)
+  - [#266-#269 Accessibility Audit](/fix/ux/accessibility-audit/specs.md)
+    - [Plan](/fix/ux/accessibility-audit/plan.md)
+  - [#270 Copy Audit — Tildes, Voseo, Anónimo](/fix/ux/copy-audit/specs.md)
+    - [Plan](/fix/ux/copy-audit/plan.md)
+  - [#271-273 Offline Hardening](/fix/infra/offline-hardening/specs.md)
+    - [Plan](/fix/infra/offline-hardening/plan.md)
+  - [#277-#278 Race Conditions, Re-renders y CF Serial Reads](/fix/infra/performance-bugs/specs.md)
+    - [Specs](/fix/infra/performance-bugs/specs.md)
+    - [Plan](/fix/infra/performance-bugs/plan.md)
+  - [#260-#265 Security Hardening Audit](/fix/security/hardening-audit/specs.md)
+    - [Plan](/fix/security/hardening-audit/plan.md)
 
 - **[Reports](/reports/)**
   - [Backlog de Producto](/reports/backlog-producto.md)
@@ -233,6 +244,11 @@
   - [#191 Force App Update](/feat/infra/191-force-app-update/prd.md)
     - [Specs](/feat/infra/191-force-app-update/specs.md)
     - [Plan](/feat/infra/191-force-app-update/plan.md)
+
+- **Chore**
+  - [#279 Service Layer Refactor](/chore/architecture/service-layer-refactor/specs.md)
+    - [Specs](/chore/architecture/service-layer-refactor/specs.md)
+    - [Plan](/chore/architecture/service-layer-refactor/plan.md)
 
 - **Tech Debt: New Home**
   - [1 - Admin Service Layer](/feat/infra/tech-debt-new-home/1-admin-service-layer.md)
