@@ -35,13 +35,9 @@ src/
 │   ├── criteria.ts                 # RATING_CRITERIA (CriterionConfig[] con id y label para multi-criterio)
 │   ├── suggestions.ts              # SUGGESTION_WEIGHTS, MAX_SUGGESTIONS, NEARBY_RADIUS_KM
 │   ├── admin.ts                    # ADMIN_EMAIL, ADMIN_PAGE_SIZE, STATUS_CHIP, STATUS_LABELS, ABUSE_TYPE_*
-<<<<<<< HEAD
+│   ├── notifications.ts            # DIGEST_LABELS (singular/plural/icon por tipo), DIGEST_MAX_GROUPS
 │   ├── performance.ts              # PERF_THRESHOLDS (green/red por vital), PERF_FLUSH_DELAY_MS
 │   └── verificationBadges.ts       # VERIFICATION_BADGES (3 badges de verificacion), cache key + TTL
-=======
-│   ├── notifications.ts            # DIGEST_LABELS (singular/plural/icon por tipo), DIGEST_MAX_GROUPS
-│   └── performance.ts              # PERF_THRESHOLDS (green/red por vital), PERF_FLUSH_DELAY_MS
->>>>>>> feat/203-notificaciones-digest
 ├── context/
 │   ├── AuthContext.tsx               # Auth anonima + Google Sign-In + displayName
 │   ├── ColorModeContext.tsx          # Dark/light mode provider + localStorage persistence
