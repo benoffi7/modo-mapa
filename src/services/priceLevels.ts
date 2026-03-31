@@ -1,19 +1,11 @@
 /**
  * Firestore service for the `priceLevels` collection.
  */
-import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import type { CollectionReference } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
-import { priceLevelConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
-import type { PriceLevel } from '../types';
-
-export function getPriceLevelsCollection(): CollectionReference<PriceLevel> {
-  return collection(db, COLLECTIONS.PRICE_LEVELS)
-    .withConverter(priceLevelConverter) as CollectionReference<PriceLevel>;
-}
 
 export async function upsertPriceLevel(
   userId: string,

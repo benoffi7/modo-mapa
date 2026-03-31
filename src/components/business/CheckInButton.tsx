@@ -5,6 +5,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useCheckIn } from '../../hooks/useCheckIn';
 import { useToast } from '../../context/ToastContext';
 import { MSG_CHECKIN, MSG_AUTH } from '../../constants/messages';
+import { logger } from '../../utils/logger';
 
 interface Props {
   businessId: string;
@@ -24,20 +25,25 @@ export default memo(function CheckInButton({ businessId, businessName, businessL
   const isSuccess = status === 'success' || hasCheckedInRecently;
 
   const handleClick = useCallback(async () => {
-    if (isSuccess && recentCheckInId) {
-      const result = await undoCheckIn();
-      if (result === 'success') toast.info(MSG_CHECKIN.removed);
+    try {
+      if (isSuccess && recentCheckInId) {
+        const result = await undoCheckIn();
+        if (result === 'success') toast.info(MSG_CHECKIN.removed);
+        if (result === 'blocked') toast.info(MSG_AUTH.loginRequired);
+        return;
+      }
+
+      if (!isNearby) {
+        toast.info(MSG_CHECKIN.tooFar);
+      }
+
+      const result = await performCheckIn();
+      if (result === 'success') toast.success(MSG_CHECKIN.success);
       if (result === 'blocked') toast.info(MSG_AUTH.loginRequired);
-      return;
+    } catch (err) {
+      logger.error('[CheckInButton] handleClick failed:', err);
+      toast.error(MSG_CHECKIN.error);
     }
-
-    if (!isNearby) {
-      toast.info(MSG_CHECKIN.tooFar);
-    }
-
-    const result = await performCheckIn();
-    if (result === 'success') toast.success(MSG_CHECKIN.success);
-    if (result === 'blocked') toast.info(MSG_AUTH.loginRequired);
   }, [isNearby, isSuccess, recentCheckInId, performCheckIn, undoCheckIn, toast]);
 
   return (

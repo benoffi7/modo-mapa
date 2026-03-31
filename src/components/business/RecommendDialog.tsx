@@ -36,11 +36,13 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
 
   useEffect(() => {
     if (!open || !userId) return;
+    let cancelled = false;
     setLoadingCount(true);
     countRecommendationsSentToday(userId)
-      .then(setSentToday)
+      .then((count) => { if (!cancelled) setSentToday(count); })
       .catch((err) => { if (import.meta.env.DEV) logger.error('count failed:', err); })
-      .finally(() => setLoadingCount(false));
+      .finally(() => { if (!cancelled) setLoadingCount(false); });
+    return () => { cancelled = true; };
   }, [open, userId]);
 
   const handleSubmit = useCallback(async () => {

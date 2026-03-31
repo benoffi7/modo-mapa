@@ -23,7 +23,7 @@ import type { Follow } from '../types';
 const MAX_FOLLOWS = 200;
 const PAGE_SIZE = 20;
 
-export function getFollowsCollection(): CollectionReference<Follow> {
+function getFollowsCollection(): CollectionReference<Follow> {
   return collection(db, COLLECTIONS.FOLLOWS).withConverter(followConverter) as CollectionReference<Follow>;
 }
 

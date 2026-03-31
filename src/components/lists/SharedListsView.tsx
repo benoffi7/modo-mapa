@@ -36,9 +36,11 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
   // Deep link support
   useEffect(() => {
     if (!sharedListId) return;
+    let cancelled = false;
     fetchSharedList(sharedListId).then((list) => {
-      if (list) setSelectedList(list);
+      if (!cancelled && list) setSelectedList(list);
     }).catch((err) => logger.error('[SharedListsView] fetchSharedList failed:', err));
+    return () => { cancelled = true; };
   }, [sharedListId]);
 
   // Back handler for parent navigation
