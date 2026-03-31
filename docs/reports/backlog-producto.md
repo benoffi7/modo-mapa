@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-30 (post merge: #250-#254 closed, v2.34.2)*
+*Actualizado: 2026-03-31 (post merge: #255-#259 closed, v2.35.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -22,5 +22,5 @@
 | Metrica | Valor |
 |---------|-------|
 | Issues abiertos | 1 (#168, bloqueado) |
-| Issues cerrados | #128–#254 (83) |
-| Versiones publicadas | v2.10.0 – v2.34.2 |
+| Issues cerrados | #128–#259 (88) |
+| Versiones publicadas | v2.10.0 – v2.35.0 |
