@@ -1,8 +1,8 @@
 # Arquitectura de Equipo de Agentes — Modo Mapa
 
-**Version:** 1.0 (draft)
-**Fecha:** 2026-03-30
-**Estado:** Propuesta para review
+**Version:** 1.1
+**Fecha:** 2026-03-31
+**Estado:** Fase 1 iniciada — Manu + Luna + Nico implementados
 
 ---
 

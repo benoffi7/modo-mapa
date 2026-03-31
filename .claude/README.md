@@ -52,11 +52,13 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 
 ### Agents (`.claude/agents/`) — 27 agents
 
-#### Coordination
+#### Coordination & Role-based
 | Agent | Type | Model | Description |
 |-------|------|-------|-------------|
 | `manu` | Coordinator | Opus | Staff Engineer / Tech Lead. Orchestrates implementation, delegates to specialists. Does NOT write code |
-| `orchestrator` | Coordinator | Default | Routes requests to the right specialist agent |
+| `luna` | Implementation (frontend) | Default | Senior Frontend Engineer. Components, UI hooks, pages, theme, map. Mobile-first. |
+| `nico` | Implementation (backend) | Default | Senior Backend Engineer. Cloud Functions, Firestore rules, services, types. Security-first. |
+| `orchestrator` | **DEPRECATED** | Default | Replaced by `manu`. Kept for compatibility only |
 
 #### Read-only auditors (report only, don't modify code)
 | Agent | Type | Description |
@@ -173,7 +175,8 @@ Memory files persist learnings across conversations. They are NOT in the repo be
 
 When Claude needs specialized help, it delegates to agents:
 
-- **Coordinators**: `manu` (Tech Lead, orchestrates features), `orchestrator` (routes to specialists)
+- **Coordinators**: `manu` (Tech Lead, orchestrates features), ~~`orchestrator`~~ (deprecated, use manu)
+- **Role-based implementors**: `luna` (Senior Frontend — components, UI hooks, theme, map), `nico` (Senior Backend — functions, rules, services, types)
 - **Read-only auditors** (report only): `architecture`, `security`, `ui-reviewer`, `dark-mode-auditor`, `copy-auditor`, `offline-auditor`, `privacy-policy`, `perf-auditor`, `admin-metrics-auditor`, `help-docs-reviewer`, `pr-reviewer`, `pre-implementation-gate`
 - **Implementation agents**: `performance`, `ui-ux-accessibility`, `testing`, `seed-manager`, `documentation`, `dependency-updater`
 - **Operations agents**: `git-expert` (exclusive git access), `ci-guardian`, `changelog-writer`, `docs-site-maintainer`, `continuous-improvement`, `prd-writer`, `specs-plan-writer`

@@ -43,6 +43,15 @@ Skip this phase for `fix/`, `chore/`, and `docs/` branches.
 
 ## Phase 1: Quality gates (abort on failure)
 
+### Phase 1 scope by branch type
+
+Not all guards apply to every branch type. Skip irrelevant checks to reduce friction:
+
+- **`feat/`** — Run ALL guards (1a through 1p)
+- **`fix/`** — Run ALL guards (1a through 1p)
+- **`chore/`** — Run only: 1a (sync), 1b (lint), 1e (build), 1i2 (conflict markers), 1n (secrets), 1p (sensitive data). Skip: tests, coverage, file size, boundary guards, Firestore rules checks
+- **`docs/`** — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip everything else (docs don't affect code)
+
 Run these sequentially — any failure aborts the merge:
 
 **Note:** Add `npm run test:coverage 2>&1 | grep -E "does not meet|All files"` after tests to catch coverage threshold failures early (CI enforces 80% branches).
