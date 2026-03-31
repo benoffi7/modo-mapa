@@ -9,6 +9,7 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { getAvatarById } from '../../constants/avatars';
+import { ANONYMOUS_DISPLAY_NAME } from '../../constants/ui';
 import StatsCards from './StatsCards';
 import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
@@ -36,8 +37,8 @@ const SECTION_TITLES: Record<string, string> = {
   privacy: 'Privacidad',
   config: 'Configuración',
   help: 'Ayuda y soporte',
-  reviews: 'Resenas',
-  stats: 'Estadisticas',
+  reviews: 'Reseñas',
+  stats: 'Estadísticas',
   achievements: 'Logros',
   interests: 'Tus intereses',
 };
@@ -62,7 +63,7 @@ export default function ProfileScreen() {
 
   const avatar = getAvatarById(avatarId ?? undefined);
 
-  const userName = displayName || 'Anonimo';
+  const userName = displayName || ANONYMOUS_DISPLAY_NAME;
   const hasPendingActions = isOffline;
 
   if (activeSection) {
