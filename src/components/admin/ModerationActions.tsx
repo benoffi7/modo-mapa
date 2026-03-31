@@ -19,8 +19,8 @@ import type { ModerationAction, ModerationTargetCollection } from '../../types/a
 interface ModerationActionsProps {
   itemId: string;
   targetCollection: ModerationTargetCollection;
-  allowHide?: boolean;
-  emphasized?: boolean;
+  allowHide?: boolean | undefined;
+  emphasized?: boolean | undefined;
   onDeleted?: (id: string) => void;
   onHidden?: (id: string) => void;
 }

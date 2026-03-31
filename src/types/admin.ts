@@ -198,7 +198,7 @@ export interface ModerationLog {
   targetCollection: ModerationTargetCollection;
   targetDocId: string;
   targetUserId: string;
-  reason?: string;
+  reason?: string | undefined;
   snapshot: Record<string, unknown>;
   timestamp: Date;
 }

@@ -27,7 +27,7 @@ export async function moderateComment(
     action: ModerationAction;
     reason?: string;
   }>(functions, 'moderateComment');
-  await func({ commentId, action, reason });
+  await func({ commentId, action, ...(reason != null && { reason }) });
 }
 
 /**
@@ -41,7 +41,7 @@ export async function moderateRating(
     ratingId: string;
     reason?: string;
   }>(functions, 'moderateRating');
-  await func({ ratingId, reason });
+  await func({ ratingId, ...(reason != null && { reason }) });
 }
 
 /**
@@ -55,7 +55,7 @@ export async function moderateCustomTag(
     tagId: string;
     reason?: string;
   }>(functions, 'moderateCustomTag');
-  await func({ tagId, reason });
+  await func({ tagId, ...(reason != null && { reason }) });
 }
 
 /**
