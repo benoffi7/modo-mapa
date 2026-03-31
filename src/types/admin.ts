@@ -133,3 +133,19 @@ export interface Achievement {
   order: number;
   active: boolean;
 }
+
+export type ModerationAction = 'delete' | 'hide';
+
+export type ModerationTargetCollection = 'comments' | 'ratings' | 'customTags';
+
+export interface ModerationLog {
+  id: string;
+  adminId: string;
+  action: ModerationAction;
+  targetCollection: ModerationTargetCollection;
+  targetDocId: string;
+  targetUserId: string;
+  reason?: string;
+  snapshot: Record<string, unknown>;
+  timestamp: Date;
+}

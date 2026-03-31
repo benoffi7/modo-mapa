@@ -1,4 +1,8 @@
-import type { AbuseLog } from '../types/admin';
+import type {
+  AbuseLog,
+  ModerationAction,
+  ModerationTargetCollection,
+} from '../types/admin';
 import type { MenuPhotoStatus } from '../types';
 
 export const FREE_TIER_READS = 50_000;
@@ -42,4 +46,15 @@ export const ABUSE_TYPE_COLORS: Record<AbuseLog['type'], 'warning' | 'error' | '
   rate_limit: 'warning',
   flagged: 'error',
   top_writers: 'info',
+};
+
+export const MODERATION_ACTION_LABELS: Record<ModerationAction, string> = {
+  delete: 'Eliminado',
+  hide: 'Ocultado',
+};
+
+export const MODERATION_TARGET_LABELS: Record<ModerationTargetCollection, string> = {
+  comments: 'Comentario',
+  ratings: 'Rating',
+  customTags: 'Tag personalizado',
 };
