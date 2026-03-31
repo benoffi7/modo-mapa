@@ -109,17 +109,17 @@ export default function ActivityDigestSection() {
     <Box sx={{ px: 2, py: 1.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionTitleSx }}>
         <Typography variant="subtitle2">Tu actividad</Typography>
-        <Typography
-          variant="caption"
-          color="primary"
-          sx={{ cursor: 'pointer' }}
+        <Button
+          variant="text"
+          size="small"
           onClick={() => {
             trackEvent('digest_item_tapped', { type: 'view_all', count: 0 });
             setActiveTab('perfil');
           }}
+          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
         >
           Ver todas
-        </Typography>
+        </Button>
       </Box>
       {groups.map((g) => (
         <DigestItem key={g.type} group={g} />
