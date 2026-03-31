@@ -16,7 +16,7 @@ export default function RecentSearches() {
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
-          Busquedas Recientes
+          Búsquedas recientes
         </Typography>
         <Typography
           variant="caption"
