@@ -2,36 +2,25 @@
  * Seed script for staging database.
  * Run with: cp scripts/seed-staging.ts functions/seed.ts && cd functions && npx tsx seed.ts && rm seed.ts
  * Uses firebase-admin with application default credentials to write to the 'staging' database.
+ *
+ * Prerequisite: run `gcloud auth application-default login` before executing this script.
  */
 
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 
-// Create ADC file from firebase-tools refresh token
-const firebaseConfig = JSON.parse(readFileSync(resolve(process.env.HOME!, '.config/configstore/firebase-tools.json'), 'utf-8'));
+// Validate that Application Default Credentials exist before proceeding
 const adcPath = resolve(process.env.HOME!, '.config/gcloud/application_default_credentials.json');
-
-// Ensure directory exists
-import { mkdirSync } from 'fs';
-mkdirSync(resolve(process.env.HOME!, '.config/gcloud'), { recursive: true });
-
-// Write ADC file
-const adcContent = {
-  type: 'authorized_user',
-  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-  refresh_token: firebaseConfig.tokens.refresh_token,
-};
-writeFileSync(adcPath, JSON.stringify(adcContent));
-process.env.GOOGLE_APPLICATION_CREDENTIALS = adcPath;
+if (!existsSync(adcPath)) {
+  console.error('ERROR: Application Default Credentials no encontradas.');
+  console.error('Ejecutar primero: gcloud auth application-default login');
+  process.exit(1);
+}
 
 initializeApp({ projectId: 'modo-mapa-app' });
 const db = getFirestore('staging');
-
-// Cleanup ADC on exit
-process.on('exit', () => { try { unlinkSync(adcPath); } catch {} });
 
 const BUSINESS_IDS = [
   'biz_001', 'biz_002', 'biz_003', 'biz_004', 'biz_005',
