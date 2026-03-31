@@ -552,5 +552,12 @@ service cloud.firestore {
     match /_ipRateLimits/{docId} {
       allow read, write: if false;
     }
+
+    // Logs de moderación — solo admin puede leer.
+    // Cloud Functions escribe con admin SDK.
+    match /moderationLogs/{docId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
   }
 }

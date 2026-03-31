@@ -38,3 +38,9 @@ export {
   fetchStorageStats,
   fetchAnalyticsReport,
 } from './content';
+export {
+  moderateComment,
+  moderateRating,
+  moderateCustomTag,
+  fetchModerationLogs,
+} from './moderation';

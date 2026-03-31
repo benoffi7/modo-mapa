@@ -12,15 +12,19 @@ import {
   fetchRecentPriceLevels,
   fetchRecentCommentLikes,
   fetchRecentCheckins,
+  fetchModerationLogs,
 } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { formatDateShort } from '../../utils/formatDate';
 import { getBusinessName } from '../../utils/businessHelpers';
 import { PRICE_LEVEL_LABELS } from '../../constants/business';
 import type { Comment, Rating, Favorite, UserTag, CustomTag, PriceLevel, CommentLike, CheckIn } from '../../types';
+import type { ModerationLog } from '../../types/admin';
 import { ADMIN_PAGE_SIZE } from '../../constants/admin';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
+import ModerationActions from './ModerationActions';
+import ModerationLogTable from './ModerationLogTable';
 
 function FlaggedChip() {
   return <Chip label="Flagged" color="error" size="small" />;
@@ -37,13 +41,29 @@ interface ActivityData {
   priceLevels: PriceLevel[];
   commentLikes: CommentLike[];
   checkins: CheckIn[];
+  moderationLogs: ModerationLog[];
 }
 
 export default function ActivityFeed() {
   const [tab, setTab] = useState(0);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+
+  const handleDeleted = useCallback((id: string) => {
+    setRemovedIds((prev) => new Set(prev).add(id));
+  }, []);
 
   const fetcher = useCallback(async (): Promise<ActivityData> => {
-    const [comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes, checkins] = await Promise.all([
+    const [
+      comments,
+      ratings,
+      favorites,
+      userTags,
+      customTags,
+      priceLevels,
+      commentLikes,
+      checkins,
+      moderationLogs,
+    ] = await Promise.all([
       fetchRecentComments(ADMIN_PAGE_SIZE),
       fetchRecentRatings(ADMIN_PAGE_SIZE),
       fetchRecentFavorites(ADMIN_PAGE_SIZE),
@@ -52,20 +72,32 @@ export default function ActivityFeed() {
       fetchRecentPriceLevels(ADMIN_PAGE_SIZE),
       fetchRecentCommentLikes(ADMIN_PAGE_SIZE),
       fetchRecentCheckins(ADMIN_PAGE_SIZE),
+      fetchModerationLogs(ADMIN_PAGE_SIZE),
     ]);
-    return { comments, ratings, favorites, userTags, customTags, priceLevels, commentLikes, checkins };
+    return {
+      comments,
+      ratings,
+      favorites,
+      userTags,
+      customTags,
+      priceLevels,
+      commentLikes,
+      checkins,
+      moderationLogs,
+    };
   }, []);
 
   const { data, loading, error } = useAsyncData(fetcher);
 
-  const comments = data?.comments ?? [];
-  const ratings = data?.ratings ?? [];
+  const comments = (data?.comments ?? []).filter((c) => !removedIds.has(c.id));
+  const ratings = (data?.ratings ?? []).filter((r) => !removedIds.has(r.userId + '__' + r.businessId));
   const favorites = data?.favorites ?? [];
   const userTags = data?.userTags ?? [];
-  const customTags = data?.customTags ?? [];
+  const customTags = (data?.customTags ?? []).filter((t) => !removedIds.has(t.id));
   const priceLevels = data?.priceLevels ?? [];
   const commentLikes = data?.commentLikes ?? [];
   const checkins = data?.checkins ?? [];
+  const moderationLogs = data?.moderationLogs ?? [];
 
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudo cargar la actividad.">
@@ -78,6 +110,7 @@ export default function ActivityFeed() {
           <Tab label={`Precios (${priceLevels.length})`} />
           <Tab label={`Likes (${commentLikes.length})`} />
           <Tab label={`Check-ins (${checkins.length})`} />
+          <Tab label={`Moderación (${moderationLogs.length})`} />
         </Tabs>
 
         {tab === 0 && (
@@ -107,6 +140,19 @@ export default function ActivityFeed() {
                   </>
                 ),
               },
+              {
+                label: 'Acciones',
+                render: (c) => (
+                  <ModerationActions
+                    itemId={c.id}
+                    targetCollection="comments"
+                    allowHide
+                    emphasized={c.flagged}
+                    onDeleted={handleDeleted}
+                    onHidden={handleDeleted}
+                  />
+                ),
+              },
             ]}
           />
         )}
@@ -119,6 +165,16 @@ export default function ActivityFeed() {
               { label: 'Comercio', render: (r) => getBusinessName(r.businessId) },
               { label: 'Score', render: (r) => '\u2605'.repeat(r.score) },
               { label: 'Fecha', render: (r) => formatDateShort(r.createdAt) },
+              {
+                label: 'Acciones',
+                render: (r) => (
+                  <ModerationActions
+                    itemId={r.userId + '__' + r.businessId}
+                    targetCollection="ratings"
+                    onDeleted={handleDeleted}
+                  />
+                ),
+              },
             ]}
           />
         )}
@@ -146,6 +202,16 @@ export default function ActivityFeed() {
               { label: 'Tag', render: (t) => t.label },
               { label: 'Tipo', render: (t) => <Chip label={t.type} size="small" color={t.type === 'custom' ? 'secondary' : 'default'} /> },
               { label: 'Fecha', render: (t) => formatDateShort(t.createdAt) },
+              {
+                label: 'Acciones',
+                render: (t) => t.type === 'custom' ? (
+                  <ModerationActions
+                    itemId={(t as CustomTag).id}
+                    targetCollection="customTags"
+                    onDeleted={handleDeleted}
+                  />
+                ) : null,
+              },
             ]}
           />
         )}
@@ -183,6 +249,10 @@ export default function ActivityFeed() {
               { label: 'Fecha', render: (c) => formatDateShort(c.createdAt) },
             ]}
           />
+        )}
+
+        {tab === 7 && (
+          <ModerationLogTable logs={moderationLogs} />
         )}
       </Box>
     </AdminPanelWrapper>

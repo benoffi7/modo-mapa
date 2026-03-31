@@ -41,6 +41,7 @@ export { getStorageStats } from './admin/storageStats';
 export { writePerfMetrics } from './admin/perfMetrics';
 export { getAnalyticsReport } from './admin/analyticsReport';
 export { toggleFeaturedList, getPublicLists, getFeaturedLists } from './admin/featuredLists';
+export { moderateComment, moderateRating, moderateCustomTag } from './admin/moderation';
 
 // Callable
 export { inviteListEditor } from './callable/inviteListEditor';
