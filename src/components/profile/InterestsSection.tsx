@@ -35,7 +35,7 @@ export default function InterestsSection() {
 
       {tags.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          No seguis ningun tag. Agrega algunos para descubrir negocios.
+          No seguís ningún tag. Agregá algunos para descubrir comercios.
         </Typography>
       )}
 
