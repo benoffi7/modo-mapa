@@ -158,6 +158,7 @@ export default function QuickActions() {
         {slots.map((slot) => (
           <Box key={slot.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
             <IconButton
+              aria-label={slot.label}
               onClick={() => handleTap(slot)}
               sx={{ ...iconCircleSx(getSlotColor(slot), 48) }}
             >
