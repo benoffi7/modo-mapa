@@ -27,7 +27,7 @@ vi.mock('../utils/distance', () => ({
   distanceKm: (...args: unknown[]) => mockDistanceKm(...args),
 }));
 
-vi.mock('../utils/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('../utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
 
 let mockUser: { uid: string } | null = { uid: 'user1' };
 vi.mock('../context/AuthContext', () => ({
@@ -54,6 +54,7 @@ vi.mock('../constants/checkin', () => ({
 }));
 
 import { useCheckIn } from './useCheckIn';
+import { logger } from '../utils/logger';
 
 describe('useCheckIn', () => {
   beforeEach(() => {
@@ -255,6 +256,33 @@ describe('useCheckIn', () => {
 
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('Undo fail');
+  });
+
+  it('calls logger.warn when fetchCheckInsForBusiness rejects (mounted component)', async () => {
+    const fetchError = new Error('fetch failed');
+    mockFetchCheckInsForBusiness.mockRejectedValue(fetchError);
+
+    renderHook(() => useCheckIn('biz1', 'Test Biz'));
+
+    await waitFor(() => expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      '[useCheckIn] fetchCheckInsForBusiness failed',
+      fetchError,
+    ));
+  });
+
+  it('does NOT call logger.warn when component is unmounted before fetch rejects (cancelled guard)', async () => {
+    let rejectFn!: (err: Error) => void;
+    mockFetchCheckInsForBusiness.mockImplementation(
+      () => new Promise<never>((_, reject) => { rejectFn = reject; }),
+    );
+
+    const { unmount } = renderHook(() => useCheckIn('biz1', 'Test Biz'));
+    unmount();
+    rejectFn(new Error('late error'));
+
+    // Flush microtasks
+    await new Promise((r) => setTimeout(r, 0));
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
 
   it('handles non-Error throw on undoCheckIn', async () => {

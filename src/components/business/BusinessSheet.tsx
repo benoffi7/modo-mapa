@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { SwipeableDrawer, Box, Tabs, Tab, IconButton, Tooltip, Typography, Button } from '@mui/material';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -93,13 +93,19 @@ export default function BusinessSheet() {
     return () => observer.disconnect();
   }, [showSkeleton]);
 
+  const handleRatingChange = useCallback(() => data.refetch('ratings'), [data]);
+  const handleTagsChange = useCallback(() => {
+    data.refetch('userTags');
+    data.refetch('customTags');
+  }, [data]);
+
   // Rating hook - instantiated once, shared between header and InfoTab
   const ratingData = useBusinessRating({
     businessId: selectedBusiness?.id ?? '',
     businessName: selectedBusiness?.name,
     ratings: data.ratings,
     isLoading: data.isLoading,
-    onRatingChange: () => data.refetch('ratings'),
+    onRatingChange: handleRatingChange,
   });
 
   useEffect(() => {
@@ -299,7 +305,7 @@ export default function BusinessSheet() {
                 seedTags={selectedBusiness.tags}
                 userTags={data.userTags}
                 customTags={data.customTags}
-                onTagsChange={() => { data.refetch('userTags'); data.refetch('customTags'); }}
+                onTagsChange={handleTagsChange}
                 menuPhoto={data.menuPhoto}
                 onPhotoChange={() => data.refetch('menuPhotos')}
                 isLoading={data.isLoading}

@@ -91,7 +91,7 @@ export function useBusinessRating({
   const myRating = pendingRating === 0 ? null : (pendingRating ?? serverMyRating);
   const myCriteria: RatingCriteria = { ...(serverMyCriteria ?? {}), ...(pendingCriteria ?? {}) };
 
-  const handleRate = async (_: unknown, value: number | null) => {
+  const handleRate = useCallback(async (_: unknown, value: number | null) => {
     if (!user || !value) return;
     setPendingRating(value);
     try {
@@ -114,9 +114,9 @@ export function useBusinessRating({
       setPendingRating(null);
       toast.error(MSG_BUSINESS.ratingError);
     }
-  };
+  }, [user, businessId, businessName, isOffline, toast, onRatingChange, serverMyRating]);
 
-  const handleDeleteRating = async () => {
+  const handleDeleteRating = useCallback(async () => {
     if (!user) return;
     setPendingRating(0);
     setPendingCriteria(null);
@@ -134,7 +134,7 @@ export function useBusinessRating({
       setPendingRating(null);
       toast.error(MSG_BUSINESS.ratingDeleteError);
     }
-  };
+  }, [user, businessId, businessName, isOffline, toast, onRatingChange]);
 
   const handleCriterionRate = useCallback(async (criterionId: RatingCriterionId, value: number | null) => {
     if (!user || !value) return;

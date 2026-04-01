@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useAsyncData } from './useAsyncData';
@@ -25,12 +25,12 @@ export function useUserSettings() {
 
   const { data, loading } = useAsyncData(fetcher);
 
-  const settings: UserSettings = {
+  const settings = useMemo<UserSettings>(() => ({
     ...(data ?? DEFAULT_SETTINGS),
     ...optimistic,
     ...(digestOverride != null ? { notificationDigest: digestOverride } : {}),
     ...(localityOverride ?? {}),
-  };
+  }), [data, optimistic, digestOverride, localityOverride]);
 
   // Sync analytics enabled state with the SDK
   useEffect(() => {

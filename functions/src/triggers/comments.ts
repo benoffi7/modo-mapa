@@ -56,8 +56,11 @@ export const onCommentCreated = onDocumentCreated(
     let parentSnap: FirebaseFirestore.DocumentSnapshot | null = null;
     if (parentId) {
       const parentRef = db.collection('comments').doc(parentId);
-      await parentRef.update({ replyCount: FieldValue.increment(1) });
-      parentSnap = await parentRef.get();
+      const [, snap] = await Promise.all([
+        parentRef.update({ replyCount: FieldValue.increment(1) }),
+        parentRef.get(),
+      ]);
+      parentSnap = snap;
     }
 
     // 4. Counters + aggregates
