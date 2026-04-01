@@ -127,6 +127,7 @@ describe('getDeviceInfo', () => {
   it('detects desktop userAgent', () => {
     vi.stubGlobal('navigator', {
       userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Chrome/91.0',
+      onLine: true,
     });
     expect(getDeviceInfo().type).toBe('desktop');
   });
@@ -186,6 +187,7 @@ describe('initPerfMetrics', () => {
     vi.stubGlobal('crypto', { randomUUID: () => 'test-session-uuid' });
     vi.stubGlobal('navigator', {
       userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Chrome/91.0',
+      onLine: true,
     });
   });
 
