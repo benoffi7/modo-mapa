@@ -131,6 +131,8 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 - [ ] Update rule tiene `affectedKeys().hasOnly()` para restringir campos modificables
 - [ ] Campos immutables (userId, businessId) no estan en la lista de affectedKeys
 - [ ] Rate limit server-side en Cloud Function trigger — DEBE llamar `snap.ref.delete()` si excede (log-only no es enforcement)
+- [ ] Toda coleccion nueva escribible por usuarios DEBE tener Cloud Function trigger con rate limit (sin trigger = billing DoS)
+- [ ] Campos `is list` DEBEN validar tamaño de cada item individual (no solo `.size()` del array)
 - [ ] Moderacion via `checkModeration()` si hay texto libre
 {Si el feature agrega campos a userSettings:}
 - [ ] Agregar campo a `keys().hasOnly()` en firestore.rules para userSettings
@@ -179,6 +181,18 @@ gh issue list --label "tech debt" --state open --json number,title
 - [ ] Archivos en `src/hooks/` DEBEN usar al menos un React hook — si no, van en `src/services/` o `src/utils/`
 - [ ] Constantes nuevas de localStorage usan key de `src/constants/storage.ts` — nunca strings hardcodeados
 - [ ] Archivos nuevos no superan 300 lineas (warn) ni 400 lineas (blocker)
+- [ ] `logger.error` NUNCA dentro de `if (import.meta.env.DEV)` — debe ejecutarse siempre para Sentry
+
+### Checklist de observabilidad
+
+- [ ] Todo Cloud Function trigger nuevo incluye `trackFunctionTiming`
+- [ ] Todo service nuevo con queries Firestore incluye `measureAsync`
+- [ ] Todo `trackEvent` nuevo registrado en `GA4_EVENT_NAMES` (analyticsReport.ts) y `ga4FeatureDefinitions.ts`
+
+### Checklist offline
+
+- [ ] Formularios/dialogs que escriben a Firestore deshabilitan submit cuando `isOffline`
+- [ ] Error handlers en catch blocks muestran `toast.error` en todos los environments (no solo DEV)
 
 ### Checklist de documentacion
 

@@ -515,6 +515,75 @@ git diff origin/new-home | grep -E '^\+.*((192\.168|10\.|172\.(1[6-9]|2[0-9]|3[0
 
 If admin emails or internal endpoints are in committed production files → **WARN**. Move to environment config or Secret Manager.
 
+### 1q. Logger error DEV guard check
+
+**BLOCKER:** New `logger.error` calls must NOT be wrapped in `if (import.meta.env.DEV)`. This silences Sentry error capture in production.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'import\.meta\.env\.DEV.*logger\.error|if.*DEV.*\{[^}]*logger\.error' "$f" 2>/dev/null; then
+      echo "SILENCED ERROR: $f wraps logger.error in DEV guard — errors lost in prod"
+    fi
+  fi
+done
+```
+
+Only `logger.warn` and `logger.log` should be silenced in prod. `logger.error` routes to Sentry and must always fire.
+
+### 1r. Performance instrumentation guard
+
+**WARN:** New Cloud Function triggers must include `trackFunctionTiming`. New service functions with Firestore queries should include `measureAsync`.
+
+```bash
+# New CF triggers without trackFunctionTiming
+for f in $(git diff --name-only origin/new-home -- 'functions/src/triggers/**'); do
+  if [ -f "$f" ]; then
+    if grep -q 'onDocument' "$f" && ! grep -q 'trackFunctionTiming' "$f"; then
+      echo "UNINSTRUMENTED TRIGGER: $f — add trackFunctionTiming"
+    fi
+  fi
+done
+
+# New service files without measureAsync
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/services/*.ts' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'getDocs|getDoc|getCountFromServer' "$f" && ! grep -q 'measureAsync' "$f"; then
+      echo "UNINSTRUMENTED SERVICE: $f — add measureAsync for Firestore queries"
+    fi
+  fi
+done
+```
+
+### 1s. Analytics event registration guard
+
+**WARN:** New `trackEvent` calls must have corresponding entries in `functions/src/admin/analyticsReport.ts` (GA4_EVENT_NAMES) and `src/components/admin/features/ga4FeatureDefinitions.ts`.
+
+```bash
+# Find new trackEvent calls and check GA4_EVENT_NAMES
+for event in $(git diff origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -E '^\+.*trackEvent\(' | grep -oP "trackEvent\('[^']+'" | grep -oP "'[^']+'" | tr -d "'"); do
+  if ! grep -q "$event" functions/src/admin/analyticsReport.ts 2>/dev/null; then
+    echo "UNREGISTERED EVENT: $event — add to GA4_EVENT_NAMES in analyticsReport.ts"
+  fi
+done
+```
+
+### 1t. Offline submit guard
+
+**WARN:** New forms/dialogs with submit actions that write to Firestore must disable submit when `isOffline`, or use `withOfflineSupport`.
+
+```bash
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'addDoc|setDoc|httpsCallable' "$f" 2>/dev/null; then
+      if ! grep -qE 'isOffline|useConnectivity|withOfflineSupport' "$f" 2>/dev/null; then
+        echo "NO OFFLINE GUARD: $f writes to Firestore without offline protection"
+      fi
+    fi
+  fi
+done
+```
+
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 ## Phase 2: Automated audits (run ALL in parallel, FOREGROUND)

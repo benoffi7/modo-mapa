@@ -308,12 +308,21 @@ Which files must be created/modified first.}
 
 - [ ] Toda coleccion nueva tiene `hasOnly()` en create + `affectedKeys().hasOnly()` en update
 - [ ] Todo campo string tiene `.size() <= N` en rules
-- [ ] Todo campo list tiene `.size() <= N` en rules
+- [ ] Todo campo list tiene `.size() <= N` en rules — Y cada item del list tiene validacion de tipo y tamaño
 - [ ] Admin writes tambien tienen validacion de campos (defense contra admin comprometido)
 - [ ] Counter decrements en triggers usan `Math.max(0, ...)` (nunca negativo)
 - [ ] Rate limits llaman `snap.ref.delete()` cuando exceden (log-only no es enforcement)
+- [ ] Toda coleccion nueva escribible por usuarios tiene Cloud Function trigger con rate limit
 - [ ] No hay secrets, admin emails, ni credenciales en archivos commiteados
 - [ ] `getCountFromServer` → usar `getCountOfflineSafe` siempre
+
+## Guardrails de observabilidad
+
+- [ ] Todo CF trigger nuevo tiene `trackFunctionTiming` (functions/src/utils/perfTracker.ts)
+- [ ] Todo service nuevo con queries Firestore tiene `measureAsync` (src/utils/perfMetrics.ts)
+- [ ] Todo `trackEvent` nuevo esta registrado en `GA4_EVENT_NAMES` (functions/src/admin/analyticsReport.ts)
+- [ ] Todo `trackEvent` nuevo tiene feature card en `ga4FeatureDefinitions.ts`
+- [ ] `logger.error` NUNCA dentro de `if (import.meta.env.DEV)` — debe ejecutarse en prod para Sentry
 
 ## Guardrails de accesibilidad y UI
 
