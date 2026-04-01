@@ -182,7 +182,10 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `menuPhotos` | 10/día por usuario |
 | `listItems` | 100/día por usuario (campo `addedBy`) — document deleted on exceed |
 | `notifications` | 50/día por destinatario (admin types exempt) |
+| `checkins` create | 10/día por usuario |
 | `checkins_delete` | 20 deletes/día por usuario — log-only (no se puede deshacer un delete) |
+| `follows` | 50/día por usuario |
+| `recommendations` | 20/día por usuario |
 
 ### Rate limiting server-side (callables)
 

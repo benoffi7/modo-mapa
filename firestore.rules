@@ -109,8 +109,10 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId', 'type'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
+        && request.resource.data.userName is string
         && request.resource.data.userName.size() > 0
         && request.resource.data.userName.size() <= 30
+        && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.createdAt == request.time
@@ -119,6 +121,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt'])
+        && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.updatedAt == request.time;
@@ -178,6 +181,7 @@ service cloud.firestore {
           isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy', 'githubIssueUrl'])
+          && (!('githubIssueUrl' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.githubIssueUrl is string && request.resource.data.githubIssueUrl.matches('^https://github\\.com/.*')))
         ) || (
           request.auth != null
           && resource.data.userId == request.auth.uid
