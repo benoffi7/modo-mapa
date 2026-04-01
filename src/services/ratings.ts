@@ -2,7 +2,7 @@
  * Firestore service for the `ratings` collection.
  */
 import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
-import type { CollectionReference } from 'firebase/firestore';
+import type { CollectionReference, QuerySnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
@@ -126,15 +126,11 @@ export async function hasUserRatedBusiness(
 
 export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<Rating[]> {
   const BATCH_SIZE = 10;
-  const results: Rating[] = [];
+  const batches: Promise<QuerySnapshot<Rating>>[] = [];
   for (let i = 0; i < businessIds.length; i += BATCH_SIZE) {
     const batch = businessIds.slice(i, i + BATCH_SIZE);
-    const snap = await getDocs(
-      query(getRatingsCollection(), where('businessId', 'in', batch)),
-    );
-    for (const d of snap.docs) {
-      results.push(d.data());
-    }
+    batches.push(getDocs(query(getRatingsCollection(), where('businessId', 'in', batch))));
   }
-  return results;
+  const snapshots = await Promise.all(batches);
+  return snapshots.flatMap((snap) => snap.docs.map((d) => d.data()));
 }

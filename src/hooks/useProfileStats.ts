@@ -30,7 +30,7 @@ export function useProfileStats(): ProfileStats {
       if (!cancelled) setCounts({ reviews, favorites, followers });
     });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.uid]);
 
   return {
     places: checkInStats.uniqueBusinesses,
