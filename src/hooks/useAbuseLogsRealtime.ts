@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
-import { abuseLogConverter } from '../config/adminConverters';
+import { subscribeToAbuseLogs } from '../services/abuseLogs';
 import type { AbuseLog } from '../types/admin';
 
 interface UseAbuseLogsRealtimeReturn {
@@ -28,28 +25,23 @@ export function useAbuseLogsRealtime(maxDocs = 200): UseAbuseLogsRealtimeReturn 
   }, [logs]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, COLLECTIONS.ABUSE_LOGS).withConverter(abuseLogConverter),
-      orderBy('timestamp', 'desc'),
-      limit(maxDocs),
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+    const unsubscribe = subscribeToAbuseLogs(
+      maxDocs,
+      (newLogs, changes) => {
         if (initialIds.current === null) {
           // First snapshot: store all IDs, no new count
-          initialIds.current = new Set(snapshot.docs.map((d) => d.id));
+          initialIds.current = new Set(newLogs.map((l) => l.id));
           setNewCount(0);
         } else {
           // Subsequent snapshots: count truly new docs
-          const added = snapshot.docChanges()
-            .filter((change) => change.type === 'added' && !initialIds.current!.has(change.doc.id));
+          const added = changes.filter(
+            (change) => change.type === 'added' && !initialIds.current!.has(change.id),
+          );
           if (added.length > 0) {
             setNewCount((prev) => prev + added.length);
           }
         }
-        setLogs(snapshot.docs.map((d) => d.data()));
+        setLogs(newLogs);
         setLoading(false);
         setError(false);
       },

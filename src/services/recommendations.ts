@@ -11,7 +11,7 @@ import { COLLECTIONS } from '../config/collections';
 import { recommendationConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { EVT_RECOMMENDATION_SENT } from '../constants/analyticsEvents';
 import { MAX_RECOMMENDATION_MESSAGE_LENGTH } from '../constants/validation';
 import type { Recommendation } from '../types';
