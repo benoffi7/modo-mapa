@@ -2,10 +2,12 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { getDb } from '../helpers/env';
 import { incrementCounter, trackWrite } from '../utils/counters';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onSharedListCreated = onDocumentCreated(
   'sharedLists/{listId}',
   async (event) => {
+    const startMs = performance.now();
     const snap = event.data;
     if (!snap) return;
     const data = snap.data();
@@ -34,5 +36,6 @@ export const onSharedListCreated = onDocumentCreated(
         detail: 'Exceeded 10 sharedLists/day — document deleted',
       });
     }
+    await trackFunctionTiming('onSharedListCreated', startMs);
   },
 );

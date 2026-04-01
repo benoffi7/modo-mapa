@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Dialog, DialogTitle, DialogContent, List, ListItemButton, ListItemText, IconButton } from '@mui/material';
+import { Box, Typography, Dialog, DialogTitle, DialogContent, List, ListItemButton, ListItemText, IconButton, ButtonBase } from '@mui/material';
 import { cardSx, iconCircleSx } from '../../theme/cards';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
@@ -81,10 +81,11 @@ export default function SpecialsSection() {
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {specials.slice(0, 3).map((item) => (
-          <Box
+          <ButtonBase
             key={item.id}
+            aria-label={item.title}
             onClick={() => handleClick(item)}
-            sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
+            sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', textAlign: 'left' }}
           >
             <Box sx={iconCircleSx('action.selected')}>
               {ICON_MAP[item.icon] ?? <StarIcon color="primary" />}
@@ -94,7 +95,7 @@ export default function SpecialsSection() {
               <Typography variant="caption" color="text.secondary">{item.subtitle}</Typography>
             </Box>
             <ChevronRightIcon color="action" />
-          </Box>
+          </ButtonBase>
         ))}
       </Box>
 
@@ -113,6 +114,7 @@ export default function SpecialsSection() {
                 <Typography variant="caption" color="text.secondary">{selectedSpecial.subtitle}</Typography>
               </Box>
               <IconButton
+                aria-label="Cerrar"
                 onClick={() => setSelectedSpecial(null)}
                 sx={{ position: 'absolute', right: 8, top: 8 }}
               >

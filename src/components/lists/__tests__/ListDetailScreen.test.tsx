@@ -89,13 +89,8 @@ function renderScreen(list = baseList) {
 }
 
 function getItemDeleteButton() {
-  // The item delete buttons are buttons containing a DeleteOutlineIcon SVG
-  // They appear inside item rows (not the list-delete button in the toolbar)
-  const buttons = screen.getAllByRole('button');
-  return buttons.find((btn) =>
-    btn.querySelector('svg[data-testid="DeleteOutlineIcon"]') !== null &&
-    !btn.closest('.MuiToolbar-root'),
-  );
+  const buttons = screen.queryAllByLabelText('Eliminar de lista');
+  return buttons[0];
 }
 
 describe('ListDetailScreen – handleRemoveItem', () => {

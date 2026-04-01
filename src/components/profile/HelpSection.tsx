@@ -24,6 +24,7 @@ import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import SearchIcon from '@mui/icons-material/Search';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 
 interface HelpItem {
   id: string;
@@ -46,7 +47,14 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <HomeOutlinedIcon color="primary" />,
         title: 'Pantalla principal',
         description:
-          'Tu pantalla principal con saludo personalizado. Acciones rápidas para buscar por categoría o probar "Sorprendeme". Sección "Especiales" con contenido destacado. Búsquedas recientes para volver a lo que visitaste. Sección "Para ti" con sugerencias personalizadas basadas en tus gustos.',
+          'Tu pantalla principal con saludo personalizado. Acciones rápidas para buscar por categoría o probar "Sorpréndeme". Sección "Especiales" con tarjetas creadas por el equipo (promos del día, listas destacadas de comercios, logros). Sección "Novedades" con el resumen de notificaciones no leídas agrupadas por tipo. Sección "Para ti" con sugerencias personalizadas basadas en tus gustos. Sección "Tus intereses" con comercios filtrados por tags que seguís.',
+      },
+      {
+        id: 'primeros_pasos',
+        icon: <SchoolOutlinedIcon color="primary" />,
+        title: 'Primeros pasos',
+        description:
+          'Tocá el card de Primeros pasos en el menú lateral para ver acciones sugeridas según tu nivel de uso. A medida que completás acciones (primera calificación, primer favorito, primer check-in, primer tag, explorar ranking), el card avanza y muestra los próximos pasos. Al completar todas las tareas, recibís un mensaje de celebración. Podés colapsar o descartar el card.',
       },
     ],
   },
@@ -72,7 +80,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <PlaceOutlinedIcon color="primary" />,
         title: 'Check-in',
         description:
-          'Registrá tu visita a un comercio tocando "Hacer check-in" en el detalle. Hay un cooldown de 4 horas por comercio y un límite de 10 check-ins por día. Si estás a más de 500 metros, te avisa pero no te bloquea. Podés deshacer el check-in tocando el botón de nuevo. Tu historial de check-ins aparece en Listas > Recientes con fecha y hora. En tu perfil se cuentan las visitas totales y comercios únicos.',
+          'Registrá tu visita a un comercio tocando "Hacer check-in" en el detalle. Hay un cooldown de 4 horas por comercio y un límite de 10 check-ins por día. Si estás a más de 500 metros, te avisa pero no te bloquea. Podés deshacer el check-in tocando el botón de nuevo. Tu historial de check-ins aparece en el menú lateral, sección "Mis visitas", con fecha y hora. En tu perfil se cuentan las visitas totales y comercios únicos.',
       },
     ],
   },
@@ -103,7 +111,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <BookmarkBorderIcon color="primary" />,
         title: 'Favoritos y listas',
         description:
-          'En la pestaña Listas tenés cuatro secciones: Favoritos (con filtros por nombre, categoría y orden, y distancia al comercio), Listas (creá listas temáticas con ícono personalizado, hacelas públicas o privadas), Recientes (historial unificado de visitas y check-ins) y Colaborativas (listas donde te invitaron como editor). Máximo 10 listas y 50 comercios por lista.',
+          'En la pestaña Listas tenés cuatro secciones: Favoritos (con filtros por nombre, categoría y orden, y distancia al comercio), Listas (creá listas temáticas con ícono personalizado, hacelas públicas o privadas), Recientes (historial de comercios visitados o vistos recientemente, guardado localmente en el dispositivo, separado de los check-ins) y Colaborativas (listas donde te invitaron como editor). Máximo 10 listas y 50 comercios por lista. El historial de check-ins lo encontrás en el menú lateral, sección "Mis visitas".',
       },
       {
         id: 'colaborativas',
@@ -129,7 +137,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <EmojiEventsOutlinedIcon color="primary" />,
         title: 'Logros',
         description:
-          'Hay 8 logros disponibles: Explorador (check-ins), Social (seguidos), Crítico (calificaciones), Viajero (localidades), Coleccionista (favoritos), Fotógrafo (fotos de menú), Embajador (recomendaciones) y En racha (días consecutivos). Tocá cualquier logro para ver qué necesitás hacer para completarlo.',
+          'Hay 8 logros disponibles: Explorador (check-ins), Social (seguidos), Crítico (calificaciones), Viajero (localidades), Coleccionista (favoritos), Fotógrafo (fotos de menú), Embajador (recomendaciones) y En racha (días consecutivos). Tocá cualquier logro para ver qué necesitás hacer para completarlo. Los íconos de perfil verificado (Local Guide, Visitante Verificado, Opinión Confiable) son un sistema separado de badges de actividad visible en el perfil de otros usuarios.',
       },
       {
         id: 'notificaciones',
@@ -155,7 +163,7 @@ const HELP_GROUPS: HelpGroup[] = [
         icon: <SettingsOutlinedIcon color="primary" />,
         title: 'Configuración',
         description:
-          'Accedé desde Perfil > Configuración. Incluye cuenta (crear cuenta, verificar email, cambiar contraseña, cerrar sesión, eliminar cuenta), perfil público/privado, datos de uso (analytics), localidad (ubicación por defecto cuando no hay GPS) y preferencias de notificaciones por tipo. La eliminación de cuenta borra permanentemente todos tus datos y no se puede deshacer.',
+          'Accedé desde Perfil > Configuración. Incluye cuenta (crear cuenta, verificar email, cambiar contraseña, cerrar sesión, eliminar cuenta), perfil público/privado, datos de uso (analytics), localidad (ubicación por defecto cuando no hay GPS), preferencias de notificaciones por tipo y frecuencia del digest (tiempo real, diaria o semanal). El modo oscuro se activa desde el switch en el menú lateral. La eliminación de cuenta borra permanentemente todos tus datos y no se puede deshacer.',
       },
       {
         id: 'modooscuro',

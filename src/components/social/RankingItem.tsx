@@ -38,6 +38,10 @@ export default function RankingItem({ entry, position, maxScore, isCurrentUser, 
   return (
     <Box
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      aria-label={onClick ? `Ver perfil de ${entry.displayName}` : undefined}
       sx={{
         display: 'flex',
         alignItems: 'center',

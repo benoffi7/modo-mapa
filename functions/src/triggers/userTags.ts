@@ -3,10 +3,12 @@ import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { logAbuse } from '../utils/abuseLogger';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onUserTagCreated = onDocumentCreated(
   'userTags/{tagId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -34,14 +36,17 @@ export const onUserTagCreated = onDocumentCreated(
 
     await incrementCounter(db, 'userTags', 1);
     await trackWrite(db, 'userTags');
+    await trackFunctionTiming('onUserTagCreated', startMs);
   },
 );
 
 export const onUserTagDeleted = onDocumentDeleted(
   'userTags/{tagId}',
   async () => {
+    const startMs = performance.now();
     const db = getDb();
     await incrementCounter(db, 'userTags', -1);
     await trackDelete(db, 'userTags');
+    await trackFunctionTiming('onUserTagDeleted', startMs);
   },
 );

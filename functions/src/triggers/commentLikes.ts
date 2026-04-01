@@ -5,10 +5,12 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { logAbuse } from '../utils/abuseLogger';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onCommentLikeCreated = onDocumentCreated(
   'commentLikes/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -61,12 +63,14 @@ export const onCommentLikeCreated = onDocumentCreated(
 
     await incrementCounter(db, 'commentLikes', 1);
     await trackWrite(db, 'commentLikes');
+    await trackFunctionTiming('onCommentLikeCreated', startMs);
   },
 );
 
 export const onCommentLikeDeleted = onDocumentDeleted(
   'commentLikes/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -85,5 +89,6 @@ export const onCommentLikeDeleted = onDocumentDeleted(
 
     await incrementCounter(db, 'commentLikes', -1);
     await trackDelete(db, 'commentLikes');
+    await trackFunctionTiming('onCommentLikeDeleted', startMs);
   },
 );
