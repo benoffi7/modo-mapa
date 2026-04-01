@@ -39,6 +39,10 @@ vi.mock('../../utils/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock('../../context/ToastContext', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }),
+}));
+
 let mockUser: { uid: string } | null = { uid: 'user1' };
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
