@@ -16,7 +16,7 @@ import { invalidateQueryCache } from './queryCache';
 
 /** Opaque cursor type for pagination — components should import this instead of QueryDocumentSnapshot */
 export type FollowCursor = QueryDocumentSnapshot<Follow>;
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';

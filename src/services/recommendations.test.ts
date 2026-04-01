@@ -32,7 +32,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
-vi.mock('../utils/getCountOfflineSafe', () => ({
+vi.mock('./getCountOfflineSafe', () => ({
   getCountOfflineSafe: async (...args: unknown[]) => {
     if (!navigator.onLine) return 0;
     const snap = await mockGetCountFromServer(...args);

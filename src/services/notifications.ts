@@ -13,7 +13,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { notificationConverter } from '../config/converters';
 import { measureAsync } from '../utils/perfMetrics';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import type { AppNotification } from '../types';
 
 export async function fetchUserNotifications(
