@@ -1,7 +1,5 @@
 import { useSyncExternalStore, useCallback } from 'react';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
+import { fetchProfileVisibility } from '../services/users';
 import { PROFILE_CACHE_TTL_MS } from '../constants/cache';
 
 // Cache entry with timestamp for TTL-based invalidation
@@ -38,44 +36,19 @@ function isStale(uid: string): boolean {
 // Tracks in-flight fetches to avoid duplicate requests
 const pendingFetches = new Set<string>();
 
-async function fetchVisibility(userIds: string[]): Promise<void> {
+async function doFetchVisibility(userIds: string[]): Promise<void> {
   const toFetch = userIds.filter((uid) => !pendingFetches.has(uid));
   if (toFetch.length === 0) return;
 
   for (const uid of toFetch) pendingFetches.add(uid);
 
-  const batches: string[][] = [];
-  for (let i = 0; i < toFetch.length; i += 30) {
-    batches.push(toFetch.slice(i, i + 30));
-  }
-
   const now = Date.now();
 
   try {
-    const snapshots = await Promise.all(
-      batches.map((batch) =>
-        getDocs(
-          query(
-            collection(db, COLLECTIONS.USERS),
-            where(documentId(), 'in', batch),
-          ),
-        ),
-      ),
-    );
-
-    const fetched = new Set<string>();
-    for (const snap of snapshots) {
-      for (const d of snap.docs) {
-        visibilityCache.set(d.id, { value: d.data().profilePublic === true, fetchedAt: now });
-        fetched.add(d.id);
-      }
+    const visibilityMap = await fetchProfileVisibility(toFetch);
+    for (const [uid, isPublic] of visibilityMap) {
+      visibilityCache.set(uid, { value: isPublic, fetchedAt: now });
     }
-
-    for (const uid of toFetch) {
-      if (!fetched.has(uid)) visibilityCache.set(uid, { value: false, fetchedAt: now });
-    }
-  } catch {
-    for (const uid of toFetch) visibilityCache.set(uid, { value: false, fetchedAt: now });
   } finally {
     for (const uid of toFetch) pendingFetches.delete(uid);
   }
@@ -91,7 +64,7 @@ export function useProfileVisibility(userIds: string[]): Map<string, boolean> {
   const unique = [...new Set(userIds)];
   const needsFetch = unique.filter((uid) => isStale(uid));
   if (needsFetch.length > 0) {
-    fetchVisibility(needsFetch);
+    doFetchVisibility(needsFetch);
   }
 
   // Build result from cache

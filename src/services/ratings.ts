@@ -7,6 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
+import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import type { Rating, RatingCriteria } from '../types';
 
@@ -98,6 +99,29 @@ export async function fetchUserRatings(userId: string): Promise<Rating[]> {
     query(getRatingsCollection(), where('userId', '==', userId)),
   );
   return snap.docs.map((d) => d.data());
+}
+
+/**
+ * Returns the count of ratings written by userId.
+ * Uses getCountOfflineSafe to handle offline gracefully.
+ */
+export async function fetchUserRatingsCount(userId: string): Promise<number> {
+  return getCountOfflineSafe(
+    query(collection(db, COLLECTIONS.RATINGS), where('userId', '==', userId)),
+  );
+}
+
+/**
+ * Returns true if a rating exists for the given user/business pair.
+ * Uses the composite doc ID pattern: {userId}__{businessId}.
+ */
+export async function hasUserRatedBusiness(
+  userId: string,
+  businessId: string,
+): Promise<boolean> {
+  const docId = `${userId}__${businessId}`;
+  const snap = await getDoc(doc(db, COLLECTIONS.RATINGS, docId));
+  return snap.exists();
 }
 
 export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<Rating[]> {
