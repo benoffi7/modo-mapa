@@ -65,7 +65,7 @@ SocialScreen
   ├─ FollowedList (lista + buscador + UserProfileSheet)
   ├─ ReceivedRecommendations (con badge no leidas)
   ├─ RankingsView (semanal/mensual/anual/all-time)
-  └─ UserProfileSheet (bottom sheet para perfiles)
+  └─ UserProfileSheet (bottom sheet shell → UserProfileContent)
 ```
 
 ## Tab: Buscar (SearchScreen)
@@ -79,7 +79,7 @@ SearchScreen
   ├─ ViewToggle (mapa/lista)
   ├─ MapView + FABs + MapHint (vista mapa)
   ├─ SearchListView (vista lista, sorted by distance)
-  └─ BusinessSheet (bottom sheet de comercio)
+  └─ BusinessSheet (bottom sheet shell → BusinessSheetContent)
 ```
 
 ## Tab: Listas (ListsScreen)
