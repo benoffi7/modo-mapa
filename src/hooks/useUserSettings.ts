@@ -70,9 +70,10 @@ export function useUserSettings() {
       updateUserSettings(user.uid, { locality, localityLat: lat, localityLng: lng }).catch((err) => {
         logger.error('[useUserSettings] updateLocality failed:', err);
         setLocalityOverride(null);
+        toast.warning(MSG_COMMON.settingUpdateError);
       });
     },
-    [user],
+    [user, toast],
   );
 
   const clearLocality = useCallback(
@@ -82,9 +83,10 @@ export function useUserSettings() {
       updateUserSettings(user.uid, { locality: '', localityLat: 0, localityLng: 0 }).catch((err) => {
         logger.error('[useUserSettings] clearLocality failed:', err);
         setLocalityOverride(null);
+        toast.warning(MSG_COMMON.settingUpdateError);
       });
     },
-    [user],
+    [user, toast],
   );
 
   const updateDigestFrequency = useCallback(
@@ -94,9 +96,10 @@ export function useUserSettings() {
       updateUserSettings(user.uid, { notificationDigest: value }).catch((err) => {
         logger.error('[useUserSettings] updateDigestFrequency failed:', err);
         setDigestOverride(null);
+        toast.warning(MSG_COMMON.settingUpdateError);
       });
     },
-    [user],
+    [user, toast],
   );
 
   return { settings, loading, updateSetting, updateDigestFrequency, updateLocality, clearLocality };

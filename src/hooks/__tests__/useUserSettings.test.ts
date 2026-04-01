@@ -39,8 +39,9 @@ vi.mock('../../utils/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn() },
 }));
 
+const mockToast = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
 vi.mock('../../context/ToastContext', () => ({
-  useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }),
+  useToast: () => mockToast,
 }));
 
 let mockUser: { uid: string } | null = { uid: 'user1' };
@@ -48,7 +49,59 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
+import { act } from '@testing-library/react';
 import { useUserSettings } from '../useUserSettings';
+
+describe('useUserSettings – toast.warning on catch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUser = { uid: 'user1' };
+    mockFetchUserSettings.mockResolvedValue({
+      profilePublic: false, notificationsEnabled: true, notifyLikes: true,
+      notifyPhotos: true, notifyRankings: true, notifyFeedback: true,
+      notifyReplies: true, notifyFollowers: true, notifyRecommendations: true,
+      analyticsEnabled: true, notificationDigest: 'daily',
+      locality: '', localityLat: 0, localityLng: 0,
+    });
+  });
+
+  it('updateLocality calls toast.warning when updateUserSettings rejects', async () => {
+    mockUpdateUserSettings.mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useUserSettings());
+
+    await act(async () => {
+      result.current.updateLocality('San Isidro', -34.47, -58.51);
+    });
+    // Allow the promise rejection to propagate
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToast.warning).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearLocality calls toast.warning when updateUserSettings rejects', async () => {
+    mockUpdateUserSettings.mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useUserSettings());
+
+    await act(async () => {
+      result.current.clearLocality();
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToast.warning).toHaveBeenCalledTimes(1);
+  });
+
+  it('updateDigestFrequency calls toast.warning when updateUserSettings rejects', async () => {
+    mockUpdateUserSettings.mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useUserSettings());
+
+    await act(async () => {
+      result.current.updateDigestFrequency('weekly');
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToast.warning).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('useUserSettings – settings memoization', () => {
   beforeEach(() => {
