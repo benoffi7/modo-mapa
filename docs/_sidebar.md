@@ -226,8 +226,19 @@
   - [#277-#278 Race Conditions, Re-renders y CF Serial Reads](/fix/infra/performance-bugs/specs.md)
     - [Specs](/fix/infra/performance-bugs/specs.md)
     - [Plan](/fix/infra/performance-bugs/plan.md)
+  - [#283 Performance Fixes v2](/fix/infra/performance-v2/specs.md)
+    - [Specs](/fix/infra/performance-v2/specs.md)
+    - [Plan](/fix/infra/performance-v2/plan.md)
   - [#260-#265 Security Hardening Audit](/fix/security/hardening-audit/specs.md)
     - [Plan](/fix/security/hardening-audit/plan.md)
+  - [#280 seed-trending client_secret](/fix/security/seed-trending-secret/specs.md)
+    - [Plan](/fix/security/seed-trending-secret/plan.md)
+  - [#281 Accessibility v2 — Typography-as-button + aria-labels](/fix/ux/accessibility-v2/specs.md)
+    - [Plan](/fix/ux/accessibility-v2/plan.md)
+  - [#282 Copy Fixes — Tildes y Voseo v2](/fix/ux/copy-v2/specs.md)
+    - [Plan](/fix/ux/copy-v2/plan.md)
+  - [#284 Toast missing in settings + stale cache fallback](/fix/infra/offline-v2/specs.md)
+    - [Plan](/fix/infra/offline-v2/plan.md)
 
 - **[Reports](/reports/)**
   - [Backlog de Producto](/reports/backlog-producto.md)
@@ -249,6 +260,9 @@
   - [#279 Service Layer Refactor](/chore/architecture/service-layer-refactor/specs.md)
     - [Specs](/chore/architecture/service-layer-refactor/specs.md)
     - [Plan](/chore/architecture/service-layer-refactor/plan.md)
+  - [#285 BackupsPanel Service Extract](/chore/architecture/backups-service/specs.md)
+    - [Specs](/chore/architecture/backups-service/specs.md)
+    - [Plan](/chore/architecture/backups-service/plan.md)
 
 - **Tech Debt: New Home**
   - [1 - Admin Service Layer](/feat/infra/tech-debt-new-home/1-admin-service-layer.md)
