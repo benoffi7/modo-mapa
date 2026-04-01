@@ -165,15 +165,17 @@ describe('onMenuPhotoCreated', () => {
     createMockDb();
     mockCheckRateLimit.mockResolvedValueOnce(true);
     const mockUpdate = vi.fn().mockResolvedValue(undefined);
+    const mockRefDelete = vi.fn().mockResolvedValue(undefined);
 
     await onCreated()({
       params: { photoId: 'photo123' },
       data: {
         data: () => ({ storagePath: 'menus/u1/biz_001/photo123_original', businessId: 'biz_001', userId: 'u1' }),
-        ref: { update: mockUpdate },
+        ref: { update: mockUpdate, delete: mockRefDelete },
       },
     });
 
+    expect(mockRefDelete).toHaveBeenCalled();
     expect(mockSharp).not.toHaveBeenCalled();
     expect(mockUpdate).not.toHaveBeenCalled();
     expect(mockIncrementCounter).not.toHaveBeenCalled();

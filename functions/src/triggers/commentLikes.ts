@@ -74,9 +74,13 @@ export const onCommentLikeDeleted = onDocumentDeleted(
     const data = snap.data();
     const commentId = data.commentId as string;
 
-    // Decrement likeCount on the comment
-    await db.doc(`comments/${commentId}`).update({
-      likeCount: FieldValue.increment(-1),
+    // Use transaction to floor likeCount at 0 (prevent negative counters)
+    const commentRef = db.doc(`comments/${commentId}`);
+    await db.runTransaction(async (tx) => {
+      const commentSnap = await tx.get(commentRef);
+      if (!commentSnap.exists) return;
+      const current = (commentSnap.data()!.likeCount as number) ?? 0;
+      tx.update(commentRef, { likeCount: Math.max(0, current - 1) });
     });
 
     await incrementCounter(db, 'commentLikes', -1);
