@@ -150,7 +150,7 @@ export default function QuickActions() {
         <Typography variant="subtitle2" color="text.secondary">
           Acciones rapidas
         </Typography>
-        <IconButton size="small" onClick={openEdit}>
+        <IconButton size="small" aria-label="Editar acciones rápidas" onClick={openEdit}>
           <EditIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -173,7 +173,7 @@ export default function QuickActions() {
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Editar acciones ({editDraft.length}/8)
-          <IconButton size="small" onClick={() => setEditOpen(false)}>
+          <IconButton size="small" aria-label="Cerrar diálogo de edición" onClick={() => setEditOpen(false)}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>

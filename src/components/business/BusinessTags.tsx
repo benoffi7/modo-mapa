@@ -198,7 +198,8 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
                   <IconButton
                     size="small"
                     onClick={() => tagFollowed ? unfollowTag(tag.id, 'business') : followTag(tag.id, 'business')}
-                    sx={{ ml: -0.5, p: 0.25 }}
+                    aria-label={tagFollowed ? `Dejar de seguir ${tag.label}` : `Seguir ${tag.label}`}
+                    sx={{ ml: -0.5, minWidth: 44, minHeight: 44 }}
                   >
                     {tagFollowed
                       ? <BookmarkIcon fontSize="small" color="primary" />

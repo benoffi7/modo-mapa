@@ -70,7 +70,7 @@ export default function ProfileScreen() {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
-          <IconButton edge="start" onClick={() => setActiveSection(null)}>
+          <IconButton edge="start" aria-label="Volver al perfil" onClick={() => setActiveSection(null)}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="subtitle1" fontWeight={600}>
@@ -119,7 +119,7 @@ export default function ProfileScreen() {
         </Avatar>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Typography variant="h6" fontWeight={700}>{userName}</Typography>
-          <IconButton size="small" onClick={() => setNameDialogOpen(true)}>
+          <IconButton size="small" aria-label="Editar nombre" onClick={() => setNameDialogOpen(true)}>
             <EditIcon fontSize="small" />
           </IconButton>
         </Box>

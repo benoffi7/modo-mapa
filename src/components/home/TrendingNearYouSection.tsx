@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, CircularProgress, Chip } from '@mui/material';
+import { Box, Typography, CircularProgress, Button, IconButton } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
+import CloseIcon from '@mui/icons-material/Close';
 import { useLocalTrending } from '../../hooks/useLocalTrending';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { allBusinesses } from '../../hooks/useBusinesses';
@@ -89,21 +90,22 @@ export default function TrendingNearYouSection() {
 
       {source === 'office' && !hintDismissed && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Typography
-            variant="caption"
-            color="primary.main"
-            sx={{ cursor: 'pointer' }}
-            onClick={handleConfigureTap}
-          >
-            Configur&aacute; tu localidad para resultados m&aacute;s precisos
-          </Typography>
-          <Chip
-            label="&times;"
+          <Button
+            variant="text"
             size="small"
-            variant="outlined"
+            onClick={handleConfigureTap}
+            sx={{ minWidth: 0, p: 0, textAlign: 'left', textTransform: 'none', fontSize: '0.75rem', lineHeight: 'inherit' }}
+          >
+            Configurá tu localidad para resultados más precisos
+          </Button>
+          <IconButton
+            size="small"
             onClick={handleDismissHint}
-            sx={{ minWidth: 24, height: 20, fontSize: '0.7rem' }}
-          />
+            aria-label="Cerrar sugerencia de localidad"
+            sx={{ minWidth: 44, minHeight: 44, flexShrink: 0 }}
+          >
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         </Box>
       )}
 

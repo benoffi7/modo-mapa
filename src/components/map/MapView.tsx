@@ -1,7 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
+import MapIcon from '@mui/icons-material/Map';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { Map, useMap } from '@vis.gl/react-google-maps';
+
+function MapLoadError() {
+  return (
+    <Box
+      sx={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        bgcolor: 'background.default', gap: 2, px: 3,
+      }}
+    >
+      <MapIcon sx={{ fontSize: 56, color: 'text.secondary' }} />
+      <Typography variant="body1" color="text.secondary" textAlign="center">
+        No se pudo cargar el mapa.
+      </Typography>
+      <Button variant="outlined" onClick={() => window.location.reload()} startIcon={<RefreshIcon />}>
+        Reintentar
+      </Button>
+    </Box>
+  );
+}
 import { useSelection } from '../../context/SelectionContext';
 import { useFilters } from '../../context/FiltersContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
@@ -21,6 +44,15 @@ export default function MapView() {
   const hasActiveFilters = searchQuery.trim().length > 0 || activeFilters.length > 0;
   const hasInitialLocation = useRef(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
+
+  useEffect(() => {
+    if (mapReady) return;
+    const timer = setTimeout(() => {
+      if (!mapReady) setMapError(true);
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [mapReady]);
 
   // Stable ref for businesses so handleMarkerClick doesn't invalidate memo'd markers
   const businessesRef = useRef(businesses);
@@ -86,7 +118,8 @@ export default function MapView() {
         ))}
         <OfficeMarker />
       </Map>
-      {!mapReady && <MapSkeleton />}
+      {!mapReady && !mapError && <MapSkeleton />}
+      {mapError && <MapLoadError />}
       {hasActiveFilters && businesses.length === 0 && (
         <Box
           sx={{

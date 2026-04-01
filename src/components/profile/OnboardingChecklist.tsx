@@ -136,14 +136,14 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}>
+            <IconButton size="small" sx={{ minWidth: 44, minHeight: 44 }} aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}>
               {expanded ? <ExpandLessIcon sx={{ fontSize: 18 }} /> : <ExpandMoreIcon sx={{ fontSize: 18 }} />}
             </IconButton>
             <IconButton
               size="small"
               onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
               aria-label="Cerrar primeros pasos"
-              sx={{ p: 0.25 }}
+              sx={{ minWidth: 44, minHeight: 44 }}
             >
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>

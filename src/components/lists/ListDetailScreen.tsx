@@ -144,35 +144,35 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <IconButton edge="start" onClick={() => onBack({
+        <IconButton edge="start" aria-label="Volver a listas" onClick={() => onBack({
           id: list.id, color: currentColor, itemCount: items.length, isPublic, editorIds, icon: currentIcon,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEditConfig && (
           <>
-            <IconButton size="small" onClick={() => setIconPickerOpen(true)}>
+            <IconButton size="small" aria-label="Cambiar icono de lista" onClick={() => setIconPickerOpen(true)}>
               {currentIcon && getListIconById(currentIcon)
                 ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
                 : <InsertEmoticonOutlinedIcon fontSize="small" />}
             </IconButton>
-            <IconButton size="small" onClick={() => setColorPickerOpen(true)}>
+            <IconButton size="small" aria-label="Cambiar color de lista" onClick={() => setColorPickerOpen(true)}>
               <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
             </IconButton>
-            <IconButton size="small" onClick={handleTogglePublic}>
+            <IconButton size="small" aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'} onClick={handleTogglePublic}>
               {isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
             </IconButton>
             {isPublic && (
-              <IconButton size="small" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
+              <IconButton size="small" aria-label="Compartir lista" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
             )}
-            <IconButton size="small" onClick={() => setEditorsOpen(true)}>
+            <IconButton size="small" aria-label="Ver editores" onClick={() => setEditorsOpen(true)}>
               <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
                 <GroupIcon fontSize="small" />
               </Badge>
             </IconButton>
-            <IconButton size="small" onClick={() => setInviteOpen(true)}>
+            <IconButton size="small" aria-label="Invitar editor" onClick={() => setInviteOpen(true)}>
               <PersonAddIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" color="error" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
+            <IconButton size="small" color="error" aria-label="Eliminar lista" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
           </>
         )}
       </Toolbar>
