@@ -51,6 +51,7 @@ export default function BusinessSheet() {
   const isOpen = selectedBusiness !== null;
   const businessId = selectedBusiness?.id ?? null;
   const data = useBusinessData(businessId);
+  const { refetch } = data;
   const { recordVisit } = useVisitHistory();
   const { data: trendingData } = useTrending();
   const isTrending = trendingData?.businesses.some((b) => b.businessId === businessId) ?? false;
@@ -93,11 +94,11 @@ export default function BusinessSheet() {
     return () => observer.disconnect();
   }, [showSkeleton]);
 
-  const handleRatingChange = useCallback(() => data.refetch('ratings'), [data]);
+  const handleRatingChange = useCallback(() => refetch('ratings'), [refetch]);
   const handleTagsChange = useCallback(() => {
-    data.refetch('userTags');
-    data.refetch('customTags');
-  }, [data]);
+    refetch('userTags');
+    refetch('customTags');
+  }, [refetch]);
 
   // Rating hook - instantiated once, shared between header and InfoTab
   const ratingData = useBusinessRating({
