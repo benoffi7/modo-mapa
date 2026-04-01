@@ -634,11 +634,12 @@ echo "$CHANGED" | grep -qE '(HelpSection|features\.md)' && LAUNCH_HELP_REVIEWER=
 
 Get changed files with: `git diff --name-only origin/new-home -- 'src/**/*.tsx' 'src/**/*.ts'`
 
-**IMPORTANT — Worktree agent prompts MUST include:**
+**IMPORTANT — Implementation agent prompts MUST include:**
 1. Full worktree path (`$WORKDIR`) as "Working directory" — agents without it will read/write to the main repo
 2. Explicit output file paths using the worktree prefix (e.g., `$WORKDIR/docs/feat/...`) — agents that receive relative paths may commit to wrong locations
 3. "DO NOT push. DO NOT modify files outside the worktree." — prevents cross-contamination
-4. "Commit when done" with explicit commit message — ensures work is captured before worktree cleanup
+4. "After ALL changes, run tests for affected files: `cd $WORKDIR && npx vitest run <changed-test-files>` and fix any failures" — agents that skip tests leave broken code for the main agent to debug
+5. "Verify TypeScript compiles: `cd $WORKDIR && npx tsc --noEmit -p tsconfig.app.json`" — catches type errors before merge
 
 Fix critical issues. Report all results as summary table before proceeding.
 
@@ -728,17 +729,23 @@ git tag vX.Y.Z
 
 ### 5b. Push
 
-**IMPORTANT:** If there are uncommitted WIP files on new-home (from another in-progress feature), the pre-push hook (`tsc`) will fail because those files may reference types/modules that don't exist yet. Always stash before pushing:
+**IMPORTANT:** Run stash, push, and tag push as SEPARATE sequential commands — never combine them in a single background command (fails silently). If there are uncommitted WIP files on new-home, stash first to avoid pre-push hook failures.
 
 ```bash
-# Stash any uncommitted/untracked WIP to avoid pre-push hook failures
+# Step 1: Stash WIP (if any)
 git stash --include-untracked 2>/dev/null
+
+# Step 2: Push branch (wait for completion)
 git push origin new-home
+
+# Step 3: Push tags (separate command)
 git push origin --tags
+
+# Step 4: Restore WIP
 git stash pop 2>/dev/null
 ```
 
-If the push still fails due to pre-push hooks, check `git stash list` — the WIP may need to be in a worktree instead of loose on main.
+If the push fails due to pre-push hooks, check `git stash list` — the WIP may need to be in a worktree instead of loose on main.
 
 ### 5c. Verify CI
 
