@@ -45,7 +45,7 @@ export default function StatsCards({
   return (
     <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1 }}>
       <StatCard icon={<PlaceIcon color="success" />} count={places} label="Lugares" onTap={onPlacesTap} />
-      <StatCard icon={<StarIcon color="warning" />} count={reviews} label="Resenas" onTap={onReviewsTap} />
+      <StatCard icon={<StarIcon color="warning" />} count={reviews} label="Reseñas" onTap={onReviewsTap} />
       <StatCard icon={<PeopleIcon color="info" />} count={followers} label="Seguidores" onTap={onFollowersTap} />
       <StatCard icon={<FavoriteIcon color="error" />} count={favorites} label="Favoritos" onTap={onFavoritesTap} />
     </Box>

@@ -48,7 +48,7 @@ export default function RankingsEmptyState({ noRankingData }: Props) {
           { action: 'Subí una foto del menú', pts: 5 },
           { action: 'Dejá un comentario', pts: 3 },
           { action: 'Calificá un comercio', pts: 2 },
-          { action: 'Deja un like, etiqueta o favorito', pts: 1 },
+          { action: 'Dejá un like, etiqueta o favorito', pts: 1 },
         ].map((item) => (
           <Typography key={item.action} variant="caption" color="text.secondary">
             {item.action} → <strong>+{item.pts} pts</strong>

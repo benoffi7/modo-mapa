@@ -57,7 +57,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
         Segui temas que te interesan
       </Typography>
       <Typography variant="caption" color="text.secondary" textAlign="center">
-        Te mostraremos negocios que coincidan con tus gustos
+        Te mostraremos comercios que coincidan con tus gustos
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, justifyContent: 'center', mt: 0.5 }}>
         {SUGGESTED_TAGS.map((tag) => (
@@ -161,7 +161,7 @@ export default function YourInterestsSection() {
       )}
       {activeGroup && activeGroup.businesses.length === 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ py: 1 }}>
-          No hay negocios con este tag todavia
+          No hay comercios con este tag todavía
         </Typography>
       )}
     </Box>

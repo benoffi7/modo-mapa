@@ -39,7 +39,7 @@ export default function ForYouSection() {
   return (
     <Box sx={{ px: 2, py: 1 }}>
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Para Ti
+        Para vos
       </Typography>
       <Box sx={{ display: 'flex', gap: 1.5, overflow: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
         {suggestions.slice(0, 8).map((s) => {

@@ -31,7 +31,7 @@ const ICON_MAP: Record<string, React.ReactElement> = {
 };
 
 const FALLBACK_SPECIALS: Special[] = [
-  { id: '1', title: 'Trending esta semana', subtitle: 'Los comercios mas populares', icon: 'LocalFireDepartment', type: 'trending', referenceId: '', order: 0, active: true },
+  { id: '1', title: 'Trending esta semana', subtitle: 'Los comercios más populares', icon: 'LocalFireDepartment', type: 'trending', referenceId: '', order: 0, active: true },
   { id: '2', title: 'Mejor calificados', subtitle: 'Top 10 por rating', icon: 'Star', type: 'trending', referenceId: '', order: 1, active: true },
   { id: '3', title: 'En crecimiento', subtitle: 'Nuevos favoritos de la comunidad', icon: 'TrendingUp', type: 'trending', referenceId: '', order: 2, active: true },
 ];

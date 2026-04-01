@@ -89,7 +89,7 @@ export default function ActivityDigestSection() {
           No hay novedades recientes
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          Califica y comenta negocios para recibir actividad
+          Calificá y comentá comercios para recibir actividad
         </Typography>
         <Button
           variant="outlined"
@@ -99,7 +99,7 @@ export default function ActivityDigestSection() {
             navigateToSearch();
           }}
         >
-          Explorar negocios
+          Explorar comercios
         </Button>
       </Box>
     );

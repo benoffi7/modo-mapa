@@ -92,7 +92,7 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
           isLoadingMore={isLoadingMore}
           emptyIcon={<PeopleIcon sx={{ fontSize: 48 }} />}
           emptyMessage={MSG_SOCIAL.emptyFollowed}
-          emptySubtext="Busca usuarios arriba para empezar"
+          emptySubtext="Buscá usuarios arriba para empezar"
           onRetry={handleRefresh}
           onLoadMore={() => loadPage(lastDoc)}
         >
