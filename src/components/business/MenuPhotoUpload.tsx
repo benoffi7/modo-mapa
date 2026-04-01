@@ -85,6 +85,9 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
       <DialogContent>
         {!preview && (
           <Box
+            role="button"
+            tabIndex={0}
+            aria-label="Seleccionar imagen"
             sx={{
               border: '2px dashed',
               borderColor: 'divider',
@@ -94,6 +97,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
               cursor: 'pointer',
             }}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
           >
             <Typography color="text.secondary">
               Tocá para seleccionar una imagen
