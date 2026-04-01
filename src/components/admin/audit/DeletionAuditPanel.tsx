@@ -231,7 +231,7 @@ export default function DeletionAuditPanel() {
                 onClick={handleLoadMore}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                {loadingMore ? 'Cargando...' : 'Cargar más'}
               </Button>
             </Box>
           )}
