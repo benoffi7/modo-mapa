@@ -148,7 +148,7 @@ export default function QuickActions() {
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
-          Acciones rapidas
+          Acciones rápidas
         </Typography>
         <IconButton size="small" aria-label="Editar acciones rápidas" onClick={openEdit}>
           <EditIcon fontSize="small" />

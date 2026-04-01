@@ -54,7 +54,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2, gap: 1 }}>
       <LocalOfferIcon color="action" sx={{ fontSize: 36 }} />
       <Typography variant="subtitle2" fontWeight={600}>
-        Segui temas que te interesan
+        Seguí temas que te interesan
       </Typography>
       <Typography variant="caption" color="text.secondary" textAlign="center">
         Te mostraremos comercios que coincidan con tus gustos
@@ -80,7 +80,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
         }}
         sx={{ mt: 0.5 }}
       >
-        Explorar mas tags
+        Explorar más tags
       </Button>
     </Box>
   );
