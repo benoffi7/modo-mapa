@@ -138,7 +138,7 @@ export function useCommentListBase({
     setReplyText('');
   }, []);
 
-  const handleSubmitReply = async () => {
+  const handleSubmitReply = useCallback(async () => {
     if (!user || !replyingTo || !replyText.trim()) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
@@ -160,7 +160,7 @@ export function useCommentListBase({
       toast.error(MSG_COMMENT.replyError);
     }
     setIsSubmitting(false);
-  };
+  }, [user, replyingTo, replyText, userCommentsToday, isOffline, businessId, businessName, displayName, onCommentsChange, toast]);
 
   const handleShowProfile = useCallback((userId: string, userName: string) => {
     setProfileUser({ id: userId, name: userName });

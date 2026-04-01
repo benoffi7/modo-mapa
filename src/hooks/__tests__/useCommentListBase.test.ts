@@ -188,3 +188,122 @@ describe('useCommentListBase – handleToggleLike', () => {
     expect(mockWithOfflineSupport).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('useCommentListBase – handleSubmitReply', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUser = { uid: 'user1' };
+    mockWithOfflineSupport.mockImplementation(
+      (_offline: boolean, _action: string, _key: object, _meta: object, fn: () => Promise<unknown>) => fn(),
+    );
+    mockAddComment.mockResolvedValue(undefined);
+  });
+
+  it('is a function (callable)', () => {
+    const { result } = renderHook(() => useCommentListBase(defaultParams));
+    expect(typeof result.current.handleSubmitReply).toBe('function');
+  });
+
+  it('calls addComment with correct args when replyingTo is set', async () => {
+    const onCommentsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useCommentListBase({ ...defaultParams, onCommentsChange }),
+    );
+
+    // Set up reply state
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    await act(async () => {
+      result.current.setReplyText('mi respuesta');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockAddComment).toHaveBeenCalledWith(
+      'user1',
+      'Test User',
+      'biz1',
+      'mi respuesta',
+      'comment1',
+    );
+    expect(onCommentsChange).toHaveBeenCalled();
+    expect(mockToast.success).toHaveBeenCalled();
+  });
+
+  it('does nothing when replyingTo is null', async () => {
+    const { result } = renderHook(() => useCommentListBase(defaultParams));
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockAddComment).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when replyText is blank', async () => {
+    const { result } = renderHook(() => useCommentListBase(defaultParams));
+
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    // replyText stays empty string
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockAddComment).not.toHaveBeenCalled();
+  });
+
+  it('shows error toast and does not call onCommentsChange on failure', async () => {
+    const onCommentsChange = vi.fn();
+    mockWithOfflineSupport.mockRejectedValueOnce(new Error('network error'));
+    const { result } = renderHook(() =>
+      useCommentListBase({ ...defaultParams, onCommentsChange }),
+    );
+
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    await act(async () => {
+      result.current.setReplyText('respuesta');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockToast.error).toHaveBeenCalled();
+    expect(onCommentsChange).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when daily comment limit is reached', async () => {
+    // Simulate user already having MAX_COMMENTS_PER_DAY comments today
+    const today = new Date();
+    const ownCommentsToday = Array.from({ length: 20 }, (_, i) => ({
+      ...baseComment,
+      id: `own${i}`,
+      userId: 'user1',
+      createdAt: today,
+    }));
+    const { result } = renderHook(() =>
+      useCommentListBase({ ...defaultParams, comments: ownCommentsToday }),
+    );
+
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    await act(async () => {
+      result.current.setReplyText('una más');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockAddComment).not.toHaveBeenCalled();
+  });
+});
