@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
+import { useToast } from './ToastContext';
 import {
   fetchUserNotifications,
   markNotificationRead,
@@ -9,6 +10,7 @@ import {
 import { POLL_INTERVAL_MS } from '../constants/timing';
 import type { AppNotification, DigestFrequency } from '../types';
 import { useUserSettings } from '../hooks/useUserSettings';
+import { MSG_COMMON } from '../constants/messages';
 import { logger } from '../utils/logger';
 
 const EMPTY_NOTIFICATIONS: AppNotification[] = [];
@@ -28,6 +30,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const { user } = useAuth();
   const uid = user?.uid ?? null;
   const { settings } = useUserSettings();
+  const toast = useToast();
   const digestFrequency: DigestFrequency = settings.notificationDigest ?? 'realtime';
   const [notifications, setNotifications] = useState<AppNotification[]>(EMPTY_NOTIFICATIONS);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -51,8 +54,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     try {
       const count = await getUnreadCount(userId);
       setUnreadCount(count);
-    } catch {
-      // silent
+    } catch (err) {
+      logger.warn('[NotificationsContext] loadCountOnly failed:', err);
     }
   }, []);
 
@@ -84,19 +87,41 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [uid, digestFrequency, loadNotifications, loadCountOnly]);
 
   const markRead = useCallback(async (notificationId: string) => {
-    await markNotificationRead(notificationId);
+    // optimistic update
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
-  }, []);
+    try {
+      await markNotificationRead(notificationId);
+    } catch (err) {
+      logger.warn('[NotificationsContext] markRead failed:', err);
+      // revert
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n)),
+      );
+      setUnreadCount((prev) => prev + 1);
+      toast.error(MSG_COMMON.markReadError);
+    }
+  }, [toast]);
 
   const markAllRead = useCallback(async () => {
     if (!uid) return;
-    await markAllNotificationsRead(uid);
+    const prevNotifications = notifications;
+    const prevCount = unreadCount;
+    // optimistic update
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
-  }, [uid]);
+    try {
+      await markAllNotificationsRead(uid);
+    } catch (err) {
+      logger.warn('[NotificationsContext] markAllRead failed:', err);
+      // revert
+      setNotifications(prevNotifications);
+      setUnreadCount(prevCount);
+      toast.error(MSG_COMMON.markAllReadError);
+    }
+  }, [uid, notifications, unreadCount, toast]);
 
   const refresh = useCallback(() => {
     if (uid) loadNotifications(uid);

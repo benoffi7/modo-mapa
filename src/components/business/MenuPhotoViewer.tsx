@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, IconButton, Typography, Box, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ReportIcon from '@mui/icons-material/Report';
@@ -21,6 +21,9 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
   const { isOffline } = useConnectivity();
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => { setImageError(false); }, [photoUrl]);
 
   const handleReport = async () => {
     setReporting(true);
@@ -62,11 +65,18 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
           </Box>
         </Box>
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1 }}>
-          <img
-            src={photoUrl}
-            alt="Foto del menú"
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-          />
+          {imageError ? (
+            <Box sx={{ textAlign: 'center', color: 'grey.500' }}>
+              <Typography variant="body2">No se pudo cargar la imagen</Typography>
+            </Box>
+          ) : (
+            <img
+              src={photoUrl}
+              alt="Foto del menú"
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              onError={() => setImageError(true)}
+            />
+          )}
         </Box>
       </Box>
     </Dialog>

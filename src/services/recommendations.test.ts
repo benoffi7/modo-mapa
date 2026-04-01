@@ -32,6 +32,14 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
+vi.mock('../utils/getCountOfflineSafe', () => ({
+  getCountOfflineSafe: async (...args: unknown[]) => {
+    if (!navigator.onLine) return 0;
+    const snap = await mockGetCountFromServer(...args);
+    return snap.data().count;
+  },
+}));
+
 import {
   createRecommendation,
   markRecommendationAsRead,
@@ -150,6 +158,18 @@ describe('countUnreadRecommendations', () => {
     const result = await countUnreadRecommendations('u1');
     expect(result).toBe(0);
   });
+
+  it('returns 0 when offline', async () => {
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    try {
+      const result = await countUnreadRecommendations('u1');
+      expect(result).toBe(0);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
+  });
 });
 
 describe('countRecommendationsSentToday', () => {
@@ -159,5 +179,35 @@ describe('countRecommendationsSentToday', () => {
     mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 3 }) });
     const result = await countRecommendationsSentToday('u1');
     expect(result).toBe(3);
+  });
+
+  it('returns 0 when offline and cache is empty', async () => {
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    try {
+      const result = await countRecommendationsSentToday('u1');
+      expect(result).toBe(0);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
+  });
+
+  it('returns cached count when offline and cache exists', async () => {
+    // Populate cache via an online call first
+    mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 2 }) });
+    await countRecommendationsSentToday('u1');
+
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    vi.clearAllMocks();
+    try {
+      const result = await countRecommendationsSentToday('u1');
+      // Cache hit — returns immediately without server call
+      expect(result).toBe(2);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
   });
 });

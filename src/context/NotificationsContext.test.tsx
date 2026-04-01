@@ -14,7 +14,15 @@ vi.mock('../services/notifications', () => ({
   getUnreadCount: (...args: unknown[]) => mockGetUnreadCount(...args),
 }));
 
-vi.mock('../utils/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('../utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
+
+vi.mock('./ToastContext', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }),
+}));
+
+vi.mock('../hooks/useUserSettings', () => ({
+  useUserSettings: () => ({ settings: { notificationDigest: 'realtime' }, loading: false }),
+}));
 
 vi.mock('../constants/timing', () => ({
   POLL_INTERVAL_MS: 60000,
