@@ -74,25 +74,26 @@ export default function InlineReplyForm({
           color="primary"
           onClick={onSubmit}
           disabled={isSubmitting || !replyText.trim()}
+          aria-label="Enviar respuesta"
           sx={{
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             flexShrink: 0,
             '&:hover': { bgcolor: 'primary.dark' },
             '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
           }}
         >
-          <SendIcon sx={{ fontSize: 14 }} />
+          <SendIcon sx={{ fontSize: 20 }} />
         </IconButton>
         <IconButton
           size="small"
           onClick={onCancel}
-          sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
+          sx={{ color: 'text.secondary', width: 44, height: 44, flexShrink: 0 }}
           aria-label="Cancelar respuesta"
         >
-          <CloseIcon sx={{ fontSize: 16 }} />
+          <CloseIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Box>
     </Box>

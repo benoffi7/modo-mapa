@@ -1,16 +1,19 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
 import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings, DigestFrequency } from '../types';
+import { MSG_COMMON } from '../constants/messages';
 import { logger } from '../utils/logger';
 
 type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'notifyFollowers' | 'notifyRecommendations' | 'analyticsEnabled';
 
 export function useUserSettings() {
   const { user } = useAuth();
+  const toast = useToast();
   const [optimistic, setOptimistic] = useState<Partial<Record<BooleanSettingKey, boolean>>>({});
   const [digestOverride, setDigestOverride] = useState<DigestFrequency | null>(null);
   const [localityOverride, setLocalityOverride] = useState<{ locality: string; localityLat: number; localityLng: number } | null>(null);
@@ -22,12 +25,12 @@ export function useUserSettings() {
 
   const { data, loading } = useAsyncData(fetcher);
 
-  const settings: UserSettings = {
+  const settings = useMemo<UserSettings>(() => ({
     ...(data ?? DEFAULT_SETTINGS),
     ...optimistic,
     ...(digestOverride != null ? { notificationDigest: digestOverride } : {}),
     ...(localityOverride ?? {}),
-  };
+  }), [data, optimistic, digestOverride, localityOverride]);
 
   // Sync analytics enabled state with the SDK
   useEffect(() => {
@@ -54,9 +57,10 @@ export function useUserSettings() {
           delete next[key];
           return next;
         });
+        toast.warning(MSG_COMMON.settingUpdateError);
       });
     },
-    [user],
+    [user, toast],
   );
 
   const updateLocality = useCallback(

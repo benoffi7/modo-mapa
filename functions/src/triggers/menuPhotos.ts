@@ -44,7 +44,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     }
 
     // Rate limit: 10 menuPhotos per day per user
-    // Don't delete doc (allow delete: if false in rules), just skip processing
+    // Trigger runs as admin SDK — delete bypasses client-facing rules
     const exceeded = await checkRateLimit(
       db,
       { collection: 'menuPhotos', limit: 10, windowType: 'daily' },
@@ -52,6 +52,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     );
 
     if (exceeded) {
+      await snap.ref.delete();
       await logAbuse(db, {
         userId,
         type: 'rate_limit',

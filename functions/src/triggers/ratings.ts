@@ -37,9 +37,11 @@ export const onRatingWritten = onDocumentWritten(
       await updateRatingAggregates(db, businessId, 'add', score);
 
       // Fan-out to followers
-      const userSnap = await db.doc(`users/${userId}`).get();
+      const [userSnap, bizSnap] = await Promise.all([
+        db.doc(`users/${userId}`).get(),
+        db.doc(`businesses/${businessId}`).get(),
+      ]);
       const actorName = userSnap.exists ? (userSnap.data()!.displayName as string) : 'Alguien';
-      const bizSnap = await db.doc(`businesses/${businessId}`).get();
       const businessName = bizSnap.exists ? (bizSnap.data()!.name as string) : '';
       await fanOutToFollowers(db, {
         actorId: userId, actorName, type: 'rating',

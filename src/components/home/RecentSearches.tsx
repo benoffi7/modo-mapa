@@ -1,4 +1,4 @@
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Typography, Button } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
@@ -16,16 +16,16 @@ export default function RecentSearches() {
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
-          Busquedas Recientes
+          Búsquedas recientes
         </Typography>
-        <Typography
-          variant="caption"
-          color="text.disabled"
+        <Button
+          variant="text"
+          size="small"
           onClick={clearHistory}
-          sx={{ cursor: 'pointer', '&:hover': { color: 'text.secondary' } }}
+          sx={{ minWidth: 0, p: 0, color: 'text.disabled', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: 'text.secondary', bgcolor: 'transparent' } }}
         >
           Borrar
-        </Typography>
+        </Button>
       </Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
         {recent.map((v) => (

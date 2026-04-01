@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
 import { useAuth } from '../context/AuthContext';
 import { useSelection } from '../context/SelectionContext';
 import { fetchMyCheckIns } from '../services/checkins';
+import { hasUserRatedBusiness } from '../services/ratings';
 import { allBusinesses } from './useBusinesses';
 import { trackEvent } from '../utils/analytics';
 import {
@@ -152,10 +150,9 @@ export function useRatingPrompt(): UseRatingPromptReturn {
 
         // Check if already rated
         try {
-          const ratingDocId = `${user!.uid}__${checkIn.businessId}`;
-          const ratingSnap = await getDoc(doc(db, COLLECTIONS.RATINGS, ratingDocId));
+          const alreadyRated = await hasUserRatedBusiness(user!.uid, checkIn.businessId);
           if (cancelled) return;
-          if (ratingSnap.exists()) {
+          if (alreadyRated) {
             continue; // Already rated, try next
           }
         } catch {
@@ -191,9 +188,8 @@ export function useRatingPrompt(): UseRatingPromptReturn {
       if (!data || !user) return;
 
       try {
-        const ratingDocId = `${user.uid}__${data.businessId}`;
-        const ratingSnap = await getDoc(doc(db, COLLECTIONS.RATINGS, ratingDocId));
-        if (ratingSnap.exists()) {
+        const alreadyRated = await hasUserRatedBusiness(user.uid, data.businessId);
+        if (alreadyRated) {
           trackEvent(EVT_RATING_PROMPT_CONVERTED, { business_id: data.businessId });
           setPromptData(null);
         }

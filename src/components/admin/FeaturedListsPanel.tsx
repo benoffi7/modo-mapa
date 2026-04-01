@@ -12,39 +12,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import StarIcon from '@mui/icons-material/Star';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../config/firebase';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useToast } from '../../context/ToastContext';
 import { MSG_ADMIN } from '../../constants/messages';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
+import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../constants/business';
 import type { SharedList, ListItem as ListItemType } from '../../types';
-
-const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
-
-const toggleFeatured = httpsCallable<
-  { listId: string; featured: boolean; databaseId?: string },
-  { success: boolean }
->(functions, 'toggleFeaturedList');
-
-const getPublicListsFn = httpsCallable<
-  { databaseId?: string },
-  { lists: SharedList[] }
->(functions, 'getPublicLists');
-
-async function fetchPublicLists(): Promise<SharedList[]> {
-  const result = await getPublicListsFn({ databaseId });
-  return result.data.lists.map((l) => ({
-    ...l,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    editorIds: l.editorIds ?? [],
-  }));
-}
 
 export default function FeaturedListsPanel() {
   const fetcher = useCallback(() => fetchPublicLists(), []);
@@ -58,7 +35,7 @@ export default function FeaturedListsPanel() {
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
     try {
-      await toggleFeatured({ listId: list.id, featured: !list.featured, databaseId });
+      await toggleFeaturedList(list.id, !list.featured);
       toast.success(MSG_ADMIN.featuredToggleSuccess(list.featured));
       refetch();
     } catch (err) {

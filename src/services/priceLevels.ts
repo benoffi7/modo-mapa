@@ -1,11 +1,43 @@
 /**
  * Firestore service for the `priceLevels` collection.
  */
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, limit, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { priceLevelConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import type { PriceLevel } from '../types';
+
+/** Safety bound: max docs to fetch (covers ~500 users × 40 businesses) */
+const MAX_PRICE_LEVELS = 20_000;
+
+/**
+ * Fetches all price level docs and returns a map of businessId -> averaged level.
+ * Safety bound: fetches at most MAX_PRICE_LEVELS docs.
+ */
+export async function fetchPriceLevelMap(
+  maxDocs = MAX_PRICE_LEVELS,
+): Promise<Map<string, number>> {
+  const snap = await getDocs(query(
+    collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
+    limit(maxDocs),
+  ));
+  const byBusiness = new Map<string, number[]>();
+  for (const docSnap of snap.docs) {
+    const pl: PriceLevel = docSnap.data();
+    const arr = byBusiness.get(pl.businessId) ?? [];
+    arr.push(pl.level);
+    byBusiness.set(pl.businessId, arr);
+  }
+
+  const result = new Map<string, number>();
+  for (const [bId, levels] of byBusiness) {
+    const avg = levels.reduce((a, b) => a + b, 0) / levels.length;
+    result.set(bId, Math.round(avg));
+  }
+  return result;
+}
 
 export async function upsertPriceLevel(
   userId: string,

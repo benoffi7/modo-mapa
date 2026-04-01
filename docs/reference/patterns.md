@@ -6,7 +6,7 @@
 |--------|-------------|
 | **Auth anonima + email/password + Google Sign-In** | Usuarios ingresan como anonimos. Pueden vincular email/password via `linkWithCredential` (preserva UID). Login cross-device con `signInWithEmailAndPassword`. Admin usa Google Sign-In solo en `/admin`. AuthMethod: `'anonymous' \| 'email' \| 'google'`. |
 | **Email auth service layer** | Todas las operaciones de auth email en `services/emailAuth.ts`: link, signIn, signOut, verify, reset, changePassword, getAuthErrorMessage. Errores mapeados a espanol en `constants/auth.ts`. User profile writes (displayName, avatar) en `services/userProfile.ts`. |
-| **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === 'benoffi11@gmail.com'`. Server: Firestore rules con `request.auth.token.email`. |
+| **Admin guard (2 capas)** | Frontend: `AdminGuard` verifica `user.email === {ADMIN_EMAIL}` (desde env var). Server: Firestore rules con `request.auth.token.admin == true` (custom claim). |
 | **App Check (prod + functions)** | Firebase App Check con reCAPTCHA Enterprise en frontend. `enforceAppCheck: !IS_EMULATOR` en todas las Cloud Functions callable. |
 
 ## Constantes centralizadas

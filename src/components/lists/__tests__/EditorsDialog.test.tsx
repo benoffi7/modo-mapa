@@ -6,6 +6,10 @@ vi.mock('../../../context/ToastContext', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
 }));
 
+vi.mock('../../../context/ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: false }),
+}));
+
 const mockFetchEditorName = vi.fn();
 const mockRemoveEditor = vi.fn();
 vi.mock('../../../services/sharedLists', () => ({

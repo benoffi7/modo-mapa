@@ -41,12 +41,12 @@ const CATEGORY_ICONS: Record<BusinessCategory, React.ReactElement> = {
 
 const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
   { id: 'restaurant', label: 'Restaurante', icon: CATEGORY_ICONS.restaurant, type: 'category' },
-  { id: 'cafe', label: 'Cafe', icon: CATEGORY_ICONS.cafe, type: 'category' },
+  { id: 'cafe', label: 'Café', icon: CATEGORY_ICONS.cafe, type: 'category' },
   { id: 'bar', label: 'Bar', icon: CATEGORY_ICONS.bar, type: 'category' },
-  { id: 'pizza', label: 'Pizzeria', icon: CATEGORY_ICONS.pizza, type: 'category' },
-  { id: 'fastfood', label: 'Rapida', icon: CATEGORY_ICONS.fastfood, type: 'category' },
-  { id: 'bakery', label: 'Panaderia', icon: CATEGORY_ICONS.bakery, type: 'category' },
-  { id: 'icecream', label: 'Heladeria', icon: CATEGORY_ICONS.icecream, type: 'category' },
+  { id: 'pizza', label: 'Pizzería', icon: CATEGORY_ICONS.pizza, type: 'category' },
+  { id: 'fastfood', label: 'Rápida', icon: CATEGORY_ICONS.fastfood, type: 'category' },
+  { id: 'bakery', label: 'Panadería', icon: CATEGORY_ICONS.bakery, type: 'category' },
+  { id: 'icecream', label: 'Heladería', icon: CATEGORY_ICONS.icecream, type: 'category' },
   { id: 'sorprendeme', label: 'Sorpresa', icon: <CasinoIcon />, type: 'action' },
   { id: 'favoritos', label: 'Favoritos', icon: <FavoriteIcon />, type: 'shortcut' },
   { id: 'recientes', label: 'Recientes', icon: <HistoryIcon />, type: 'shortcut' },
@@ -150,7 +150,7 @@ export default function QuickActions() {
         <Typography variant="subtitle2" color="text.secondary">
           Acciones rapidas
         </Typography>
-        <IconButton size="small" onClick={openEdit}>
+        <IconButton size="small" aria-label="Editar acciones rápidas" onClick={openEdit}>
           <EditIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -173,7 +173,7 @@ export default function QuickActions() {
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           Editar acciones ({editDraft.length}/8)
-          <IconButton size="small" onClick={() => setEditOpen(false)}>
+          <IconButton size="small" aria-label="Cerrar diálogo de edición" onClick={() => setEditOpen(false)}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>

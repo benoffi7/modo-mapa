@@ -53,7 +53,7 @@ function createMockDb(overrides?: {
   commentExists?: boolean;
   userName?: string;
 }) {
-  const commentData = overrides?.commentData ?? { userId: 'author1', businessId: 'b1' };
+  const commentData = overrides?.commentData ?? { userId: 'author1', businessId: 'b1', likeCount: 2 };
   const commentExists = overrides?.commentExists ?? true;
   const userName = overrides?.userName ?? 'TestUser';
 
@@ -69,10 +69,20 @@ function createMockDb(overrides?: {
     ),
   }));
 
-  const db = { doc: mockDocFn, collection: vi.fn() };
+  // runTransaction executes the callback with a transaction object
+  const mockRunTransaction = vi.fn().mockImplementation(async (callback: (tx: unknown) => Promise<void>) => {
+    const commentSnap = { exists: commentExists, data: () => commentData };
+    const tx = {
+      get: vi.fn().mockResolvedValue(commentSnap),
+      update: mockUpdate,
+    };
+    await callback(tx);
+  });
+
+  const db = { doc: mockDocFn, collection: vi.fn(), runTransaction: mockRunTransaction };
   mockGetFirestore.mockReturnValue(db);
 
-  return { db, mockUpdate, mockDocFn };
+  return { db, mockUpdate, mockDocFn, mockRunTransaction };
 }
 
 // Import triggers
@@ -178,15 +188,37 @@ describe('onCommentLikeDeleted', () => {
     expect(mockIncrementCounter).not.toHaveBeenCalled();
   });
 
-  it('decrements likeCount on the comment', async () => {
-    const { mockUpdate } = createMockDb();
+  it('decrements likeCount on the comment using transaction (floor at 0)', async () => {
+    const { mockUpdate } = createMockDb({ commentData: { userId: 'author1', businessId: 'b1', likeCount: 3 } });
 
     await onDeleted()({
       data: { data: () => ({ userId: 'u1', commentId: 'c1' }) },
     });
 
-    expect(mockUpdate).toHaveBeenCalledWith({ likeCount: { __increment: true } });
-    expect(mockIncrement).toHaveBeenCalledWith(-1);
+    // Transaction calls tx.update(commentRef, data) — check with expect.anything() for the ref arg
+    // Math.max(0, 3 - 1) = 2
+    expect(mockUpdate).toHaveBeenCalledWith(expect.anything(), { likeCount: 2 });
+  });
+
+  it('floors likeCount at 0 when current count is already 0', async () => {
+    const { mockUpdate } = createMockDb({ commentData: { userId: 'author1', businessId: 'b1', likeCount: 0 } });
+
+    await onDeleted()({
+      data: { data: () => ({ userId: 'u1', commentId: 'c1' }) },
+    });
+
+    // Math.max(0, 0 - 1) = 0 — never goes negative
+    expect(mockUpdate).toHaveBeenCalledWith(expect.anything(), { likeCount: 0 });
+  });
+
+  it('skips update when comment does not exist', async () => {
+    const { mockUpdate } = createMockDb({ commentExists: false });
+
+    await onDeleted()({
+      data: { data: () => ({ userId: 'u1', commentId: 'c1' }) },
+    });
+
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('decrements counters', async () => {

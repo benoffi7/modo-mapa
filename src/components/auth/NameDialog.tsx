@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { STORAGE_KEY_ONBOARDING_CREATED_AT } from '../../constants/storage';
+import { ANONYMOUS_DISPLAY_NAME } from '../../constants/ui';
 
 export default function NameDialog() {
   const { user, displayName, setDisplayName, isLoading } = useAuth();
@@ -33,7 +34,7 @@ export default function NameDialog() {
   };
 
   const handleSkip = async () => {
-    await setDisplayName('Anónimo');
+    await setDisplayName(ANONYMOUS_DISPLAY_NAME);
     markOnboardingStart();
   };
 

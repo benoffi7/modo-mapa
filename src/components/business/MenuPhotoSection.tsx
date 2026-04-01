@@ -82,6 +82,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
               src={photoUrl}
               alt="Menú"
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
+              onError={() => setPhotoUrl(null)}
             />
             {user && !hasPending && (
               <IconButton

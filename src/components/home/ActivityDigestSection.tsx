@@ -89,7 +89,7 @@ export default function ActivityDigestSection() {
           No hay novedades recientes
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          Califica y comenta negocios para recibir actividad
+          Calificá y comentá comercios para recibir actividad
         </Typography>
         <Button
           variant="outlined"
@@ -99,7 +99,7 @@ export default function ActivityDigestSection() {
             navigateToSearch();
           }}
         >
-          Explorar negocios
+          Explorar comercios
         </Button>
       </Box>
     );
@@ -109,17 +109,17 @@ export default function ActivityDigestSection() {
     <Box sx={{ px: 2, py: 1.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionTitleSx }}>
         <Typography variant="subtitle2">Tu actividad</Typography>
-        <Typography
-          variant="caption"
-          color="primary"
-          sx={{ cursor: 'pointer' }}
+        <Button
+          variant="text"
+          size="small"
           onClick={() => {
             trackEvent('digest_item_tapped', { type: 'view_all', count: 0 });
             setActiveTab('perfil');
           }}
+          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
         >
           Ver todas
-        </Typography>
+        </Button>
       </Box>
       {groups.map((g) => (
         <DigestItem key={g.type} group={g} />

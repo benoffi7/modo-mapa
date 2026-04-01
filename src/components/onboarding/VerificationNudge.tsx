@@ -96,7 +96,7 @@ export default function VerificationNudge() {
               Verificá tu email
             </Typography>
           </Box>
-          <IconButton size="small" onClick={handleDismiss} aria-label="Cerrar nudge de verificación" sx={{ p: 0.25 }}>
+          <IconButton size="small" onClick={handleDismiss} aria-label="Cerrar nudge de verificación" sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>

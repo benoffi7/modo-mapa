@@ -77,7 +77,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 - **Ownership**: escrituras validan `request.resource.data.userId == request.auth.uid`.
 - **Timestamps server-side**: todas las reglas de `create` validan `createdAt == request.time`.
 - **Validación de campos**: longitudes máximas (displayName 30, text 500, message 1000, label 30), score 1-5, `isValidCriteria` para multi-criterio ratings (each 1-5 int).
-- **Admin check**: `isAdmin()` verifica `request.auth.token.email == 'benoffi11@gmail.com'`. Tolerante a campos faltantes en `request.auth.token`.
+- **Admin check**: `isAdmin()` verifica `request.auth.token.admin == true` (custom claim). Ver `{ADMIN_EMAIL}` en Secret Manager para el email asociado.
 - **Métricas públicas**: `dailyMetrics` es legible por cualquier usuario autenticado (estadísticas públicas).
 
 ### Reglas por colección
@@ -97,7 +97,9 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `config` | admin | Functions | Functions | — |
 | `dailyMetrics` | auth | Functions | Functions | — |
 | `abuseLogs` | admin | Functions | — | — |
-| `userSettings` | auth (expone locality a otros; necesario para profilePublic check) | owner, `keys().hasOnly()` (includes followedTags fields), notifyFollowers/notifyRecommendations validated as bool, notificationDigest validated as string<=10, followedTags validated as list<=20 | owner, `keys().hasOnly()` | — |
+| `userSettings` | owner + admin | owner, `keys().hasOnly()`, notifyFollowers/notifyRecommendations as bool, notificationDigest string<=10, followedTags list<=20, locality string<=100 | owner, `affectedKeys().hasOnly()`, same field validations | — (no delete, doc permanente) |
+| `specials` | auth | admin, `keys().hasOnly()`, title 1-100, active bool, imageUrl Firebase Storage only, timestamps server-side | admin, `affectedKeys().hasOnly()`, same field validations | admin |
+| `achievements` | auth | admin, `keys().hasOnly()`, id/title/description/icon/category required, threshold int>=1 | admin, `affectedKeys().hasOnly()`, same field validations | admin |
 | `userRankings` | auth | Functions | Functions | — |
 | `notifications` | owner | — | owner (`affectedKeys().hasOnly(['read'])`) | — |
 | `_rateLimits` | — | Functions | Functions | — |
@@ -150,6 +152,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 2. **Validación al iniciar:** Nuevas vars requeridas deben agregarse a la validación en `src/config/firebase.ts`.
 3. **No commitear `.env`:** Verificar que `.env` esté en `.gitignore`.
 4. **GitHub Secrets:** Para CI/CD, agregar en GitHub repo Settings.
+5. **No SA keys descargadas:** No usar Service Account keys en disco para desarrollo local. Usar `gcloud auth application-default login` (ADC). Para CI/CD usar Workload Identity Federation.
+6. **Secretos sensibles en Secret Manager:** `ADMIN_EMAIL` y otros secretos de runtime se gestionan via Firebase Secret Manager, no en `functions/.env`.
 
 ---
 
@@ -177,6 +181,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `menuPhotos` | 10/día por usuario |
 | `listItems` | 100/día por usuario (campo `addedBy`) — document deleted on exceed |
 | `notifications` | 50/día por destinatario (admin types exempt) |
+| `checkins_delete` | 20 deletes/día por usuario — log-only (no se puede deshacer un delete) |
 
 ### Rate limiting server-side (callables)
 
@@ -215,7 +220,7 @@ Los callables de editores usan `checkCallableRateLimit()` de `functions/src/util
 
 - **replyCount**: `onCommentCreated` incrementa el `replyCount` del padre cuando se crea una respuesta (vía `FieldValue.increment(1)`). `onCommentDeleted` decrementa con floor en 0.
 - **Cascade delete**: `onCommentDeleted` busca y elimina todas las replies huérfanas (`parentId == deletedDocId`) en batch.
-- **likeCount**: `onCommentLikeCreated`/`onCommentLikeDeleted` gestionan el contador de likes.
+- **likeCount**: `onCommentLikeCreated`/`onCommentLikeDeleted` gestionan el contador de likes. El decremento usa transaccion con `Math.max(0, current - 1)` para prevenir valores negativos.
 
 ### Moderación de contenido
 

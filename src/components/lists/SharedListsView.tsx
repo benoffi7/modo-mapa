@@ -77,7 +77,35 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
 
   useEffect(() => {
     let ignore = false;
-    fetchFeaturedLists().then((result) => { if (!ignore) setFeaturedLists(result); }).catch((err) => logger.error('[SharedListsView] fetchFeaturedLists failed:', err));
+    const CACHE_KEY = 'mm_featured_lists';
+    const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+    // Warm from cache immediately
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached) as { data: SharedList[]; ts: number };
+        if (Date.now() - ts < CACHE_TTL && !ignore) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- warm from localStorage cache before async fetch
+          setFeaturedLists(data.map((l) => ({
+            ...l,
+            createdAt: new Date(l.createdAt),
+            updatedAt: new Date(l.updatedAt),
+          })));
+        }
+      }
+    } catch { /* ignore malformed cache */ }
+
+    fetchFeaturedLists()
+      .then((result) => {
+        if (!ignore) {
+          setFeaturedLists(result);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result, ts: Date.now() }));
+          } catch { /* storage full */ }
+        }
+      })
+      .catch((err) => logger.error('[SharedListsView] fetchFeaturedLists failed:', err));
     return () => { ignore = true; };
   }, []);
 

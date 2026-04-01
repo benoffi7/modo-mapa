@@ -118,7 +118,7 @@ export default function PrivacyPolicy() {
             question_answered, question_viewed), eventos de check-ins (checkin_created,
             checkin_deleted), eventos de recomendaciones (recommendation_sent,
             recommendation_opened, recommendation_list_viewed),
-            eventos de sincronizacion offline (offline_action_queued,
+            eventos de sincronización offline (offline_action_queued,
             offline_sync_completed, offline_sync_failed, offline_action_discarded),
             eventos de seguimiento de usuarios y feed de actividad,
             navegación entre secciones y progreso de onboarding,

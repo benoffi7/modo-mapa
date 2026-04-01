@@ -167,7 +167,8 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
           sx={{
             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s',
-            p: 0.25,
+            minWidth: 44,
+            minHeight: 44,
           }}
           aria-label={expanded ? 'Colapsar' : 'Expandir'}
         >

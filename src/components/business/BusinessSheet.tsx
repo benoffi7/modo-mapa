@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { SwipeableDrawer, Box, Tabs, Tab, IconButton, Tooltip } from '@mui/material';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { SwipeableDrawer, Box, Tabs, Tab, IconButton, Tooltip, Typography, Button } from '@mui/material';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useAuth } from '../../context/AuthContext';
 import { useSelection } from '../../context/SelectionContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
@@ -24,6 +26,20 @@ import DiscardDialog from '../common/DiscardDialog';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import SendIcon from '@mui/icons-material/Send';
 import { lazy, Suspense } from 'react';
+
+function BusinessSheetError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, px: 3, gap: 2 }}>
+      <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
+      <Typography variant="body2" color="text.secondary" textAlign="center">
+        No se pudo cargar la información del comercio.
+      </Typography>
+      <Button variant="outlined" size="small" onClick={onRetry} startIcon={<RefreshIcon />}>
+        Reintentar
+      </Button>
+    </Box>
+  );
+}
 
 const RecommendDialog = lazy(() => import('./RecommendDialog'));
 
@@ -59,6 +75,7 @@ export default function BusinessSheet() {
   }
   const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
   const showSkeleton = data.isLoading;
+  const showError = !data.isLoading && data.error;
   const regularComments = useMemo(() => data.comments.filter((c) => c.type !== 'question'), [data.comments]);
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem(STORAGE_KEY_DRAG_HANDLE_SEEN));
   const headerRef = useRef<HTMLDivElement>(null);
@@ -76,13 +93,19 @@ export default function BusinessSheet() {
     return () => observer.disconnect();
   }, [showSkeleton]);
 
+  const handleRatingChange = useCallback(() => data.refetch('ratings'), [data]);
+  const handleTagsChange = useCallback(() => {
+    data.refetch('userTags');
+    data.refetch('customTags');
+  }, [data]);
+
   // Rating hook - instantiated once, shared between header and InfoTab
   const ratingData = useBusinessRating({
     businessId: selectedBusiness?.id ?? '',
     businessName: selectedBusiness?.name,
     ratings: data.ratings,
     isLoading: data.isLoading,
-    onRatingChange: () => data.refetch('ratings'),
+    onRatingChange: handleRatingChange,
   });
 
   useEffect(() => {
@@ -194,6 +217,8 @@ export default function BusinessSheet() {
 
           {showSkeleton ? (
             <BusinessSheetSkeleton />
+          ) : showError ? (
+            <BusinessSheetError onRetry={() => data.refetch()} />
           ) : (
           <Box sx={{
             pb: 'calc(24px + env(safe-area-inset-bottom))',
@@ -280,7 +305,7 @@ export default function BusinessSheet() {
                 seedTags={selectedBusiness.tags}
                 userTags={data.userTags}
                 customTags={data.customTags}
-                onTagsChange={() => { data.refetch('userTags'); data.refetch('customTags'); }}
+                onTagsChange={handleTagsChange}
                 menuPhoto={data.menuPhoto}
                 onPhotoChange={() => data.refetch('menuPhotos')}
                 isLoading={data.isLoading}
