@@ -62,7 +62,6 @@ const baseComment: Comment = {
   likeCount: 5,
   type: 'comment',
   createdAt: new Date(),
-  parentId: undefined,
   replyCount: 0,
   flagged: false,
 };
