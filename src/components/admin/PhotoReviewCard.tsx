@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardMedia, CardContent, CardActions, Typography, Button, TextField, Box, Chip } from '@mui/material';
 import ReportIcon from '@mui/icons-material/Report';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
-import { storage, functions } from '../../config/firebase';
+import { storage } from '../../config/firebase';
+import { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto } from '../../services/adminPhotos';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { formatDateShort } from '../../utils/formatDate';
 import { STATUS_CHIP } from '../../constants/admin';
@@ -37,8 +37,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
   const handleApprove = async () => {
     setLoading(true);
     try {
-      const approve = httpsCallable(functions, 'approveMenuPhoto');
-      await approve({ photoId: photo.id });
+      await approveMenuPhoto(photo.id);
       onAction();
     } catch (err) {
       logger.error('Error approving photo:', err);
@@ -50,8 +49,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
   const handleReject = async () => {
     setLoading(true);
     try {
-      const reject = httpsCallable(functions, 'rejectMenuPhoto');
-      await reject({ photoId: photo.id, reason });
+      await rejectMenuPhoto(photo.id, reason);
       onAction();
     } catch (err) {
       logger.error('Error rejecting photo:', err);
@@ -64,8 +62,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const del = httpsCallable(functions, 'deleteMenuPhoto');
-      await del({ photoId: photo.id });
+      await deleteMenuPhoto(photo.id);
       onAction();
     } catch (err) {
       logger.error('Error deleting photo:', err);
