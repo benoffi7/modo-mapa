@@ -137,7 +137,7 @@ export default function DeletionAuditPanel() {
 
       {filtered.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-          Sin registros de eliminacion.
+          Sin registros de eliminación.
         </Typography>
       ) : (
         <>

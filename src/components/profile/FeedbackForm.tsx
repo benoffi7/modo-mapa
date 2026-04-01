@@ -86,7 +86,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
       setSelectedBusiness(null);
       setBusinessQuery('');
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error sending feedback:', error);
+      logger.error('Error sending feedback:', error);
     }
     setIsSubmitting(false);
   };

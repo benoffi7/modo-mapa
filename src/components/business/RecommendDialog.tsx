@@ -40,7 +40,7 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
     setLoadingCount(true);
     countRecommendationsSentToday(userId)
       .then((count) => { if (!cancelled) setSentToday(count); })
-      .catch((err) => { if (import.meta.env.DEV) logger.error('count failed:', err); })
+      .catch((err) => { logger.error('count failed:', err); })
       .finally(() => { if (!cancelled) setLoadingCount(false); });
     return () => { cancelled = true; };
   }, [open, userId]);
@@ -68,7 +68,7 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
       setSelectedUser(null);
       setMessage('');
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Recommend failed:', err);
+      logger.error('Recommend failed:', err);
       toast.error(err instanceof Error ? err.message : MSG_SOCIAL.recommendError);
     } finally {
       setSubmitting(false);
@@ -81,12 +81,12 @@ export default function RecommendDialog({ open, onClose, businessId, businessNam
       <DialogContent sx={{ maxHeight: '70vh', overflow: 'auto' }}>
         {limitReached && !loadingCount ? (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Alcanzaste el limite de {MAX_RECOMMENDATIONS_PER_DAY} recomendaciones por dia
+            Alcanzaste el límite de {MAX_RECOMMENDATIONS_PER_DAY} recomendaciones por día
           </Alert>
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Busca un usuario para recomendarle este comercio
+              Buscá un usuario para recomendarle este comercio
             </Typography>
 
             {selectedUser ? (

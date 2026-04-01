@@ -8,4 +8,5 @@ export const MSG_COMMENT = {
   favoriteHint: 'Guardá tus favoritos tocando el corazón.',
   emptyOwn: 'No dejaste comentarios todavía',
   emptyBusiness: 'No hay comentarios para este comercio',
+  deleteSuccess: 'Comentario eliminado',
 } as const;

@@ -62,7 +62,7 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
       onToggle();
     } catch (error) {
       setOptimistic(null);
-      if (import.meta.env.DEV) logger.error('Error toggling favorite:', error);
+      logger.error('Error toggling favorite:', error);
       toast.error(MSG_BUSINESS.favoriteError);
     }
     setIsToggling(false);

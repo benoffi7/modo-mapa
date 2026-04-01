@@ -49,7 +49,7 @@ export default function PerformancePanel() {
       fetchStorageStats().catch((err) => { logger.error('[PerformancePanel] fetchStorageStats failed:', err); return null; }),
       fetchDailyMetrics('desc', 1).catch((err) => { logger.error('[PerformancePanel] fetchDailyMetrics failed:', err); return []; }),
     ]);
-    const latestMetrics = dailyMetrics[0] as unknown as Record<string, unknown> | undefined;
+    const latestMetrics: Record<string, unknown> | undefined = dailyMetrics[0] as unknown as Record<string, unknown> | undefined;
     const perfData = (latestMetrics?.performance ?? {}) as Record<string, unknown>;
     const functions = (perfData.functions ?? {}) as Record<string, FunctionTiming>;
     return { docs, functions, storageStats };

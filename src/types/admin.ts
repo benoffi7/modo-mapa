@@ -19,6 +19,7 @@ export interface AdminCounters {
 }
 
 export interface DailyMetrics extends PublicMetrics {
+  id: string;
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;

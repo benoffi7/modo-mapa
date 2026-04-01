@@ -15,7 +15,7 @@ import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { useToast } from '../../context/ToastContext';
-import { MSG_COMMON } from '../../constants/messages';
+import { MSG_COMMON, MSG_COMMENT } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -60,7 +60,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete,
     onDeleteComplete: reload,
-    message: 'Comentario eliminado',
+    message: MSG_COMMENT.deleteSuccess,
   });
 
   // Edit (extracted hook)

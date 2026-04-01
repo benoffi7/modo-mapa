@@ -65,6 +65,7 @@ export const dailyMetricsConverter: FirestoreDataConverter<DailyMetrics> = {
   fromFirestore(snap: QueryDocumentSnapshot, options?: SnapshotOptions): DailyMetrics {
     const d = snap.data(options);
     return {
+      id: snap.id,
       date: snap.id,
       ratingDistribution: asRecord(d.ratingDistribution),
       topFavorited: asArray(d.topFavorited),

@@ -115,7 +115,7 @@ export function useCommentListBase({
       }
     } catch (error) {
       setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
+      logger.error('Error toggling like:', error);
       toast.error(MSG_COMMENT.likeError);
     } finally {
       togglingIds.current.delete(commentId);
@@ -156,7 +156,7 @@ export function useCommentListBase({
       onCommentsChange();
       if (!isOffline) toast.success(MSG_COMMENT.replySuccess);
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error adding reply:', error);
+      logger.error('Error adding reply:', error);
       toast.error(MSG_COMMENT.replyError);
     }
     setIsSubmitting(false);

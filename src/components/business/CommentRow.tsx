@@ -20,6 +20,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { formatDateMedium } from '../../utils/formatDate';
 import { LIKE_COLOR } from '../../constants/ui';
 import { MAX_COMMENT_LENGTH } from '../../constants/validation';
+import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
 
 export interface CommentRowProps {
@@ -101,7 +102,7 @@ const CommentRow = memo(function CommentRow({
             }}
             onClick={() => isProfilePublic && onShowProfile?.(comment.userId, comment.userName)}
           >
-            {isDeletedParent ? 'Comentario eliminado' : (comment.userName || 'Anónimo')}
+            {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {formatDateMedium(comment.createdAt)}
