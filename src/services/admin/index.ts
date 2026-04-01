@@ -52,3 +52,4 @@ export {
   fetchActivityFeedDiag,
 } from './config';
 export { fetchDeletionAuditLogs } from './audit';
+export { listBackups, createBackup, restoreBackup, deleteBackup } from './backups';
