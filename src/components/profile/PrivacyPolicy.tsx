@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 2 }}>
-        Última actualización: marzo 2026
+        Última actualización: abril 2026
       </Typography>
 
       <Section title="Información general">
@@ -114,8 +114,8 @@ export default function PrivacyPolicy() {
             favoritos, calificaciones, comentarios, etiquetas, listas, fotos de menú y
             filtros). También se registran
             eventos relacionados con la autenticación (account_created, email_sign_in,
-            sign_out, password_changed, account_deleted), eventos de preguntas y respuestas (question_created,
-            question_answered, question_viewed), eventos de check-ins (checkin_created,
+            sign_out, password_changed, account_deleted), eventos de preguntas (question_created,
+            question_viewed), eventos de check-ins (checkin_created,
             checkin_deleted), eventos de recomendaciones (recommendation_sent,
             recommendation_opened, recommendation_list_viewed),
             eventos de sincronización offline (offline_action_queued,
@@ -155,8 +155,9 @@ export default function PrivacyPolicy() {
             <strong>localStorage:</strong> almacena preferencias locales en tu navegador
             (tema claro/oscuro, visitas recientes, preferencia de analytics, estado del
             tutorial de bienvenida, configuración de acciones rápidas del inicio, avatar
-            seleccionado, y opcionalmente tu email si activás &quot;Recordar mi
-            email&quot;). Estos datos no se envían a
+            seleccionado, caché de verificación de usuarios (badges de verificación de
+            otros usuarios con clave mm_verification_badges_u{'{uid}'}), y opcionalmente
+            tu email si activás &quot;Recordar mi email&quot;). Estos datos no se envían a
             ningún servidor y podés borrarlos en cualquier momento desde la configuración
             del navegador o desactivando la opción.
           </Li>

@@ -89,21 +89,35 @@ const CommentRow = memo(function CommentRow({
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-          <Typography
-            component="span"
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              fontSize: isReply ? '0.8rem' : undefined,
-              ...(isProfilePublic ? {
-                cursor: 'pointer',
-                '&:hover': { textDecoration: 'underline' },
-              } : {}),
-            }}
-            onClick={() => isProfilePublic && onShowProfile?.(comment.userId, comment.userName)}
-          >
-            {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
-          </Typography>
+          {isProfilePublic ? (
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => onShowProfile?.(comment.userId, comment.userName)}
+              sx={{
+                fontWeight: 600,
+                fontSize: isReply ? '0.8rem' : 'body2.fontSize',
+                textTransform: 'none',
+                p: 0,
+                minWidth: 0,
+                lineHeight: 'inherit',
+                verticalAlign: 'baseline',
+              }}
+            >
+              {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
+            </Button>
+          ) : (
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                fontSize: isReply ? '0.8rem' : undefined,
+              }}
+            >
+              {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
+            </Typography>
+          )}
           <Typography variant="caption" color="text.secondary">
             {formatDateMedium(comment.createdAt)}
           </Typography>

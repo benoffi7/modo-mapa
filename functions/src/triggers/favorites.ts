@@ -5,10 +5,12 @@ import { incrementBusinessCount } from '../utils/aggregates';
 import { fanOutToFollowers } from '../utils/fanOut';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onFavoriteCreated = onDocumentCreated(
   'favorites/{favoriteId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -43,12 +45,14 @@ export const onFavoriteCreated = onDocumentCreated(
         });
       }
     }
+    await trackFunctionTiming('onFavoriteCreated', startMs);
   },
 );
 
 export const onFavoriteDeleted = onDocumentDeleted(
   'favorites/{favoriteId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const businessId = event.data?.data().businessId as string | undefined;
     await incrementCounter(db, 'favorites', -1);
@@ -56,5 +60,6 @@ export const onFavoriteDeleted = onDocumentDeleted(
     if (businessId) {
       await incrementBusinessCount(db, 'businessFavorites', businessId, -1);
     }
+    await trackFunctionTiming('onFavoriteDeleted', startMs);
   },
 );

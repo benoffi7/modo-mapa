@@ -5,10 +5,12 @@ import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onRecommendationCreated = onDocumentCreated(
   'recommendations/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -73,5 +75,6 @@ export const onRecommendationCreated = onDocumentCreated(
 
     await incrementCounter(db, 'recommendations', 1);
     await trackWrite(db, 'recommendations');
+    await trackFunctionTiming('onRecommendationCreated', startMs);
   },
 );

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider,
-  CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
+  CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button, ButtonBase,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -213,10 +213,11 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
               const biz = allBusinesses.find((b) => b.id === item.businessId);
               if (!biz) return null;
               return (
-                <Box
+                <ButtonBase
                   key={item.id}
+                  aria-label={`Abrir ${biz.name}`}
                   onClick={() => navigateToBusiness(biz)}
-                  sx={cardSx}
+                  sx={{ ...cardSx, width: '100%', textAlign: 'left', display: 'block' }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -235,7 +236,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
                       </IconButton>
                     )}
                   </Box>
-                </Box>
+                </ButtonBase>
               );
             })}
           </Box>

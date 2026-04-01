@@ -3,10 +3,12 @@ import { getDb } from '../helpers/env';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onCheckInCreated = onDocumentCreated(
   'checkins/{checkinId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -34,12 +36,14 @@ export const onCheckInCreated = onDocumentCreated(
 
     await incrementCounter(db, 'checkins', 1);
     await trackWrite(db, 'checkins');
+    await trackFunctionTiming('onCheckInCreated', startMs);
   },
 );
 
 export const onCheckInDeleted = onDocumentDeleted(
   'checkins/{checkinId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) {
@@ -72,5 +76,6 @@ export const onCheckInDeleted = onDocumentDeleted(
 
     await incrementCounter(db, 'checkins', -1);
     await trackDelete(db, 'checkins');
+    await trackFunctionTiming('onCheckInDeleted', startMs);
   },
 );

@@ -5,12 +5,14 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 const MAX_FOLLOWS = 200;
 
 export const onFollowCreated = onDocumentCreated(
   'follows/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -103,12 +105,14 @@ export const onFollowCreated = onDocumentCreated(
 
     await incrementCounter(db, 'follows', 1);
     await trackWrite(db, 'follows');
+    await trackFunctionTiming('onFollowCreated', startMs);
   },
 );
 
 export const onFollowDeleted = onDocumentDeleted(
   'follows/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -136,5 +140,6 @@ export const onFollowDeleted = onDocumentDeleted(
 
     await incrementCounter(db, 'follows', -1);
     await trackDelete(db, 'follows');
+    await trackFunctionTiming('onFollowDeleted', startMs);
   },
 );

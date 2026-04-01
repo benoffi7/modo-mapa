@@ -1,4 +1,4 @@
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, ButtonBase } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { getListIconById } from '../../constants/listIcons';
@@ -22,10 +22,11 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
           const iconData = getListIconById(list.icon);
           const color = sanitizeListColor(list.color);
           return (
-            <Box
+            <ButtonBase
               key={list.id}
+              aria-label={list.name}
               onClick={() => onListClick(list)}
-              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.5, aspectRatio: '1 / 1', textAlign: 'center' }}
+              sx={{ ...cardSx, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.5, aspectRatio: '1 / 1', textAlign: 'center', width: '100%' }}
             >
               <Box sx={iconCircleSx(color)}>
                 <Typography fontSize={22}>
@@ -38,7 +39,7 @@ export default function ListCardGrid({ lists, onListClick, onCreateClick, readOn
               <Typography variant="caption" color="text.secondary">
                 {list.itemCount} lugar{list.itemCount !== 1 ? 'es' : ''}
               </Typography>
-            </Box>
+            </ButtonBase>
           );
         })}
       </Box>
