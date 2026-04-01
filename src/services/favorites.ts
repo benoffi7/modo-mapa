@@ -10,7 +10,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import type { Favorite } from '../types';
 

@@ -7,7 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import type { Rating, RatingCriteria } from '../types';
 

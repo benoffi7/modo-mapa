@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userRankingConverter } from '../config/converters';
