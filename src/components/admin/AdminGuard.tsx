@@ -25,9 +25,9 @@ function DevAdminGuard({ children }: AdminGuardProps) {
   useEffect(() => {
     let cancelled = false;
     const setup = async () => {
-      const { auth, functions } = await import('../../config/firebase');
+      const { auth } = await import('../../config/firebase');
       const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
-      const { httpsCallable } = await import('firebase/functions');
+      const { setAdminClaim } = await import('../../services/adminClaims');
 
       try {
         await signInWithEmailAndPassword(auth, ADMIN_EMAIL, DEV_PASSWORD);
@@ -50,8 +50,7 @@ function DevAdminGuard({ children }: AdminGuardProps) {
       }
 
       // Set admin custom claim via Cloud Function
-      const setAdmin = httpsCallable(functions, 'setAdminClaim');
-      await setAdmin({ targetUid: auth.currentUser!.uid });
+      await setAdminClaim({ targetUid: auth.currentUser!.uid });
       // Force token refresh to pick up new claim
       await auth.currentUser!.getIdToken(true);
 
