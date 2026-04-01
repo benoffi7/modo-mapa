@@ -1,7 +1,6 @@
-export interface BackupEntry {
-  id: string;
-  createdAt: string;
-}
+import type { BackupEntry } from '../../types/admin';
+
+export type { BackupEntry };
 
 export type ConfirmAction =
   | { type: 'restore'; backup: BackupEntry }
