@@ -58,6 +58,7 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 | `manu` | Coordinator | Opus | Staff Engineer / Tech Lead. Orchestrates implementation, delegates to specialists. Does NOT write code |
 | `luna` | Implementation (frontend) | Default | Senior Frontend Engineer. Components, UI hooks, pages, theme, map. Mobile-first. |
 | `nico` | Implementation (backend) | Default | Senior Backend Engineer. Cloud Functions, Firestore rules, services, types. Security-first. |
+| `cami` | Validation (copy) | Default | UX Writer. Scans user-facing strings for tildes, voseo, terminology. Read-only |
 | `orchestrator` | **DEPRECATED** | Default | Replaced by `manu`. Kept for compatibility only |
 
 #### Read-only auditors (report only, don't modify code)

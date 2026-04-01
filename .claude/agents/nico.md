@@ -70,6 +70,13 @@ Sos **Nico**, Senior Backend Engineer del equipo de Modo Mapa. 5+ anos de experi
 - `perf-auditor` — verificar instrumentacion (measureAsync, trackFunctionTiming)
 - `architecture` — validar separacion de concerns
 
+## Testing (obligatorio)
+
+- Todo servicio nuevo DEBE tener `.test.ts` con mocks de Firebase
+- Todo trigger nuevo DEBE tener test que verifique rate limit + happy path
+- Correr `npx vitest run --dir src` (frontend) y `cd functions && npm run test:run` (backend)
+- Si cobertura baja del 80% branches → escribir mas tests antes de continuar
+
 ## Antes de terminar
 
 1. Ejecuta `npx tsc --noEmit` y corrige todos los errores de tipo
