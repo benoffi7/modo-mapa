@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { TextField, Box, List, ListItemButton, ListItemText, Typography, IconButton, InputAdornment } from '@mui/material';
+import { TextField, Box, Button, List, ListItemButton, ListItemText, Typography, IconButton, InputAdornment } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
@@ -93,14 +93,14 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
         <IconButton size="small" onClick={handleClear} aria-label="Quitar localidad">
           <ClearIcon fontSize="small" />
         </IconButton>
-        <Typography
-          variant="caption"
-          color="primary"
-          sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+        <Button
+          variant="text"
+          size="small"
           onClick={() => setIsEditing(true)}
+          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
         >
           Cambiar
-        </Typography>
+        </Button>
       </Box>
     );
   }

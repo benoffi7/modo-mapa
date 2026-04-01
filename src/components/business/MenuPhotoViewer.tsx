@@ -5,8 +5,10 @@ import ReportIcon from '@mui/icons-material/Report';
 import { reportMenuPhoto } from '../../services/menuPhotos';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useToast } from '../../context/ToastContext';
 import { formatDateMedium } from '../../utils/formatDate';
 import { logger } from '../../utils/logger';
+import { MSG_BUSINESS } from '../../constants/messages/business';
 
 interface Props {
   open: boolean;
@@ -19,6 +21,7 @@ interface Props {
 export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, onClose }: Props) {
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
+  const toast = useToast();
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -31,7 +34,8 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
       await reportMenuPhoto(photoId);
       setReported(true);
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Error reporting photo:', err);
+      logger.error('Error reporting photo:', err);
+      toast.error(MSG_BUSINESS.photoReportError);
     } finally {
       setReporting(false);
     }

@@ -154,6 +154,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 4. **GitHub Secrets:** Para CI/CD, agregar en GitHub repo Settings.
 5. **No SA keys descargadas:** No usar Service Account keys en disco para desarrollo local. Usar `gcloud auth application-default login` (ADC). Para CI/CD usar Workload Identity Federation.
 6. **Secretos sensibles en Secret Manager:** `ADMIN_EMAIL` y otros secretos de runtime se gestionan via Firebase Secret Manager, no en `functions/.env`.
+7. **Seed scripts con ADC:** `scripts/seed-trending.mjs` y `scripts/seed-staging.ts` usan Application Default Credentials para acceder a la base de datos remota. Prerequisito: `gcloud auth application-default login`. Ningún script de seed debe contener `client_secret`, `client_id` ni `refresh_token` hardcodeados.
 
 ---
 

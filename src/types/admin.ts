@@ -187,6 +187,11 @@ export interface ActivityFeedDiagResponse {
   total: number;
 }
 
+export interface BackupEntry {
+  id: string;
+  createdAt: string;
+}
+
 export type ModerationAction = 'delete' | 'hide';
 
 export type ModerationTargetCollection = 'comments' | 'ratings' | 'customTags';

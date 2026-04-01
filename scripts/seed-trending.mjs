@@ -9,15 +9,19 @@
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
-import { readFileSync } from 'fs';
+import { existsSync } from 'fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, '..', 'functions', 'node_modules', 'x.js'));
 const admin = require('firebase-admin');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 
-// Load refresh token for remote auth
-const firebaseToolsPath = resolve(process.env.HOME, '.config/configstore/firebase-tools.json');
-const firebaseTools = JSON.parse(readFileSync(firebaseToolsPath, 'utf-8'));
+// Validate that Application Default Credentials exist before proceeding
+const adcPath = resolve(process.env.HOME, '.config/gcloud/application_default_credentials.json');
+if (!existsSync(adcPath)) {
+  console.error('ERROR: Application Default Credentials no encontradas.');
+  console.error('Ejecutar primero: gcloud auth application-default login');
+  process.exit(1);
+}
 
 const target = process.argv.includes('--target')
   ? process.argv[process.argv.indexOf('--target') + 1]
@@ -28,15 +32,7 @@ if (!target) {
   admin.initializeApp({ projectId: 'modo-mapa-app' });
   console.log('Target: local emulators (default database)');
 } else {
-  admin.initializeApp({
-    projectId: 'modo-mapa-app',
-    credential: admin.credential.refreshToken({
-      type: 'authorized_user',
-      client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-      client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-      refresh_token: firebaseTools.tokens.refresh_token,
-    }),
-  });
+  admin.initializeApp({ projectId: 'modo-mapa-app' });
   console.log(`Target: remote database "${target}"`);
 }
 
