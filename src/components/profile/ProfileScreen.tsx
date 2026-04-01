@@ -112,7 +112,11 @@ export default function ProfileScreen() {
       {/* Header */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 3, pb: 1 }}>
         <Avatar
+          role="button"
+          tabIndex={0}
+          aria-label="Cambiar avatar"
           onClick={() => setAvatarPickerOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setAvatarPickerOpen(true); }}
           sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: avatar ? 32 : 28, mb: 1, cursor: 'pointer' }}
         >
           {avatar ? avatar.emoji : userName.charAt(0).toUpperCase()}

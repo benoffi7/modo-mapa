@@ -228,6 +228,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
                     {canEditItems && (
                       <IconButton
                         size="small"
+                        aria-label="Eliminar de lista"
                         onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
                       >
                         <DeleteOutlineIcon fontSize="small" />

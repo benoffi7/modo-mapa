@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box, Typography, Button, Skeleton } from '@mui/material';
+import { Box, ButtonBase, Typography, Button, Skeleton } from '@mui/material';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -36,24 +36,25 @@ function DigestItem({ group }: { group: DigestGroup }) {
   };
 
   return (
-    <Box
+    <ButtonBase
       onClick={handleTap}
       sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 1.5,
         py: 0.75,
-        cursor: 'pointer',
-        '&:hover': { bgcolor: 'action.hover' },
+        width: '100%',
         borderRadius: 1,
         px: 1,
+        textAlign: 'left',
+        '&:hover': { bgcolor: 'action.hover' },
       }}
     >
       {ICON_MAP[group.icon] ?? <NotificationsNoneIcon fontSize="small" color="primary" />}
       <Typography variant="body2" sx={{ flex: 1 }}>
         {group.label}
       </Typography>
-    </Box>
+    </ButtonBase>
   );
 }
 

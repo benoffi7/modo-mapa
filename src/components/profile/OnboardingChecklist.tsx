@@ -124,8 +124,13 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
     <Card variant="outlined" sx={{ mx: 2, mb: 1, borderRadius: 2 }}>
       <CardContent sx={{ py: 2, px: 2, '&:last-child': { pb: 2 } }}>
         <Box
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
           onClick={toggleExpanded}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleExpanded(); }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
