@@ -21,7 +21,7 @@ import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
 import CommentsToolbar from './CommentsToolbar';
-import CommentsListItem from './CommentsListItem';
+import CommentsListItemSwipeable from './CommentsListItemSwipeable';
 import { useCommentsListFilters } from './useCommentsListFilters';
 import { useVirtualizedList } from './useVirtualizedList';
 import type { SortMode } from './useCommentsListFilters';
@@ -133,7 +133,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   }, [notifications, markRead, onSelectBusiness]);
 
   const itemProps = {
-    editingId, editText, isSavingEdit, swipe, getSwipeRef, unreadReplyCommentIds,
+    editingId, editText, isSavingEdit, unreadReplyCommentIds,
     onSelectBusiness: handleSelectBusiness,
     onStartEdit: startEdit, onSaveEdit: saveEdit, onCancelEdit: cancelEdit,
     onSetEditText: setEditText, onMarkForDelete: markForDelete,
@@ -192,7 +192,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
       {filteredComments.length > 0 && !shouldVirtualize && (
         <List disablePadding>
           {filteredComments.map(({ id, comment, business }) => (
-            <CommentsListItem key={id} id={id} comment={comment} business={business} {...itemProps} />
+            <CommentsListItemSwipeable key={id} id={id} comment={comment} business={business} swipe={swipe} getSwipeRef={getSwipeRef} {...itemProps} />
           ))}
         </List>
       )}
@@ -215,7 +215,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <CommentsListItem id={id} comment={comment} business={business} {...itemProps} />
+                  <CommentsListItemSwipeable id={id} comment={comment} business={business} swipe={swipe} getSwipeRef={getSwipeRef} {...itemProps} />
                 </Box>
               );
             })}
