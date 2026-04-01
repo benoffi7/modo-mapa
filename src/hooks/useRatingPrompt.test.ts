@@ -22,18 +22,9 @@ vi.mock('../services/checkins', () => ({
   fetchMyCheckIns: (...args: unknown[]) => mockFetchMyCheckIns(args[0] as string, args[1] as number),
 }));
 
-const mockGetDoc = vi.fn();
-vi.mock('firebase/firestore', () => ({
-  doc: (_db: unknown, _col: string, id: string) => ({ path: `ratings/${id}` }),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
-}));
-
-vi.mock('../config/firebase', () => ({
-  db: {},
-}));
-
-vi.mock('../config/collections', () => ({
-  COLLECTIONS: { RATINGS: 'ratings', CHECKINS: 'checkins' },
+const mockHasUserRatedBusiness = vi.fn();
+vi.mock('../services/ratings', () => ({
+  hasUserRatedBusiness: (...args: unknown[]) => mockHasUserRatedBusiness(...args),
 }));
 
 // Mock allBusinesses
@@ -72,7 +63,7 @@ describe('useRatingPrompt', () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     mockFetchMyCheckIns.mockResolvedValue([]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -84,7 +75,7 @@ describe('useRatingPrompt', () => {
     mockFetchMyCheckIns.mockResolvedValue([
       makeCheckIn({ id: 'ci1', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: threeHoursAgo }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -124,7 +115,7 @@ describe('useRatingPrompt', () => {
     mockFetchMyCheckIns.mockResolvedValue([
       makeCheckIn({ id: 'ci1', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: exactlyTwoHours }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -138,7 +129,7 @@ describe('useRatingPrompt', () => {
     mockFetchMyCheckIns.mockResolvedValue([
       makeCheckIn({ id: 'ci1', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: exactlyEightHours }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -152,7 +143,7 @@ describe('useRatingPrompt', () => {
     mockFetchMyCheckIns.mockResolvedValue([
       makeCheckIn({ id: 'ci1', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: threeHoursAgo }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => true });
+    mockHasUserRatedBusiness.mockResolvedValue(true);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -194,7 +185,7 @@ describe('useRatingPrompt', () => {
       makeCheckIn({ id: 'ci_recent', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: threeHoursAgo }),
       makeCheckIn({ id: 'ci_old', businessId: 'biz_002', businessName: 'Test Bar', createdAt: fourHoursAgo }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -229,7 +220,7 @@ describe('useRatingPrompt', () => {
       makeCheckIn({ id: 'ci_unknown', businessId: 'biz_999', businessName: 'Unknown Place', createdAt: threeHoursAgo }),
       makeCheckIn({ id: 'ci_known', businessId: 'biz_002', businessName: 'Test Bar', createdAt: threeHoursAgo }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();
@@ -244,7 +235,7 @@ describe('useRatingPrompt', () => {
     mockFetchMyCheckIns.mockResolvedValue([
       makeCheckIn({ id: 'ci1', businessId: 'biz_001', businessName: 'Test Cafe', createdAt: threeHoursAgo }),
     ]);
-    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockHasUserRatedBusiness.mockResolvedValue(false);
 
     const { result } = renderHook(() => useRatingPrompt());
     await flushPromises();

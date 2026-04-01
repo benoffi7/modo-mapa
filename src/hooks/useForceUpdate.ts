@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
 import { isUpdateRequired } from '../utils/version';
+import { fetchAppVersionConfig } from '../services/config';
 import { logger } from '../utils/logger';
 import { trackEvent } from '../utils/analytics';
 import {
@@ -98,10 +96,7 @@ function isReloadLimitReached(): boolean {
 
 async function checkVersion(): Promise<'reloading' | 'limit-reached' | 'up-to-date' | 'error'> {
   try {
-    const snap = await getDoc(doc(db, COLLECTIONS.CONFIG, 'appVersion'));
-    if (!snap.exists()) return 'up-to-date';
-
-    const { minVersion } = snap.data() as { minVersion?: string };
+    const { minVersion } = await fetchAppVersionConfig();
     if (!minVersion) return 'up-to-date';
 
     if (isUpdateRequired(minVersion, __APP_VERSION__)) {
