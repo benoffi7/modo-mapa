@@ -3,9 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useSelection } from '../context/SelectionContext';
 import { useTab } from '../context/TabContext';
 import { allBusinesses } from './useBusinesses';
+import { ALL_TAB_IDS } from '../types';
 import type { TabId } from '../types';
-
-const VALID_TABS: TabId[] = ['inicio', 'social', 'buscar', 'listas', 'perfil'];
 const BUSINESS_ID_RE = /^biz_\d{1,6}$/;
 
 /**
@@ -36,7 +35,7 @@ export function useDeepLinks() {
     }
 
     const tabParam = searchParams.get('tab');
-    if (tabParam && VALID_TABS.includes(tabParam as TabId)) {
+    if (tabParam && ALL_TAB_IDS.includes(tabParam as TabId)) {
       setActiveTab(tabParam as TabId);
       searchParams.delete('tab');
       changed = true;

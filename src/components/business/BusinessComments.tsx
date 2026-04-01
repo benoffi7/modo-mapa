@@ -22,7 +22,7 @@ import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
 
-type SortMode = 'recent' | 'oldest' | 'useful';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 
 interface Props {
   businessId: string;

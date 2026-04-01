@@ -22,9 +22,9 @@ import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
 import CommentsToolbar from './CommentsToolbar';
 import CommentsListItemSwipeable from './CommentsListItemSwipeable';
-import { useCommentsListFilters } from './useCommentsListFilters';
-import { useVirtualizedList } from './useVirtualizedList';
-import type { SortMode } from './useCommentsListFilters';
+import { useCommentsListFilters } from '../../hooks/useCommentsListFilters';
+import { useVirtualizedList } from '../../hooks/useVirtualizedList';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 import { truncate } from '../../utils/text';
 import type { Business, Comment } from '../../types';
 
