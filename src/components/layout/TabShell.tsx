@@ -1,9 +1,10 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { Box } from '@mui/material';
-import TabBar, { TAB_BAR_HEIGHT } from './TabBar';
+import TabBar from './TabBar';
 import TabLoader from '../ui/TabLoader';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
+import { useNavLayout } from '../../hooks/useNavLayout';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useUnreadRecommendations } from '../../hooks/useUnreadRecommendations';
 import { useDeepLinks } from '../../hooks/useDeepLinks';
@@ -16,15 +17,15 @@ const SocialScreen = lazy(() => import('../social/SocialScreen'));
 const ProfileScreen = lazy(() => import('../profile/ProfileScreen'));
 const HomeScreen = lazy(() => import('../home/HomeScreen'));
 
-function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
+function TabContent({ tab, isActive, navLayout }: { tab: TabId; isActive: boolean; navLayout: { position: 'bottom' | 'left'; offset: number } }) {
   return (
     <Box
       sx={{
         position: 'absolute',
         top: 0,
-        left: 0,
+        left: navLayout.position === 'left' ? `${navLayout.offset}px` : 0,
         right: 0,
-        bottom: `${TAB_BAR_HEIGHT}px`,
+        bottom: navLayout.position === 'bottom' ? `${navLayout.offset}px` : 0,
         display: isActive ? 'flex' : 'none',
         flexDirection: 'column',
       }}
@@ -50,6 +51,7 @@ function TabContent({ tab, isActive }: { tab: TabId; isActive: boolean }) {
 
 export default function TabShell() {
   const { activeTab } = useTab();
+  const navLayout = useNavLayout();
   const { notifications } = useNotifications();
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
   const { unreadCount: recoUnread } = useUnreadRecommendations();
@@ -68,7 +70,7 @@ export default function TabShell() {
     >
       <OfflineIndicator />
       {ALL_TAB_IDS.map((tab) => (
-        <TabContent key={tab} tab={tab} isActive={activeTab === tab} />
+        <TabContent key={tab} tab={tab} isActive={activeTab === tab} navLayout={navLayout} />
       ))}
       <TabBar notificationBadge={unreadCount} recommendationBadge={recoUnread} />
     </Box>
