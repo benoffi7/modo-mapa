@@ -181,6 +181,7 @@ Mock strategy.}
 ### Reglas
 - Todo `<IconButton>` → `aria-label` obligatorio
 - Nunca `<Typography onClick>` → usar `<Button variant="text">`
+- Nunca `<Box onClick>` o `<Avatar onClick>` sin `role="button"` + `tabIndex={0}` + `aria-label` → usar `<ButtonBase>`
 - Touch targets: minimo 44x44px (no `p: 0.25`, no `width: 32`)
 - Componentes con fetch → DEBEN tener error state con retry (no skeleton forever)
 - `<img>` con URL dinamica → DEBEN tener `onError` fallback

@@ -355,6 +355,12 @@ for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | g
     if grep -qE '<Typography[^>]*onClick' "$f" 2>/dev/null; then
       echo "TYPOGRAPHY AS BUTTON: $f — use Button variant='text' instead"
     fi
+    # Box/Avatar used as button (onClick without role="button")
+    if grep -qE '<(Box|Avatar)[^>]*onClick' "$f" 2>/dev/null; then
+      if ! grep -qE 'role="button"' "$f" 2>/dev/null; then
+        echo "BOX/AVATAR AS BUTTON: $f — add role='button' + tabIndex={0} + aria-label, or use ButtonBase"
+      fi
+    fi
   fi
 done
 ```
@@ -441,6 +447,15 @@ for f in $(git diff --name-only origin/new-home); do
   if [ -f "$f" ]; then
     if grep -qEi '(client_secret|private_key|api_key|secret_key|password|token).*[:=].*["\x27][A-Za-z0-9_\-]{10,}' "$f" 2>/dev/null; then
       echo "POTENTIAL SECRET: $f"
+    fi
+  fi
+done
+
+# FULL REPO scan for secrets in scripts (catches files not in the diff)
+for f in scripts/*.ts scripts/*.mjs scripts/*.js; do
+  if [ -f "$f" ]; then
+    if grep -qEi 'client_secret|private_key' "$f" 2>/dev/null; then
+      echo "SECRET IN SCRIPT: $f — must use gcloud ADC, not hardcoded credentials"
     fi
   fi
 done

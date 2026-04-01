@@ -257,7 +257,8 @@ gh issue list --label "tech debt" --state open --json number,title
 ### Checklist de accesibilidad
 
 - [ ] Todo `<IconButton>` tiene `aria-label` descriptivo
-- [ ] Elementos interactivos usan semantica correcta (`<Button>`, no `<Typography onClick>`)
+- [ ] Elementos interactivos usan semantica correcta (`<Button>`, no `<Typography onClick>`, no `<Box onClick>` sin role)
+- [ ] Clickable `<Box>`, `<Avatar>` usan `role="button"` + `tabIndex={0}` + `aria-label`, o mejor usar `<ButtonBase>`
 - [ ] Touch targets minimo 44x44px en mobile (no usar `p: 0.25` en IconButtons)
 - [ ] Componentes con carga de datos tienen error state (no solo skeleton forever)
 - [ ] Imagenes con URLs dinamicas tienen `onError` fallback
