@@ -1,11 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { searchUsers } from '../services/users';
+import type { UserSearchResult } from '../services/users';
 import { logger } from '../utils/logger';
 
-export interface UserSearchResult {
-  userId: string;
-  displayName: string;
-}
+export type { UserSearchResult };
 
 export function useUserSearch() {
   const [results, setResults] = useState<UserSearchResult[]>([]);
