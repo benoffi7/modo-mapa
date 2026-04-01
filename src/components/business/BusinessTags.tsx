@@ -101,7 +101,7 @@ export default memo(function BusinessTags({ businessId, businessName, seedTags, 
       }
       onTagsChange();
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Error toggling tag:', err);
+      logger.error('Error toggling tag:', err);
     }
     setPendingTagId(null);
   };

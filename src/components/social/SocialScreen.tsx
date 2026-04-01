@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { Box, Chip, Badge, Typography } from '@mui/material';
 import TabLoader from '../ui/TabLoader';
 
@@ -30,12 +30,12 @@ export default function SocialScreen() {
   const { unreadCount } = useUnreadRecommendations();
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
-  const handleChipClick = (tab: SocialSubTab) => {
+  const handleChipClick = useCallback((tab: SocialSubTab) => {
     trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'social', sub_tab: tab });
     setSocialSubTab(tab);
-  };
+  }, [setSocialSubTab]);
 
-  const handleSelectBusiness = (biz: Business) => navigateToBusiness(biz);
+  const handleSelectBusiness = useCallback((biz: Business) => navigateToBusiness(biz), [navigateToBusiness]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

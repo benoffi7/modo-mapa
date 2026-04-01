@@ -112,6 +112,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 - **replyCount server-only**: gestionado exclusivamente por Cloud Functions (`onCommentCreated`/`onCommentDeleted`). El cliente no puede modificar este campo.
 - **storagePath validation (#250)**: menuPhotos create rule validates storagePath with regex `^menus/{auth.uid}/biz_NNN/[a-zA-Z0-9_-]+$` preventing path traversal and proxy attacks. Defense-in-depth: trigger also validates and rejects with abuse logging.
 - **Type validation (#251)**: userSettings validates notifyFollowers/notifyRecommendations as bool, notificationDigest as string<=10, followedTags as list<=20 with timestamp fields. sharedLists validates color (string<=20) and icon (string<=50) on create and update. listItems rate limit now deletes the offending document.
+- **Per-item list validation (#289)**: followedTags validates each item is string<=50 via `isValidFollowedTags()` function (CEL index enumeration for up to 20 items). listItems.businessId uses `isValidBusinessId()`. follows.followedId and listItems.listId capped at 128 chars.
+- **sharedLists rate limit (#289)**: `onSharedListCreated` trigger enforces 10 lists/day per owner with `snap.ref.delete()` + abuse logging.
 
 ---
 
@@ -181,6 +183,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `feedback` | 5/día por usuario |
 | `menuPhotos` | 10/día por usuario |
 | `listItems` | 100/día por usuario (campo `addedBy`) — document deleted on exceed |
+| `sharedLists` | 10/día por owner — document deleted on exceed (#289) |
 | `notifications` | 50/día por destinatario (admin types exempt) |
 | `checkins` create | 10/día por usuario |
 | `checkins_delete` | 20 deletes/día por usuario — log-only (no se puede deshacer un delete) |

@@ -22,7 +22,7 @@ import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
 
-type SortMode = 'recent' | 'oldest' | 'useful';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 
 interface Props {
   businessId: string;
@@ -47,7 +47,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
     comments,
     userCommentLikes,
     onCommentsChange,
-    deleteMessage: 'Comentario eliminado',
+    deleteMessage: MSG_COMMENT.deleteSuccess,
     expandThread,
   });
 
@@ -137,7 +137,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
         toast.info(MSG_COMMENT.favoriteHint);
       }
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error adding comment:', error);
+      logger.error('Error adding comment:', error);
       toast.error(MSG_COMMENT.publishError);
     }
   };
@@ -162,7 +162,7 @@ export default memo(function BusinessComments({ businessId, businessName, commen
       onCommentsChange();
       toast.success(MSG_COMMENT.editSuccess);
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error editing comment:', error);
+      logger.error('Error editing comment:', error);
       toast.error(MSG_COMMENT.publishError);
     }
     setIsSavingEdit(false);

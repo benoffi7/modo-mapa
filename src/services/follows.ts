@@ -37,10 +37,10 @@ export async function followUser(followerId: string, followedId: string): Promis
   if (followerId === followedId) throw new Error('Cannot follow yourself');
 
   // Check max follows limit client-side
-  const followingSnap = await getDocs(
+  const followingCount = await getCountOfflineSafe(
     query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', followerId)),
   );
-  if (followingSnap.size >= MAX_FOLLOWS) {
+  if (followingCount >= MAX_FOLLOWS) {
     throw new Error('Has alcanzado el limite de 200 usuarios seguidos');
   }
 

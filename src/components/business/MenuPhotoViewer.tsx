@@ -43,10 +43,10 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen>
-      <Box sx={{ position: 'relative', height: '100%', bgcolor: 'black', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ position: 'relative', height: '100%', bgcolor: 'common.black', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
           {reviewedAt && (
-            <Typography variant="body2" sx={{ color: 'white', pl: 1 }}>
+            <Typography variant="body2" sx={{ color: 'common.white', pl: 1 }}>
               {`Menú actualizado: ${formatDateMedium(reviewedAt)}`}
             </Typography>
           )}
@@ -63,7 +63,7 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
                 {reported ? 'Reportada' : 'Reportar'}
               </Button>
             )}
-            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <IconButton onClick={onClose} sx={{ color: 'common.white' }} aria-label="Cerrar">
               <CloseIcon />
             </IconButton>
           </Box>

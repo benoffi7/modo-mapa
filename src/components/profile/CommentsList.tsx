@@ -15,16 +15,16 @@ import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { useToast } from '../../context/ToastContext';
-import { MSG_COMMON } from '../../constants/messages';
+import { MSG_COMMON, MSG_COMMENT } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
 import CommentsToolbar from './CommentsToolbar';
 import CommentsListItemSwipeable from './CommentsListItemSwipeable';
-import { useCommentsListFilters } from './useCommentsListFilters';
-import { useVirtualizedList } from './useVirtualizedList';
-import type { SortMode } from './useCommentsListFilters';
+import { useCommentsListFilters } from '../../hooks/useCommentsListFilters';
+import { useVirtualizedList } from '../../hooks/useVirtualizedList';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 import { truncate } from '../../utils/text';
 import type { Business, Comment } from '../../types';
 
@@ -60,7 +60,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete,
     onDeleteComplete: reload,
-    message: 'Comentario eliminado',
+    message: MSG_COMMENT.deleteSuccess,
   });
 
   // Edit (extracted hook)

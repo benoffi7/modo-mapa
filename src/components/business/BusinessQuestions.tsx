@@ -117,7 +117,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       onCommentsChange();
       if (!isOffline) toast.success(MSG_QUESTION.publishSuccess);
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error creating question:', error);
+      logger.error('Error creating question:', error);
       toast.error(MSG_QUESTION.publishError);
     }
   };

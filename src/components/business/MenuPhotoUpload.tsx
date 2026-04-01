@@ -53,7 +53,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
       onSuccess();
       handleReset();
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('MenuPhotoUpload error:', err);
+      logger.error('MenuPhotoUpload error:', err);
       if (!abort.signal.aborted) {
         setError(err instanceof Error ? err.message : 'No se pudo subir la foto');
       }
@@ -143,7 +143,7 @@ export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }
           onClick={handleSubmit}
           variant="contained"
           disabled={!selectedFile || uploading || isOffline}
-          title={isOffline ? 'Requiere conexion' : undefined}
+          title={isOffline ? 'Requiere conexión' : undefined}
         >
           Enviar
         </Button>

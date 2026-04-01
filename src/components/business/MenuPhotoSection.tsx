@@ -96,7 +96,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
                     theme.palette.mode === 'light'
                       ? alpha(theme.palette.common.black, 0.55)
                       : alpha(theme.palette.common.white, 0.15),
-                  color: 'white',
+                  color: 'common.white',
                   '&:hover': {
                     bgcolor: (theme) =>
                       theme.palette.mode === 'light'

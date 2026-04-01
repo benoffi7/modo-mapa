@@ -19,7 +19,7 @@ export default function DiscardDialog({ open, onKeepEditing, onDiscard }: Discar
       <DialogTitle>&iquest;Descartar borrador?</DialogTitle>
       <DialogContent>
         <DialogContentText id="discard-dialog-description">
-          Tenes texto sin enviar. Si cerras, se va a perder.
+          Tenés texto sin enviar. Si cerrás, se va a perder.
         </DialogContentText>
       </DialogContent>
       <DialogActions>

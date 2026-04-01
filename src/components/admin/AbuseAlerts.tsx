@@ -140,14 +140,14 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const handleReview = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await reviewAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) logger.error('Error reviewing:', err); }
+    catch (err) { logger.error('Error reviewing:', err); }
     setActionInProgress(null);
   };
 
   const handleDismiss = async (logId: string, e: React.MouseEvent) => {
     e.stopPropagation(); setActionInProgress(logId);
     try { await dismissAbuseLog(logId); }
-    catch (err) { if (import.meta.env.DEV) logger.error('Error dismissing:', err); }
+    catch (err) { logger.error('Error dismissing:', err); }
     setActionInProgress(null);
   };
 

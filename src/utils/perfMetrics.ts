@@ -169,6 +169,8 @@ async function flushPerfMetrics(): Promise<void> {
 
   const APP_VERSION: string = __APP_VERSION__;
 
+  if (!navigator.onLine) return;
+
   try {
     const writePerfMetrics = httpsCallable(functions, 'writePerfMetrics');
     await writePerfMetrics({

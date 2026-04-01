@@ -46,7 +46,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setNotifications(notifs);
       setUnreadCount(count);
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Error loading notifications:', err);
+      logger.error('Error loading notifications:', err);
     }
   }, []);
 

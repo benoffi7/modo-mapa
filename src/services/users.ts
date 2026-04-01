@@ -117,7 +117,7 @@ export async function fetchUserDisplayNames(
         names.set(d.id, (d.data() as { displayName?: string }).displayName ?? d.id);
       }
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('fetchUserDisplayNames batch failed:', err);
+      logger.error('fetchUserDisplayNames batch failed:', err);
     }
   }
   return names;

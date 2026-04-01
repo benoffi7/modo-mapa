@@ -25,7 +25,7 @@ export function useUserSearch() {
         const found = await searchUsers(term);
         setResults(found);
       } catch (err) {
-        if (import.meta.env.DEV) logger.error('User search failed:', err);
+        logger.error('User search failed:', err);
         setResults([]);
       } finally {
         setSearching(false);
