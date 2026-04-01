@@ -91,7 +91,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
           isLoadingMore={isLoadingMore}
           emptyIcon={<SendIcon sx={{ fontSize: 48 }} />}
           emptyMessage={MSG_SOCIAL.emptyRecommendations}
-          emptySubtext="Segui a otros usuarios para empezar!"
+          emptySubtext="Seguí a otros usuarios para empezar!"
           onRetry={reload}
           onLoadMore={loadMore}
         >

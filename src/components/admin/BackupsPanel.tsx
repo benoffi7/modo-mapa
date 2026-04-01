@@ -258,7 +258,7 @@ export default function BackupsPanel() {
                 disabled={loadingMore}
                 startIcon={loadingMore ? <CircularProgress size={16} /> : undefined}
               >
-                {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                {loadingMore ? 'Cargando...' : 'Cargar más'}
               </Button>
             </Box>
           )}
