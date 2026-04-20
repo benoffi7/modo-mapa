@@ -120,3 +120,17 @@ After auditing, if the merge DOES touch admin files, update `docs/reference/admi
 - The admin panel reference at `docs/reference/admin-panel.md` is the source of truth
 - Be thorough — missed admin gaps mean admins are blind to user activity
 - Always create actionable issues, not vague suggestions
+
+## Regression checks (#310)
+
+See `docs/reference/guards/310-admin-metrics.md`.
+
+- Every Firestore collection written by the app has admin inspector OR documented exception.
+- Every `logEvent`/`trackEvent` in prod appears in `GA4_EVENT_NAMES` (`functions/src/admin/analyticsReport.ts`) AND in `ga4FeatureDefinitions.ts`.
+- Zero orphaned services — every export in `src/services/admin/` has a consumer in `src/components/admin/`.
+- Admin callables touching `_rateLimits` or `listItems` require `assertAdmin`, `ENFORCE_APP_CHECK_ADMIN`, `checkCallableRateLimit`, and write to `moderationLogs`/`abuseLogs`.
+
+```bash
+grep -rEn "trackEvent\(['\"]" src/ --include="*.ts" --include="*.tsx"
+grep -rEn "^export (async )?function" src/services/admin/
+```

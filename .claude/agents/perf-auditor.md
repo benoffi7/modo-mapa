@@ -113,3 +113,17 @@ This agent runs when there are changes in:
 - `functions/src/triggers/`
 - `src/utils/perfMetrics.ts`
 - `functions/src/utils/perfTracker.ts`
+
+## Regression checks (#303)
+
+See `docs/reference/guards/303-perf-instrumentation.md`.
+
+- Every `getDocs`/`getDoc` in `src/services/` (except `admin/`) goes through `measuredGetDocs`/`measuredGetDoc` with `<service>_<operation>` name.
+- Every trigger in `functions/src/triggers/` calls `trackFunctionTiming` (except auth blocking hooks).
+- Naming: snake_case `<service>_<operation>`. Legacy grandfathered: `notifications`, `unreadCount`, `userSettings`, `paginatedQuery`.
+- Seed `config/perfCounters` with non-empty data in `scripts/seed-admin-data.mjs`.
+
+```bash
+grep -rn "getDocs\|getDoc(" src/services/ --include="*.ts" | grep -v admin | grep -v test | grep -v measuredGet
+grep -rln "trackFunctionTiming" functions/src/triggers/
+```

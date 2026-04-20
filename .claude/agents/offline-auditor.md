@@ -143,3 +143,20 @@ grep -rn "httpsCallable" src/components/ src/services/ --include="*.ts" --includ
 ```
 
 Reportar cada `httpsCallable` sin guard offline como hallazgo de severidad Alta.
+
+## Regression checks (#304)
+
+Ver `docs/reference/guards/304-offline.md`.
+
+- Toda mutacion (`addDoc`/`setDoc`/`updateDoc`/`deleteDoc`) en `src/services/` pasa por `withOfflineSupport(...)` o gated por `navigator.onLine` / `isOffline`.
+- `httpsCallable` en componentes user-facing gated por `useConnectivity().isOffline` o `navigator.onLine`.
+- `getCountFromServer` pasa por `getCountOfflineSafe`.
+- Lists CRUD (`list_create`, `list_update`, `list_delete`, `list_toggle_public`, `list_item_add`, `list_item_remove`) registrados como `OfflineActionType` en `src/types/offline.ts`.
+- Cada `<APIProvider>` envuelto en `MapErrorBoundary`.
+
+```bash
+grep -rn "addDoc\|setDoc\|updateDoc" src/services/ --include="*.ts" | grep -v admin | grep -v test | grep -v withOfflineSupport
+grep -rn "httpsCallable" src/components/ src/services/ | grep -v admin | grep -v test | grep -v navigator.onLine | grep -v isOffline
+grep -rn "getCountFromServer" src/ --include="*.ts" | grep -v test | grep -v getCountOfflineSafe
+grep -rn "APIProvider" src/components/ | grep -v MapErrorBoundary
+```

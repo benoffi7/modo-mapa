@@ -101,3 +101,18 @@ Archivos revisados sin problemas.
 - Siempre reporta archivo:linea exacta para facilitar el fix
 - Si encontras un patron repetido (mismo color en muchos archivos), agrupalo
 - Prioriza componentes visibles al usuario (no pages de admin/debug)
+
+## Regression checks (#307)
+
+Ver `docs/reference/guards/307-dark-mode.md`.
+
+- Cero hex/rgb/rgba en `color:` o `bgcolor:` de `sx` fuera de `src/theme/`, `src/constants/`, y `src/components/lists/ColorPicker.tsx` (paleta user).
+- Tints semi-transparentes usan `alpha(color, mode === 'dark' ? darkValue : lightValue)`, no alpha fijo.
+- Paletas en `src/constants/` usan tuplas `[light, dark]` (canonico: `UserScoreCard.tsx:22-27`).
+- `MuiFab` shadow en `src/theme/index.ts` es mode-aware (espeja patron `MuiPaper`).
+- Decisiones de contraste usan `src/utils/contrast.ts` (`getContrastRatio`, `meetsWCAG_AA`).
+
+```bash
+grep -rEn "(color|bgcolor|backgroundColor): *['\"\`]#[0-9a-fA-F]" src/components/ --include="*.tsx" | grep -v ColorPicker | grep -v test
+grep -rn "rgba(255" src/components/ --include="*.tsx"
+```

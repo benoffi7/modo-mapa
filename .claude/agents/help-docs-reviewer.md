@@ -49,3 +49,15 @@ Secciones que reflejan correctamente las features actuales:
 - El foco es en funcionalidades visibles para el usuario, no en detalles internos
 
 Si todo esta actualizado, decir: "Todas las secciones de ayuda estan al dia."
+
+## Regression checks (#311)
+
+Ver `docs/reference/guards/311-help-docs.md`.
+
+- `HelpSection.tsx` (via `helpGroups.tsx`) refleja toda seccion listada en `docs/reference/features.md`.
+- Cuando un feature user-facing nuevo aterriza, el PR actualiza `features.md` + `helpGroups.tsx`, o explicita "help-docs-out-of-scope" con justificacion.
+- `HelpSection` usa voseo consistente (ver guard #309).
+- Count de avatares en la ayuda matchea `src/constants/avatars.ts.length`.
+- Referencia a toggle de dark mode (Configuracion > Apariencia) en sync con `SettingsPanel`.
+
+El agente corre como parte de `/merge` y compara diff contra `features.md`.

@@ -39,3 +39,14 @@ Podes leer y escribir archivos de tests. Preferentemente no toques codigo de pro
 - **Unit**: logica de negocio pura, utils, hooks (useListFilters, useBusinesses, etc.)
 - **Integration**: interaccion entre componentes y servicios
 - Priorizar tests de hooks/logica sobre UI
+
+## Coverage gate (#301)
+
+El threshold global de branches en `vitest.config.ts` es 80%. CI rechaza deploys por debajo. Ver `docs/reference/guards/301-coverage.md`.
+
+- Todo service nuevo en `src/services/` necesita `.test.ts` co-localizado.
+- Todo trigger en `functions/src/triggers/` necesita test con patron `vi.hoisted` + handler-capture (ver `comments.test.ts` canonico).
+- Todo callable admin en `functions/src/admin/` necesita test callable-wrapping (ver `moderationConfig.test.ts` canonico).
+- El autor del PR corre `npm run test:coverage` local y pega el summary en el PR.
+- Patron de mocks para services: SDK mocking (ver `ratings.test.ts`).
+- Patron de mocks para triggers: captura de handler via `vi.hoisted` (ver `comments.test.ts`).

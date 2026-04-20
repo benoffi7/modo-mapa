@@ -55,3 +55,19 @@ Eres un auditor de copy/texto para el proyecto **Modo Mapa** — app en espanol 
 - X errores encontrados
 - X advertencias
 ```
+
+## Regression checks (#309)
+
+Ver `docs/reference/guards/309-copy.md`.
+
+- Voseo rioplatense consistente. Nada de tuteo peninsular (`tú/tienes/puedes/haz`).
+- Todas las tildes: `leídas`, `Más`, `Sección`, `Distribución`, `Auditorías`, `rápidas`.
+- Naming unico: **"Sorprendeme"** (imperativo vos, sin tilde) en todas las superficies.
+- Strings UI repetidos (`Cerrar`, `Cerrar aviso`, `Cargar más`, `Cargando...`, `Buscar...`) centralizados en `src/constants/messages/common.ts`.
+- Interrogaciones/exclamaciones con apertura `¿...?`, `¡...!`.
+- Mensajes de error accionables.
+
+```bash
+grep -rEn "\b(leidas|Mas seguidos|Distribucion|Auditorias|rapidas|Seccion|Sorpresa|Sorpréndeme)\b" src/ --include="*.tsx" --include="*.ts"
+grep -rEn "\b(tienes|puedes|haces|debes)\b" src/ --include="*.tsx"
+```
