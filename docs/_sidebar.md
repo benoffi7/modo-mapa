@@ -22,10 +22,18 @@
   - [Worktree Workflow](/procedures/worktree-workflow.md)
   - [Cloud Functions Staging](/procedures/cloud-functions-staging.md)
 
+- **Admin**
+  - [#310 Admin Metrics Gaps — listItems / _rateLimits + event tracking](/feat/admin/310-admin-metrics-gaps/prd.md)
+    - [Specs](/feat/admin/310-admin-metrics-gaps/specs.md)
+    - [Plan](/feat/admin/310-admin-metrics-gaps/plan.md)
+
 - **Content**
   - [Conectar IconPicker Listas](/feat/content/conectar-iconpicker-listas/prd.md)
     - [Specs](/feat/content/conectar-iconpicker-listas/specs.md)
     - [Plan](/feat/content/conectar-iconpicker-listas/plan.md)
+  - [#311 Help Section Update](/feat/content/311-help-section-update/prd.md)
+    - [Specs](/feat/content/311-help-section-update/specs.md)
+    - [Plan](/feat/content/311-help-section-update/plan.md)
 
 - **Infra**
   - [Descomponer CommentsList](/feat/infra/descomponer-comments-list/prd.md)
@@ -108,6 +116,21 @@
   - [#259 Admin GA4 Analytics Dashboard](/feat/infra/259-admin-ga4-analytics/prd.md)
     - [Specs](/feat/infra/259-admin-ga4-analytics/specs.md)
     - [Plan](/feat/infra/259-admin-ga4-analytics/plan.md)
+  - [#306 Architecture — Prop-Drilling + Sabanas + Logger Bypass](/feat/infra/306-architecture-prop-drilling-sabanas/prd.md)
+    - [Specs](/feat/infra/306-architecture-prop-drilling-sabanas/specs.md)
+    - [Plan](/feat/infra/306-architecture-prop-drilling-sabanas/plan.md)
+  - [#301 Coverage Branches Threshold](/feat/infra/301-coverage-branches-threshold/prd.md)
+    - [Specs](/feat/infra/301-coverage-branches-threshold/specs.md)
+    - [Plan](/feat/infra/301-coverage-branches-threshold/plan.md)
+  - [#303 Perf Instrumentation Hot Paths](/feat/infra/303-perf-instrumentation-hot-paths/prd.md)
+    - [Specs](/feat/infra/303-perf-instrumentation-hot-paths/specs.md)
+    - [Plan](/feat/infra/303-perf-instrumentation-hot-paths/plan.md)
+  - [#302 Performance — Bundle Splits + Firestore Waterfalls](/feat/infra/302-performance-bundle-waterfalls/prd.md)
+    - [Specs](/feat/infra/302-performance-bundle-waterfalls/specs.md)
+    - [Plan](/feat/infra/302-performance-bundle-waterfalls/plan.md)
+  - [#304 Offline Lists + Notifications](/feat/infra/304-offline-lists-notifications/prd.md)
+    - [Specs](/feat/infra/304-offline-lists-notifications/specs.md)
+    - [Plan](/feat/infra/304-offline-lists-notifications/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
@@ -170,6 +193,12 @@
   - [#258 Deletion Audit Log](/feat/security/258-admin-deletion-audit/prd.md)
     - [Specs](/feat/security/258-admin-deletion-audit/specs.md)
     - [Plan](/feat/security/258-admin-deletion-audit/plan.md)
+  - [#300 Critical Deps + App Check + Abuse Vectors](/feat/security/300-security-critical-deps-appcheck-abuse/prd.md)
+    - [Specs](/feat/security/300-security-critical-deps-appcheck-abuse/specs.md)
+    - [Plan](/feat/security/300-security-critical-deps-appcheck-abuse/plan.md)
+  - [#308 Privacy Policy Drift](/feat/security/308-privacy-policy-drift/prd.md)
+    - [Specs](/feat/security/308-privacy-policy-drift/specs.md)
+    - [Plan](/feat/security/308-privacy-policy-drift/plan.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
@@ -209,6 +238,12 @@
   - [#246 Dark Mode Hardcoded Colors](/feat/ux/246-dark-mode-hardcoded-colors/prd.md)
     - [Specs](/feat/ux/246-dark-mode-hardcoded-colors/specs.md)
     - [Plan](/feat/ux/246-dark-mode-hardcoded-colors/plan.md)
+  - [#307 Dark Mode VerificationBadge + Home + Mapa](/feat/ux/307-dark-mode-verification-badge/prd.md)
+    - [Specs](/feat/ux/307-dark-mode-verification-badge/specs.md)
+    - [Plan](/feat/ux/307-dark-mode-verification-badge/plan.md)
+  - [#305 MUI 7 slotProps + Touch Targets + 360px Overflow](/feat/ux/305-mui7-slotprops-touch-targets/prd.md)
+    - [Specs](/feat/ux/305-mui7-slotprops-touch-targets/specs.md)
+    - [Plan](/feat/ux/305-mui7-slotprops-touch-targets/plan.md)
 
 - **Fixes**
   - [Coding Standard Violations](/fix/coding-standard-violations/prd.md)
@@ -251,6 +286,9 @@
   - [#295–#296 Offline Guards + Perf Instrumentation](/fix/infra/295-296-offline-perf-instrumentation/specs.md)
     - [Specs](/fix/infra/295-296-offline-perf-instrumentation/specs.md)
     - [Plan](/fix/infra/295-296-offline-perf-instrumentation/plan.md)
+  - [#309 Copy tildes + Sorprendeme + MSG_COMMON](/fix/ux/309-copy-tildes-sorprendeme/prd.md)
+    - [Specs](/fix/ux/309-copy-tildes-sorprendeme/specs.md)
+    - [Plan](/fix/ux/309-copy-tildes-sorprendeme/plan.md)
 
 - **[Reports](/reports/)**
   - [Backlog de Producto](/reports/backlog-producto.md)
