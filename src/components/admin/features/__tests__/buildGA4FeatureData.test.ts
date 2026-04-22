@@ -1,4 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+vi.mock('../../../../services/admin', () => ({
+  fetchDailyMetrics: vi.fn(),
+  fetchCounters: vi.fn(),
+  fetchAnalyticsReport: vi.fn(),
+}));
+
 import { buildGA4FeatureData } from '../../FeaturesPanel';
 import type { GA4EventCount } from '../../../../types/admin';
 
