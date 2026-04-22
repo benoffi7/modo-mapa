@@ -138,6 +138,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
     } catch (err) {
       if (fetchIdRef.current !== id) return;
       logger.error('Error loading business data:', err);
+      console.error('[useBusinessData] error:', err);
       // If we served from read cache, keep showing stale data instead of error
       if (!servedFromReadCache) {
         setError(true);
