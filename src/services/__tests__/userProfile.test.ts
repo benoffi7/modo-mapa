@@ -1,8 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/firebase', () => ({ db: {} }));
-vi.mock('../../config/collections', () => ({ COLLECTIONS: { USERS: 'users' } }));
-vi.mock('../../config/converters', () => ({ userProfileConverter: {} }));
+vi.mock('../../config/collections', () => ({
+  COLLECTIONS: {
+    USERS: 'users',
+    COMMENTS: 'comments',
+    RATINGS: 'ratings',
+    FAVORITES: 'favorites',
+    CUSTOM_TAGS: 'customTags',
+    MENU_PHOTOS: 'menuPhotos',
+  },
+}));
+vi.mock('../../config/converters', () => ({
+  userProfileConverter: {},
+  commentConverter: {},
+  ratingConverter: {},
+  favoriteConverter: {},
+  customTagConverter: {},
+  menuPhotoConverter: {},
+}));
 
 const mockGetDoc = vi.fn();
 const mockMeasuredGetDoc = vi.fn((_name: string, ref: unknown) => mockGetDoc(ref));
@@ -17,7 +33,7 @@ vi.mock('../../utils/perfMetrics', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
+  collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
   doc: (...args: unknown[]) => mockDoc(...args),
   getDoc: (...args: unknown[]) => mockGetDoc(...args),
   getDocs: vi.fn(),
@@ -31,7 +47,9 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock dependencies used by fetchUserProfile (not under test here, but imported at module level)
 vi.mock('../../utils/businessHelpers', () => ({ getBusinessName: vi.fn() }));
-vi.mock('../rankings', () => ({ fetchLatestRanking: vi.fn() }));
+
+const mockFetchLatestRanking = vi.fn();
+vi.mock('../rankings', () => ({ fetchLatestRanking: (...args: unknown[]) => mockFetchLatestRanking(...args) }));
 vi.mock('../../utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), log: vi.fn() } }));
 
 describe('fetchUserProfileDoc', () => {
@@ -130,6 +148,111 @@ describe('updateUserAvatar', () => {
 
     const { updateUserAvatar } = await import('../userProfile');
     await expect(updateUserAvatar('uid-err', 'av1')).rejects.toThrow('update failed');
+  });
+});
+
+describe('fetchUserProfile', () => {
+  function emptySnap(size = 0) {
+    return { docs: [], size, empty: size === 0 };
+  }
+
+  function makeCommentDoc(overrides: Record<string, unknown> = {}) {
+    return {
+      data: () => ({
+        id: 'c1',
+        businessId: 'biz1',
+        text: 'hello',
+        likeCount: 0,
+        createdAt: new Date(),
+        flagged: false,
+        ...overrides,
+      }),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDoc.mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) });
+    mockGetDoc.mockResolvedValue({ exists: () => false });
+    mockMeasuredGetDocs.mockResolvedValue(emptySnap());
+    mockMeasuredGetDoc.mockImplementation(() =>
+      Promise.resolve({ exists: () => false, data: () => null }),
+    );
+    mockFetchLatestRanking.mockResolvedValue(null);
+  });
+
+  it('returns Anónimo as displayName when no user doc and no fallbackName', async () => {
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.displayName).toBe('Anónimo');
+  });
+
+  it('uses fallbackName when user doc does not exist', async () => {
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1', 'Guest');
+    expect(result.displayName).toBe('Guest');
+  });
+
+  it('uses displayName from user doc when it exists', async () => {
+    mockMeasuredGetDoc.mockImplementation(() =>
+      Promise.resolve({ exists: () => true, data: () => ({ displayName: 'Alice', createdAt: new Date() }) }),
+    );
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.displayName).toBe('Alice');
+  });
+
+  it('returns rankingPosition null when monthlyRanking is null', async () => {
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.rankingPosition).toBeNull();
+  });
+
+  it('returns rankingPosition null when userId not in ranking', async () => {
+    mockFetchLatestRanking.mockResolvedValue({ rankings: [{ userId: 'other', score: 10 }] });
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.rankingPosition).toBeNull();
+  });
+
+  it('returns correct rankingPosition when userId is found in ranking', async () => {
+    mockFetchLatestRanking.mockResolvedValue({
+      rankings: [{ userId: 'other', score: 20 }, { userId: 'uid-1', score: 10 }],
+    });
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.rankingPosition).toBe(2);
+  });
+
+  it('sums likeCount across comments', async () => {
+    mockMeasuredGetDocs.mockImplementation((name: string) => {
+      if (name === 'userProfile_comments') {
+        return Promise.resolve({
+          docs: [makeCommentDoc({ likeCount: 3 }), makeCommentDoc({ likeCount: 7 })],
+          size: 2,
+        });
+      }
+      return Promise.resolve(emptySnap());
+    });
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.stats.likesReceived).toBe(10);
+  });
+
+  it('gracefully handles measuredGetDoc rejection (catches error, returns null user)', async () => {
+    mockMeasuredGetDoc.mockImplementation(() =>
+      Promise.reject(new Error('permission denied')),
+    );
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-err', 'Fallback');
+    expect(result.displayName).toBe('Fallback');
+  });
+
+  it('gracefully handles fetchLatestRanking rejection', async () => {
+    mockFetchLatestRanking.mockRejectedValue(new Error('rank error'));
+    const { fetchUserProfile } = await import('../userProfile');
+    const result = await fetchUserProfile('uid-1');
+    expect(result.rankingPosition).toBeNull();
   });
 });
 

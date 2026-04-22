@@ -298,5 +298,54 @@ describe('initPerfMetrics', () => {
       expect(typeof payload.queries.fetchBusinesses.p50).toBe('number');
       expect(typeof payload.queries.fetchBusinesses.p95).toBe('number');
     });
+
+    it('visibilitychange triggers flush when document becomes hidden', async () => {
+      const { initPerfMetrics } = await freshImport();
+      initPerfMetrics('user1', true);
+
+      // Register a vital so the flush actually sends data
+      triggerObserver('largest-contentful-paint', [
+        { startTime: 800 } as PerformanceEntry,
+      ]);
+
+      // Simulate page hidden
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      // Allow microtasks to settle
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockCallable).toHaveBeenCalledTimes(1);
+
+      // Restore
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+    });
+
+    it('visibilitychange does not flush when document is still visible', async () => {
+      const { initPerfMetrics } = await freshImport();
+      initPerfMetrics('user1', true);
+
+      triggerObserver('largest-contentful-paint', [
+        { startTime: 800 } as PerformanceEntry,
+      ]);
+
+      // visibilityState stays visible
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Flush should not have fired (no timer advance to delay)
+      expect(mockCallable).not.toHaveBeenCalled();
+    });
   });
 });

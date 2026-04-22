@@ -53,17 +53,18 @@ describe('BusinessScopeContext', () => {
   });
 
   it('actualiza el value cuando cambia businessId', () => {
-    const wrapper = ({ children, scope }: { children: ReactNode; scope: BusinessScope }) => (
-      <BusinessScopeProvider scope={scope}>{children}</BusinessScopeProvider>
+    let currentScope = makeScope({ businessId: 'biz-a' });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <BusinessScopeProvider scope={currentScope}>{children}</BusinessScopeProvider>
     );
 
-    const initial = makeScope({ businessId: 'biz-a' });
-    const { result, rerender } = renderHook(() => useBusinessScope(), {
-      wrapper: ({ children }) => wrapper({ children, scope: initial }),
-    });
+    const { result, rerender } = renderHook(() => useBusinessScope(), { wrapper });
+
     expect(result.current.businessId).toBe('biz-a');
 
-    rerender({ scope: makeScope({ businessId: 'biz-b' }) });
+    currentScope = makeScope({ businessId: 'biz-b' });
+    rerender();
+
     expect(result.current.businessId).toBe('biz-b');
   });
 

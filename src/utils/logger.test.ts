@@ -33,4 +33,38 @@ describe('logger', () => {
     expect(() => logger.warn('msg')).not.toThrow();
     expect(() => logger.log('msg', [1, 2])).not.toThrow();
   });
+
+  it('does not call console in PROD mode (warn and log)', async () => {
+    // Simulate production: DEV=false
+    vi.stubEnv('DEV', false as unknown as string);
+    vi.resetModules();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { logger } = await import('./logger');
+    logger.warn('should not appear');
+    logger.log('should not appear');
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(logSpy).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('calls captureToSentry in PROD mode for logger.error with Error arg', async () => {
+    vi.stubEnv('DEV', false as unknown as string);
+    vi.resetModules();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('./logger');
+    const err = new Error('prod error');
+    expect(() => logger.error('something broke', err)).not.toThrow();
+    expect(consoleSpy).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('calls captureToSentry with new Error wrapping message when first arg is not Error', async () => {
+    vi.stubEnv('DEV', false as unknown as string);
+    vi.resetModules();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('./logger');
+    expect(() => logger.error('something broke', 'string-arg')).not.toThrow();
+    vi.unstubAllEnvs();
+  });
 });

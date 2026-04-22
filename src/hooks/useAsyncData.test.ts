@@ -55,4 +55,18 @@ describe('useAsyncData', () => {
     // Still null because ignore=true
     expect(result.current.data).toBeNull();
   });
+
+  it('ignores stale error when component unmounts before fetch rejects', async () => {
+    let rejectFirst: (err: Error) => void;
+    const firstPromise = new Promise<string>((_resolve, reject) => { rejectFirst = reject; });
+    const fetcher = vi.fn().mockReturnValue(firstPromise);
+
+    const { result, unmount } = renderHook(() => useAsyncData(fetcher));
+    unmount();
+
+    // Reject after unmount — should not set error state
+    act(() => { rejectFirst!(new Error('stale error')); });
+    // error should remain false because ignore=true
+    expect(result.current.error).toBe(false);
+  });
 });
