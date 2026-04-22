@@ -98,7 +98,7 @@ export default function BusinessSheet() {
       }}
     >
       {selectedBusiness && (
-        <Box sx={{ overflow: 'auto', maxHeight: '85dvh', pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
+        <Box sx={{ overflow: 'auto', maxHeight: '85dvh', pb: 'calc(24px + env(safe-area-inset-bottom))', bgcolor: 'background.paper' }}>
           <DragHandle onClose={handleClose} showTooltip={showTooltip && isOpen} />
           <BusinessSheetContent
             key={selectedBusiness.id}
