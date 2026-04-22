@@ -360,6 +360,21 @@ describe('syncEngine', () => {
       expect(onComplete).toHaveBeenCalledWith(0, 1);
     });
 
+    it('wraps non-Error throws in Error when marking failed', async () => {
+      const action = makeFullAction({ retryCount: 2 });
+      vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+      vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([action]);
+      vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+      vi.mocked(upsertRating).mockRejectedValueOnce('string-error');
+
+      const onFailed = vi.fn();
+      await processQueue(vi.fn(), onFailed, vi.fn());
+
+      const wrappedErr = onFailed.mock.calls[0]?.[1];
+      expect(wrappedErr).toBeInstanceOf(Error);
+      expect(wrappedErr.message).toBe('string-error');
+    });
+
     it('defers failed actions instead of blocking with backoff', async () => {
       const action = makeFullAction({ retryCount: 0 });
       vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);

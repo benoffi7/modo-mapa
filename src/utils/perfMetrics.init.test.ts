@@ -327,6 +327,24 @@ describe('initPerfMetrics', () => {
       });
     });
 
+    it('flush does not call writePerfMetrics when offline', async () => {
+      vi.stubGlobal('navigator', {
+        userAgent: 'Mozilla/5.0 (X11; Linux x86_64)',
+        onLine: false,
+      });
+
+      const { initPerfMetrics } = await freshImport();
+      initPerfMetrics('user1', true);
+
+      triggerObserver('largest-contentful-paint', [
+        { startTime: 800 } as PerformanceEntry,
+      ]);
+
+      await vi.advanceTimersByTimeAsync(150);
+
+      expect(mockCallable).not.toHaveBeenCalled();
+    });
+
     it('visibilitychange does not flush when document is still visible', async () => {
       const { initPerfMetrics } = await freshImport();
       initPerfMetrics('user1', true);
