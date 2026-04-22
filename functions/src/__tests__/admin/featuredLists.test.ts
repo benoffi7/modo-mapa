@@ -36,6 +36,10 @@ vi.mock('../../helpers/assertAdmin', () => ({
   assertAdmin: (...args: unknown[]) => mockAssertAdmin(...args),
 }));
 
+vi.mock('../../utils/callableRateLimit', () => ({
+  checkCallableRateLimit: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { toggleFeaturedList, getPublicLists, getFeaturedLists } from '../../admin/featuredLists';
 
 const toggleHandler = toggleFeaturedList as unknown as (request: unknown) => Promise<unknown>;

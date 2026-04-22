@@ -60,10 +60,12 @@ function buildDb(initial: Partial<MockDbState> = {}) {
 
   const collectionCursor = {
     where: vi.fn().mockImplementation(() => ({
-      get: vi.fn().mockResolvedValue({
-        empty: state.followers.length === 0,
-        docs: state.followers,
-      }),
+      limit: vi.fn().mockImplementation((n: number) => ({
+        get: vi.fn().mockResolvedValue({
+          empty: state.followers.length === 0,
+          docs: state.followers.slice(0, n),
+        }),
+      })),
     })),
   };
 
