@@ -73,7 +73,7 @@ export default memo(function FavoriteButton({ isFavorite, isLoading, onToggle }:
       aria-label={shown ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       onClick={toggleFavorite}
       disabled={isLoading || isToggling || !user}
-      sx={{ color: shown ? 'error.main' : 'text.secondary' }}
+      sx={{ color: shown ? 'error.main' : 'text.primary' }}
     >
       {shown ? <FavoriteIcon /> : <FavoriteBorderIcon />}
     </IconButton>

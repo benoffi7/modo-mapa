@@ -35,23 +35,22 @@ export default memo(function BusinessRating({ ratingData, ratings, isLoading }: 
           ({totalRatings} {totalRatings === 1 ? 'opinión' : 'opiniones'})
         </Typography>
       </Box>
-      {user && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Tu calificación:
-          </Typography>
-          <Rating
-            value={myRating}
-            onChange={handleRate}
-            size="medium"
-          />
-          {myRating != null && (
-            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }} aria-label="Borrar calificación">
-              <CloseIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          )}
-        </Box>
-      )}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Tu calificación:
+        </Typography>
+        <Rating
+          value={myRating}
+          onChange={handleRate}
+          size="medium"
+          readOnly={!user}
+        />
+        {myRating != null && (
+          <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }} aria-label="Borrar calificación">
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
+      </Box>
     </Box>
   );
 });

@@ -31,7 +31,7 @@ export default function ShareButton({ business }: Props) {
 
   return (
     <>
-      <IconButton onClick={handleShare} aria-label="Compartir comercio" sx={{ color: 'text.secondary' }}>
+      <IconButton onClick={handleShare} aria-label="Compartir comercio" sx={{ color: 'text.primary' }}>
         <ShareIcon />
       </IconButton>
       <Snackbar

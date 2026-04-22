@@ -193,17 +193,15 @@ export default function BusinessSheetContent({
             shareButton={<ShareButton business={business} />}
             recommendButton={
               user && !user.isAnonymous ? (
-                <IconButton onClick={() => setRecommendDialogOpen(true)} aria-label="Recomendar">
+                <IconButton onClick={() => setRecommendDialogOpen(true)} aria-label="Recomendar" sx={{ color: 'text.primary' }}>
                   <SendIcon />
                 </IconButton>
               ) : undefined
             }
             addToListButton={
-              user && !user.isAnonymous ? (
-                <IconButton onClick={() => setListDialogOpen(true)} aria-label="Guardar en lista">
-                  <BookmarkBorderIcon />
-                </IconButton>
-              ) : undefined
+              <IconButton onClick={() => setListDialogOpen(true)} aria-label="Guardar en lista" sx={{ color: 'text.primary' }}>
+                <BookmarkBorderIcon />
+              </IconButton>
             }
             checkInButton={<CheckInButton />}
           />
