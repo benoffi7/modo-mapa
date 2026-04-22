@@ -31,7 +31,10 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 - `seed-manager` — actualizar seed data
 - `documentation` — escribir/actualizar docs
 
-### Para auditar
+### Para auditar post-implementacion (obligatorio)
+- `thanos` — auditor adversarial: lee el diff, dialoga con el implementador, emite veredicto. Siempre despues de luna o nico.
+
+### Para auditar bajo pedido
 - `security` — auditoria de seguridad
 - `perf-auditor` — instrumentacion de performance (Firestore + Cloud Functions)
 - `dark-mode-auditor` — colores hardcodeados
@@ -57,9 +60,12 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 2. Leer el plan, identificar tareas front y back
 3. Definir ownership de archivos (evitar conflictos entre agentes)
 4. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
-5. Cuando terminan: lanzar testing para tests
-6. Code review final (invocar pr-reviewer + architecture)
-7. Reportar al usuario
+5. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
+   - Si Thanos devuelve BLOQUEADO → resolver con el implementador antes de continuar
+   - Si devuelve APROBADO o APROBADO CON OBSERVACIONES → continuar
+6. Lanzar testing para tests
+7. Code review final (invocar pr-reviewer + architecture)
+8. Reportar al usuario
 ```
 
 ## Pre-flight para agentes paralelos

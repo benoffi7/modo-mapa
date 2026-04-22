@@ -3,9 +3,7 @@ import { SwipeableDrawer, Box, Tooltip } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useSelection } from '../../context/SelectionContext';
 import { STORAGE_KEY_DRAG_HANDLE_SEEN } from '../../constants/storage';
-import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
-import DiscardDialog from '../common/DiscardDialog';
-import BusinessSheetContent from './BusinessSheetContent';
+import BusinessSheetCompactContent from './BusinessSheetCompactContent';
 
 function DragHandle({ onClose, showTooltip }: { onClose: () => void; showTooltip: boolean }) {
   return (
@@ -57,11 +55,9 @@ function DragHandle({ onClose, showTooltip }: { onClose: () => void; showTooltip
 }
 
 export default function BusinessSheet() {
-  const { selectedBusiness, setSelectedBusiness, selectedBusinessTab, setSelectedBusinessTab } = useSelection();
+  const { selectedBusiness, setSelectedBusiness } = useSelection();
   const isOpen = selectedBusiness !== null;
   const [showTooltip, setShowTooltip] = useState(() => !localStorage.getItem(STORAGE_KEY_DRAG_HANDLE_SEEN));
-  const [commentsDirty, setCommentsDirty] = useState(false);
-  const { confirmClose, dialogProps } = useUnsavedChanges(commentsDirty ? 'x' : '');
 
   useEffect(() => {
     if (showTooltip && isOpen) {
@@ -73,11 +69,10 @@ export default function BusinessSheet() {
     }
   }, [showTooltip, isOpen]);
 
-  const handleClose = () => confirmClose(() => setSelectedBusiness(null));
+  const handleClose = () => setSelectedBusiness(null);
   const handleOpen = () => {};
 
   return (
-    <>
     <SwipeableDrawer
       anchor="bottom"
       open={isOpen}
@@ -90,7 +85,7 @@ export default function BusinessSheet() {
         sx: {
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
-          maxHeight: '85dvh',
+          maxHeight: '50dvh',
           overflow: 'hidden',
         },
         role: 'dialog' as const,
@@ -98,19 +93,11 @@ export default function BusinessSheet() {
       }}
     >
       {selectedBusiness && (
-        <Box sx={{ overflow: 'auto', maxHeight: '85dvh', pb: 'calc(24px + env(safe-area-inset-bottom))', bgcolor: 'background.paper' }}>
+        <Box sx={{ overflow: 'auto', maxHeight: '50dvh', pb: 'calc(24px + env(safe-area-inset-bottom))', bgcolor: 'background.paper' }}>
           <DragHandle onClose={handleClose} showTooltip={showTooltip && isOpen} />
-          <BusinessSheetContent
-            key={selectedBusiness.id}
-            business={selectedBusiness}
-            initialTab={selectedBusinessTab ?? undefined}
-            onTabConsumed={() => setSelectedBusinessTab(null)}
-            onDirtyChange={setCommentsDirty}
-          />
+          <BusinessSheetCompactContent key={selectedBusiness.id} business={selectedBusiness} />
         </Box>
       )}
     </SwipeableDrawer>
-    <DiscardDialog {...dialogProps} />
-    </>
   );
 }

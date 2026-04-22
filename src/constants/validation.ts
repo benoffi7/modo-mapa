@@ -13,3 +13,6 @@ export const MAX_VISIT_HISTORY = 50;
 
 // Rating
 export const SCORE_OPTIONS = [1, 2, 3, 4, 5] as const;
+
+// ID patterns
+export const BUSINESS_ID_REGEX = /^biz_\d{1,6}$/;
