@@ -59,7 +59,7 @@ describe('saveAllAchievements', () => {
       ],
     });
 
-    await saveAllAchievements([{ id: 'keep1', title: 'Keep', order: 1 } as Parameters<typeof saveAllAchievements>[0][0]]);
+    await saveAllAchievements([{ id: 'keep1', title: 'Keep', order: 1 } as unknown as Parameters<typeof saveAllAchievements>[0][0]]);
 
     expect(mockDeleteDoc).toHaveBeenCalledWith('ref-old');
     expect(mockDeleteDoc).not.toHaveBeenCalledWith('ref-keep');
@@ -68,7 +68,7 @@ describe('saveAllAchievements', () => {
   it('upserts each achievement with updatedAt added and id stripped from payload', async () => {
     mockGetDocs.mockResolvedValue({ docs: [] });
 
-    await saveAllAchievements([{ id: 'ach1', title: 'Hero', order: 5 } as Parameters<typeof saveAllAchievements>[0][0]]);
+    await saveAllAchievements([{ id: 'ach1', title: 'Hero', order: 5 } as unknown as Parameters<typeof saveAllAchievements>[0][0]]);
 
     expect(mockSetDoc).toHaveBeenCalledOnce();
     const [, payload] = mockSetDoc.mock.calls[0] as [unknown, Record<string, unknown>];
@@ -83,7 +83,7 @@ describe('saveAllAchievements', () => {
       docs: [{ id: 'ach1', ref: 'ref1' }],
     });
 
-    await saveAllAchievements([{ id: 'ach1', title: 'Hero', order: 1 } as Parameters<typeof saveAllAchievements>[0][0]]);
+    await saveAllAchievements([{ id: 'ach1', title: 'Hero', order: 1 } as unknown as Parameters<typeof saveAllAchievements>[0][0]]);
 
     expect(mockDeleteDoc).not.toHaveBeenCalled();
   });

@@ -34,7 +34,8 @@ describe('countersConverter', () => {
   });
 
   it('toFirestore: spreads data unchanged', () => {
-    const input = { comments: 5 } as Parameters<typeof countersConverter.toFirestore>[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const input = { comments: 5 } as any;
     expect(countersConverter.toFirestore(input)).toEqual({ comments: 5 });
   });
 });

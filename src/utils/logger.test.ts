@@ -36,7 +36,7 @@ describe('logger', () => {
 
   it('does not call console in PROD mode (warn and log)', async () => {
     // Simulate production: DEV=false
-    vi.stubEnv('DEV', false as unknown as string);
+    vi.stubEnv('DEV', false);
     vi.resetModules();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -49,7 +49,7 @@ describe('logger', () => {
   });
 
   it('calls captureToSentry in PROD mode for logger.error with Error arg', async () => {
-    vi.stubEnv('DEV', false as unknown as string);
+    vi.stubEnv('DEV', false);
     vi.resetModules();
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { logger } = await import('./logger');
@@ -60,7 +60,7 @@ describe('logger', () => {
   });
 
   it('calls captureToSentry with new Error wrapping message when first arg is not Error', async () => {
-    vi.stubEnv('DEV', false as unknown as string);
+    vi.stubEnv('DEV', false);
     vi.resetModules();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const { logger } = await import('./logger');
