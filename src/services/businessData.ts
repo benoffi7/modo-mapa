@@ -109,34 +109,38 @@ export async function fetchSingleCollection(bId: string, uid: string, col: Busin
 export async function fetchBusinessData(bId: string, uid: string): Promise<BusinessDataResult> {
   const favDocId = `${uid}__${bId}`;
 
+  const wrapDbg = async <T>(name: string, p: Promise<T>): Promise<T> => {
+    try { return await p; } catch (e) { console.error(`[businessData] FAILED: ${name}`, e); throw e; }
+  };
+
   const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
-    measuredGetDoc('businessData_favorite', doc(db, COLLECTIONS.FAVORITES, favDocId)),
-    measuredGetDocs('businessData_ratings', query(
+    wrapDbg('favorites', measuredGetDoc('businessData_favorite', doc(db, COLLECTIONS.FAVORITES, favDocId))),
+    wrapDbg('ratings', measuredGetDocs('businessData_ratings', query(
       collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
       where('businessId', '==', bId),
-    )),
-    measuredGetDocs('businessData_comments', query(
+    ))),
+    wrapDbg('comments', measuredGetDocs('businessData_comments', query(
       collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
       where('businessId', '==', bId),
-    )),
-    measuredGetDocs('businessData_userTags', query(
+    ))),
+    wrapDbg('userTags', measuredGetDocs('businessData_userTags', query(
       collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
       where('businessId', '==', bId),
-    )),
-    measuredGetDocs('businessData_customTags', query(
+    ))),
+    wrapDbg('customTags', measuredGetDocs('businessData_customTags', query(
       collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
       where('userId', '==', uid),
       where('businessId', '==', bId),
-    )),
-    measuredGetDocs('businessData_priceLevels', query(
+    ))),
+    wrapDbg('priceLevels', measuredGetDocs('businessData_priceLevels', query(
       collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
       where('businessId', '==', bId),
-    )),
-    measuredGetDocs('businessData_menuPhotos', query(
+    ))),
+    wrapDbg('menuPhotos', measuredGetDocs('businessData_menuPhotos', query(
       collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
       where('businessId', '==', bId),
       where('status', '==', 'approved'),
-    )),
+    ))),
   ]);
 
   const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
