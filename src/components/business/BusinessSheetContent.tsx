@@ -213,7 +213,7 @@ export default function BusinessSheetContent({
             sx={{
               position: 'sticky',
               top: headerHeight,
-              zIndex: 2,
+              zIndex: 10,
               background: 'inherit',
               px: 2,
             }}

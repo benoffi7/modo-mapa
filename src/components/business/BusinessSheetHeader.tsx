@@ -33,7 +33,7 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
       sx={{
         position: 'sticky',
         top: 0,
-        zIndex: 2,
+        zIndex: 10,
         background: 'inherit',
         px: 2,
         pt: 0,
