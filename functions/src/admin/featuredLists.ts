@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { assertAdmin } from '../helpers/assertAdmin';
 import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
+import { checkCallableRateLimit } from '../utils/callableRateLimit';
 
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 500;
@@ -132,6 +133,7 @@ export const getFeaturedLists = onCall(
     }
 
     const db = getDb(extractDbId(request.data));
+    await checkCallableRateLimit(db, `featured_lists_${request.auth.uid}`, 60, request.auth.uid);
     const pageSize = extractPageSize(request.data);
     const startAfterId = extractStartAfter(request.data);
 

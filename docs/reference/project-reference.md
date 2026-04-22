@@ -1,9 +1,9 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.34.1
+**Version:** 2.35.7
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-03-30
+**Ultima actualizacion:** 2026-04-21
 
 ---
 
@@ -100,4 +100,8 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Offline read caching** (#197): IndexedDB `readCache.ts` con LRU eviction (20 entries). 3-tier lookup en `useBusinessData`: memory → IndexedDB → Firestore. `StaleBanner` para datos stale. Incremental loading (`isLoadingComments`, `stale` fields)
 - **Accesibilidad** (#196): `contrast.ts` (WCAG 2.0), `aria-live` en contadores dinamicos, `role=alertdialog` en dialogs destructivos, `PasswordField` con `helperText` nativo (auto `aria-describedby`)
 - **Rating prompt** (#199): `useRatingPrompt` hook detecta check-ins recientes (2-8h) sin calificar. `RatingPromptBanner` en HomeScreen. 3/dia cap. 4 analytics events
-- **Tests**: 212 test files (95 frontend + 117 backend) cubriendo utils, services, hooks, contexts, auth components (PasswordField, PasswordStrength, validatePassword), onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, 34 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **BusinessScopeContext** (#306): `src/context/BusinessScopeContext.tsx` — contexto local al subarbol de `BusinessSheetContent` que expone `{ businessId, businessName, location }`. Elimina prop-drilling de `businessId`/`businessName` a traves de 11 componentes del dominio Business. Componentes consumidores: `FavoriteButton`, `BusinessTags`, `BusinessPriceLevel`, `CheckInButton`, `AddToListDialog`, `RecommendDialog`, `BusinessComments`, `BusinessQuestions`, `OpinionesTab`, `MenuPhotoUpload`, `MenuPhotoSection`
+- **businessMap singleton** (#302): `src/utils/businessMap.ts` — `getBusinessMap()` devuelve `Map<string, Business>` memoizado a nivel modulo. `getBusinessById(id)` para lookups O(1). Reemplaza `allBusinesses.find()` disperso en 6+ componentes/hooks. `__resetBusinessMap()` para tests
+- **Offline Lists CRUD** (#304): 6 nuevas variantes de `OfflineActionType` para operaciones de listas. `list_delete` bloqueado intencionalmente (cascade delete inseguro). ID generado client-side via `generateListId()` para writes optimistas sin conexion. `MapErrorBoundary` en `SearchScreen` con auto-fallback a list view
+- **HELP_GROUPS registry** (#311): Array declarativo `HELP_GROUPS` en `src/components/profile/helpGroups.tsx` — patron equivalente a `HOME_SECTIONS`. `HelpSection.tsx` itera el array; agregar topic nuevo = agregar entrada al array, sin tocar JSX del orquestador
+- **Tests**: 212+ test files cubriendo utils, services, hooks, contexts, auth components, onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, BusinessScopeContext, businessMap, MapErrorBoundary, helpGroups, 34 Cloud Functions test files. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)

@@ -53,9 +53,10 @@ export async function fanOutToFollowers(
     return;
   }
 
-  // Get all followers of the actor
+  // Get followers up to the recipient cap — limit at query level to avoid fetching unbounded collections
   const followersSnap = await db.collection('follows')
     .where('followedId', '==', data.actorId)
+    .limit(FANOUT_MAX_RECIPIENTS_PER_ACTION)
     .get();
 
   if (followersSnap.empty) {
@@ -69,8 +70,7 @@ export async function fanOutToFollowers(
   const now = Date.now();
   const cutoff = now - FANOUT_DEDUP_WINDOW_MS;
 
-  // Enforce recipient cap to bound write cost (#300 H-3)
-  const recipients = followersSnap.docs.slice(0, FANOUT_MAX_RECIPIENTS_PER_ACTION);
+  const recipients = followersSnap.docs;
 
   let batch = db.batch();
   let count = 0;

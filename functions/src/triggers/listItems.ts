@@ -25,7 +25,7 @@ export const onListItemCreated = onDocumentCreated(
         .where('addedBy', '==', addedBy)
         .where('createdAt', '>=', startOfDay)
         .count().get();
-      const exceeded = countSnap.data().count > DAILY_LIMIT;
+      const exceeded = countSnap.data().count >= DAILY_LIMIT;
 
       if (exceeded) {
         // Delete the offending document FIRST (admin SDK bypasses rules)
