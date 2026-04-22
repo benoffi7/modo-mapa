@@ -175,7 +175,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <BookmarkBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
           <Typography variant="body2" color="text.secondary">{MSG_LIST.emptyLists}</Typography>
-          <Typography variant="caption" color="text.secondary">Crea una para organizar tus comercios favoritos</Typography>
+          <Typography variant="caption" color="text.secondary">Creá una para organizar tus comercios favoritos</Typography>
         </Box>
       ) : (
         <ListCardGrid

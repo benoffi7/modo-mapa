@@ -22,7 +22,7 @@ export default function RecentSearches() {
           variant="text"
           size="small"
           onClick={clearHistory}
-          sx={{ minWidth: 0, p: 0, color: 'text.disabled', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: 'text.secondary', bgcolor: 'transparent' } }}
+          sx={{ minWidth: 44, minHeight: 44, color: 'text.disabled', fontSize: '0.75rem', textTransform: 'none', px: 1, '&:hover': { color: 'text.secondary', bgcolor: 'transparent' } }}
         >
           Borrar
         </Button>

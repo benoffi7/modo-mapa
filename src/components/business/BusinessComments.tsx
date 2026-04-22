@@ -9,6 +9,7 @@ import {
   Collapse,
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
@@ -25,8 +26,6 @@ import { logger } from '../../utils/logger';
 import type { SortMode } from '../../hooks/useCommentsListFilters';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   comments: Comment[];
   userCommentLikes: Set<string>;
   isLoading: boolean;
@@ -34,7 +33,9 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default memo(function BusinessComments({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
+export default memo(function BusinessComments({ comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
+  const { businessId, businessName } = useBusinessScope();
+
   // Thread state (needed by useCommentListBase for expandThread)
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const expandThread = useCallback((id: string) => {

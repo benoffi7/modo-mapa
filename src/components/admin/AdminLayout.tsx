@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import AppBar from '@mui/material/AppBar';
@@ -8,17 +9,14 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Badge from '@mui/material/Badge';
 import { useAuth } from '../../context/AuthContext';
+// Eager: paneles sin recharts.
 import DashboardOverview from './DashboardOverview';
 import ActivityFeed from './ActivityFeed';
-import FirebaseUsage from './FirebaseUsage';
 import AbuseAlerts from './AbuseAlerts';
 import FeedbackList from './FeedbackList';
-import TrendsPanel from './TrendsPanel';
 import UsersPanel from './UsersPanel';
 import BackupsPanel from './BackupsPanel';
 import PhotoReviewPanel from './PhotoReviewPanel';
-import PerformancePanel from './PerformancePanel';
-import FeaturesPanel from './FeaturesPanel';
 import FeaturedListsPanel from './FeaturedListsPanel';
 import NotificationsPanel from './NotificationsPanel';
 import SocialPanel from './SocialPanel';
@@ -26,6 +24,21 @@ import SpecialsPanel from './SpecialsPanel';
 import AchievementsPanel from './AchievementsPanel';
 import ConfigPanel from './ConfigPanel';
 import DeletionAuditPanel from './audit/DeletionAuditPanel';
+
+// Lazy: paneles que importan recharts (~60-80KB gzip combinado).
+// Solo se bajan cuando el admin hace click en ese tab.
+const TrendsPanel = lazy(() => import('./TrendsPanel'));
+const FirebaseUsage = lazy(() => import('./FirebaseUsage'));
+const PerformancePanel = lazy(() => import('./PerformancePanel'));
+const FeaturesPanel = lazy(() => import('./FeaturesPanel'));
+
+function AdminPanelLoader() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+      <CircularProgress size={28} />
+    </Box>
+  );
+}
 
 export default function AdminLayout() {
   const [tab, setTab] = useState(0);
@@ -66,22 +79,24 @@ export default function AdminLayout() {
         <Tab label="Especiales" />
         <Tab label="Logros" />
         <Tab label="Configuración" />
-        <Tab label="Auditorias" />
+        <Tab label="Auditorías" />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {tab === 0 && <DashboardOverview />}
         {tab === 1 && <ActivityFeed />}
         {tab === 2 && <FeedbackList />}
-        {tab === 3 && <TrendsPanel />}
+        <Suspense fallback={<AdminPanelLoader />}>
+          {tab === 3 && <TrendsPanel />}
+          {tab === 6 && <FirebaseUsage />}
+          {tab === 11 && <PerformancePanel />}
+          {tab === 12 && <FeaturesPanel />}
+        </Suspense>
         {tab === 4 && <UsersPanel />}
         {tab === 5 && <SocialPanel />}
-        {tab === 6 && <FirebaseUsage />}
         {tab === 7 && <AbuseAlerts onPendingCount={setAlertsPendingCount} />}
         {tab === 8 && <BackupsPanel />}
         {tab === 9 && <PhotoReviewPanel />}
         {tab === 10 && <FeaturedListsPanel />}
-        {tab === 11 && <PerformancePanel />}
-        {tab === 12 && <FeaturesPanel />}
         {tab === 13 && <NotificationsPanel />}
         {tab === 14 && <SpecialsPanel />}
         {tab === 15 && <AchievementsPanel />}

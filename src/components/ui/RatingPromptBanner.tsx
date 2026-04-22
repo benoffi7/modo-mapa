@@ -1,6 +1,7 @@
 import { Box, Stack, Typography, Button, IconButton, Fade } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import CloseIcon from '@mui/icons-material/Close';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface RatingPromptBannerProps {
   businessName: string;
@@ -39,7 +40,7 @@ export default function RatingPromptBanner({ businessName, onRate, onDismiss }: 
           >
             Calificar
           </Button>
-          <IconButton size="small" onClick={onDismiss} aria-label="Cerrar">
+          <IconButton size="small" onClick={onDismiss} aria-label={MSG_COMMON.closeAriaLabel}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Stack>

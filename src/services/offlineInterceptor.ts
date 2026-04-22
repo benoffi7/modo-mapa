@@ -8,7 +8,13 @@ export const OFFLINE_ENQUEUED_MSG = 'Guardado offline — se sincronizará al re
 export async function withOfflineSupport<T>(
   isOffline: boolean,
   actionType: OfflineActionType,
-  actionMeta: { userId: string; businessId: string; businessName?: string | undefined; referenceId?: string | undefined },
+  actionMeta: {
+    userId: string;
+    businessId: string;
+    businessName?: string | undefined;
+    referenceId?: string | undefined;
+    listId?: string | undefined;
+  },
   payload: OfflineActionPayload,
   onlineAction: () => Promise<T>,
   toast?: { info: (msg: string) => void },
@@ -28,6 +34,9 @@ export async function withOfflineSupport<T>(
   }
   if (actionMeta.referenceId) {
     actionData.referenceId = actionMeta.referenceId;
+  }
+  if (actionMeta.listId) {
+    actionData.listId = actionMeta.listId;
   }
   await enqueue(actionData);
 

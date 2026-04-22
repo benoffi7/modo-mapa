@@ -2,19 +2,20 @@ import { useState, useRef } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, LinearProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
 import { logger } from '../../utils/logger';
 
 interface Props {
   open: boolean;
-  businessId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function MenuPhotoUpload({ open, businessId, onClose, onSuccess }: Props) {
+export default function MenuPhotoUpload({ open, onClose, onSuccess }: Props) {
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
+  const { businessId } = useBusinessScope();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

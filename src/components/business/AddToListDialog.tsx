@@ -18,6 +18,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useOptionalBusinessScope } from '../../context/BusinessScopeContext';
 import { MAX_LISTS } from '../../constants/lists';
 import {
   createList,
@@ -34,13 +35,16 @@ import { logger } from '../../utils/logger';
 interface Props {
   open: boolean;
   onClose: () => void;
-  businessId: string;
-  businessName: string;
+  businessId?: string;
+  businessName?: string;
 }
 
-export default function AddToListDialog({ open, onClose, businessId, businessName }: Props) {
+export default function AddToListDialog({ open, onClose, businessId: propBusinessId, businessName: propBusinessName }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const scope = useOptionalBusinessScope();
+  const businessId = propBusinessId ?? scope?.businessId ?? '';
+  const businessName = propBusinessName ?? scope?.businessName ?? '';
 
   const [lists, setLists] = useState<SharedList[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
@@ -170,8 +174,10 @@ export default function AddToListDialog({ open, onClose, businessId, businessNam
                       </Box>
                     }
                     secondary={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
-                    primaryTypographyProps={{ fontSize: '0.9rem' }}
-                    secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                    slotProps={{
+                      primary: { sx: { fontSize: '0.9rem' } },
+                      secondary: { sx: { fontSize: '0.75rem' } },
+                    }}
                   />
                   {actionInProgress === list.id && <CircularProgress size={16} />}
                 </ListItemButton>

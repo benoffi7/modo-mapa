@@ -1,45 +1,24 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import IconButton from '@mui/material/IconButton';
-import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import SearchIcon from '@mui/icons-material/Search';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { reviewAbuseLog, dismissAbuseLog } from '../../services/admin';
 import { useAbuseLogsRealtime } from '../../hooks/useAbuseLogsRealtime';
 import { useToast } from '../../context/ToastContext';
-import { formatDateShort } from '../../utils/formatDate';
-import { ABUSE_TYPE_COLORS, ABUSE_TYPE_LABELS } from '../../constants';
 import AdminPanelWrapper from './AdminPanelWrapper';
+import AlertsFilters from './alerts/AlertsFilters';
+import AlertsTable from './alerts/AlertsTable';
 import KpiCard from './alerts/KpiCard';
 import ReincidentesView from './alerts/ReincidentesView';
 import {
   computeKpis, getDateThreshold, exportToCsv, getSeverity,
-  ALL_TYPES, PAGE_SIZE, DATE_PRESETS, STATUS_OPTIONS,
-  SEVERITY_CONFIG, SEVERITY_FILTER_OPTIONS,
+  ALL_TYPES, PAGE_SIZE,
 } from './alerts/alertsHelpers';
 import type { AbuseType, SortField, SortDir, DatePreset, StatusFilter, SeverityFilter } from './alerts/alertsHelpers';
 import { logger } from '../../utils/logger';
@@ -64,7 +43,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [innerTab, setInnerTab] = useState<'alerts' | 'reincidentes'>('alerts');
 
-  // Toast for new alerts
+  // Toast for new alerts (mantener en el orquestador para no romper al split).
   const toast = useToast();
   const prevNewCount = useRef(0);
 
@@ -157,7 +136,11 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortField(field); setSortDir(field === 'timestamp' ? 'desc' : 'asc'); }
   };
-  const clearFilters = () => { setTypeFilter('all'); setCollectionFilter(''); setUserSearch(''); setDatePreset('all'); setStatusFilter('pending'); setSeverityFilter('all'); setVisibleCount(PAGE_SIZE); };
+  const clearFilters = () => {
+    setTypeFilter('all'); setCollectionFilter(''); setUserSearch('');
+    setDatePreset('all'); setStatusFilter('pending'); setSeverityFilter('all');
+    setVisibleCount(PAGE_SIZE);
+  };
   const hasActiveFilters = typeFilter !== 'all' || collectionFilter !== '' || userSearch !== '' || datePreset !== 'all' || statusFilter !== 'pending' || severityFilter !== 'all';
   const trendIcon = useMemo(() => {
     if (!kpis) return null;
@@ -165,7 +148,10 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
     if (kpis.alertsToday < kpis.alertsYesterday) return <TrendingDownIcon fontSize="small" sx={{ color: 'success.main' }} />;
     return <TrendingFlatIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
   }, [kpis]);
-  const handleExport = () => { const d = new Date(); exportToCsv(filtered, `alertas-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`); };
+  const handleExport = () => {
+    const d = new Date();
+    exportToCsv(filtered, `alertas-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`);
+  };
 
   return (
     <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las alertas.">
@@ -189,129 +175,55 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
 
       {innerTab === 'alerts' && (
         <>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-            {/* Row 1: Periodo + Estado */}
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Periodo</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {DATE_PRESETS.map((p) => <Chip key={p.key} label={p.label} size="small" variant={datePreset === p.key ? 'filled' : 'outlined'} color={datePreset === p.key ? 'primary' : 'default'} onClick={() => setDatePreset(datePreset === p.key ? 'all' : p.key)} />)}
-              </Box>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Estado</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {STATUS_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={statusFilter === o.key ? 'filled' : 'outlined'} color={statusFilter === o.key ? o.color : 'default'} onClick={() => setStatusFilter(o.key)} />)}
-              </Box>
-            </Box>
+          <AlertsFilters
+            datePreset={datePreset}
+            onDatePresetChange={setDatePreset}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            severityFilter={severityFilter}
+            onSeverityFilterChange={setSeverityFilter}
+            collectionFilter={collectionFilter}
+            onCollectionFilterChange={setCollectionFilter}
+            userSearch={userSearch}
+            onUserSearchChange={setUserSearch}
+            collections={collections}
+            typeCounts={typeCounts}
+            totalLogs={logs?.length ?? 0}
+            hasActiveFilters={hasActiveFilters}
+            onClear={clearFilters}
+            onExport={handleExport}
+            exportDisabled={filtered.length === 0}
+          />
 
-            {/* Row 2: Tipo + Severidad */}
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Tipo</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                <Badge badgeContent={logs?.length ?? 0} max={999} sx={{ '& .MuiBadge-badge': { bgcolor: 'text.primary', color: 'background.paper' } }}>
-                  <Chip label="Todas" variant={typeFilter === 'all' ? 'filled' : 'outlined'} onClick={() => setTypeFilter('all')} size="small" />
-                </Badge>
-                {ALL_TYPES.map((type) => (
-                  <Badge key={type} badgeContent={typeCounts[type]} color={ABUSE_TYPE_COLORS[type]} max={999}>
-                    <Chip label={ABUSE_TYPE_LABELS[type]} color={ABUSE_TYPE_COLORS[type]} variant={typeFilter === type ? 'filled' : 'outlined'} onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)} size="small" />
-                  </Badge>
-                ))}
-              </Box>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Severidad</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {SEVERITY_FILTER_OPTIONS.map((o) => <Chip key={o.key} label={o.label} size="small" variant={severityFilter === o.key ? 'filled' : 'outlined'} color={severityFilter === o.key && o.key !== 'all' ? SEVERITY_CONFIG[o.key].color : 'default'} onClick={() => setSeverityFilter(o.key)} />)}
-              </Box>
-            </Box>
-
-            {/* Row 3: Colección + búsqueda + acciones — full width */}
-            <Box sx={{ gridColumn: { md: '1 / -1' }, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-              {collections.length > 0 && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Colección</Typography>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                    {collections.map((col) => <Chip key={col} label={col} size="small" variant={collectionFilter === col ? 'filled' : 'outlined'} onClick={() => setCollectionFilter(collectionFilter === col ? '' : col)} />)}
-                  </Box>
-                </Box>
-              )}
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}>
-                <TextField size="small" placeholder="Buscar por userId..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} sx={{ minWidth: 200 }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }} />
-                {hasActiveFilters && <Button size="small" onClick={clearFilters}>Limpiar</Button>}
-                <Tooltip title="Exportar CSV"><span><IconButton size="small" onClick={handleExport} disabled={filtered.length === 0}><FileDownloadIcon fontSize="small" /></IconButton></span></Tooltip>
-              </Box>
-            </Box>
-          </Box>
-
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>{filtered.length} alerta{filtered.length !== 1 ? 's' : ''}{hasActiveFilters ? ' (filtrado)' : ''}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+            {filtered.length} alerta{filtered.length !== 1 ? 's' : ''}{hasActiveFilters ? ' (filtrado)' : ''}
+          </Typography>
 
           {filtered.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>{hasActiveFilters ? 'Sin resultados para los filtros seleccionados.' : 'Sin alertas de abuso.'}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+              {hasActiveFilters ? 'Sin resultados para los filtros seleccionados.' : 'Sin alertas de abuso.'}
+            </Typography>
           ) : (
             <>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell padding="checkbox" />
-                      <TableCell><TableSortLabel active={sortField === 'type'} direction={sortField === 'type' ? sortDir : 'asc'} onClick={() => handleSort('type')}>Tipo</TableSortLabel></TableCell>
-                      <TableCell>Severidad</TableCell>
-                      <TableCell>Usuario</TableCell>
-                      <TableCell><TableSortLabel active={sortField === 'collection'} direction={sortField === 'collection' ? sortDir : 'asc'} onClick={() => handleSort('collection')}>Colección</TableSortLabel></TableCell>
-                      <TableCell>Detalle</TableCell>
-                      <TableCell><TableSortLabel active={sortField === 'timestamp'} direction={sortField === 'timestamp' ? sortDir : 'desc'} onClick={() => handleSort('timestamp')}>Fecha</TableSortLabel></TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {visible.map((log) => {
-                      const isExpanded = expandedId === log.id;
-                      const userTotal = userAlertCounts.get(log.userId) ?? 0;
-                      const severity = getSeverity(log);
-                      return (
-                        <Fragment key={log.id}>
-                          <TableRow hover sx={{ cursor: 'pointer', '& > *': { borderBottom: isExpanded ? 'unset' : undefined } }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
-                            <TableCell padding="checkbox"><IconButton size="small">{isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton></TableCell>
-                            <TableCell><Chip label={ABUSE_TYPE_LABELS[log.type]} color={ABUSE_TYPE_COLORS[log.type]} size="small" /></TableCell>
-                            <TableCell><Chip label={SEVERITY_CONFIG[severity].label} color={SEVERITY_CONFIG[severity].color} size="small" variant="outlined" /></TableCell>
-                            <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{log.userId.slice(0, 12)}</TableCell>
-                            <TableCell>{log.collection}</TableCell>
-                            <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.detail}</TableCell>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateShort(log.timestamp)}</TableCell>
-                          </TableRow>
-                          {isExpanded && (
-                            <TableRow key={`detail-${log.id}`}>
-                              <TableCell colSpan={7} sx={{ py: 0, px: 1 }}>
-                                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1, my: 1 }}>
-                                  <Typography variant="subtitle2" gutterBottom>Detalle completo</Typography>
-                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{log.detail}</Typography>
-                                  <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                                    <Typography variant="caption" color="text.secondary">Usuario: {log.userId}</Typography>
-                                    <Typography variant="caption" color="text.secondary">Colección: {log.collection}</Typography>
-                                    <Typography variant="caption" color="text.secondary">Fecha: {log.timestamp.toLocaleString()}</Typography>
-                                    <Chip label={`${userTotal} alerta${userTotal !== 1 ? 's' : ''}`} size="small" variant="outlined" />
-                                    {userTotal > 3 && <Chip icon={<WarningAmberIcon />} label="Reincidente" size="small" color="error" variant="outlined" />}
-                                    {log.reviewed && <Chip label="Revisada" size="small" color="success" variant="outlined" />}
-                                    {log.dismissed && <Chip label="Descartada" size="small" variant="outlined" />}
-                                  </Box>
-                                  {!log.reviewed && !log.dismissed && (
-                                    <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
-                                      <Button size="small" variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} disabled={actionInProgress === log.id} onClick={(e) => handleReview(log.id, e)}>Revisar</Button>
-                                      <Button size="small" variant="outlined" color="inherit" startIcon={<DeleteOutlineIcon />} disabled={actionInProgress === log.id} onClick={(e) => handleDismiss(log.id, e)}>Descartar</Button>
-                                    </Box>
-                                  )}
-                                </Box>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <AlertsTable
+                rows={visible}
+                expandedId={expandedId}
+                onExpand={setExpandedId}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                userAlertCounts={userAlertCounts}
+                actionInProgress={actionInProgress}
+                onReview={handleReview}
+                onDismiss={handleDismiss}
+              />
               {hasMore && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Button variant="outlined" size="small" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>Cargar más ({filtered.length - visibleCount} restantes)</Button>
+                  <Button variant="outlined" size="small" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                    Cargar más ({filtered.length - visibleCount} restantes)
+                  </Button>
                 </Box>
               )}
             </>

@@ -35,10 +35,10 @@ export default function NotificationsPanel() {
               <StatCard label="Total enviadas" value={data.total} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <StatCard label="Leidas" value={data.read} />
+              <StatCard label="Leídas" value={data.read} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <StatCard label="No leidas" value={data.unread} />
+              <StatCard label="No leídas" value={data.unread} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
               <StatCard label={`Tasa de lectura (${globalReadRate}%)`} value={globalReadRate} />
@@ -52,8 +52,8 @@ export default function NotificationsPanel() {
                 <TableRow>
                   <TableCell>Tipo</TableCell>
                   <TableCell align="right">Total</TableCell>
-                  <TableCell align="right">Leidas</TableCell>
-                  <TableCell align="right">No leidas</TableCell>
+                  <TableCell align="right">Leídas</TableCell>
+                  <TableCell align="right">No leídas</TableCell>
                   <TableCell>Tasa de lectura</TableCell>
                 </TableRow>
               </TableHead>

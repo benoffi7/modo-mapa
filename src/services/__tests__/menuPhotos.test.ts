@@ -6,6 +6,11 @@ vi.mock('../../config/converters', () => ({ menuPhotoConverter: {} }));
 vi.mock('../businessDataCache', () => ({ invalidateBusinessCache: vi.fn() }));
 vi.mock('../../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
+const mockMeasuredGetDocs = vi.fn();
+vi.mock('../../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+}));
+
 const mockCallableFn = vi.fn();
 const mockHttpsCallable = vi.fn<(f: unknown, n: string) => typeof mockCallableFn>(() => mockCallableFn);
 vi.mock('firebase/functions', () => ({

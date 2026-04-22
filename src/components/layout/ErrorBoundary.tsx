@@ -3,6 +3,7 @@ import type { ReactNode, ErrorInfo } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { logger } from '../../utils/logger';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface Props {
   children: ReactNode;
@@ -52,9 +53,9 @@ export default class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <ErrorOutlineIcon sx={{ fontSize: 64, color: 'text.secondary' }} />
-          <Typography variant="h6">Algo salió mal</Typography>
+          <Typography variant="h6">{MSG_COMMON.genericErrorTitle}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Ocurrió un error inesperado. Intentá recargar la página.
+            {MSG_COMMON.genericErrorBody}
           </Typography>
           <Button variant="contained" onClick={this.handleReset}>
             Reintentar

@@ -11,6 +11,11 @@ import type {
   CheckinDeletePayload,
   FollowPayload,
   RecommendationPayload,
+  ListCreatePayload,
+  ListUpdatePayload,
+  ListTogglePublicPayload,
+  ListDeletePayload,
+  ListItemAddPayload,
 } from '../types/offline';
 
 let syncing = false;
@@ -119,6 +124,46 @@ export async function executeAction(action: OfflineAction): Promise<void> {
     case 'recommendation_read': {
       const { markRecommendationAsRead } = await import('./recommendations');
       await markRecommendationAsRead(action.referenceId ?? businessId);
+      break;
+    }
+    case 'list_create': {
+      const { name, description, icon } = p as ListCreatePayload;
+      const { createList } = await import('./sharedLists');
+      await createList(userId, name, description, icon, action.listId);
+      break;
+    }
+    case 'list_update': {
+      const { name, description, color, icon } = p as ListUpdatePayload;
+      const { updateList } = await import('./sharedLists');
+      if (!action.listId) throw new Error('list_update requires listId');
+      await updateList(action.listId, name, description, color, icon);
+      break;
+    }
+    case 'list_toggle_public': {
+      const { isPublic } = p as ListTogglePublicPayload;
+      const { toggleListPublic } = await import('./sharedLists');
+      if (!action.listId) throw new Error('list_toggle_public requires listId');
+      await toggleListPublic(action.listId, isPublic);
+      break;
+    }
+    case 'list_delete': {
+      const { ownerId } = p as ListDeletePayload;
+      const { deleteList } = await import('./sharedLists');
+      if (!action.listId) throw new Error('list_delete requires listId');
+      await deleteList(action.listId, ownerId);
+      break;
+    }
+    case 'list_item_add': {
+      const { addedBy } = p as ListItemAddPayload;
+      const { addBusinessToList } = await import('./sharedLists');
+      if (!action.listId) throw new Error('list_item_add requires listId');
+      await addBusinessToList(action.listId, businessId, addedBy);
+      break;
+    }
+    case 'list_item_remove': {
+      const { removeBusinessFromList } = await import('./sharedLists');
+      if (!action.listId) throw new Error('list_item_remove requires listId');
+      await removeBusinessFromList(action.listId, businessId);
       break;
     }
   }

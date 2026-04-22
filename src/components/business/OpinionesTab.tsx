@@ -7,8 +7,6 @@ import type { Comment } from '../../types';
 type SubTab = 'comments' | 'questions';
 
 interface Props {
-  businessId: string;
-  businessName: string;
   comments: Comment[];
   regularComments: Comment[];
   userCommentLikes: Set<string>;
@@ -18,8 +16,6 @@ interface Props {
 }
 
 export default memo(function OpinionesTab({
-  businessId,
-  businessName,
   comments,
   regularComments,
   userCommentLikes,
@@ -42,8 +38,6 @@ export default memo(function OpinionesTab({
       </Tabs>
       <Box sx={{ display: subTab === 'comments' ? 'block' : 'none' }}>
         <BusinessComments
-          businessId={businessId}
-          businessName={businessName}
           comments={regularComments}
           userCommentLikes={userCommentLikes}
           isLoading={isLoading}
@@ -53,8 +47,6 @@ export default memo(function OpinionesTab({
       </Box>
       <Box sx={{ display: subTab === 'questions' ? 'block' : 'none' }}>
         <BusinessQuestions
-          businessId={businessId}
-          businessName={businessName}
           comments={comments}
           userCommentLikes={userCommentLikes}
           isLoading={isLoading}

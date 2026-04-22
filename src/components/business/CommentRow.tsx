@@ -173,7 +173,7 @@ const CommentRow = memo(function CommentRow({
                 <IconButton
                   size="small"
                   onClick={() => onToggleLike(comment.id)}
-                  sx={{ color: isLiked ? LIKE_COLOR : 'text.secondary', p: 0.5 }}
+                  sx={{ color: isLiked ? LIKE_COLOR : 'text.secondary', minWidth: 44, minHeight: 44 }}
                   aria-label={isLiked ? 'Quitar like' : 'Dar like'}
                 >
                   {isLiked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
@@ -233,7 +233,7 @@ const CommentRow = memo(function CommentRow({
             <IconButton
               size="small"
               onClick={() => onStartEdit(comment)}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }}
               aria-label="Editar comentario"
             >
               <EditOutlinedIcon sx={{ fontSize: 18 }} />
@@ -242,7 +242,7 @@ const CommentRow = memo(function CommentRow({
           <IconButton
             size="small"
             onClick={() => onDelete(comment)}
-            sx={{ color: 'text.secondary' }}
+            sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }}
             aria-label="Eliminar comentario"
           >
             <DeleteOutlineIcon sx={{ fontSize: 18 }} />

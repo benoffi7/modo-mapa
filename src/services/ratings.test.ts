@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Firebase before importing the service
 vi.mock('../config/firebase', () => ({ db: {} }));
@@ -11,6 +11,21 @@ const mockGetDoc = vi.fn();
 const mockGetDocs = vi.fn();
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
+
+const mockMeasureAsync = vi.fn((_name: string, fn: () => Promise<unknown>) => fn());
+const mockMeasuredGetDoc = vi.fn((_name: string, ref: unknown) => mockGetDoc(ref));
+const mockMeasuredGetDocs = vi.fn((_name: string, q: unknown) => mockGetDocs(q));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measureAsync: (name: string, fn: () => Promise<unknown>) => mockMeasureAsync(name, fn),
+  measuredGetDoc: (name: string, ref: unknown) => mockMeasuredGetDoc(name, ref),
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+}));
+
+const mockGetCountOfflineSafe = vi.fn();
+vi.mock('./getCountOfflineSafe', () => ({
+  getCountOfflineSafe: (...args: unknown[]) => mockGetCountOfflineSafe(...args),
+}));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
@@ -25,7 +40,14 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
 }));
 
-import { upsertRating, upsertCriteriaRating, fetchUserRatings, fetchRatingsByBusinessIds } from './ratings';
+import {
+  upsertRating,
+  upsertCriteriaRating,
+  fetchUserRatings,
+  fetchUserRatingsCount,
+  hasUserRatedBusiness,
+  fetchRatingsByBusinessIds,
+} from './ratings';
 
 describe('upsertRating — input validation', () => {
   beforeEach(() => {
@@ -194,5 +216,45 @@ describe('fetchRatingsByBusinessIds', () => {
     const ids = Array.from({ length: 12 }, (_, i) => `b${i}`);
     const result = await fetchRatingsByBusinessIds(ids);
     expect(result).toHaveLength(2);
+  });
+});
+
+describe('measureAsync instrumentation', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('fetchUserRatings emits name ratings_byUser', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchUserRatings('u1');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('ratings_byUser');
+  });
+
+  it('fetchUserRatingsCount emits name ratings_countByUser', async () => {
+    mockGetCountOfflineSafe.mockResolvedValue(5);
+    await fetchUserRatingsCount('u1');
+    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('ratings_countByUser');
+  });
+
+  it('hasUserRatedBusiness emits name ratings_hasUser', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => true });
+    await hasUserRatedBusiness('u1', 'b1');
+    expect(mockMeasuredGetDoc.mock.calls.map((c) => c[0])).toContain('ratings_hasUser');
+  });
+
+  it('fetchRatingsByBusinessIds emits name ratings_byBusinessIds', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchRatingsByBusinessIds(['b1', 'b2']);
+    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('ratings_byBusinessIds');
+  });
+
+  it('upsertRating emits name ratings_upsertExists', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => false });
+    await upsertRating('u1', 'b1', 4);
+    expect(mockMeasuredGetDoc.mock.calls.map((c) => c[0])).toContain('ratings_upsertExists');
+  });
+
+  it('upsertCriteriaRating emits name ratings_criteriaExists', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ criteria: {} }) });
+    await upsertCriteriaRating('u1', 'b1', { food: 4 });
+    expect(mockMeasuredGetDoc.mock.calls.map((c) => c[0])).toContain('ratings_criteriaExists');
   });
 });

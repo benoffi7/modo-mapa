@@ -39,7 +39,7 @@ function BusinessRow({ business, distance, onSelect }: BusinessRowProps) {
             </Typography>
           </Box>
         }
-        primaryTypographyProps={{ fontWeight: 500, fontSize: '0.95rem' }}
+        slotProps={{ primary: { sx: { fontWeight: 500, fontSize: '0.95rem' } } }}
       />
       <StarIcon sx={{ color: 'warning.main', fontSize: 18 }} />
     </ListItemButton>

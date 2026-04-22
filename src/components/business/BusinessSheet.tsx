@@ -101,6 +101,7 @@ export default function BusinessSheet() {
         <Box sx={{ overflow: 'auto', maxHeight: '85dvh', pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
           <DragHandle onClose={handleClose} showTooltip={showTooltip && isOpen} />
           <BusinessSheetContent
+            key={selectedBusiness.id}
             business={selectedBusiness}
             initialTab={selectedBusinessTab ?? undefined}
             onTabConsumed={() => setSelectedBusinessTab(null)}

@@ -16,7 +16,14 @@ export type OfflineActionType =
   | 'follow_add'
   | 'follow_remove'
   | 'recommendation_create'
-  | 'recommendation_read';
+  | 'recommendation_read'
+  // Lists domain (#304)
+  | 'list_create'
+  | 'list_update'
+  | 'list_toggle_public'
+  | 'list_delete'
+  | 'list_item_add'
+  | 'list_item_remove';
 
 /** Status de una acción en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -31,6 +38,8 @@ export interface OfflineAction {
   businessName?: string;
   /** Generic reference ID for actions where businessId doesn't apply (e.g. recommendation_read stores recommendationId here) */
   referenceId?: string;
+  /** List ID for list_* action types (#304) */
+  listId?: string;
   createdAt: number;
   retryCount: number;
   status: OfflineActionStatus;
@@ -50,6 +59,12 @@ export type OfflineActionPayload =
   | CheckinDeletePayload
   | FollowPayload
   | RecommendationPayload
+  // Lists domain (#304)
+  | ListCreatePayload
+  | ListUpdatePayload
+  | ListTogglePublicPayload
+  | ListDeletePayload
+  | ListItemAddPayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -106,6 +121,32 @@ export interface RecommendationPayload {
 
 export interface FollowPayload {
   followedId: string;
+}
+
+/** Lists domain payloads (#304) */
+export interface ListCreatePayload {
+  name: string;
+  description: string;
+  icon?: string;
+}
+
+export interface ListUpdatePayload {
+  name: string;
+  description: string;
+  color?: string;
+  icon?: string;
+}
+
+export interface ListTogglePublicPayload {
+  isPublic: boolean;
+}
+
+export interface ListDeletePayload {
+  ownerId: string;
+}
+
+export interface ListItemAddPayload {
+  addedBy?: string;
 }
 
 /** For action types that need no extra data beyond userId/businessId on the action */

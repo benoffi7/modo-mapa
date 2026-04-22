@@ -117,7 +117,7 @@ export default function ActivityDigestSection() {
             trackEvent('digest_item_tapped', { type: 'view_all', count: 0 });
             setActiveTab('perfil');
           }}
-          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
+          sx={{ minWidth: 44, minHeight: 44, fontSize: '0.75rem', textTransform: 'none', px: 1 }}
         >
           Ver todas
         </Button>

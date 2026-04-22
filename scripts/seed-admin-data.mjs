@@ -851,6 +851,63 @@ async function seed() {
     });
   }
 
+  // ── config/perfCounters (Cloud Function timing samples) ─────────────────
+  console.log('Seeding perf counters for Cloud Functions...');
+  await setDoc(doc(db, 'config', 'perfCounters'), {
+    onCommentCreated: [120, 145, 180, 210, 250, 300, 150, 175],
+    onCommentLikeCreated: [80, 95, 110, 130, 160, 100, 120],
+    onCommentDeleted: [95, 130, 145, 180, 110],
+    onCommentUpdated: [70, 85, 100, 130, 90, 110],
+    onCustomTagCreated: [100, 130, 160, 200, 140],
+    onCustomTagDeleted: [60, 75, 90, 70],
+    onFavoriteCreated: [50, 65, 80, 95, 70],
+    onFavoriteDeleted: [45, 55, 70, 60],
+    onFeedbackCreated: [180, 220, 280, 350, 250],
+    onMenuPhotoCreated: [800, 950, 1200, 1500, 1000],
+    onRatingWritten: [90, 110, 140, 170, 130, 100],
+    onPriceLevelCreated: [60, 75, 90, 70],
+    onPriceLevelUpdated: [55, 65, 80, 65],
+    onFollowCreated: [120, 150, 180, 220, 160],
+    onFollowDeleted: [80, 100, 130, 95],
+    onRecommendationCreated: [140, 170, 220, 270, 190],
+    onUserCreated: [45, 60, 80, 55],
+  });
+
+  // ── Enrich today's dailyMetrics with performance.{vitals, queries, functions} ──
+  // So QueryLatencyTable + FunctionTimingTable render immediately post-seed.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  await setDoc(doc(db, 'dailyMetrics', todayStr), {
+    performance: {
+      vitals: {
+        lcp: { p50: 2100, p75: 2800, p95: 3400 },
+        inp: { p50: 150, p75: 220, p95: 380 },
+        cls: { p50: 0.05, p75: 0.08, p95: 0.15 },
+        ttfb: { p50: 400, p75: 650, p95: 950 },
+      },
+      queries: {
+        businessData_ratings: { p50: 180, p95: 420, count: 250 },
+        businessData_comments: { p50: 240, p95: 560, count: 250 },
+        businessData_userTags: { p50: 150, p95: 380, count: 250 },
+        businessData_menuPhotos: { p50: 160, p95: 380, count: 250 },
+        userProfile_comments: { p50: 220, p95: 520, count: 40 },
+        userProfile_ratings: { p50: 180, p95: 400, count: 40 },
+        ratings_byUser: { p50: 140, p95: 320, count: 80 },
+        notifications: { p50: 120, p95: 280, count: 180 },
+        unreadCount: { p50: 60, p95: 150, count: 240 },
+        follows_followersCount: { p50: 60, p95: 150, count: 40 },
+        userSettings: { p50: 80, p95: 180, count: 200 },
+      },
+      functions: {
+        onCommentCreated: { p50: 175, p95: 280, count: 8 },
+        onCommentLikeCreated: { p50: 110, p95: 160, count: 7 },
+        onRatingWritten: { p50: 120, p95: 170, count: 6 },
+        onMenuPhotoCreated: { p50: 1000, p95: 1500, count: 5 },
+        onFollowCreated: { p50: 160, p95: 220, count: 5 },
+        onRecommendationCreated: { p50: 190, p95: 270, count: 5 },
+      },
+    },
+  }, { merge: true });
+
   // Compute business-level aggregates from seeded data
   const bizFavCounts = {};
   const bizCommentCounts = {};
@@ -954,6 +1011,8 @@ async function seed() {
   console.log('- 12 recommendations (varied senders/recipients, 60% read)');
   console.log('- 10 user settings (all public, notifyRecommendations enabled)');
   console.log('- 7 perf metrics (1 per day, mix mobile/desktop, wifi/4g/3g)');
+  console.log('- 1 config/perfCounters doc with samples for 17 triggers');
+  console.log('- Enriched today dailyMetrics with performance.{vitals,queries,functions}');
   console.log('- 1 trending businesses document (5 sample trending businesses)');
   console.log('- Counters and moderation config');
   console.log('- 1 admin user with custom claim (admin: true)');

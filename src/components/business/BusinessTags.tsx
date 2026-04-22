@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { useFollowedTags } from '../../hooks/useFollowedTags';
 import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
@@ -27,8 +28,6 @@ import DeleteTagDialog from './DeleteTagDialog';
 import { logger } from '../../utils/logger';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   seedTags: string[];
   userTags: UserTag[];
   customTags: CustomTag[];
@@ -42,10 +41,11 @@ interface TagCount {
   userAdded: boolean;
 }
 
-export default memo(function BusinessTags({ businessId, businessName, seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
+export default memo(function BusinessTags({ seedTags, userTags, customTags, isLoading, onTagsChange }: Props) {
   const { user } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { businessId, businessName } = useBusinessScope();
   const { isFollowed: isTagFollowed, followTag, unfollowTag } = useFollowedTags();
 
   const [dialogOpen, setDialogOpen] = useState(false);

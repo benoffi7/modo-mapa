@@ -11,6 +11,7 @@ import SearchBar from './SearchBar';
 import FilterChips from './FilterChips';
 import SearchListView from './SearchListView';
 import BusinessSheet from '../business/BusinessSheet';
+import MapErrorBoundary from './MapErrorBoundary';
 import { FiltersProvider, useFilters } from '../../context/FiltersContext';
 import { useSelection } from '../../context/SelectionContext';
 import { useTab } from '../../context/TabContext';
@@ -19,6 +20,7 @@ import type { BusinessCategory } from '../../types';
 import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useOnboardingHint } from '../../hooks/useOnboardingHint';
 import { trackEvent } from '../../utils/analytics';
+import { MSG_COMMON } from '../../constants/messages';
 import type { SearchViewMode } from '../../types';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
@@ -46,7 +48,7 @@ function MapHint() {
         severity="info"
         variant="filled"
         action={
-          <IconButton size="small" color="inherit" aria-label="Cerrar aviso" onClick={dismiss}>
+          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }
@@ -120,46 +122,48 @@ function SearchFilterBridge() {
  * Supports map/list toggle view.
  */
 export default function SearchScreen() {
-  const [viewMode, setViewMode] = useState<SearchViewMode>('map');
+  const [viewMode, setViewMode] = useState<SearchViewMode>(
+    GOOGLE_MAPS_API_KEY ? 'map' : 'list',
+  );
 
   return (
     <FiltersProvider>
       <SearchFilterBridge />
-      <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
-        <Box
-          sx={{
-            height: '100%',
-            width: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <SearchBar />
-          <FilterChips />
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
-          {viewMode === 'map' ? (
-            <>
+      <Box
+        sx={{
+          height: '100%',
+          width: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <SearchBar />
+        <FilterChips />
+        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        {viewMode === 'map' && GOOGLE_MAPS_API_KEY ? (
+          <MapErrorBoundary onFallback={() => setViewMode('list')}>
+            <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
               <MapView />
               <LocationFAB />
               <OfficeFAB />
               <MapHint />
-            </>
-          ) : (
-            <Box sx={{
-              position: 'absolute',
-              top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px) + 52px + 48px)',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              overflow: 'auto',
-              bgcolor: 'background.default',
-            }}>
-              <SearchListView />
-            </Box>
-          )}
-          <BusinessSheet />
-        </Box>
-      </APIProvider>
+            </APIProvider>
+          </MapErrorBoundary>
+        ) : (
+          <Box sx={{
+            position: 'absolute',
+            top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px) + 52px + 48px)',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            overflow: 'auto',
+            bgcolor: 'background.default',
+          }}>
+            <SearchListView />
+          </Box>
+        )}
+        <BusinessSheet />
+      </Box>
     </FiltersProvider>
   );
 }

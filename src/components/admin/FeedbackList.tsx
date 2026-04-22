@@ -8,22 +8,19 @@ import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Dialog from '@mui/material/Dialog';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import { fetchRecentFeedback } from '../../services/admin';
 import { respondToFeedback, resolveFeedback, createGithubIssueFromFeedback } from '../../services/adminFeedback';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { formatDateShort } from '../../utils/formatDate';
-import { isValidStorageUrl } from '../../utils/media';
-import { FEEDBACK_STATUSES, MAX_ADMIN_RESPONSE_LENGTH } from '../../constants/feedback';
+import { FEEDBACK_STATUSES } from '../../constants/feedback';
 import type { Feedback, FeedbackCategory, FeedbackStatus, Business } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ActivityTable from './ActivityTable';
+import FeedbackRespondForm from './feedback/FeedbackRespondForm';
+import FeedbackBusinessDialog from './feedback/FeedbackBusinessDialog';
+import FeedbackMediaPreview from './feedback/FeedbackMediaPreview';
 
 function categoryColor(cat: FeedbackCategory): 'error' | 'primary' | 'info' | 'warning' | 'default' {
   if (cat === 'bug') return 'error';
@@ -67,7 +64,7 @@ export default function FeedbackList() {
 
   const businessDetail = useMemo(() => {
     if (!businessDetailId) return null;
-    return allBusinesses.find((b) => b.id === businessDetailId) ?? null;
+    return getBusinessById(businessDetailId) ?? null;
   }, [businessDetailId]);
 
   const handleRespond = async (feedbackId: string) => {
@@ -124,7 +121,7 @@ export default function FeedbackList() {
         <Autocomplete<Business, false, false, false>
           options={allBusinesses}
           getOptionLabel={(b) => b.name}
-          value={allBusinesses.find((b) => b.id === businessFilter) ?? null}
+          value={getBusinessById(businessFilter ?? '') ?? null}
           onChange={(_e, value) => setBusinessFilter(value?.id ?? null)}
           renderInput={(params) => (
             <TextField {...params} placeholder="Filtrar por comercio" size="small" />
@@ -157,22 +154,7 @@ export default function FeedbackList() {
               render: (f) => (
                 <Box>
                   <Typography variant="body2">{f.message}</Typography>
-                  {isValidStorageUrl(f.mediaUrl) && f.mediaType === 'pdf' ? (
-                    <Link href={f.mediaUrl} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                      <PictureAsPdfIcon color="error" fontSize="small" />
-                      <Typography variant="caption">PDF adjunto</Typography>
-                    </Link>
-                  ) : isValidStorageUrl(f.mediaUrl) ? (
-                    <Box
-                      component="img"
-                      src={f.mediaUrl}
-                      alt="Adjunto"
-                      onClick={() => setMediaOpen(f.mediaUrl!)}
-                      sx={{ maxHeight: 60, borderRadius: 0.5, mt: 0.5, cursor: 'pointer', objectFit: 'cover' }}
-                    />
-                  ) : f.mediaUrl ? (
-                    <Typography variant="caption" color="error">Adjunto no disponible</Typography>
-                  ) : null}
+                  <FeedbackMediaPreview mediaUrl={f.mediaUrl} mediaType={f.mediaType} onOpenImage={setMediaOpen} />
                 </Box>
               ),
             },
@@ -197,33 +179,13 @@ export default function FeedbackList() {
                     </Typography>
                   )}
                   {respondingId === f.id ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <TextField
-                        size="small"
-                        multiline
-                        maxRows={3}
-                        placeholder="Escribir respuesta..."
-                        value={responseText}
-                        onChange={(e) => setResponseText(e.target.value)}
-                        slotProps={{ htmlInput: { maxLength: MAX_ADMIN_RESPONSE_LENGTH } }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          disabled={!responseText.trim() || submitting}
-                          onClick={() => handleRespond(f.id)}
-                        >
-                          Enviar
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => { setRespondingId(null); setResponseText(''); }}
-                        >
-                          Cancelar
-                        </Button>
-                      </Box>
-                    </Box>
+                    <FeedbackRespondForm
+                      value={responseText}
+                      onChange={setResponseText}
+                      onSubmit={() => handleRespond(f.id)}
+                      onCancel={() => { setRespondingId(null); setResponseText(''); }}
+                      submitting={submitting}
+                    />
                   ) : (
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                       {f.status !== 'resolved' && (
@@ -285,35 +247,11 @@ export default function FeedbackList() {
             />
           )}
         </Dialog>
-        <Dialog open={!!businessDetailId} onClose={() => setBusinessDetailId(null)} maxWidth="xs" fullWidth>
-          {businessDetail ? (
-            <>
-              <DialogTitle>{businessDetail.name}</DialogTitle>
-              <DialogContent>
-                <List dense disablePadding>
-                  <ListItem disableGutters><ListItemText primary="ID" secondary={businessDetail.id} /></ListItem>
-                  {businessDetail.address && <ListItem disableGutters><ListItemText primary="Dirección" secondary={businessDetail.address} /></ListItem>}
-                  {businessDetail.tags && businessDetail.tags.length > 0 && (
-                    <ListItem disableGutters>
-                      <ListItemText primary="Tags" secondary={
-                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                          {businessDetail.tags.map((t) => <Chip key={t} label={t} size="small" />)}
-                        </Box>
-                      } />
-                    </ListItem>
-                  )}
-                </List>
-              </DialogContent>
-            </>
-          ) : businessDetailId ? (
-            <>
-              <DialogTitle>Comercio no encontrado</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2" color="text.secondary">ID: {businessDetailId}</Typography>
-              </DialogContent>
-            </>
-          ) : null}
-        </Dialog>
+        <FeedbackBusinessDialog
+          businessDetailId={businessDetailId}
+          businessDetail={businessDetail}
+          onClose={() => setBusinessDetailId(null)}
+        />
       </Box>
     </AdminPanelWrapper>
   );

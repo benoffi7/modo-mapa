@@ -172,10 +172,14 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
                 </ListItemIcon>
                 <ListItemText
                   primary={task.label}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    fontSize: '0.8rem',
-                    sx: task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined,
+                  slotProps={{
+                    primary: {
+                      variant: 'body2',
+                      sx: {
+                        fontSize: '0.8rem',
+                        ...(task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : {}),
+                      },
+                    },
                   }}
                 />
                 <task.icon sx={{ fontSize: 14, color: task.isComplete ? 'text.disabled' : 'text.secondary', opacity: 0.5 }} />

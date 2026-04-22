@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Button, IconButton } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLocalTrending } from '../../hooks/useLocalTrending';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessMap } from '../../utils/businessMap';
 import { trackEvent } from '../../utils/analytics';
 import { STORAGE_KEY_DISMISS_LOCALITY_HINT } from '../../constants/storage';
 import {
@@ -22,10 +22,7 @@ export default function TrendingNearYouSection() {
     () => localStorage.getItem(STORAGE_KEY_DISMISS_LOCALITY_HINT) === 'true',
   );
 
-  const businessMap = useMemo(
-    () => new Map(allBusinesses.map((b) => [b.id, b])),
-    [],
-  );
+  const businessMap = getBusinessMap();
 
   // Track section view
   useEffect(() => {
@@ -94,7 +91,7 @@ export default function TrendingNearYouSection() {
             variant="text"
             size="small"
             onClick={handleConfigureTap}
-            sx={{ minWidth: 0, p: 0, textAlign: 'left', textTransform: 'none', fontSize: '0.75rem', lineHeight: 'inherit' }}
+            sx={{ minWidth: 44, minHeight: 44, textAlign: 'left', textTransform: 'none', fontSize: '0.75rem', px: 1 }}
           >
             Configurá tu localidad para resultados más precisos
           </Button>

@@ -147,8 +147,10 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
               <ListItemText
                 primary={s.mainText}
                 secondary={s.secondaryText}
-                primaryTypographyProps={{ fontSize: '0.85rem' }}
-                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                slotProps={{
+                  primary: { sx: { fontSize: '0.85rem' } },
+                  secondary: { sx: { fontSize: '0.75rem' } },
+                }}
               />
             </ListItemButton>
           ))}

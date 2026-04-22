@@ -20,6 +20,9 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkRemoveIcon from '@mui/icons-material/BookmarkRemove';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { MSG_OFFLINE } from '../../constants/messages';
 import type { OfflineActionType } from '../../types/offline';
@@ -42,6 +45,12 @@ const ACTION_LABELS: Record<OfflineActionType, string> = {
   follow_remove: 'Dejar de seguir',
   recommendation_create: 'Recomendación',
   recommendation_read: 'Marcar leída',
+  list_create: 'Crear lista',
+  list_update: 'Editar lista',
+  list_toggle_public: 'Cambiar visibilidad',
+  list_delete: 'Eliminar lista',
+  list_item_add: 'Agregar a lista',
+  list_item_remove: 'Quitar de lista',
 };
 
 const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
@@ -62,6 +71,12 @@ const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
   follow_remove: PersonAddIcon,
   recommendation_create: SendIcon,
   recommendation_read: SendIcon,
+  list_create: FormatListBulletedIcon,
+  list_update: FormatListBulletedIcon,
+  list_toggle_public: FormatListBulletedIcon,
+  list_delete: DeleteOutlineIcon,
+  list_item_add: BookmarkIcon,
+  list_item_remove: BookmarkRemoveIcon,
 };
 
 function timeAgo(timestamp: number): string {
@@ -143,8 +158,10 @@ export default memo(function PendingActionsSection() {
               <ListItemText
                 primary={`${ACTION_LABELS[action.type]}${action.businessName ? ` - ${action.businessName}` : ''}`}
                 secondary={`${timeAgo(action.createdAt)}${isFailed ? ' - Falló' : ''}`}
-                primaryTypographyProps={{ fontSize: '0.85rem', color: isFailed ? 'error.main' : 'text.primary' }}
-                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                slotProps={{
+                  primary: { sx: { fontSize: '0.85rem', color: isFailed ? 'error.main' : 'text.primary' } },
+                  secondary: { sx: { fontSize: '0.75rem' } },
+                }}
               />
             </ListItem>
           );

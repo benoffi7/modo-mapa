@@ -114,7 +114,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     features: [
       { key: 'special_tapped', name: 'Especiales', icon: icon(HomeOutlinedIcon), eventNames: ['special_tapped'], color: '#2196F3' },
       { key: 'for_you', name: 'Para vos', icon: icon(HomeOutlinedIcon), eventNames: ['for_you_tapped'], color: '#42A5F5' },
-      { key: 'quick_action', name: 'Acciones rapidas', icon: icon(HomeOutlinedIcon), eventNames: ['quick_action_tapped', 'quick_actions_edited'], color: '#64B5F6' },
+      { key: 'quick_action', name: 'Acciones rápidas', icon: icon(HomeOutlinedIcon), eventNames: ['quick_action_tapped', 'quick_actions_edited'], color: '#64B5F6' },
       { key: 'recent_search', name: 'Busqueda reciente', icon: icon(HomeOutlinedIcon), eventNames: ['recent_search_tapped'], color: '#90CAF9' },
     ],
   },
@@ -123,7 +123,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     label: 'Interests',
     features: [
       { key: 'tag_follow', name: 'Seguir tag', icon: icon(LocalOfferOutlinedIcon), eventNames: ['tag_followed', 'tag_unfollowed'], color: '#9C27B0' },
-      { key: 'interests_section', name: 'Seccion intereses', icon: icon(LocalOfferOutlinedIcon), eventNames: ['interests_section_viewed'], color: '#AB47BC' },
+      { key: 'interests_section', name: 'Sección intereses', icon: icon(LocalOfferOutlinedIcon), eventNames: ['interests_section_viewed'], color: '#AB47BC' },
       { key: 'interests_business', name: 'Negocio intereses', icon: icon(LocalOfferOutlinedIcon), eventNames: ['interests_business_tapped'], color: '#BA68C8' },
       { key: 'interests_cta', name: 'CTA intereses', icon: icon(LocalOfferOutlinedIcon), eventNames: ['interests_cta_tapped', 'interests_suggested_tapped'], color: '#CE93D8' },
     ],
@@ -132,7 +132,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     id: 'digest',
     label: 'Digest',
     features: [
-      { key: 'digest_section', name: 'Seccion digest', icon: icon(EmailOutlinedIcon), eventNames: ['digest_section_viewed'], color: '#009688' },
+      { key: 'digest_section', name: 'Sección digest', icon: icon(EmailOutlinedIcon), eventNames: ['digest_section_viewed'], color: '#009688' },
       { key: 'digest_item', name: 'Item digest', icon: icon(EmailOutlinedIcon), eventNames: ['digest_item_tapped'], color: '#26A69A' },
       { key: 'digest_cta', name: 'CTA digest', icon: icon(EmailOutlinedIcon), eventNames: ['digest_cta_tapped'], color: '#4DB6AC' },
       { key: 'digest_frequency', name: 'Frecuencia digest', icon: icon(EmailOutlinedIcon), eventNames: ['digest_frequency_changed'], color: '#80CBC4' },
@@ -184,10 +184,18 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     ],
   },
   {
+    id: 'admin_tools',
+    label: 'Admin Tools',
+    features: [
+      { key: 'admin_config', name: 'Config tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_config_viewed', 'admin_moderation_updated', 'admin_activity_feed_diag'], color: '#455A64' },
+      { key: 'admin_metrics', name: 'Metrics tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_list_items_inspected', 'admin_rate_limit_reset', 'admin_list_item_deleted'], color: '#546E7A' },
+    ],
+  },
+  {
     id: 'other',
     label: 'Otras features',
     features: [
-      { key: 'surprise', name: 'Sorprendeme!', icon: icon(CasinoIcon), eventNames: ['surprise_me'], color: '#FF5722' },
+      { key: 'surprise', name: 'Sorprendeme', icon: icon(CasinoIcon), eventNames: ['surprise_me'], color: '#FF5722' },
       { key: 'lists', name: 'Listas', icon: icon(BookmarkBorderIcon), eventNames: ['list_created', 'list_item_added', 'list_item_removed', 'list_deleted', 'list_icon_changed'], color: '#795548' },
       { key: 'search', name: 'Busqueda', icon: icon(SearchIcon), eventNames: ['business_search'], color: '#607D8B' },
       { key: 'share', name: 'Compartir', icon: icon(ShareIcon), eventNames: ['business_share'], color: '#00BCD4' },

@@ -4,21 +4,17 @@ import PlaceIcon from '@mui/icons-material/Place';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useCheckIn } from '../../hooks/useCheckIn';
 import { useToast } from '../../context/ToastContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { MSG_CHECKIN, MSG_AUTH } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 
-interface Props {
-  businessId: string;
-  businessName: string;
-  businessLocation?: { lat: number; lng: number };
-}
-
-export default memo(function CheckInButton({ businessId, businessName, businessLocation }: Props) {
+export default memo(function CheckInButton() {
   const toast = useToast();
+  const { businessId, businessName, location } = useBusinessScope();
   const { hasCheckedInRecently, isNearby, status, recentCheckInId, performCheckIn, undoCheckIn } = useCheckIn(
     businessId,
     businessName,
-    businessLocation,
+    location,
   );
 
   const isLoading = status === 'loading';

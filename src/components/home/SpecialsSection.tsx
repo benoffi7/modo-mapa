@@ -18,6 +18,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../constants/business';
 import type { Special, Business, BusinessCategory } from '../../types';
 import { fetchActiveSpecials } from '../../services/specials';
+import { MSG_COMMON } from '../../constants/messages';
 
 const ICON_MAP: Record<string, React.ReactElement> = {
   LocalFireDepartment: <LocalFireDepartmentIcon color="error" />,
@@ -114,7 +115,7 @@ export default function SpecialsSection() {
                 <Typography variant="caption" color="text.secondary">{selectedSpecial.subtitle}</Typography>
               </Box>
               <IconButton
-                aria-label="Cerrar"
+                aria-label={MSG_COMMON.closeAriaLabel}
                 onClick={() => setSelectedSpecial(null)}
                 sx={{ position: 'absolute', right: 8, top: 8 }}
               >
@@ -138,8 +139,10 @@ export default function SpecialsSection() {
                     <ListItemText
                       primary={biz.name}
                       secondary={CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
-                      primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                      slotProps={{
+                        primary: { sx: { fontSize: '0.9rem', fontWeight: 500 } },
+                        secondary: { sx: { fontSize: '0.75rem' } },
+                      }}
                     />
                   </ListItemButton>
                 ))}

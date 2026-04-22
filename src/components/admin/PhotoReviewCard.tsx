@@ -4,7 +4,7 @@ import ReportIcon from '@mui/icons-material/Report';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
 import { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto } from '../../services/adminPhotos';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { formatDateShort } from '../../utils/formatDate';
 import { STATUS_CHIP } from '../../constants/admin';
 import type { MenuPhoto } from '../../types';
@@ -21,7 +21,7 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
 
-  const businessName = allBusinesses.find((b) => b.id === photo.businessId)?.name ?? photo.businessId;
+  const businessName = getBusinessById(photo.businessId)?.name ?? photo.businessId;
   const chipInfo = STATUS_CHIP[photo.status] ?? { label: photo.status, color: 'default' as const };
 
   useEffect(() => {

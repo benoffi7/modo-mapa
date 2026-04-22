@@ -1,11 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_VIEWED } from '../../constants/analyticsEvents';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessMap } from '../../utils/businessMap';
 import TrendingBusinessCard from './TrendingBusinessCard';
 import type { Business } from '../../types';
 
@@ -15,7 +15,7 @@ interface Props {
 
 export default function TrendingList({ onSelectBusiness }: Props) {
   const { data, loading, error } = useTrending();
-  const businessMap = useMemo(() => new Map(allBusinesses.map((b) => [b.id, b])), []);
+  const businessMap = getBusinessMap();
 
   useEffect(() => {
     trackEvent(EVT_TRENDING_VIEWED);

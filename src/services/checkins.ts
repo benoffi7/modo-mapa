@@ -1,12 +1,13 @@
 /**
  * Firestore service for the `checkins` collection.
  */
-import { collection, doc, addDoc, deleteDoc, getDocs, query, where, orderBy, limit as firestoreLimit, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, deleteDoc, query, where, orderBy, limit as firestoreLimit, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { checkinConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
+import { measuredGetDocs } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import type { CheckIn } from '../types';
 
@@ -52,7 +53,7 @@ export async function fetchMyCheckIns(
     ? query(getCheckinsCollection(), where('userId', '==', userId), orderBy('createdAt', 'desc'), firestoreLimit(limitCount))
     : query(getCheckinsCollection(), where('userId', '==', userId), orderBy('createdAt', 'desc'));
 
-  const snap = await getDocs(q);
+  const snap = await measuredGetDocs('checkins_byUser', q);
   return snap.docs.map((d) => d.data());
 }
 
@@ -60,7 +61,8 @@ export async function fetchCheckInsForBusiness(
   businessId: string,
   userId: string,
 ): Promise<CheckIn[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'checkins_byUserBusiness',
     query(
       getCheckinsCollection(),
       where('userId', '==', userId),
@@ -78,7 +80,8 @@ export async function deleteCheckIn(userId: string, checkInId: string): Promise<
 }
 
 export async function fetchUserCheckIns(userId: string): Promise<CheckIn[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'checkins_byUserAll',
     query(getCheckinsCollection(), where('userId', '==', userId)),
   );
   return snap.docs.map((d) => d.data());

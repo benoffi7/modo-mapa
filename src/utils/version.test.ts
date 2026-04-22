@@ -38,6 +38,13 @@ describe('compareSemver', () => {
     expect(compareSemver('2.30.3', '2.31.0')).toBe(-1);
     expect(compareSemver('2.31.0', '2.30.3')).toBe(1);
   });
+
+  it('defaults missing parts to 0 for short version strings', () => {
+    // '1.0' has no patch — treated as '1.0.0'
+    expect(compareSemver('1.0', '1.0.0')).toBe(0);
+    expect(compareSemver('1.0', '1.0.1')).toBe(-1);
+    expect(compareSemver('1.1', '1.0.9')).toBe(1);
+  });
 });
 
 describe('isUpdateRequired', () => {
