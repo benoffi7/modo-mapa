@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Box, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
@@ -19,6 +20,7 @@ import { useSurpriseMe } from '../../hooks/useSurpriseMe';
 import { useSelection } from '../../context/SelectionContext';
 import { trackEvent } from '../../utils/analytics';
 import { CATEGORY_COLORS } from '../../constants/business';
+import { getContrastText } from '../../utils/contrast';
 import { iconCircleSx } from '../../theme/cards';
 import type { BusinessCategory } from '../../types';
 
@@ -47,12 +49,17 @@ const ALL_AVAILABLE_SLOTS: QuickActionSlot[] = [
   { id: 'fastfood', label: 'Rápida', icon: CATEGORY_ICONS.fastfood, type: 'category' },
   { id: 'bakery', label: 'Panadería', icon: CATEGORY_ICONS.bakery, type: 'category' },
   { id: 'icecream', label: 'Heladería', icon: CATEGORY_ICONS.icecream, type: 'category' },
-  { id: 'sorprendeme', label: 'Sorpresa', icon: <CasinoIcon />, type: 'action' },
+  { id: 'sorprendeme', label: 'Sorprendeme', icon: <CasinoIcon />, type: 'action' },
   { id: 'favoritos', label: 'Favoritos', icon: <FavoriteIcon />, type: 'shortcut' },
   { id: 'recientes', label: 'Recientes', icon: <HistoryIcon />, type: 'shortcut' },
   { id: 'visitas', label: 'Visitas', icon: <PlaceIcon />, type: 'shortcut' },
 ];
 
+/**
+ * Colores semanticos para acciones rapidas (QuickActions slots).
+ * Son brand colors (no mode-aware) — el color del icono se calcula
+ * dinamicamente con getContrastText para garantizar WCAG AA en ambos modos.
+ */
 const QUICK_ACTION_COLORS: Record<string, string> = {
   sorprendeme: '#00897b',
   favoritos: '#e53935',
@@ -60,11 +67,11 @@ const QUICK_ACTION_COLORS: Record<string, string> = {
   visitas: '#1e88e5',
 };
 
-export function getSlotColor(slot: QuickActionSlot): string {
+export function getSlotColor(slot: QuickActionSlot, fallback = '#546e7a'): string {
   if (slot.type === 'category') {
-    return CATEGORY_COLORS[slot.id as BusinessCategory] ?? '#546e7a';
+    return CATEGORY_COLORS[slot.id as BusinessCategory] ?? fallback;
   }
-  return QUICK_ACTION_COLORS[slot.id] ?? '#546e7a';
+  return QUICK_ACTION_COLORS[slot.id] ?? fallback;
 }
 
 const DEFAULT_IDS = ['restaurant', 'cafe', 'bar', 'pizza', 'fastfood', 'bakery', 'icecream', 'sorprendeme'];
@@ -92,6 +99,8 @@ function saveConfig(ids: string[]) {
 }
 
 export default function QuickActions() {
+  const theme = useTheme();
+  const fallbackColor = theme.palette.grey[600];
   const { navigateToSearchWithFilter, navigateToListsSubTab } = useTabNavigation();
   const { setActiveTab } = useTab();
   const { setSelectedBusiness } = useSelection();
@@ -155,20 +164,24 @@ export default function QuickActions() {
         </IconButton>
       </Box>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
-        {slots.map((slot) => (
-          <Box key={slot.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              aria-label={slot.label}
-              onClick={() => handleTap(slot)}
-              sx={{ ...iconCircleSx(getSlotColor(slot), 48) }}
-            >
-              <Box sx={{ color: 'common.white', display: 'flex' }}>{slot.icon}</Box>
-            </IconButton>
-            <Typography variant="caption" noWrap sx={{ maxWidth: 64, textAlign: 'center' }}>
-              {slot.label}
-            </Typography>
-          </Box>
-        ))}
+        {slots.map((slot) => {
+          const slotColor = getSlotColor(slot, fallbackColor);
+          const iconColor = getContrastText(slotColor);
+          return (
+            <Box key={slot.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                aria-label={slot.label}
+                onClick={() => handleTap(slot)}
+                sx={{ ...iconCircleSx(slotColor, 48) }}
+              >
+                <Box sx={{ color: iconColor, display: 'flex' }}>{slot.icon}</Box>
+              </IconButton>
+              <Typography variant="caption" noWrap sx={{ maxWidth: 64, textAlign: 'center' }}>
+                {slot.label}
+              </Typography>
+            </Box>
+          );
+        })}
       </Box>
 
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
@@ -179,27 +192,31 @@ export default function QuickActions() {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {ALL_AVAILABLE_SLOTS.map((slot) => (
-            <FormControlLabel
-              key={slot.id}
-              control={
-                <Checkbox
-                  checked={editDraft.includes(slot.id)}
-                  onChange={() => toggleSlot(slot.id)}
-                  disabled={!editDraft.includes(slot.id) && editDraft.length >= 8}
-                />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ ...iconCircleSx(getSlotColor(slot), 32), color: 'common.white' }}>
-                    <Box sx={{ display: 'flex', fontSize: 18 }}>{slot.icon}</Box>
+          {ALL_AVAILABLE_SLOTS.map((slot) => {
+            const slotColor = getSlotColor(slot, fallbackColor);
+            const iconColor = getContrastText(slotColor);
+            return (
+              <FormControlLabel
+                key={slot.id}
+                control={
+                  <Checkbox
+                    checked={editDraft.includes(slot.id)}
+                    onChange={() => toggleSlot(slot.id)}
+                    disabled={!editDraft.includes(slot.id) && editDraft.length >= 8}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ ...iconCircleSx(slotColor, 32), color: iconColor }}>
+                      <Box sx={{ display: 'flex', fontSize: 18 }}>{slot.icon}</Box>
+                    </Box>
+                    <Typography variant="body2">{slot.label}</Typography>
                   </Box>
-                  <Typography variant="body2">{slot.label}</Typography>
-                </Box>
-              }
-              sx={{ display: 'flex', width: '100%' }}
-            />
-          ))}
+                }
+                sx={{ display: 'flex', width: '100%' }}
+              />
+            );
+          })}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditOpen(false)}>Cancelar</Button>

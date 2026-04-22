@@ -1,7 +1,8 @@
-import { collection, query, where, getDocs, doc, getDoc, documentId } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, documentId } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter } from '../config/converters';
+import { measureAsync, measuredGetDocs, measuredGetDoc } from '../utils/perfMetrics';
 import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
 
 export type BusinessDataCollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
@@ -29,12 +30,14 @@ export async function fetchUserLikes(uid: string, commentIds: string[]): Promise
   for (let i = 0; i < docIds.length; i += BATCH_SIZE) {
     batches.push(docIds.slice(i, i + BATCH_SIZE));
   }
-  const snaps = await Promise.all(batches.map((batch) =>
-    getDocs(query(
-      collection(db, COLLECTIONS.COMMENT_LIKES),
-      where(documentId(), 'in', batch),
-    ))
-  ));
+  const snaps = await measureAsync('businessData_userLikes', () =>
+    Promise.all(batches.map((batch) =>
+      getDocs(query(
+        collection(db, COLLECTIONS.COMMENT_LIKES),
+        where(documentId(), 'in', batch),
+      ))
+    )),
+  );
   for (const snap of snaps) {
     for (const d of snap.docs) {
       const commentId = d.id.split('__')[1];
@@ -48,18 +51,18 @@ export async function fetchUserLikes(uid: string, commentIds: string[]): Promise
 export async function fetchSingleCollection(bId: string, uid: string, col: BusinessDataCollectionName) {
   switch (col) {
     case 'favorites': {
-      const snap = await getDoc(doc(db, COLLECTIONS.FAVORITES, `${uid}__${bId}`));
+      const snap = await measuredGetDoc('businessData_favorite', doc(db, COLLECTIONS.FAVORITES, `${uid}__${bId}`));
       return { isFavorite: snap.exists() };
     }
     case 'ratings': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_ratings', query(
         collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
         where('businessId', '==', bId),
       ));
       return { ratings: snap.docs.map((d) => d.data()) };
     }
     case 'comments': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_comments', query(
         collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
         where('businessId', '==', bId),
       ));
@@ -69,14 +72,14 @@ export async function fetchSingleCollection(bId: string, uid: string, col: Busin
       return { comments: result, userCommentLikes };
     }
     case 'userTags': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_userTags', query(
         collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
         where('businessId', '==', bId),
       ));
       return { userTags: snap.docs.map((d) => d.data()) };
     }
     case 'customTags': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_customTags', query(
         collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
         where('userId', '==', uid),
         where('businessId', '==', bId),
@@ -86,14 +89,14 @@ export async function fetchSingleCollection(bId: string, uid: string, col: Busin
       return { customTags: result };
     }
     case 'priceLevels': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_priceLevels', query(
         collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
         where('businessId', '==', bId),
       ));
       return { priceLevels: snap.docs.map((d) => d.data()) };
     }
     case 'menuPhotos': {
-      const snap = await getDocs(query(
+      const snap = await measuredGetDocs('businessData_menuPhotos', query(
         collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
         where('businessId', '==', bId),
         where('status', '==', 'approved'),
@@ -107,29 +110,29 @@ export async function fetchBusinessData(bId: string, uid: string): Promise<Busin
   const favDocId = `${uid}__${bId}`;
 
   const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
-    getDoc(doc(db, COLLECTIONS.FAVORITES, favDocId)),
-    getDocs(query(
+    measuredGetDoc('businessData_favorite', doc(db, COLLECTIONS.FAVORITES, favDocId)),
+    measuredGetDocs('businessData_ratings', query(
       collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
       where('businessId', '==', bId),
     )),
-    getDocs(query(
+    measuredGetDocs('businessData_comments', query(
       collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
       where('businessId', '==', bId),
     )),
-    getDocs(query(
+    measuredGetDocs('businessData_userTags', query(
       collection(db, COLLECTIONS.USER_TAGS).withConverter(userTagConverter),
       where('businessId', '==', bId),
     )),
-    getDocs(query(
+    measuredGetDocs('businessData_customTags', query(
       collection(db, COLLECTIONS.CUSTOM_TAGS).withConverter(customTagConverter),
       where('userId', '==', uid),
       where('businessId', '==', bId),
     )),
-    getDocs(query(
+    measuredGetDocs('businessData_priceLevels', query(
       collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
       where('businessId', '==', bId),
     )),
-    getDocs(query(
+    measuredGetDocs('businessData_menuPhotos', query(
       collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
       where('businessId', '==', bId),
       where('status', '==', 'approved'),

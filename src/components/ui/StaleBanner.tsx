@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface StaleBannerProps {
   businessId: string;
@@ -50,7 +51,7 @@ export default function StaleBanner({ businessId, onRefresh }: StaleBannerProps)
       <IconButton
         size="small"
         onClick={handleDismiss}
-        aria-label="Cerrar aviso"
+        aria-label={MSG_COMMON.closeNoticeAriaLabel}
         sx={{ color: 'inherit', p: 0.5 }}
       >
         <CloseIcon fontSize="small" />

@@ -2,7 +2,7 @@
  * Firestore service for the `recommendations` collection.
  */
 import {
-  collection, addDoc, getDocs, updateDoc, doc, writeBatch,
+  collection, addDoc, updateDoc, doc, writeBatch,
   query, where, serverTimestamp,
 } from 'firebase/firestore';
 import type { CollectionReference, QueryConstraint } from 'firebase/firestore';
@@ -12,6 +12,7 @@ import { recommendationConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
+import { measureAsync, measuredGetDocs } from '../utils/perfMetrics';
 import { EVT_RECOMMENDATION_SENT } from '../constants/analyticsEvents';
 import { MAX_RECOMMENDATION_MESSAGE_LENGTH } from '../constants/validation';
 import type { Recommendation } from '../types';
@@ -62,7 +63,8 @@ export async function markRecommendationAsRead(recommendationId: string): Promis
 }
 
 export async function markAllRecommendationsAsRead(userId: string): Promise<void> {
-  const unread = await getDocs(
+  const unread = await measuredGetDocs(
+    'recommendations_unreadList',
     query(
       collection(db, COLLECTIONS.RECOMMENDATIONS),
       where('recipientId', '==', userId),
@@ -79,13 +81,13 @@ export async function markAllRecommendationsAsRead(userId: string): Promise<void
 }
 
 export async function countUnreadRecommendations(userId: string): Promise<number> {
-  return getCountOfflineSafe(
+  return measureAsync('recommendations_unreadCount', () => getCountOfflineSafe(
     query(
       collection(db, COLLECTIONS.RECOMMENDATIONS),
       where('recipientId', '==', userId),
       where('read', '==', false),
     ),
-  );
+  ));
 }
 
 const sentTodayCache = new Map<string, { count: number; day: number }>();
@@ -104,13 +106,13 @@ export async function countRecommendationsSentToday(userId: string): Promise<num
   if (cached && cached.day === dayTs) return cached.count;
 
   try {
-    const count = await getCountOfflineSafe(
+    const count = await measureAsync('recommendations_sentTodayCount', () => getCountOfflineSafe(
       query(
         collection(db, COLLECTIONS.RECOMMENDATIONS),
         where('senderId', '==', userId),
         where('createdAt', '>=', today),
       ),
-    );
+    ));
     sentTodayCache.set(userId, { count, day: dayTs });
     return count;
   } catch {

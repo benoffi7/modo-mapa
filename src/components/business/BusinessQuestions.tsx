@@ -16,6 +16,7 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useToast } from '../../context/ToastContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { createQuestion } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
@@ -29,16 +30,15 @@ import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   comments: Comment[];
   userCommentLikes: Set<string>;
   isLoading: boolean;
   onCommentsChange: () => void;
 }
 
-export default memo(function BusinessQuestions({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
+export default memo(function BusinessQuestions({ comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const toast = useToast();
+  const { businessId, businessName } = useBusinessScope();
   const [questionText, setQuestionText] = useState('');
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 

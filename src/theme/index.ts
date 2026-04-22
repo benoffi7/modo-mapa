@@ -62,7 +62,9 @@ export function getDesignTokens(mode: 'light' | 'dark'): ThemeOptions {
       MuiFab: {
         styleOverrides: {
           root: {
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            boxShadow: isLight
+              ? '0 1px 4px rgba(0,0,0,0.3)'
+              : '0 1px 4px rgba(0,0,0,0.6)',
           },
         },
       },

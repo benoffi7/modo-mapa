@@ -5,7 +5,8 @@ import { logger } from '../../utils/logger';
 import { fetchLatestRanking, fetchTrendingCurrent, fetchCronHealthStatus } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { getBusinessName } from '../../utils/businessHelpers';
-import { PieChartCard, TopList } from '../stats';
+import PieChartCard from '../stats/PieChartCard';
+import { TopList } from '../stats';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import CronCard from './CronCard';
 import { CRON_CONFIGS } from '../../constants/admin';
@@ -90,7 +91,7 @@ export default function CronHealthSection() {
           <Grid container spacing={2}>
             {tierDistribution.length > 0 && (
               <Grid size={{ xs: 12, md: 4 }}>
-                <PieChartCard title="Distribucion de Tiers" data={tierDistribution} />
+                <PieChartCard title="Distribución de Tiers" data={tierDistribution} />
               </Grid>
             )}
             {topRanking.length > 0 && (

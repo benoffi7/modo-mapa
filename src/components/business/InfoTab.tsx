@@ -5,36 +5,38 @@ import BusinessPriceLevel from './BusinessPriceLevel';
 import BusinessTags from './BusinessTags';
 import MenuPhotoSection from './MenuPhotoSection';
 import type { UseBusinessRatingReturn } from '../../hooks/useBusinessRating';
-import type { Business, UserTag, CustomTag, MenuPhoto, PriceLevel } from '../../types';
+import type { UserTag, CustomTag, MenuPhoto, PriceLevel } from '../../types';
+
+export interface PriceLevelData {
+  levels: PriceLevel[];
+  onChange: () => void;
+}
+
+export interface TagsData {
+  seed: string[];
+  user: UserTag[];
+  custom: CustomTag[];
+  onChange: () => void;
+}
+
+export interface PhotoData {
+  photo: MenuPhoto | null;
+  onChange: () => void;
+}
 
 interface Props {
-  business: Business;
   ratingData: UseBusinessRatingReturn;
-  // PriceLevel
-  priceLevels: PriceLevel[];
-  onPriceLevelChange: () => void;
-  // Tags
-  seedTags: string[];
-  userTags: UserTag[];
-  customTags: CustomTag[];
-  onTagsChange: () => void;
-  // MenuPhoto
-  menuPhoto: MenuPhoto | null;
-  onPhotoChange: () => void;
+  priceLevelData: PriceLevelData;
+  tagsData: TagsData;
+  photoData: PhotoData;
   isLoading: boolean;
 }
 
 export default memo(function InfoTab({
-  business,
   ratingData,
-  priceLevels,
-  onPriceLevelChange,
-  seedTags,
-  userTags,
-  customTags,
-  onTagsChange,
-  menuPhoto,
-  onPhotoChange,
+  priceLevelData,
+  tagsData,
+  photoData,
   isLoading,
 }: Props) {
   return (
@@ -48,29 +50,23 @@ export default memo(function InfoTab({
       />
       <Divider sx={{ my: 1.5 }} />
       <BusinessPriceLevel
-        key={business.id}
-        businessId={business.id}
-        businessName={business.name}
-        priceLevels={priceLevels}
+        priceLevels={priceLevelData.levels}
         isLoading={isLoading}
-        onPriceLevelChange={onPriceLevelChange}
+        onPriceLevelChange={priceLevelData.onChange}
       />
       <Divider sx={{ my: 1.5 }} />
       <BusinessTags
-        businessId={business.id}
-        businessName={business.name}
-        seedTags={seedTags}
-        userTags={userTags}
-        customTags={customTags}
+        seedTags={tagsData.seed}
+        userTags={tagsData.user}
+        customTags={tagsData.custom}
         isLoading={isLoading}
-        onTagsChange={onTagsChange}
+        onTagsChange={tagsData.onChange}
       />
       <Divider sx={{ my: 1.5 }} />
       <MenuPhotoSection
-        menuPhoto={menuPhoto}
-        businessId={business.id}
+        menuPhoto={photoData.photo}
         isLoading={isLoading}
-        onPhotoChange={onPhotoChange}
+        onPhotoChange={photoData.onChange}
       />
     </Box>
   );

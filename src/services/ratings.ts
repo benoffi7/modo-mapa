@@ -1,13 +1,14 @@
 /**
  * Firestore service for the `ratings` collection.
  */
-import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference, QuerySnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
+import { measureAsync, measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import type { Rating, RatingCriteria } from '../types';
 
@@ -27,7 +28,7 @@ export async function upsertRating(
 
   const docId = `${userId}__${businessId}`;
   const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
-  const existing = await getDoc(ratingRef);
+  const existing = await measuredGetDoc('ratings_upsertExists', ratingRef);
 
   const criteriaField = criteria != null ? { criteria } : {};
 
@@ -66,7 +67,7 @@ export async function upsertCriteriaRating(
 
   const docId = `${userId}__${businessId}`;
   const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
-  const existing = await getDoc(ratingRef);
+  const existing = await measuredGetDoc('ratings_criteriaExists', ratingRef);
 
   if (!existing.exists()) {
     // Require a global rating before allowing criteria ratings
@@ -95,7 +96,8 @@ export async function deleteRating(
 }
 
 export async function fetchUserRatings(userId: string): Promise<Rating[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'ratings_byUser',
     query(getRatingsCollection(), where('userId', '==', userId)),
   );
   return snap.docs.map((d) => d.data());
@@ -106,9 +108,9 @@ export async function fetchUserRatings(userId: string): Promise<Rating[]> {
  * Uses getCountOfflineSafe to handle offline gracefully.
  */
 export async function fetchUserRatingsCount(userId: string): Promise<number> {
-  return getCountOfflineSafe(
+  return measureAsync('ratings_countByUser', () => getCountOfflineSafe(
     query(collection(db, COLLECTIONS.RATINGS), where('userId', '==', userId)),
-  );
+  ));
 }
 
 /**
@@ -120,7 +122,7 @@ export async function hasUserRatedBusiness(
   businessId: string,
 ): Promise<boolean> {
   const docId = `${userId}__${businessId}`;
-  const snap = await getDoc(doc(db, COLLECTIONS.RATINGS, docId));
+  const snap = await measuredGetDoc('ratings_hasUser', doc(db, COLLECTIONS.RATINGS, docId));
   return snap.exists();
 }
 
@@ -131,6 +133,6 @@ export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<
     const batch = businessIds.slice(i, i + BATCH_SIZE);
     batches.push(getDocs(query(getRatingsCollection(), where('businessId', 'in', batch))));
   }
-  const snapshots = await Promise.all(batches);
+  const snapshots = await measureAsync('ratings_byBusinessIds', () => Promise.all(batches));
   return snapshots.flatMap((snap) => snap.docs.map((d) => d.data()));
 }

@@ -1,4 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
+import { getDocs, getDoc } from 'firebase/firestore';
+import type { Query, DocumentReference, QuerySnapshot, DocumentSnapshot } from 'firebase/firestore';
 import { functions } from '../config/firebase';
 import { PERF_FLUSH_DELAY_MS } from '../constants/performance';
 import { trackEvent } from './analytics';
@@ -40,6 +42,28 @@ export async function measureAsync<T>(name: string, fn: () => Promise<T>): Promi
   const elapsed = performance.now() - start;
   recordQueryTiming(name, elapsed);
   return result;
+}
+
+/**
+ * Thin wrapper over `measureAsync(name, () => getDocs(q))`.
+ * Use in service-layer modules for Firestore collection reads.
+ */
+export async function measuredGetDocs<T>(
+  name: string,
+  q: Query<T>,
+): Promise<QuerySnapshot<T>> {
+  return measureAsync(name, () => getDocs(q));
+}
+
+/**
+ * Thin wrapper over `measureAsync(name, () => getDoc(ref))`.
+ * Use in service-layer modules for Firestore document reads.
+ */
+export async function measuredGetDoc<T>(
+  name: string,
+  ref: DocumentReference<T>,
+): Promise<DocumentSnapshot<T>> {
+  return measureAsync(name, () => getDoc(ref));
 }
 
 // --- Observers ---

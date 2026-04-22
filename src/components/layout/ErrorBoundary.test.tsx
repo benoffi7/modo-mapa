@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import ErrorBoundary from './ErrorBoundary';
+import { MSG_COMMON } from '../../constants/messages';
 
 describe('ErrorBoundary', () => {
   beforeEach(() => {
@@ -31,8 +32,8 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
-    expect(screen.getByText(/Ocurrió un error inesperado/)).toBeInTheDocument();
+    expect(screen.getByText(MSG_COMMON.genericErrorTitle)).toBeInTheDocument();
+    expect(screen.getByText(MSG_COMMON.genericErrorBody)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
@@ -64,7 +65,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
+    expect(screen.getByText(MSG_COMMON.genericErrorTitle)).toBeInTheDocument();
 
     shouldThrow = false;
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));

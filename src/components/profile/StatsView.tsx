@@ -1,9 +1,21 @@
+import { lazy, Suspense } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { usePublicMetrics } from '../../hooks/usePublicMetrics';
 import { getBusinessName, getTagLabel } from '../../utils/businessHelpers';
-import { PieChartCard, TopList } from '../stats';
+import { TopList } from '../stats';
+
+// recharts (~374KB) se baja solo cuando se renderiza esta vista.
+const PieChartCard = lazy(() => import('../stats/PieChartCard'));
+
+function PieChartFallback() {
+  return (
+    <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress size={24} />
+    </Box>
+  );
+}
 
 export default function StatsView() {
   const { metrics, loading, error } = usePublicMetrics();
@@ -48,8 +60,10 @@ export default function StatsView() {
 
   return (
     <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <PieChartCard title="Distribución de Ratings" data={ratingPieData} />
-      <PieChartCard title="Tags más usados" data={tagsPieData} />
+      <Suspense fallback={<PieChartFallback />}>
+        <PieChartCard title="Distribución de Ratings" data={ratingPieData} />
+        <PieChartCard title="Tags más usados" data={tagsPieData} />
+      </Suspense>
       <TopList
         title="Más favoriteados"
         items={metrics.topFavorited.map((t) => ({

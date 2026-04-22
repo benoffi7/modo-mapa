@@ -136,6 +136,13 @@ const GA4_EVENT_NAMES = [
   'tab_switched',
   'sub_tab_switched',
   'business_sheet_tab_changed',
+  // Admin tools (#310)
+  'admin_config_viewed',
+  'admin_moderation_updated',
+  'admin_activity_feed_diag',
+  'admin_list_items_inspected',
+  'admin_rate_limit_reset',
+  'admin_list_item_deleted',
 ] as const;
 
 const CACHE_TTL_MS = 3_600_000; // 1 hour

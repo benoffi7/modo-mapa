@@ -5,6 +5,8 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import { useAuth } from '../../context/AuthContext';
+import { BusinessScopeProvider } from '../../context/BusinessScopeContext';
+import type { BusinessScope } from '../../context/BusinessScopeContext';
 import { useBusinessData } from '../../hooks/useBusinessData';
 import { useBusinessRating } from '../../hooks/useBusinessRating';
 import { useVisitHistory } from '../../hooks/useVisitHistory';
@@ -13,6 +15,7 @@ import { trackEvent } from '../../utils/analytics';
 import { EVT_BUSINESS_SHEET_TAB_CHANGED } from '../../constants/analyticsEvents';
 import BusinessSheetHeader from './BusinessSheetHeader';
 import InfoTab from './InfoTab';
+import type { PriceLevelData, TagsData, PhotoData } from './InfoTab';
 import OpinionesTab from './OpinionesTab';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
@@ -136,8 +139,34 @@ export default function BusinessSheetContent({
     });
   };
 
+  // Scope para el subárbol (eliminamos prop-drilling de businessId/businessName/location).
+  const scope = useMemo<BusinessScope>(
+    () => ({
+      businessId: business.id,
+      businessName: business.name,
+      location: { lat: business.lat, lng: business.lng },
+    }),
+    [business.id, business.name, business.lat, business.lng],
+  );
+
+  // Grupos de data para InfoTab (evita re-renders si los subobjetos no cambian).
+  const handlePriceLevelChange = useCallback(() => refetch('priceLevels'), [refetch]);
+  const handlePhotoChange = useCallback(() => refetch('menuPhotos'), [refetch]);
+  const priceLevelData = useMemo<PriceLevelData>(
+    () => ({ levels: data.priceLevels, onChange: handlePriceLevelChange }),
+    [data.priceLevels, handlePriceLevelChange],
+  );
+  const tagsData = useMemo<TagsData>(
+    () => ({ seed: business.tags, user: data.userTags, custom: data.customTags, onChange: handleTagsChange }),
+    [business.tags, data.userTags, data.customTags, handleTagsChange],
+  );
+  const photoData = useMemo<PhotoData>(
+    () => ({ photo: data.menuPhoto, onChange: handlePhotoChange }),
+    [data.menuPhoto, handlePhotoChange],
+  );
+
   return (
-    <>
+    <BusinessScopeProvider scope={scope}>
       {showSkeleton ? (
         <BusinessSheetSkeleton />
       ) : showError ? (
@@ -165,8 +194,6 @@ export default function BusinessSheetContent({
             ratingData={ratingData}
             favoriteButton={
               <FavoriteButton
-                businessId={business.id}
-                businessName={business.name}
                 isFavorite={data.isFavorite}
                 isLoading={data.isLoading}
                 onToggle={() => data.refetch('favorites')}
@@ -187,13 +214,7 @@ export default function BusinessSheetContent({
                 </IconButton>
               ) : undefined
             }
-            checkInButton={
-              <CheckInButton
-                businessId={business.id}
-                businessName={business.name}
-                businessLocation={{ lat: business.lat, lng: business.lng }}
-              />
-            }
+            checkInButton={<CheckInButton />}
           />
 
           {/* Sticky tabs */}
@@ -220,23 +241,15 @@ export default function BusinessSheetContent({
           {/* Tab content */}
           <Box sx={{ display: activeTab === 'info' ? 'block' : 'none' }}>
             <InfoTab
-              business={business}
               ratingData={ratingData}
-              priceLevels={data.priceLevels}
-              onPriceLevelChange={() => data.refetch('priceLevels')}
-              seedTags={business.tags}
-              userTags={data.userTags}
-              customTags={data.customTags}
-              onTagsChange={handleTagsChange}
-              menuPhoto={data.menuPhoto}
-              onPhotoChange={() => data.refetch('menuPhotos')}
+              priceLevelData={priceLevelData}
+              tagsData={tagsData}
+              photoData={photoData}
               isLoading={data.isLoading}
             />
           </Box>
           <Box sx={{ display: activeTab === 'opiniones' ? 'block' : 'none' }}>
             <OpinionesTab
-              businessId={business.id}
-              businessName={business.name}
               comments={data.comments}
               regularComments={regularComments}
               userCommentLikes={data.userCommentLikes}
@@ -251,19 +264,15 @@ export default function BusinessSheetContent({
       <AddToListDialog
         open={listDialogOpen}
         onClose={() => setListDialogOpen(false)}
-        businessId={business.id}
-        businessName={business.name}
       />
       <Suspense fallback={null}>
         {recommendDialogOpen && (
           <RecommendDialog
             open
             onClose={() => setRecommendDialogOpen(false)}
-            businessId={business.id}
-            businessName={business.name}
           />
         )}
       </Suspense>
-    </>
+    </BusinessScopeProvider>
   );
 }

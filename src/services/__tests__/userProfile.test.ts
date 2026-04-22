@@ -5,9 +5,16 @@ vi.mock('../../config/collections', () => ({ COLLECTIONS: { USERS: 'users' } }))
 vi.mock('../../config/converters', () => ({ userProfileConverter: {} }));
 
 const mockGetDoc = vi.fn();
+const mockMeasuredGetDoc = vi.fn((_name: string, ref: unknown) => mockGetDoc(ref));
+const mockMeasuredGetDocs = vi.fn();
 const mockSetDoc = vi.fn();
 const mockUpdateDoc = vi.fn();
 const mockDoc = vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) });
+
+vi.mock('../../utils/perfMetrics', () => ({
+  measuredGetDoc: (name: string, ref: unknown) => mockMeasuredGetDoc(name, ref),
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+}));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
@@ -123,5 +130,27 @@ describe('updateUserAvatar', () => {
 
     const { updateUserAvatar } = await import('../userProfile');
     await expect(updateUserAvatar('uid-err', 'av1')).rejects.toThrow('update failed');
+  });
+});
+
+describe('measureAsync instrumentation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDoc.mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) });
+  });
+
+  it('fetchUserProfileDoc uses measuredGetDoc with userProfile_doc', async () => {
+    mockGetDoc.mockResolvedValueOnce({ exists: () => false });
+    const { fetchUserProfileDoc } = await import('../userProfile');
+    await fetchUserProfileDoc('uid-1');
+    expect(mockMeasuredGetDoc.mock.calls.map((c) => c[0])).toContain('userProfile_doc');
+  });
+
+  it('updateUserDisplayName uses measuredGetDoc with userProfile_existsCheck', async () => {
+    mockGetDoc.mockResolvedValueOnce({ exists: () => true });
+    mockUpdateDoc.mockResolvedValueOnce(undefined);
+    const { updateUserDisplayName } = await import('../userProfile');
+    await updateUserDisplayName('uid-1', 'NewName');
+    expect(mockMeasuredGetDoc.mock.calls.map((c) => c[0])).toContain('userProfile_existsCheck');
   });
 });

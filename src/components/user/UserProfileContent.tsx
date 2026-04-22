@@ -7,7 +7,7 @@ import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { formatDateMedium } from '../../utils/formatDate';
 import { MEDALS } from '../../constants/rankings';
 import { truncate } from '../../utils/text';
@@ -26,7 +26,7 @@ export default function UserProfileContent({ userId, userName, onClose, onNaviga
   const { profile, loading } = useUserProfile(userId, userName);
 
   const handleCommentClick = (businessId: string) => {
-    const business: Business | undefined = allBusinesses.find((b) => b.id === businessId);
+    const business: Business | undefined = getBusinessById(businessId);
     if (business) {
       onClose();
       onNavigateToBusiness(business);

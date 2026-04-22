@@ -19,6 +19,7 @@ import type { BusinessCategory } from '../../types';
 import { AUTO_DISMISS_MS } from '../../constants/timing';
 import { useOnboardingHint } from '../../hooks/useOnboardingHint';
 import { trackEvent } from '../../utils/analytics';
+import { MSG_COMMON } from '../../constants/messages';
 import type { SearchViewMode } from '../../types';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
@@ -46,7 +47,7 @@ function MapHint() {
         severity="info"
         variant="filled"
         action={
-          <IconButton size="small" color="inherit" aria-label="Cerrar aviso" onClick={dismiss}>
+          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }

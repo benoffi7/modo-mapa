@@ -2,6 +2,7 @@ import { Dialog, DialogTitle, DialogContent, Box, ButtonBase, Typography, IconBu
 import CloseIcon from '@mui/icons-material/Close';
 import { AVATAR_OPTIONS } from '../../constants/avatars';
 import type { AvatarOption } from '../../constants/avatars';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface Props {
   open: boolean;
@@ -15,7 +16,7 @@ export default function AvatarPicker({ open, onClose, onSelect, selectedId }: Pr
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Elegir avatar
-        <IconButton size="small" aria-label="Cerrar" onClick={onClose}>
+        <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={onClose}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>

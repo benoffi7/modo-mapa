@@ -13,7 +13,11 @@ const {
   const mockWhere2 = vi.fn().mockReturnValue({ count: mockCount });
   const mockWhere1 = vi.fn().mockReturnValue({ where: mockWhere2 });
   const mockCollection = vi.fn().mockReturnValue({ where: mockWhere1 });
-  const mockDb = { collection: mockCollection };
+  const mockDoc = vi.fn().mockReturnValue({
+    set: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue({ exists: false }),
+  });
+  const mockDb = { collection: mockCollection, doc: mockDoc };
   const mockGetFirestore = vi.fn().mockReturnValue(mockDb);
 
   return {
@@ -33,6 +37,7 @@ const {
 
 vi.mock('firebase-admin/firestore', () => ({
   getFirestore: mockGetFirestore,
+  FieldValue: { serverTimestamp: () => '__ts__' },
 }));
 
 vi.mock('firebase-functions/v2/firestore', () => ({
@@ -49,6 +54,10 @@ vi.mock('../../utils/counters', () => ({
 
 vi.mock('../../utils/abuseLogger', () => ({
   logAbuse: (...args: unknown[]) => mockLogAbuse(...args),
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 import '../../triggers/listItems';
@@ -92,7 +101,8 @@ describe('onListItemCreated', () => {
     expect(mockLogAbuse).not.toHaveBeenCalled();
   });
 
-  it('deletes document and logs abuse when rate limit exceeded', async () => {
+  // #300 M-5: rate limit now runs BEFORE counter increment.
+  it('deletes document and logs abuse WITHOUT incrementing when rate limit exceeded', async () => {
     mockCountGet.mockResolvedValueOnce({ data: () => ({ count: 101 }) });
     const mockDelete = vi.fn().mockResolvedValue(undefined);
 
@@ -104,8 +114,9 @@ describe('onListItemCreated', () => {
       },
     });
 
-    expect(mockIncrementCounter).toHaveBeenCalledWith(expect.anything(), 'listItems', 1);
-    expect(mockTrackWrite).toHaveBeenCalledWith(expect.anything(), 'listItems');
+    // counter must NOT be incremented when limit exceeded (#300 M-5)
+    expect(mockIncrementCounter).not.toHaveBeenCalled();
+    expect(mockTrackWrite).not.toHaveBeenCalled();
     expect(mockDelete).toHaveBeenCalled();
     expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), {
       userId: 'user1',

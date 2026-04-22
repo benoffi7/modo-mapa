@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { UserSearchField } from '../UserSearchField';
 import { createRecommendation, countRecommendationsSentToday } from '../../services/recommendations';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
@@ -17,14 +18,13 @@ import { useEffect } from 'react';
 interface Props {
   open: boolean;
   onClose: () => void;
-  businessId: string;
-  businessName: string;
 }
 
-export default function RecommendDialog({ open, onClose, businessId, businessName }: Props) {
+export default function RecommendDialog({ open, onClose }: Props) {
   const { user, displayName } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { businessId, businessName } = useBusinessScope();
   const [selectedUser, setSelectedUser] = useState<{ userId: string; displayName: string } | null>(null);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);

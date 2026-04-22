@@ -9,6 +9,11 @@ vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 const mockAddDoc = vi.fn().mockResolvedValue({ id: 'ci_001' });
 const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
 const mockGetDocs = vi.fn();
+const mockMeasuredGetDocs = vi.fn((_name: string, q: unknown) => mockGetDocs(q));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+}));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
@@ -129,5 +134,27 @@ describe('fetchUserCheckIns', () => {
   it('propagates errors', async () => {
     mockGetDocs.mockRejectedValue(new Error('network'));
     await expect(fetchUserCheckIns('u1')).rejects.toThrow('network');
+  });
+});
+
+describe('measureAsync instrumentation', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('fetchMyCheckIns emits name checkins_byUser', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchMyCheckIns('u1');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('checkins_byUser');
+  });
+
+  it('fetchCheckInsForBusiness emits name checkins_byUserBusiness', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchCheckInsForBusiness('b1', 'u1');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('checkins_byUserBusiness');
+  });
+
+  it('fetchUserCheckIns emits name checkins_byUserAll', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchUserCheckIns('u1');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('checkins_byUserAll');
   });
 });

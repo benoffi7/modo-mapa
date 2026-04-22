@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import MapIcon from '@mui/icons-material/Map';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -128,7 +129,7 @@ export default function MapView() {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             textAlign: 'center',
-            bgcolor: (theme) => `rgba(${theme.palette.mode === 'dark' ? '30,30,30' : '255,255,255'},0.95)`,
+            bgcolor: (theme) => alpha(theme.palette.background.paper, 0.95),
             borderRadius: 2,
             px: 3,
             py: 2,

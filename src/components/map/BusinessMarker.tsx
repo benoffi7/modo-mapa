@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { useTheme } from '@mui/material/styles';
 import { CATEGORY_COLORS } from '../../constants/business';
 import type { Business } from '../../types';
 
@@ -11,7 +12,11 @@ interface Props {
 }
 
 const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onClick, averageRating }: Props) {
+  const theme = useTheme();
   const color = CATEGORY_COLORS[business.category] || CATEGORY_COLORS.restaurant;
+  // background.paper resuelve a '#ffffff' en light y '#1e1e1e' en dark.
+  // Son strings hex validos para la API Pin de @vis.gl/react-google-maps.
+  const contrastColor = theme.palette.background.paper;
 
   const handleClick = useCallback(() => {
     onClick(business.id);
@@ -48,8 +53,8 @@ const BusinessMarker = memo(function BusinessMarker({ business, isSelected, onCl
         <div style={{ pointerEvents: 'none' }}>
           <Pin
             background={color}
-            borderColor={isSelected ? '#fff' : color}
-            glyphColor="#fff"
+            borderColor={isSelected ? contrastColor : color}
+            glyphColor={contrastColor}
             scale={isSelected ? 1.3 : 1}
           />
         </div>

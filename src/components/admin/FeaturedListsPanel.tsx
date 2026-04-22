@@ -19,7 +19,7 @@ import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
 import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { CATEGORY_LABELS } from '../../constants/business';
 import type { SharedList, ListItem as ListItemType } from '../../types';
 
@@ -123,7 +123,7 @@ export default function FeaturedListsPanel() {
                     ) : (
                       <List disablePadding dense>
                         {items.map((item) => {
-                          const business = allBusinesses.find((b) => b.id === item.businessId);
+                          const business = getBusinessById(item.businessId);
                           if (!business) return null;
                           return (
                             <ListItem key={item.id} disablePadding>

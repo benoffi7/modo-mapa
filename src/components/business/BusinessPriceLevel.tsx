@@ -3,6 +3,7 @@ import { Box, Typography, Button } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { upsertPriceLevel, deletePriceLevel } from '../../services/priceLevels';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PRICE_LEVEL_LABELS } from '../../constants/business';
@@ -10,17 +11,16 @@ import { LEVELS, LEVEL_SYMBOLS } from '../../constants/business';
 import type { PriceLevel } from '../../types';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   priceLevels: PriceLevel[];
   isLoading: boolean;
   onPriceLevelChange: () => void;
 }
 
-export default memo(function BusinessPriceLevel({ businessId, businessName, priceLevels, isLoading, onPriceLevelChange }: Props) {
+export default memo(function BusinessPriceLevel({ priceLevels, isLoading, onPriceLevelChange }: Props) {
   const { user } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { businessId, businessName } = useBusinessScope();
 
   const { averageLevel, totalVotes, serverMyLevel } = useMemo(() => {
     let sum = 0;
@@ -38,8 +38,10 @@ export default memo(function BusinessPriceLevel({ businessId, businessName, pric
     };
   }, [priceLevels, user]);
 
-  // pendingLevel: number = voting, 0 = pending delete, null = no change
-  const [pendingLevel, setPendingLevel] = useState<number | null>(null);
+  // pendingLevel: scoped to a businessId to auto-reset on navigation
+  const [pendingState, setPendingState] = useState<{ id: string; level: number | null }>({ id: businessId, level: null });
+  const pendingLevel = pendingState.id === businessId ? pendingState.level : null;
+  const setPendingLevel = (level: number | null) => setPendingState({ id: businessId, level });
   const myLevel = pendingLevel === 0 ? null : (pendingLevel ?? serverMyLevel);
 
   const handleVote = async (level: number) => {

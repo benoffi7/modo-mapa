@@ -12,7 +12,8 @@ import type { CustomTag } from '../../types';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import CronHealthSection from './CronHealthSection';
 import StatCard from './StatCard';
-import { TopList, PieChartCard } from '../stats';
+import { TopList } from '../stats';
+import PieChartCard from '../stats/PieChartCard';
 import { logger } from '../../utils/logger';
 
 interface CommentStats {

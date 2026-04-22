@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { formatDateMedium } from '../../utils/formatDate';
 import { logger } from '../../utils/logger';
 import { MSG_BUSINESS } from '../../constants/messages/business';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface Props {
   open: boolean;
@@ -63,7 +64,7 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
                 {reported ? 'Reportada' : 'Reportar'}
               </Button>
             )}
-            <IconButton onClick={onClose} sx={{ color: 'common.white' }} aria-label="Cerrar">
+            <IconButton onClick={onClose} sx={{ color: 'common.white' }} aria-label={MSG_COMMON.closeAriaLabel}>
               <CloseIcon />
             </IconButton>
           </Box>

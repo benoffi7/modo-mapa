@@ -1,7 +1,7 @@
 /**
  * Firestore + Storage service for the `menuPhotos` collection.
  */
-import { collection, doc, setDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import type { CollectionReference, DocumentReference } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import { db, storage, functions } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { menuPhotoConverter } from '../config/converters';
 import { invalidateBusinessCache } from './businessDataCache';
+import { measuredGetDocs } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import type { MenuPhoto } from '../types';
 
@@ -38,7 +39,7 @@ export async function uploadMenuPhoto(
   }
 
   // Check pending count for this user
-  const pendingSnap = await getDocs(query(
+  const pendingSnap = await measuredGetDocs('menuPhotos_pendingCountCheck', query(
     collection(db, COLLECTIONS.MENU_PHOTOS),
     where('userId', '==', userId),
     where('status', '==', 'pending'),
@@ -100,7 +101,7 @@ export async function uploadMenuPhoto(
  * Get the approved menu photo for a business (if any).
  */
 export async function getApprovedMenuPhoto(businessId: string): Promise<MenuPhoto | null> {
-  const snap = await getDocs(query(
+  const snap = await measuredGetDocs('menuPhotos_approved', query(
     collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
     where('businessId', '==', businessId),
     where('status', '==', 'approved'),
@@ -116,7 +117,7 @@ export async function getUserPendingPhotos(
   userId: string,
   businessId: string,
 ): Promise<MenuPhoto[]> {
-  const snap = await getDocs(query(
+  const snap = await measuredGetDocs('menuPhotos_userPending', query(
     collection(db, COLLECTIONS.MENU_PHOTOS).withConverter(menuPhotoConverter),
     where('userId', '==', userId),
     where('businessId', '==', businessId),

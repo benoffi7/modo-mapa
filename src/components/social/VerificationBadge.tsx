@@ -3,6 +3,7 @@ import Chip from '@mui/material/Chip';
 import LinearProgress from '@mui/material/LinearProgress';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
 import { trackEvent } from '../../utils/analytics';
 import type { VerificationBadge as VerificationBadgeType } from '../../types';
 
@@ -11,11 +12,16 @@ interface Props {
   compact?: boolean;
 }
 
-const GOLD_BORDER = '#FFD700';
-const GOLD_BG = 'rgba(255, 215, 0, 0.08)';
+// Brand color (medalla de oro) — usado como border y bar del LinearProgress.
+const GOLD_HEX = '#FFD700';
 const GREY_BORDER = 'divider';
 
 export default function VerificationBadge({ badge, compact = false }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  // Duplicamos la opacidad en dark (0.08 -> 0.16) para compensar el background.default oscuro
+  const goldBg = alpha(GOLD_HEX, isDark ? 0.16 : 0.08);
+
   const tooltipText = `${badge.name}: ${badge.current}/${badge.target} \u2014 ${badge.description}`;
 
   const handleTooltipOpen = () => {
@@ -32,8 +38,8 @@ export default function VerificationBadge({ badge, compact = false }: Props) {
           sx={{
             fontSize: '0.75rem',
             height: 24,
-            borderColor: badge.earned ? GOLD_BORDER : undefined,
-            bgcolor: badge.earned ? GOLD_BG : undefined,
+            borderColor: badge.earned ? GOLD_HEX : undefined,
+            bgcolor: badge.earned ? goldBg : undefined,
             '& .MuiChip-label': { px: 0.75 },
           }}
         />
@@ -48,8 +54,8 @@ export default function VerificationBadge({ badge, compact = false }: Props) {
           p: 1.5,
           borderRadius: 1,
           border: 1,
-          borderColor: badge.earned ? GOLD_BORDER : GREY_BORDER,
-          bgcolor: badge.earned ? GOLD_BG : 'transparent',
+          borderColor: badge.earned ? GOLD_HEX : GREY_BORDER,
+          bgcolor: badge.earned ? goldBg : 'transparent',
           minWidth: 140,
         }}
       >
@@ -75,7 +81,7 @@ export default function VerificationBadge({ badge, compact = false }: Props) {
             mb: 0.5,
             bgcolor: 'action.hover',
             '& .MuiLinearProgress-bar': {
-              bgcolor: badge.earned ? GOLD_BORDER : 'primary.main',
+              bgcolor: badge.earned ? GOLD_HEX : 'primary.main',
             },
           }}
         />
