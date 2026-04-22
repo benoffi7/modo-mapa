@@ -60,6 +60,7 @@ Ver `docs/reference/guards/306-architecture.md`.
 - Subarbol de business tabs consume `useBusinessScope()`, no prop-drill `businessId`/`businessName`.
 - `InfoTab` prop surface agrupada en `priceLevelData`, `tagsData`, `photoData`.
 - Componentes no importan `firebase/firestore` directo — van via `src/services/`.
+- Al refactorizar un componente para consumir contexto (`useBusinessScope`), los props deben ser opcionales con fallback a contexto via `useOptionalBusinessScope()` — nunca eliminar props que callers existentes pasan directamente. Verificar todos los usos con `grep -rn "ComponentName" src/ --include="*.tsx"` antes de eliminar cualquier prop.
 
 ```bash
 grep -rn "console\.\(error\|log\|warn\)(" src/ --include="*.ts" --include="*.tsx" | grep -v logger.ts | grep -v sentry.ts | grep -v test

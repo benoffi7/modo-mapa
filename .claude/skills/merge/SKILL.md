@@ -119,7 +119,13 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
 ```
 
-If `does not meet` appears, write more tests before proceeding. Common gap: `syncEngine.ts` — new action types need corresponding test cases in `syncEngine.test.ts`.
+If `does not meet` appears, use a two-step strategy:
+
+**Step 1 — Exclude legitimately untestable files.** `src/components/admin/**` and `src/components/DEV/**` are excluded from coverage in `vitest.config.ts`. If a new admin/DEV component is pushing the threshold below 80%, verify it is already listed in `coverage.exclude`. These are valid exclusions — admin UI components require E2E tests, not unit tests.
+
+**Step 2 — Write targeted branch tests.** For non-admin files, identify the specific uncovered branches. Common gap areas: `QuestionForm` conditional branches, `FiltersContext` edge cases, `perfMetrics` offline flush path, `syncEngine` non-Error throw catch blocks.
+
+**Tech-debt bundle note:** When merging 5+ issues at once, run coverage at Phase 1g BEFORE Phase 2 audits — catching a 3% shortfall after 11 issues are implemented is much more painful than catching it early.
 
 ### 1h. Firestore index validation
 
@@ -756,8 +762,13 @@ gh run watch $(gh run list --branch new-home --limit 1 --json databaseId -q '.[0
 ### 5d. Clean up branches
 
 ```bash
-git push origin --delete <branch-name>
-git branch -d <branch-name>
+# Remove worktree first (if applicable)
+git worktree remove --force .claude/worktrees/<short-name> 2>/dev/null || true
+
+# Only delete remote if it exists (branch may have been local-only)
+git ls-remote --exit-code origin <branch-name> 2>/dev/null && git push origin --delete <branch-name> || echo "Branch was local-only, no remote to delete"
+
+git branch -D <branch-name>
 ```
 
 ### 5e. Close related issues

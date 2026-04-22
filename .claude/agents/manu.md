@@ -82,6 +82,8 @@ Antes de terminar:
 4. Haz un commit con mensaje descriptivo
 ```
 
+**Regla adicional para refactors de prop interface:** Si el agente va a eliminar o renombrar un prop de un componente, DEBE primero hacer `grep -rn "NombreComponente" src/ --include="*.tsx"` y verificar que ningún caller existente use ese prop directamente. Si hay callers fuera del contexto refactorizado, el prop debe ser opcional con fallback a contexto — nunca eliminar props con callers activos.
+
 ## Cuando escalar al usuario
 
 - Trade-offs significativos que afectan UX o costo
