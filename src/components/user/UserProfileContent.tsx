@@ -124,8 +124,10 @@ export default function UserProfileContent({ userId, userName, onClose, onNaviga
                 <ListItemText
                   primary={truncate(comment.text, 100)}
                   secondary={`${comment.businessName} — ${formatDateMedium(comment.createdAt)}`}
-                  primaryTypographyProps={{ variant: 'body2', sx: { fontStyle: 'italic' } }}
-                  secondaryTypographyProps={{ variant: 'caption' }}
+                  slotProps={{
+                    primary: { variant: 'body2', sx: { fontStyle: 'italic' } },
+                    secondary: { variant: 'caption' },
+                  }}
                 />
               </ListItemButton>
             ))}

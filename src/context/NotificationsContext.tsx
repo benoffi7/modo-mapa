@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { useConnectivity } from './ConnectivityContext';
 import {
   fetchUserNotifications,
   markNotificationRead,
@@ -31,6 +32,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const uid = user?.uid ?? null;
   const { settings } = useUserSettings();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const digestFrequency: DigestFrequency = settings.notificationDigest ?? 'realtime';
   const [notifications, setNotifications] = useState<AppNotification[]>(EMPTY_NOTIFICATIONS);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -87,6 +89,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [uid, digestFrequency, loadNotifications, loadCountOnly]);
 
   const markRead = useCallback(async (notificationId: string) => {
+    // Early return when offline — mark-as-read is cosmetic, polling on reconnect will refresh count
+    if (isOffline) return;
     // optimistic update
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
@@ -103,10 +107,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setUnreadCount((prev) => prev + 1);
       toast.error(MSG_COMMON.markReadError);
     }
-  }, [toast]);
+  }, [toast, isOffline]);
 
   const markAllRead = useCallback(async () => {
-    if (!uid) return;
+    if (!uid || isOffline) return;
     const prevNotifications = notifications;
     const prevCount = unreadCount;
     // optimistic update
@@ -121,7 +125,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setUnreadCount(prevCount);
       toast.error(MSG_COMMON.markAllReadError);
     }
-  }, [uid, notifications, unreadCount, toast]);
+  }, [uid, notifications, unreadCount, toast, isOffline]);
 
   const refresh = useCallback(() => {
     if (uid) loadNotifications(uid);

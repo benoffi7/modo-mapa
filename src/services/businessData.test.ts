@@ -164,4 +164,100 @@ describe('fetchUserLikes — measureAsync instrumentation', () => {
     expect(result.has('c3')).toBe(true);
     expect(result.has('c2')).toBe(false);
   });
+
+  it('splits 35 ids into 2 batches (30 + 5)', async () => {
+    mockGetDocs.mockResolvedValue(emptyQuerySnap());
+    const ids = Array.from({ length: 35 }, (_, i) => `comment${i}`);
+    const { fetchUserLikes } = await import('./businessData');
+    await fetchUserLikes('user_001', ids);
+    // measureAsync wraps one Promise.all with 2 batch getDocs calls
+    expect(mockGetDocs).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('fetchBusinessData — branch coverage for isFavorite and menuPhoto', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockMeasuredGetDoc.mockResolvedValue({ exists: () => false, data: () => undefined });
+    mockMeasuredGetDocs.mockResolvedValue(emptyQuerySnap());
+  });
+
+  it('isFavorite is true when favSnap.exists() returns true', async () => {
+    mockMeasuredGetDoc.mockResolvedValue({ exists: () => true, data: () => undefined });
+    const { fetchBusinessData } = await import('./businessData');
+    const result = await fetchBusinessData('biz_001', 'user_001');
+    expect(result.isFavorite).toBe(true);
+  });
+
+  it('menuPhoto is non-null when menuPhotoSnap is non-empty', async () => {
+    const fakePhoto = { id: 'photo1', url: 'http://example.com/photo.jpg' };
+    mockMeasuredGetDocs.mockImplementation(async (name: string) => {
+      if (name === 'businessData_menuPhotos') {
+        return { docs: [{ data: () => fakePhoto }], empty: false, size: 1 };
+      }
+      return emptyQuerySnap();
+    });
+    const { fetchBusinessData } = await import('./businessData');
+    const result = await fetchBusinessData('biz_001', 'user_001');
+    expect(result.menuPhoto).toEqual(fakePhoto);
+  });
+
+  it('filters flagged comments and sorts by createdAt desc', async () => {
+    const older = new Date('2024-01-01');
+    const newer = new Date('2024-06-01');
+    mockMeasuredGetDocs.mockImplementation(async (name: string) => {
+      if (name === 'businessData_comments') {
+        return {
+          docs: [
+            { data: () => ({ id: 'c1', flagged: false, createdAt: older }) },
+            { data: () => ({ id: 'c2', flagged: true, createdAt: newer }) },
+            { data: () => ({ id: 'c3', flagged: false, createdAt: newer }) },
+          ],
+          empty: false,
+          size: 3,
+        };
+      }
+      return emptyQuerySnap();
+    });
+    mockGetDocs.mockResolvedValue(emptyQuerySnap());
+
+    const { fetchBusinessData } = await import('./businessData');
+    const result = await fetchBusinessData('biz_001', 'user_001');
+    // c2 (flagged) removed, c3 (newer) before c1 (older)
+    expect(result.comments.map((c) => c.id)).toEqual(['c3', 'c1']);
+  });
+});
+
+describe('fetchSingleCollection — menuPhoto empty vs non-empty', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockMeasuredGetDoc.mockResolvedValue({ exists: () => false, data: () => undefined });
+    mockMeasuredGetDocs.mockResolvedValue(emptyQuerySnap());
+  });
+
+  it('menuPhotos returns null when snap is empty', async () => {
+    mockMeasuredGetDocs.mockResolvedValue(emptyQuerySnap());
+    const { fetchSingleCollection } = await import('./businessData');
+    const result = await fetchSingleCollection('biz_001', 'user_001', 'menuPhotos');
+    expect(result).toEqual({ menuPhoto: null });
+  });
+
+  it('menuPhotos returns first item when snap is non-empty', async () => {
+    const photo = { id: 'p1', url: 'http://img.com/p.jpg' };
+    mockMeasuredGetDocs.mockResolvedValue({
+      docs: [{ data: () => photo }],
+      empty: false,
+      size: 1,
+    });
+    const { fetchSingleCollection } = await import('./businessData');
+    const result = await fetchSingleCollection('biz_001', 'user_001', 'menuPhotos');
+    expect(result).toEqual({ menuPhoto: photo });
+  });
+
+  it('favorites returns isFavorite: true when doc exists', async () => {
+    mockMeasuredGetDoc.mockResolvedValue({ exists: () => true, data: () => undefined });
+    const { fetchSingleCollection } = await import('./businessData');
+    const result = await fetchSingleCollection('biz_001', 'user_001', 'favorites');
+    expect(result).toEqual({ isFavorite: true });
+  });
 });

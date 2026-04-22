@@ -20,6 +20,11 @@ vi.mock('./ToastContext', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }),
 }));
 
+let mockIsOffline = false;
+vi.mock('./ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: mockIsOffline }),
+}));
+
 vi.mock('../hooks/useUserSettings', () => ({
   useUserSettings: () => ({ settings: { notificationDigest: 'realtime' }, loading: false }),
 }));
@@ -43,6 +48,7 @@ describe('NotificationsContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUser = { uid: 'user1' };
+    mockIsOffline = false;
     mockFetchUserNotifications.mockResolvedValue([]);
     mockGetUnreadCount.mockResolvedValue(0);
     mockMarkNotificationRead.mockResolvedValue(undefined);
@@ -191,5 +197,58 @@ describe('NotificationsContext', () => {
     await act(async () => { resolveFetch([]); });
 
     expect(result.current.loading).toBe(false);
+  });
+
+  // Offline guard tests (#304)
+  describe('offline guards', () => {
+    it('markRead is a no-op when offline — does not call service', async () => {
+      mockIsOffline = true;
+      mockFetchUserNotifications.mockResolvedValue([{ id: 'n-1', read: false }]);
+      mockGetUnreadCount.mockResolvedValue(1);
+
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.markRead('n-1');
+      });
+
+      expect(mockMarkNotificationRead).not.toHaveBeenCalled();
+    });
+
+    it('markRead does not change state when offline', async () => {
+      mockIsOffline = true;
+      const notifs = [{ id: 'n-1', read: false }];
+      mockFetchUserNotifications.mockResolvedValue(notifs);
+      mockGetUnreadCount.mockResolvedValue(1);
+
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.markRead('n-1');
+      });
+
+      // State should be unchanged — no optimistic update
+      expect(result.current.unreadCount).toBe(1);
+      const n = result.current.notifications.find((x) => x.id === 'n-1');
+      expect(n?.read).toBe(false);
+    });
+
+    it('markAllRead is a no-op when offline — does not call service', async () => {
+      mockIsOffline = true;
+      mockFetchUserNotifications.mockResolvedValue([{ id: 'n-1', read: false }]);
+      mockGetUnreadCount.mockResolvedValue(1);
+
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.markAllRead();
+      });
+
+      expect(mockMarkAllNotificationsRead).not.toHaveBeenCalled();
+      expect(result.current.unreadCount).toBe(1);
+    });
   });
 });

@@ -65,23 +65,14 @@ export default function BusinessSheetContent({
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const [commentsDirty, setCommentsDirty] = useState(false);
-  const prevBusinessIdRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<BusinessSheetTab>(() => initialTab ?? 'info');
 
-  // Consume deep-link tab + reset tab on business change
-  if (initialTab) {
-    onTabConsumed?.();
-    if (activeTab !== initialTab) {
-      setActiveTab(initialTab);
-    }
-  }
-  // eslint-disable-next-line react-hooks/refs -- synchronous render-time tracking of business changes (React 18+ pattern)
-  if (businessId !== prevBusinessIdRef.current) {
-    prevBusinessIdRef.current = businessId; // eslint-disable-line react-hooks/refs
-    if (activeTab !== 'info' && businessId !== null) {
-      setActiveTab('info');
-    }
-  }
+  // Notify parent that the deep-link tab has been consumed (on mount when initialTab is set).
+  // Tab reset on business change is handled by key={business.id} in the parent (BusinessSheet).
+  useEffect(() => {
+    if (initialTab) onTabConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once on mount
 
   const showSkeleton = data.isLoading;
   const showError = !data.isLoading && data.error;

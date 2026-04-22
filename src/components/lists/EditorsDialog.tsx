@@ -110,8 +110,10 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
                 <ListItemText
                   primary={editor.displayName}
                   secondary="Editor"
-                  primaryTypographyProps={{ fontSize: '0.9rem' }}
-                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                  slotProps={{
+                    primary: { sx: { fontSize: '0.9rem' } },
+                    secondary: { sx: { fontSize: '0.7rem' } },
+                  }}
                 />
               </ListItem>
             ))}

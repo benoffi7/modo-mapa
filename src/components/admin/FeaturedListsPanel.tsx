@@ -130,8 +130,10 @@ export default function FeaturedListsPanel() {
                               <ListItemText
                                 primary={business.name}
                                 secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
-                                primaryTypographyProps={{ fontSize: '0.85rem' }}
-                                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                                slotProps={{
+                                  primary: { sx: { fontSize: '0.85rem' } },
+                                  secondary: { sx: { fontSize: '0.75rem' } },
+                                }}
                                 sx={{ pl: 1, py: 0.5 }}
                               />
                             </ListItem>

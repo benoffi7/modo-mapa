@@ -137,7 +137,7 @@ const CommentsListItem = memo(function CommentsListItem({
             </>
           )
         }
-        primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+        slotProps={{ primary: { sx: { fontWeight: 500, fontSize: '0.9rem' } } }}
       />
       {editingId !== id && (
         <Box sx={{ display: 'flex', flexDirection: 'column', ml: 0.5 }}>

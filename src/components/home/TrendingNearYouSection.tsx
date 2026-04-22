@@ -91,7 +91,7 @@ export default function TrendingNearYouSection() {
             variant="text"
             size="small"
             onClick={handleConfigureTap}
-            sx={{ minWidth: 0, p: 0, textAlign: 'left', textTransform: 'none', fontSize: '0.75rem', lineHeight: 'inherit' }}
+            sx={{ minWidth: 44, minHeight: 44, textAlign: 'left', textTransform: 'none', fontSize: '0.75rem', px: 1 }}
           >
             Configurá tu localidad para resultados más precisos
           </Button>

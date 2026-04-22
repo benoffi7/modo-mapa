@@ -15,4 +15,6 @@ export const MSG_COMMON = {
   // Error boundary (#309 S3)
   genericErrorTitle: 'Algo salió mal',
   genericErrorBody: 'Ocurrió un error inesperado. Intentá recargar la página.',
+  // Offline guards (#304)
+  noConnectionForProfile: 'No se puede cambiar sin conexión',
 } as const;

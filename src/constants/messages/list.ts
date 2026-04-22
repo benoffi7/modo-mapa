@@ -28,4 +28,6 @@ export const MSG_LIST = {
     count > 0
       ? `${count} favorito${count !== 1 ? 's' : ''} agregado${count !== 1 ? 's' : ''}`
       : 'Ya tenés todos como favoritos',
+  deleteRequiresConnection: 'Eliminar listas requiere conexión',
+  featuredStale: 'Listas destacadas desactualizadas',
 } as const;

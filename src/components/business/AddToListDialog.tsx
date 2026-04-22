@@ -174,8 +174,10 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
                       </Box>
                     }
                     secondary={`${list.itemCount} comercio${list.itemCount !== 1 ? 's' : ''}`}
-                    primaryTypographyProps={{ fontSize: '0.9rem' }}
-                    secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                    slotProps={{
+                      primary: { sx: { fontSize: '0.9rem' } },
+                      secondary: { sx: { fontSize: '0.75rem' } },
+                    }}
                   />
                   {actionInProgress === list.id && <CircularProgress size={16} />}
                 </ListItemButton>

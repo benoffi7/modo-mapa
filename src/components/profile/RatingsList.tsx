@@ -141,7 +141,7 @@ export default function RatingsList({ onSelectBusiness }: Props) {
                   </Typography>
                 </>
               }
-              primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }}
+              slotProps={{ primary: { sx: { fontWeight: 500, fontSize: '0.9rem' } } }}
             />
           </ListItemButton>
         ))}

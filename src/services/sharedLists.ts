@@ -27,7 +27,18 @@ function getSharedListsCollection(): CollectionReference<SharedList> {
   return collection(db, COLLECTIONS.SHARED_LISTS).withConverter(sharedListConverter) as CollectionReference<SharedList>;
 }
 
-export async function createList(userId: string, name: string, description: string = '', icon?: string): Promise<string> {
+/** Generate a Firestore-compatible list ID client-side (no network call). Used for offline-first flows. */
+export function generateListId(): string {
+  return doc(collection(db, COLLECTIONS.SHARED_LISTS)).id;
+}
+
+export async function createList(
+  userId: string,
+  name: string,
+  description: string = '',
+  icon?: string,
+  listId?: string,
+): Promise<string> {
   const docData: Record<string, unknown> = {
     ownerId: userId,
     name: name.trim(),
@@ -38,10 +49,20 @@ export async function createList(userId: string, name: string, description: stri
     updatedAt: serverTimestamp(),
   };
   if (icon && getListIconById(icon)) docData.icon = icon;
-  const ref = await addDoc(collection(db, COLLECTIONS.SHARED_LISTS), docData);
+
+  let resolvedId: string;
+  if (listId) {
+    // Client-generated ID (offline-first flow)
+    await setDoc(doc(db, COLLECTIONS.SHARED_LISTS, listId), docData);
+    resolvedId = listId;
+  } else {
+    const ref = await addDoc(collection(db, COLLECTIONS.SHARED_LISTS), docData);
+    resolvedId = ref.id;
+  }
+
   invalidateQueryCache(COLLECTIONS.SHARED_LISTS, userId);
-  trackEvent('list_created', { list_id: ref.id });
-  return ref.id;
+  trackEvent('list_created', { list_id: resolvedId });
+  return resolvedId;
 }
 
 export async function toggleListPublic(listId: string, isPublic: boolean): Promise<void> {
