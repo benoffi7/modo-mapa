@@ -34,7 +34,7 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
         position: 'sticky',
         top: 0,
         zIndex: 2,
-        bgcolor: 'background.paper',
+        background: 'inherit',
         px: 2,
         pt: 0,
         pb: 0,
