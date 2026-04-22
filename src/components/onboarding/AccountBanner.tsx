@@ -12,6 +12,7 @@ import {
   EVT_ONBOARDING_BANNER_CLICKED,
   EVT_ONBOARDING_BANNER_DISMISSED,
 } from '../../constants/analyticsEvents';
+import { MSG_COMMON } from '../../constants/messages';
 
 function shouldShow(authMethod: string): boolean {
   if (authMethod !== 'anonymous') return false;
@@ -74,7 +75,7 @@ export default function AccountBanner({ onCreateAccount }: Props) {
             <Button color="inherit" size="small" onClick={handleClick} sx={{ fontWeight: 600 }}>
               Crear cuenta
             </Button>
-            <IconButton size="small" color="inherit" onClick={handleDismiss}>
+            <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={handleDismiss}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </>

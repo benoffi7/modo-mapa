@@ -25,6 +25,7 @@ import {
   TYPE_LABELS,
   formatDuration,
 } from './auditHelpers';
+import { MSG_COMMON } from '../../../constants/messages';
 import type { DeletionAuditLogEntry } from '../../../types/admin';
 
 type TypeFilter = DeletionAuditLogEntry['type'] | 'all';
@@ -137,7 +138,7 @@ export default function DeletionAuditPanel() {
 
       {filtered.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-          Sin registros de eliminacion.
+          Sin registros de eliminación.
         </Typography>
       ) : (
         <>
@@ -231,7 +232,7 @@ export default function DeletionAuditPanel() {
                 onClick={handleLoadMore}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                {loadingMore ? MSG_COMMON.loading : MSG_COMMON.loadMore}
               </Button>
             </Box>
           )}

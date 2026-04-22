@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { incrementCounter, trackWrite } from '../utils/counters';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 // Regex for valid storagePath: menus/{userId}/{bizId}/{fileName}
 const STORAGE_PATH_REGEX = /^menus\/[a-zA-Z0-9]+\/biz_\d{1,6}\/[a-zA-Z0-9_-]+$/;
@@ -12,6 +13,7 @@ const STORAGE_PATH_REGEX = /^menus\/[a-zA-Z0-9]+\/biz_\d{1,6}\/[a-zA-Z0-9_-]+$/;
 export const onMenuPhotoCreated = onDocumentCreated(
   'menuPhotos/{photoId}',
   async (event) => {
+    const startMs = performance.now();
     const snap = event.data;
     if (!snap) return;
     const data = snap.data();
@@ -44,7 +46,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     }
 
     // Rate limit: 10 menuPhotos per day per user
-    // Don't delete doc (allow delete: if false in rules), just skip processing
+    // Trigger runs as admin SDK — delete bypasses client-facing rules
     const exceeded = await checkRateLimit(
       db,
       { collection: 'menuPhotos', limit: 10, windowType: 'daily' },
@@ -52,6 +54,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     );
 
     if (exceeded) {
+      await snap.ref.delete();
       await logAbuse(db, {
         userId,
         type: 'rate_limit',
@@ -87,5 +90,6 @@ export const onMenuPhotoCreated = onDocumentCreated(
     // Counters
     await incrementCounter(db, 'menuPhotos', 1);
     await trackWrite(db, 'menuPhotos');
+    await trackFunctionTiming('onMenuPhotoCreated', startMs);
   },
 );

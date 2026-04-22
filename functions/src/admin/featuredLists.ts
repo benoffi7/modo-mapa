@@ -1,12 +1,35 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { assertAdmin } from '../helpers/assertAdmin';
 import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
+import { checkCallableRateLimit } from '../utils/callableRateLimit';
+
+const DEFAULT_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 500;
 
 /** Extract optional databaseId from callable request data. */
 function extractDbId(data: unknown): string | undefined {
   if (data && typeof data === 'object' && 'databaseId' in data) {
     const id = (data as { databaseId?: unknown }).databaseId;
     return typeof id === 'string' ? id : undefined;
+  }
+  return undefined;
+}
+
+/** Parse & clamp page size from the request payload. */
+function extractPageSize(data: unknown): number {
+  if (data && typeof data === 'object' && 'pageSize' in data) {
+    const raw = (data as { pageSize?: unknown }).pageSize;
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+      return Math.min(Math.floor(raw), MAX_PAGE_SIZE);
+    }
+  }
+  return DEFAULT_PAGE_SIZE;
+}
+
+function extractStartAfter(data: unknown): string | undefined {
+  if (data && typeof data === 'object' && 'startAfter' in data) {
+    const raw = (data as { startAfter?: unknown }).startAfter;
+    if (typeof raw === 'string' && raw.length > 0 && raw.length <= 128) return raw;
   }
   return undefined;
 }
@@ -52,18 +75,34 @@ interface ListData {
   itemCount: number;
 }
 
+interface ListPage {
+  lists: ListData[];
+  nextCursor: string | null;
+}
+
 export const getPublicLists = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
-  async (request) => {
+  async (request): Promise<ListPage> => {
     assertAdmin(request.auth);
 
     const db = getDb(extractDbId(request.data));
-    const snap = await db
+    const pageSize = extractPageSize(request.data);
+    const startAfterId = extractStartAfter(request.data);
+
+    let q = db
       .collection('sharedLists')
       .where('isPublic', '==', true)
       .orderBy('updatedAt', 'desc')
-      .get();
+      .limit(pageSize);
 
+    if (startAfterId) {
+      const cursorSnap = await db.doc(`sharedLists/${startAfterId}`).get();
+      if (cursorSnap.exists) {
+        q = q.startAfter(cursorSnap);
+      }
+    }
+
+    const snap = await q.get();
     const lists: ListData[] = snap.docs.map((d) => {
       const data = d.data();
       return {
@@ -77,25 +116,41 @@ export const getPublicLists = onCall(
       };
     });
 
-    return { lists };
+    const nextCursor = snap.size === pageSize && snap.size > 0
+      ? snap.docs[snap.size - 1].id
+      : null;
+
+    return { lists, nextCursor };
   },
 );
 
 /** Public callable — returns featured lists for any authenticated user. */
 export const getFeaturedLists = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
-  async (request) => {
+  async (request): Promise<ListPage> => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
 
     const db = getDb(extractDbId(request.data));
-    const snap = await db
+    await checkCallableRateLimit(db, `featured_lists_${request.auth.uid}`, 60, request.auth.uid);
+    const pageSize = extractPageSize(request.data);
+    const startAfterId = extractStartAfter(request.data);
+
+    let q = db
       .collection('sharedLists')
       .where('featured', '==', true)
       .orderBy('updatedAt', 'desc')
-      .get();
+      .limit(pageSize);
 
+    if (startAfterId) {
+      const cursorSnap = await db.doc(`sharedLists/${startAfterId}`).get();
+      if (cursorSnap.exists) {
+        q = q.startAfter(cursorSnap);
+      }
+    }
+
+    const snap = await q.get();
     const lists: ListData[] = snap.docs.map((d) => {
       const data = d.data();
       return {
@@ -109,6 +164,10 @@ export const getFeaturedLists = onCall(
       };
     });
 
-    return { lists };
+    const nextCursor = snap.size === pageSize && snap.size > 0
+      ? snap.docs[snap.size - 1].id
+      : null;
+
+    return { lists, nextCursor };
   },
 );

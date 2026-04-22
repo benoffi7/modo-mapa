@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 2 }}>
-        Última actualización: marzo 2026
+        Última actualización: abril 2026 (actualizada el 20/04/2026)
       </Typography>
 
       <Section title="Información general">
@@ -108,22 +108,20 @@ export default function PrivacyPolicy() {
             y no se envía a ningún servidor.
           </Li>
           <Li>
-            <strong>Datos de uso (opcional):</strong> si activás &quot;Enviar datos de uso&quot;
-            en Configuración, Firebase Analytics (GA4) recopila eventos anónimos de
-            navegación y uso (ej: vistas de comercios, búsquedas, interacciones con
-            favoritos, calificaciones, comentarios, etiquetas, listas, fotos de menú y
-            filtros). También se registran
-            eventos relacionados con la autenticación (account_created, email_sign_in,
-            sign_out, password_changed, account_deleted), eventos de preguntas y respuestas (question_created,
-            question_answered, question_viewed), eventos de check-ins (checkin_created,
-            checkin_deleted), eventos de recomendaciones (recommendation_sent,
-            recommendation_opened, recommendation_list_viewed),
-            eventos de sincronizacion offline (offline_action_queued,
-            offline_sync_completed, offline_sync_failed, offline_action_discarded),
-            eventos de seguimiento de usuarios y feed de actividad,
-            navegación entre secciones y progreso de onboarding,
-            y la propiedad de usuario auth_type. Estos eventos
-            se asocian al UID, no al email, y no identifican a personas individuales.
+            <strong>Datos de uso (opcional):</strong> si activás &quot;Enviar datos
+            de uso&quot; en Configuración, Firebase Analytics (GA4) recopila eventos
+            anónimos de uso de la app agrupados por dominio: navegación entre
+            secciones, interacciones con comercios (vistas, búsquedas, filtros,
+            calificaciones, comentarios, favoritos, fotos, recomendaciones,
+            preguntas, check-ins), interacciones sociales (seguir usuarios,
+            rankings, actividad, intereses), progreso de onboarding y creación
+            de cuenta, sincronización offline, rendimiento (Web Vitals) y
+            acciones administrativas — entre otros eventos de uso. El catálogo
+            completo y actualizado de eventos está disponible para los
+            administradores en el panel de <em>Features</em> de la app. Estos
+            eventos se asocian a tu UID (no a tu email) y no identifican a
+            personas individuales. También se registra la propiedad de usuario{' '}
+            <code>auth_type</code> (anónima / email / google para administradores).
           </Li>
           <Li>
             <strong>Métricas de rendimiento (opcional):</strong> si activás &quot;Enviar
@@ -148,17 +146,28 @@ export default function PrivacyPolicy() {
             de rendimiento, etc.) en servidores de Google Cloud.
           </Li>
           <Li>
+            <strong>Logs de seguridad (abuseLogs):</strong> cuando se exceden
+            límites de uso (rate limiting) o se flaggea contenido inapropiado,
+            se registra un log administrativo con tu UID, el tipo de evento
+            y la fecha. Estos logs no contienen el contenido generado por el
+            usuario y sólo son accesibles por administradores para investigar
+            abusos o patrones anómalos.
+          </Li>
+          <Li>
             <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
             feedback subidas por los usuarios.
           </Li>
           <Li>
-            <strong>localStorage:</strong> almacena preferencias locales en tu navegador
-            (tema claro/oscuro, visitas recientes, preferencia de analytics, estado del
-            tutorial de bienvenida, configuración de acciones rápidas del inicio, avatar
-            seleccionado, y opcionalmente tu email si activás &quot;Recordar mi
-            email&quot;). Estos datos no se envían a
-            ningún servidor y podés borrarlos en cualquier momento desde la configuración
-            del navegador o desactivando la opción.
+            <strong>localStorage:</strong> almacena preferencias locales en tu
+            navegador agrupadas en flags de onboarding, UI y cache: tema
+            claro/oscuro, visitas recientes, preferencia de analytics, flags de
+            tutoriales y onboarding, configuración de acciones rápidas del
+            inicio, avatar seleccionado, caché local de badges de verificación
+            de otros usuarios, contadores de límites locales, y opcionalmente
+            tu email si activás &quot;Recordar mi email&quot;. Estos datos no se
+            envían a ningún servidor y podés borrarlos en cualquier momento
+            desde la configuración del navegador o desactivando la opción
+            correspondiente en la app.
           </Li>
           <Li>
             <strong>IndexedDB (local):</strong> cuando no tenés conexión a internet,
@@ -210,6 +219,22 @@ export default function PrivacyPolicy() {
           puede ser compartido con GitHub para la gestión interna de mejoras y
           corrección de errores. No se comparte tu identidad ni tu UID; solo el
           contenido del mensaje. Ningún otro dato personal se comparte con terceros.
+        </P>
+        <P>
+          <strong>Diagnóstico de errores (Sentry):</strong> si la app encuentra
+          un error inesperado en producción, se envía información técnica del
+          incidente a <strong>Sentry</strong> (stack trace, versión de la app,
+          URL donde ocurrió el fallo y tu UID) con el único fin de diagnosticar
+          y corregir el problema. No se comparte tu email ni contenido generado
+          por vos.
+        </P>
+        <P>
+          <strong>Mapa (Google Maps):</strong> al renderizar el mapa interactivo,
+          tu navegador solicita tiles (imágenes del mapa) a los servidores de
+          Google Maps. Esto implica compartir tu dirección IP y las coordenadas
+          del área del mapa que estás viendo con Google, según su propia política
+          de privacidad. Esto es inherente al uso del mapa y no pasa por nuestros
+          servidores.
         </P>
         <P>
           Podés compartir voluntariamente tu posición y puntaje en el ranking, así como

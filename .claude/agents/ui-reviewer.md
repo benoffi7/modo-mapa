@@ -36,3 +36,19 @@ Eres un revisor experto en UI para el proyecto **Modo Mapa** — app mobile-firs
 ### Problemas criticos
 ### Sugerencias
 ```
+
+## Regression checks (#305)
+
+Ver `docs/reference/guards/305-ui-ux.md`.
+
+- `primaryTypographyProps` / `secondaryTypographyProps` prohibidos. Usar `slotProps={{ primary: {...}, secondary: {...} }}` (MUI 7). Canonico: `CommentRow.tsx:162`.
+- Touch targets minimo 44x44px (WCAG 2.5.5). Button/IconButton con `p: 0` en UI tactil es bug.
+- TabBar center FAB es componente nombrado, no Box targeteado por selector `.Mui-selected .MuiBox-root`.
+- `setState` durante render prohibido. No `eslint-disable react-hooks/rules-of-hooks`.
+- Chips: usar `size="small"` directo, no pelear contra `height` en sx.
+- 360px overflow: Typography con contenido al lado necesita `noWrap`.
+
+```bash
+grep -rn "primaryTypographyProps\|secondaryTypographyProps" src/ --include="*.tsx"
+grep -rn "eslint-disable.*react-hooks" src/components/
+```

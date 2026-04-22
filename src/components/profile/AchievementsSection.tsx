@@ -1,4 +1,4 @@
-import { Box, Card, CardActionArea, Typography, LinearProgress } from '@mui/material';
+import { Box, Button, Card, CardActionArea, Typography, LinearProgress } from '@mui/material';
 import type { SvgIconProps } from '@mui/material';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
@@ -50,14 +50,14 @@ export default function AchievementsSection({ onViewAll }: Props) {
     <Box sx={{ px: 2, py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">Logros</Typography>
-        <Typography
-          variant="caption"
-          color="primary"
+        <Button
+          variant="text"
+          size="small"
           onClick={onViewAll}
-          sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
         >
           Ver todos
-        </Typography>
+        </Button>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, overflow: 'auto', pb: 0.5 }}>
         {sorted.map((a) => {

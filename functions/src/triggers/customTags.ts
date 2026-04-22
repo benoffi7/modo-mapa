@@ -4,10 +4,12 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onCustomTagCreated = onDocumentCreated(
   'customTags/{tagId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -69,14 +71,17 @@ export const onCustomTagCreated = onDocumentCreated(
     // 3. Counters
     await incrementCounter(db, 'customTags', 1);
     await trackWrite(db, 'customTags');
+    await trackFunctionTiming('onCustomTagCreated', startMs);
   },
 );
 
 export const onCustomTagDeleted = onDocumentDeleted(
   'customTags/{tagId}',
   async () => {
+    const startMs = performance.now();
     const db = getDb();
     await incrementCounter(db, 'customTags', -1);
     await trackDelete(db, 'customTags');
+    await trackFunctionTiming('onCustomTagDeleted', startMs);
   },
 );

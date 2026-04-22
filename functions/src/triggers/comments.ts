@@ -56,17 +56,20 @@ export const onCommentCreated = onDocumentCreated(
     let parentSnap: FirebaseFirestore.DocumentSnapshot | null = null;
     if (parentId) {
       const parentRef = db.collection('comments').doc(parentId);
-      await parentRef.update({ replyCount: FieldValue.increment(1) });
-      parentSnap = await parentRef.get();
+      const [, snap] = await Promise.all([
+        parentRef.update({ replyCount: FieldValue.increment(1) }),
+        parentRef.get(),
+      ]);
+      parentSnap = snap;
     }
 
     // 4. Counters + aggregates
     const businessId = data.businessId as string | undefined;
-    await incrementCounter(db, 'comments', 1);
-    await trackWrite(db, 'comments');
-    if (businessId) {
-      await incrementBusinessCount(db, 'businessComments', businessId, 1);
-    }
+    await Promise.all([
+      incrementCounter(db, 'comments', 1),
+      trackWrite(db, 'comments'),
+      businessId ? incrementBusinessCount(db, 'businessComments', businessId, 1) : Promise.resolve(),
+    ]);
 
     // 5. Notify parent comment author about the reply
     if (parentId && parentSnap?.exists) {
@@ -172,10 +175,10 @@ export const onCommentDeleted = onDocumentDeleted(
 
     // 3. Counters + aggregates
     const businessId = data?.businessId as string | undefined;
-    await incrementCounter(db, 'comments', -1);
-    await trackDelete(db, 'comments');
-    if (businessId) {
-      await incrementBusinessCount(db, 'businessComments', businessId, -1);
-    }
+    await Promise.all([
+      incrementCounter(db, 'comments', -1),
+      trackDelete(db, 'comments'),
+      businessId ? incrementBusinessCount(db, 'businessComments', businessId, -1) : Promise.resolve(),
+    ]);
   },
 );

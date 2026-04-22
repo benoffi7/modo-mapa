@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { TextField, Box, List, ListItemButton, ListItemText, Typography, IconButton, InputAdornment } from '@mui/material';
+import { TextField, Box, Button, List, ListItemButton, ListItemText, Typography, IconButton, InputAdornment } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { logger } from '../../utils/logger';
 
 interface Props {
   currentLocality?: string | undefined;
@@ -20,18 +21,30 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [ready, setReady] = useState(false);
+  const [apiError, setApiError] = useState(false);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20;
+
     const check = () => {
+      if (cancelled) return;
       if (window.google?.maps?.places?.AutocompleteSuggestion) {
         geocoderRef.current = new google.maps.Geocoder();
         setReady(true);
       } else {
+        attempts += 1;
+        if (attempts >= MAX_ATTEMPTS) {
+          setApiError(true);
+          return;
+        }
         setTimeout(check, 500);
       }
     };
     check();
+    return () => { cancelled = true; };
   }, []);
 
   const handleSearch = useCallback(async (input: string) => {
@@ -71,8 +84,8 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
       setQuery('');
       setSuggestions([]);
       setIsEditing(false);
-    } catch {
-      // geocode failed silently
+    } catch (e) {
+      logger.warn('[LocalityPicker] geocode failed', e);
     }
   }, [onSelect]);
 
@@ -93,14 +106,14 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
         <IconButton size="small" onClick={handleClear} aria-label="Quitar localidad">
           <ClearIcon fontSize="small" />
         </IconButton>
-        <Typography
-          variant="caption"
-          color="primary"
-          sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+        <Button
+          variant="text"
+          size="small"
           onClick={() => setIsEditing(true)}
+          sx={{ minWidth: 0, p: 0, fontSize: '0.75rem', textTransform: 'none' }}
         >
           Cambiar
-        </Typography>
+        </Button>
       </Box>
     );
   }
@@ -110,11 +123,13 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
       <TextField
         size="small"
         fullWidth
-        placeholder={ready ? 'Buscar ciudad o barrio...' : 'Cargando...'}
+        placeholder={apiError ? 'Servicio no disponible' : ready ? 'Buscar ciudad o barrio...' : 'Cargando...'}
         value={query}
         onChange={(e) => { void handleSearch(e.target.value); }}
-        disabled={!ready}
+        disabled={!ready || apiError}
         autoFocus={isEditing}
+        error={apiError}
+        helperText={apiError ? 'No se pudo cargar el buscador de localidades' : undefined}
         slotProps={{
           input: {
             startAdornment: (
@@ -132,8 +147,10 @@ export default function LocalityPicker({ currentLocality, onSelect, onClear }: P
               <ListItemText
                 primary={s.mainText}
                 secondary={s.secondaryText}
-                primaryTypographyProps={{ fontSize: '0.85rem' }}
-                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                slotProps={{
+                  primary: { sx: { fontSize: '0.85rem' } },
+                  secondary: { sx: { fontSize: '0.75rem' } },
+                }}
               />
             </ListItemButton>
           ))}

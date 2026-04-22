@@ -54,10 +54,10 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2, gap: 1 }}>
       <LocalOfferIcon color="action" sx={{ fontSize: 36 }} />
       <Typography variant="subtitle2" fontWeight={600}>
-        Segui temas que te interesan
+        Seguí temas que te interesan
       </Typography>
       <Typography variant="caption" color="text.secondary" textAlign="center">
-        Te mostraremos negocios que coincidan con tus gustos
+        Te mostraremos comercios que coincidan con tus gustos
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, justifyContent: 'center', mt: 0.5 }}>
         {SUGGESTED_TAGS.map((tag) => (
@@ -80,7 +80,7 @@ function EmptyState({ onFollow, onExplore }: { onFollow: (tag: string) => void; 
         }}
         sx={{ mt: 0.5 }}
       >
-        Explorar mas tags
+        Explorar más tags
       </Button>
     </Box>
   );
@@ -161,7 +161,7 @@ export default function YourInterestsSection() {
       )}
       {activeGroup && activeGroup.businesses.length === 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ py: 1 }}>
-          No hay negocios con este tag todavia
+          No hay comercios con este tag todavía
         </Typography>
       )}
     </Box>

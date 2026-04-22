@@ -28,7 +28,29 @@ echo "Working directory: $WORKDIR"
 
 Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
+## Phase 0: Pre-implementation gate (feat/ branches only)
+
+For `feat/` branches, verify that PRD, specs, and plan exist and were approved before merging implementation work:
+
+Launch a **pre-implementation-gate** agent with the branch name and issue number. The agent checks:
+1. PRD exists in `docs/feat/{category}/{slug}/prd.md`
+2. Specs exist in `docs/feat/{category}/{slug}/specs.md`
+3. Plan exists in `docs/feat/{category}/{slug}/plan.md`
+
+If any are missing → **WARN** (not blocker, but report prominently). This catches features that bypassed the PRD workflow.
+
+Skip this phase for `fix/`, `chore/`, and `docs/` branches.
+
 ## Phase 1: Quality gates (abort on failure)
+
+### Phase 1 scope by branch type
+
+Not all guards apply to every branch type. Skip irrelevant checks to reduce friction:
+
+- **`feat/`** — Run ALL guards (1a through 1p)
+- **`fix/`** — Run ALL guards (1a through 1p)
+- **`chore/`** — Run only: 1a (sync), 1b (lint), 1e (build), 1i2 (conflict markers), 1n (secrets), 1p (sensitive data). Skip: tests, coverage, file size, boundary guards, Firestore rules checks
+- **`docs/`** — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip everything else (docs don't affect code)
 
 Run these sequentially — any failure aborts the merge:
 
@@ -97,7 +119,13 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
 ```
 
-If `does not meet` appears, write more tests before proceeding. Common gap: `syncEngine.ts` — new action types need corresponding test cases in `syncEngine.test.ts`.
+If `does not meet` appears, use a two-step strategy:
+
+**Step 1 — Exclude legitimately untestable files.** `src/components/admin/**` and `src/components/DEV/**` are excluded from coverage in `vitest.config.ts`. If a new admin/DEV component is pushing the threshold below 80%, verify it is already listed in `coverage.exclude`. These are valid exclusions — admin UI components require E2E tests, not unit tests.
+
+**Step 2 — Write targeted branch tests.** For non-admin files, identify the specific uncovered branches. Common gap areas: `QuestionForm` conditional branches, `FiltersContext` edge cases, `perfMetrics` offline flush path, `syncEngine` non-Error throw catch blocks.
+
+**Tech-debt bundle note:** When merging 5+ issues at once, run coverage at Phase 1g BEFORE Phase 2 audits — catching a 3% shortfall after 11 issues are implemented is much more painful than catching it early.
 
 ### 1h. Firestore index validation
 
@@ -220,6 +248,37 @@ done
 
 If violations found: move the Firebase call to a service function. Components must stay Firebase-agnostic to keep the monolith % low.
 
+### 1k1b. Offline safety guard
+
+**WARN:** New or modified code that uses `httpsCallable` or `getCountFromServer` must have offline protection.
+
+```bash
+# getCountFromServer without offline-safe wrapper
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.' | grep -v 'getCountOfflineSafe'); do
+  if [ -f "$f" ]; then
+    if grep -q 'getCountFromServer' "$f" 2>/dev/null; then
+      echo "OFFLINE UNSAFE: $f uses getCountFromServer directly — use getCountOfflineSafe"
+    fi
+  fi
+done
+
+# httpsCallable in user-facing components without offline guard
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -q 'httpsCallable' "$f" 2>/dev/null; then
+      if ! grep -qE 'isOffline|useConnectivity|navigator\.onLine' "$f" 2>/dev/null; then
+        echo "NO OFFLINE GUARD: $f uses httpsCallable without connectivity check"
+      fi
+    fi
+  fi
+done
+```
+
+Rules:
+- `getCountFromServer` → always use `getCountOfflineSafe` wrapper
+- `httpsCallable` in user-facing components → must check connectivity (disable button, show message, or cache fallback)
+- `<img>` with dynamic URLs → must have `onError` fallback for offline/broken images
+
 ### 1k2. Layer boundary guard
 
 **WARN:** Check that new files in `src/hooks/` actually use React hooks. Files without `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, or `useContext` belong in `src/services/` or `src/utils/`.
@@ -266,6 +325,78 @@ done
 
 Pattern to use: `let cancelled = false; ... if (!cancelled) setState(...); return () => { cancelled = true; }`
 
+### 1k4. Touch target minimum guard
+
+**WARN:** New or modified IconButtons and interactive elements must meet the 44x44px minimum touch target for mobile.
+
+```bash
+# Check for dangerously small padding on IconButtons
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'p:\s*0\.(25|5)\b|padding:\s*[0-2]px' "$f" 2>/dev/null; then
+      echo "SMALL TOUCH TARGET: $f — IconButton padding below 44px minimum"
+    fi
+  fi
+done
+```
+
+Interactive elements with `width/height: 32` or `p: 0.25` produce ~20-32px targets. Minimum is `minWidth: 44, minHeight: 44` or `p: 1.25` with 24px icon.
+
+### 1k5. Accessibility guard
+
+**WARN:** New or modified interactive elements must have proper accessibility attributes.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    # IconButtons without aria-label
+    if grep -qE '<IconButton[^>]*>' "$f" 2>/dev/null; then
+      count_buttons=$(grep -c '<IconButton' "$f" 2>/dev/null)
+      count_labels=$(grep -c 'aria-label' "$f" 2>/dev/null)
+      if [ "$count_labels" -lt "$count_buttons" ]; then
+        echo "MISSING ARIA-LABEL: $f ($count_buttons IconButtons, $count_labels aria-labels)"
+      fi
+    fi
+    # Typography used as button (onClick without role="button")
+    if grep -qE '<Typography[^>]*onClick' "$f" 2>/dev/null; then
+      echo "TYPOGRAPHY AS BUTTON: $f — use Button variant='text' instead"
+    fi
+    # Box/Avatar used as button (onClick without role="button")
+    if grep -qE '<(Box|Avatar)[^>]*onClick' "$f" 2>/dev/null; then
+      if ! grep -qE 'role="button"' "$f" 2>/dev/null; then
+        echo "BOX/AVATAR AS BUTTON: $f — add role='button' + tabIndex={0} + aria-label, or use ButtonBase"
+      fi
+    fi
+  fi
+done
+```
+
+Rules:
+- Every `<IconButton>` MUST have `aria-label`
+- Never use `<Typography onClick>` for interactive elements — use `<Button variant="text">` or `<Link component="button">`
+- New components with loading data MUST have error states (not just skeleton forever)
+
+### 1k6. String consistency guard
+
+**WARN:** New or modified user-facing strings must follow copy conventions.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    # Check for common missing tildes in Spanish
+    if grep -qEi "'[^']*\b(dia|dias|busqueda|cafe|pizzeria|rapida|panaderia|heladeria|resena|edicion|opinion|todavia|mas|informacion|direccion|ubicacion|configuracion|sincronizacion)\b[^']*'" "$f" 2>/dev/null; then
+      echo "POSSIBLE MISSING TILDE: $f"
+    fi
+    # Check for "negocios" (should be "comercios")
+    if grep -qi 'negocios' "$f" 2>/dev/null; then
+      echo "TERMINOLOGY: $f uses 'negocios' — should be 'comercios'"
+    fi
+  fi
+done
+```
+
+Conventions: voseo (Buscá, Dejá, Calificá), "comercios" not "negocios", all Spanish words must have proper tildes.
+
 ### 1l. Billing impact guard
 
 **WARN:** If the branch adds new Cloud Function triggers or new writable Firestore collections, evaluate billing impact.
@@ -297,15 +428,167 @@ git diff origin/new-home -- 'firestore.rules' | grep -E '^\+.*match /' | grep -v
 For each new collection, verify ALL of these exist:
 - [ ] `hasOnly()` on create rule (prevents field injection)
 - [ ] `hasOnly()` or `affectedKeys().hasOnly()` on update rule
-- [ ] Type/range validation on every field
+- [ ] Type validation on every field (`is string`, `is bool`, `is int`, `is list`, `is timestamp`)
+- [ ] `.size() <= N` on every string field (prevents storage DoS)
+- [ ] `.size() <= N` on every list field
 - [ ] `createdAt == request.time` on create
 - [ ] Ownership check (`userId == request.auth.uid`) on writes
 - [ ] Rate limit in Cloud Function trigger (if user-facing writes)
+- [ ] Rate limit calls `snap.ref.delete()` on excess (log-only is not enforcement)
+- [ ] Counter decrements use `Math.max(0, ...)` floor (prevents negative counts)
 - [ ] Content moderation via `checkModeration()` (if collection has text fields)
 - [ ] Seed data entry (check with seed-manager agent in Phase 3c)
 - [ ] Privacy policy mention (if collection stores user data)
+- [ ] Admin writes also have field validation (compromised admin defense)
 
 If any item is missing → **BLOCKER**: the collection is not hardened. Fix before merging.
+
+### 1n. Secrets and credentials guard
+
+**BLOCKER:** Scan all changed and new files for accidentally committed secrets, credentials, or sensitive config.
+
+```bash
+# Check for common secret patterns in changed files
+for f in $(git diff --name-only origin/new-home); do
+  if [ -f "$f" ]; then
+    if grep -qEi '(client_secret|private_key|api_key|secret_key|password|token).*[:=].*["\x27][A-Za-z0-9_\-]{10,}' "$f" 2>/dev/null; then
+      echo "POTENTIAL SECRET: $f"
+    fi
+  fi
+done
+
+# FULL REPO scan for secrets in scripts (catches files not in the diff)
+for f in scripts/*.ts scripts/*.mjs scripts/*.js; do
+  if [ -f "$f" ]; then
+    if grep -qEi 'client_secret|private_key' "$f" 2>/dev/null; then
+      echo "SECRET IN SCRIPT: $f — must use gcloud ADC, not hardcoded credentials"
+    fi
+  fi
+done
+
+# Check for SA key files on disk (even if gitignored)
+ls -la sa-key*.json *-credentials.json service-account*.json 2>/dev/null && echo "WARN: Service account key files found on disk"
+```
+
+If potential secrets found → **BLOCKER**. Refactor to use environment variables, Secret Manager, or `gcloud auth application-default login`. Never commit secrets even to non-public repos.
+
+### 1o. Firestore rules hardening guard
+
+**BLOCKER if firestore.rules changed:** Verify all rules follow security best practices:
+
+```bash
+if git diff --name-only origin/new-home | grep -q 'firestore.rules'; then
+  echo "=== Rules without field validation on write ==="
+  # Check all allow write/create/update for hasOnly
+  grep -n 'allow \(write\|create\|update\)' firestore.rules | while read line; do
+    linenum=$(echo "$line" | cut -d: -f1)
+    block=$(sed -n "${linenum},$((linenum+15))p" firestore.rules)
+    echo "$block" | grep -q 'hasOnly\|affectedKeys' || echo "MISSING VALIDATION: $line"
+  done
+
+  echo "=== String fields without size limits ==="
+  grep -n 'is string' firestore.rules | while read line; do
+    linenum=$(echo "$line" | cut -d: -f1)
+    field=$(echo "$line" | grep -oP '\w+(?=\s+is string)')
+    nearby=$(sed -n "$((linenum-2)),$((linenum+2))p" firestore.rules)
+    echo "$nearby" | grep -q '\.size()' || echo "NO SIZE LIMIT: $line"
+  done
+
+  echo "=== Counter decrements without floor-at-zero ==="
+  git diff origin/new-home -- 'functions/src/triggers/**' | grep -E '^\+.*increment\(-' | head -10
+fi
+```
+
+Checklist for every write rule:
+- [ ] `keys().hasOnly()` or `affectedKeys().hasOnly()` present
+- [ ] Every `is string` field has `.size() <= N` limit
+- [ ] Every `is list` field has `.size() <= N` limit
+- [ ] Admin-only writes still have field validation (compromised admin defense)
+- [ ] Counter decrements in triggers use `Math.max(0, ...)` floor
+- [ ] Rate limits call `snap.ref.delete()` (not just log) on excess
+
+### 1p. Sensitive data exposure guard
+
+**WARN:** Check that committed files don't expose admin emails, internal URLs, or PII.
+
+```bash
+# Admin emails in committed files
+git diff --name-only origin/new-home | xargs grep -l '@gmail.com\|@googlemail.com' 2>/dev/null | grep -v '.test.' | grep -v 'node_modules'
+
+# Internal URLs or IPs
+git diff origin/new-home | grep -E '^\+.*((192\.168|10\.|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]+|localhost:[0-9]{4,})' | grep -v '.env.example' | head -5
+```
+
+If admin emails or internal endpoints are in committed production files → **WARN**. Move to environment config or Secret Manager.
+
+### 1q. Logger error DEV guard check
+
+**BLOCKER:** New `logger.error` calls must NOT be wrapped in `if (import.meta.env.DEV)`. This silences Sentry error capture in production.
+
+```bash
+for f in $(git diff --name-only origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -v '.test.'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'import\.meta\.env\.DEV.*logger\.error|if.*DEV.*\{[^}]*logger\.error' "$f" 2>/dev/null; then
+      echo "SILENCED ERROR: $f wraps logger.error in DEV guard — errors lost in prod"
+    fi
+  fi
+done
+```
+
+Only `logger.warn` and `logger.log` should be silenced in prod. `logger.error` routes to Sentry and must always fire.
+
+### 1r. Performance instrumentation guard
+
+**WARN:** New Cloud Function triggers must include `trackFunctionTiming`. New service functions with Firestore queries should include `measureAsync`.
+
+```bash
+# New CF triggers without trackFunctionTiming
+for f in $(git diff --name-only origin/new-home -- 'functions/src/triggers/**'); do
+  if [ -f "$f" ]; then
+    if grep -q 'onDocument' "$f" && ! grep -q 'trackFunctionTiming' "$f"; then
+      echo "UNINSTRUMENTED TRIGGER: $f — add trackFunctionTiming"
+    fi
+  fi
+done
+
+# New service files without measureAsync
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/services/*.ts' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'getDocs|getDoc|getCountFromServer' "$f" && ! grep -q 'measureAsync' "$f"; then
+      echo "UNINSTRUMENTED SERVICE: $f — add measureAsync for Firestore queries"
+    fi
+  fi
+done
+```
+
+### 1s. Analytics event registration guard
+
+**WARN:** New `trackEvent` calls must have corresponding entries in `functions/src/admin/analyticsReport.ts` (GA4_EVENT_NAMES) and `src/components/admin/features/ga4FeatureDefinitions.ts`.
+
+```bash
+# Find new trackEvent calls and check GA4_EVENT_NAMES
+for event in $(git diff origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -E '^\+.*trackEvent\(' | grep -oP "trackEvent\('[^']+'" | grep -oP "'[^']+'" | tr -d "'"); do
+  if ! grep -q "$event" functions/src/admin/analyticsReport.ts 2>/dev/null; then
+    echo "UNREGISTERED EVENT: $event — add to GA4_EVENT_NAMES in analyticsReport.ts"
+  fi
+done
+```
+
+### 1t. Offline submit guard
+
+**WARN:** New forms/dialogs with submit actions that write to Firestore must disable submit when `isOffline`, or use `withOfflineSupport`.
+
+```bash
+for f in $(git diff --name-only --diff-filter=A origin/new-home -- 'src/components/**/*.tsx' | grep -v '.test.' | grep -v 'admin/'); do
+  if [ -f "$f" ]; then
+    if grep -qE 'addDoc|setDoc|httpsCallable' "$f" 2>/dev/null; then
+      if ! grep -qE 'isOffline|useConnectivity|withOfflineSupport' "$f" 2>/dev/null; then
+        echo "NO OFFLINE GUARD: $f writes to Firestore without offline protection"
+      fi
+    fi
+  fi
+done
+```
 
 If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
@@ -317,8 +600,8 @@ If any step fails, stop and fix. Do NOT proceed to Phase 2.
 
 Determine branch type from the branch name prefix:
 
-- **`feat/`** — Full audit (all 7 agents below)
-- **`fix/`** — Reduced audit: security + architecture + performance only (3 agents)
+- **`feat/`** — Full audit (all 8 core agents below + conditional agents 9-11 based on changed files)
+- **`fix/`** — Reduced audit: security + architecture + performance only (3 agents) + conditional agents if triggered
 - **`chore/` or `docs/`** — Minimal audit: security + architecture only (2 agents). These branches refactor existing code or update docs — UI, dark mode, offline, and privacy audits add no value since user-visible behavior doesn't change
 
 ### Full audit agents
@@ -334,13 +617,35 @@ Launch these agents in parallel using their specialized `subagent_type`. These p
 7. **offline-auditor** — audit changed files for offline support: uncached reads, unqueued writes, missing network error handling, no fallback UI. Creates tech debt issue if findings are non-trivial (warning, not blocker)
 8. **copy-auditor** — scan changed `.tsx` files for spelling errors, missing tildes, inconsistent tone in user-facing strings (toasts, labels, Typography text, placeholders, dialog titles)
 
+### Conditional audit agents (launch in parallel with the above, only when relevant files changed)
+
+9. **perf-auditor** — verify Firestore query instrumentation (measureAsync) and Cloud Function trigger timing (trackFunctionTiming). **Trigger:** changes in `src/hooks/`, `src/services/`, `functions/src/triggers/`, `src/utils/perfMetrics.ts`, or `functions/src/utils/perfTracker.ts`
+10. **admin-metrics-auditor** — verify new data collections/analytics events have corresponding admin dashboard visibility. **Trigger:** changes in `src/components/admin/`, or diff contains new `logEvent`/`addDoc`/`setDoc`/`collection(` calls
+11. **help-docs-reviewer** — validate HelpSection content matches features.md. **Trigger:** changes in `src/components/menu/HelpSection.tsx` or `docs/reference/features.md`
+
+```bash
+# Determine which conditional agents to launch
+CHANGED=$(git diff --name-only origin/new-home)
+
+# perf-auditor: hooks, services, or function triggers changed
+echo "$CHANGED" | grep -qE '(src/hooks/|src/services/|functions/src/triggers/|perfMetrics|perfTracker)' && LAUNCH_PERF_AUDITOR=true
+
+# admin-metrics-auditor: admin components changed OR new data collection patterns
+echo "$CHANGED" | grep -qE '(src/components/admin/)' && LAUNCH_ADMIN_AUDITOR=true
+git diff origin/new-home -- 'src/**/*.ts' 'src/**/*.tsx' | grep -qE '^\+.*(logEvent|addDoc|setDoc|collection\()' && LAUNCH_ADMIN_AUDITOR=true
+
+# help-docs-reviewer: HelpSection or features.md changed
+echo "$CHANGED" | grep -qE '(HelpSection|features\.md)' && LAUNCH_HELP_REVIEWER=true
+```
+
 Get changed files with: `git diff --name-only origin/new-home -- 'src/**/*.tsx' 'src/**/*.ts'`
 
-**IMPORTANT — Worktree agent prompts MUST include:**
+**IMPORTANT — Implementation agent prompts MUST include:**
 1. Full worktree path (`$WORKDIR`) as "Working directory" — agents without it will read/write to the main repo
 2. Explicit output file paths using the worktree prefix (e.g., `$WORKDIR/docs/feat/...`) — agents that receive relative paths may commit to wrong locations
 3. "DO NOT push. DO NOT modify files outside the worktree." — prevents cross-contamination
-4. "Commit when done" with explicit commit message — ensures work is captured before worktree cleanup
+4. "After ALL changes, run tests for affected files: `cd $WORKDIR && npx vitest run <changed-test-files>` and fix any failures" — agents that skip tests leave broken code for the main agent to debug
+5. "Verify TypeScript compiles: `cd $WORKDIR && npx tsc --noEmit -p tsconfig.app.json`" — catches type errors before merge
 
 Fix critical issues. Report all results as summary table before proceeding.
 
@@ -430,29 +735,40 @@ git tag vX.Y.Z
 
 ### 5b. Push
 
-**IMPORTANT:** If there are uncommitted WIP files on new-home (from another in-progress feature), the pre-push hook (`tsc`) will fail because those files may reference types/modules that don't exist yet. Always stash before pushing:
+**IMPORTANT:** Run stash, push, and tag push as SEPARATE sequential commands — never combine them in a single background command (fails silently). If there are uncommitted WIP files on new-home, stash first to avoid pre-push hook failures.
 
 ```bash
-# Stash any uncommitted/untracked WIP to avoid pre-push hook failures
+# Step 1: Stash WIP (if any)
 git stash --include-untracked 2>/dev/null
+
+# Step 2: Push branch (wait for completion)
 git push origin new-home
+
+# Step 3: Push tags (separate command)
 git push origin --tags
+
+# Step 4: Restore WIP
 git stash pop 2>/dev/null
 ```
 
-If the push still fails due to pre-push hooks, check `git stash list` — the WIP may need to be in a worktree instead of loose on main.
+If the push fails due to pre-push hooks, check `git stash list` — the WIP may need to be in a worktree instead of loose on main.
 
 ### 5c. Verify CI
 
 ```bash
-gh run watch $(gh run list --branch main --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+gh run watch $(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
 ```
 
 ### 5d. Clean up branches
 
 ```bash
-git push origin --delete <branch-name>
-git branch -d <branch-name>
+# Remove worktree first (if applicable)
+git worktree remove --force .claude/worktrees/<short-name> 2>/dev/null || true
+
+# Only delete remote if it exists (branch may have been local-only)
+git ls-remote --exit-code origin <branch-name> 2>/dev/null && git push origin --delete <branch-name> || echo "Branch was local-only, no remote to delete"
+
+git branch -D <branch-name>
 ```
 
 ### 5e. Close related issues
@@ -485,6 +801,10 @@ Output a final summary:
 | performance | ... |
 | privacy-policy | ... |
 | offline-auditor | ... |
+| copy-auditor | ... |
+| perf-auditor | ... (if triggered) |
+| admin-metrics | ... (if triggered) |
+| help-docs | ... (if triggered) |
 
 ### Docs updated
 - features.md, patterns.md, project-reference.md, HelpSection.tsx
@@ -515,7 +835,7 @@ Add the new version at the **top** of the table (newest first):
 ```bash
 git add docs/reports/backlog-producto.md docs/reports/changelog.md
 git commit -m "docs: update backlog and changelog post-merge"
-git push origin main
+git push origin new-home
 ```
 
 These files are the **single source of truth** for product roadmap and release history.
@@ -537,17 +857,19 @@ gh issue create --title "Tech debt: <summary>" --body "<consolidated list>" --la
 
 Do NOT just report tech debt in the merge summary — create a trackable issue.
 
-### 8b. Self-reflection
+### 8b. Self-reflection (continuous-improvement agent)
 
-Self-reflect on what could improve in agents, workflow, or permissions based on this merge.
+Launch a **continuous-improvement** agent with a summary of this merge (branch name, audits run, issues found, friction points encountered). The agent will:
 
-1. List 2-3 concrete improvements observed during this merge
-2. For each: classify as "agent fix", "skill update", "doc update", or "memory"
-3. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
-4. Save only non-formalizable insights to memory (user preferences, operational learnings)
-5. Report the summary to the user
+1. Analyze the merge process for friction, failures, or missed catches
+2. List 2-3 concrete improvements observed
+3. Classify each as "agent fix", "skill update", "doc update", or "memory"
+4. Implement agent/skill/doc fixes immediately if trivial (< 5 min)
+5. Save only non-formalizable insights to memory (user preferences, operational learnings)
 
 **Prefer formalizing improvements in agents/skills/docs over saving to memory.** Memory is for context that can't live elsewhere.
+
+If the agent fails or times out, do the self-reflection manually with the 5 steps above.
 
 ### 8c. Ask the user
 

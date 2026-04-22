@@ -38,7 +38,7 @@ export default function ShareButton({ business }: Props) {
         open={snackOpen}
         autoHideDuration={3000}
         onClose={() => setSnackOpen(false)}
-        message="Link copiado"
+        message="Link copiado al portapapeles"
       />
     </>
   );

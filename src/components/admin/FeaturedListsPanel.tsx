@@ -12,39 +12,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import StarIcon from '@mui/icons-material/Star';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../config/firebase';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useToast } from '../../context/ToastContext';
 import { MSG_ADMIN } from '../../constants/messages';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
+import { getBusinessById } from '../../utils/businessMap';
 import { CATEGORY_LABELS } from '../../constants/business';
 import type { SharedList, ListItem as ListItemType } from '../../types';
-
-const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID || undefined;
-
-const toggleFeatured = httpsCallable<
-  { listId: string; featured: boolean; databaseId?: string },
-  { success: boolean }
->(functions, 'toggleFeaturedList');
-
-const getPublicListsFn = httpsCallable<
-  { databaseId?: string },
-  { lists: SharedList[] }
->(functions, 'getPublicLists');
-
-async function fetchPublicLists(): Promise<SharedList[]> {
-  const result = await getPublicListsFn({ databaseId });
-  return result.data.lists.map((l) => ({
-    ...l,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    editorIds: l.editorIds ?? [],
-  }));
-}
 
 export default function FeaturedListsPanel() {
   const fetcher = useCallback(() => fetchPublicLists(), []);
@@ -58,7 +35,7 @@ export default function FeaturedListsPanel() {
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
     try {
-      await toggleFeatured({ listId: list.id, featured: !list.featured, databaseId });
+      await toggleFeaturedList(list.id, !list.featured);
       toast.success(MSG_ADMIN.featuredToggleSuccess(list.featured));
       refetch();
     } catch (err) {
@@ -146,15 +123,17 @@ export default function FeaturedListsPanel() {
                     ) : (
                       <List disablePadding dense>
                         {items.map((item) => {
-                          const business = allBusinesses.find((b) => b.id === item.businessId);
+                          const business = getBusinessById(item.businessId);
                           if (!business) return null;
                           return (
                             <ListItem key={item.id} disablePadding>
                               <ListItemText
                                 primary={business.name}
                                 secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
-                                primaryTypographyProps={{ fontSize: '0.85rem' }}
-                                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                                slotProps={{
+                                  primary: { sx: { fontSize: '0.85rem' } },
+                                  secondary: { sx: { fontSize: '0.75rem' } },
+                                }}
                                 sx={{ pl: 1, py: 0.5 }}
                               />
                             </ListItem>

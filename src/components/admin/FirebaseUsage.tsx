@@ -8,7 +8,7 @@ import { fetchDailyMetrics } from '../../services/admin';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import LineChartCard from './charts/LineChartCard';
-import { PieChartCard } from '../stats';
+import PieChartCard from '../stats/PieChartCard';
 import { FREE_TIER_READS, FREE_TIER_WRITES } from '../../constants/admin';
 
 export default function FirebaseUsage() {

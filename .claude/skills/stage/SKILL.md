@@ -78,6 +78,18 @@ git add package.json package-lock.json
 git commit -m "chore: bump version to $(node -p 'require(\"./package.json\").version')"
 ```
 
+### Step 1d: Seed staging database
+
+Ensure staging DB has current seed data for all collections:
+
+```bash
+cp scripts/seed-staging.ts functions/seed.ts && cd $WORKDIR/functions && npx tsx seed.ts && rm seed.ts && cd $WORKDIR
+```
+
+This is MANDATORY on every staging deploy — new features may have added collections that need seed data to be testable. The seed script is idempotent (overwrites existing data).
+
+If the seed fails, fix `scripts/seed-staging.ts` before deploying.
+
 ### Step 2: Push feature branch
 
 ```bash

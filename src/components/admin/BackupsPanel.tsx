@@ -7,50 +7,11 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { httpsCallable } from 'firebase/functions';
-import type { HttpsCallableResult } from 'firebase/functions';
-import { functions } from '../../config/firebase';
 import type { BackupEntry, ConfirmAction } from './backupTypes';
 import { formatBackupDate, extractErrorMessage, mapErrorToUserMessage, logError } from './backupUtils';
 import BackupTable from './BackupTable';
 import BackupConfirmDialog from './BackupConfirmDialog';
-
-// ── Callable types ──────────────────────────────────────────────────────
-
-interface ListBackupsRequest {
-  pageSize?: number;
-  pageToken?: string;
-}
-
-interface ListBackupsResponse {
-  backups: BackupEntry[];
-  nextPageToken: string | null;
-  totalCount: number;
-}
-
-interface CreateBackupResponse {
-  id: string;
-  createdAt: string;
-}
-
-interface RestoreBackupRequest {
-  backupId: string;
-}
-
-interface DeleteBackupRequest {
-  backupId: string;
-}
-
-interface SuccessResponse {
-  success: true;
-}
-
-// ── Callable references ────────────────────────────────────────────────
-
-const createBackupFn = httpsCallable<unknown, CreateBackupResponse>(functions, 'createBackup');
-const listBackupsFn = httpsCallable<ListBackupsRequest, ListBackupsResponse>(functions, 'listBackups');
-const restoreBackupFn = httpsCallable<RestoreBackupRequest, SuccessResponse>(functions, 'restoreBackup');
-const deleteBackupFn = httpsCallable<DeleteBackupRequest, SuccessResponse>(functions, 'deleteBackup');
+import { listBackups, createBackup, restoreBackup, deleteBackup } from '../../services/admin/backups';
 
 import { ADMIN_PAGE_SIZE, AUTO_DISMISS_MS } from '../../constants';
 
@@ -86,13 +47,9 @@ export default function BackupsPanel() {
   const fetchBackups = useCallback(async (pageToken?: string) => {
     try {
       setError(null);
-      let result: HttpsCallableResult<ListBackupsResponse>;
-      if (pageToken) {
-        result = await listBackupsFn({ pageSize: ADMIN_PAGE_SIZE, pageToken });
-      } else {
-        result = await listBackupsFn({ pageSize: ADMIN_PAGE_SIZE });
-      }
-      const { backups: newBackups, nextPageToken: token, totalCount: total } = result.data;
+      const { backups: newBackups, nextPageToken: token, totalCount: total } = pageToken
+        ? await listBackups(ADMIN_PAGE_SIZE, pageToken)
+        : await listBackups(ADMIN_PAGE_SIZE);
 
       if (pageToken) {
         setBackups((prev) => [...prev, ...newBackups]);
@@ -130,7 +87,7 @@ export default function BackupsPanel() {
     setError(null);
     setSuccess(null);
     try {
-      await createBackupFn({});
+      await createBackup();
       setSuccess('Backup creado exitosamente.');
       setLoading(true);
       await fetchBackups();
@@ -150,7 +107,7 @@ export default function BackupsPanel() {
     setError(null);
     setSuccess(null);
     try {
-      await restoreBackupFn({ backupId: backup.id });
+      await restoreBackup(backup.id);
       setSuccess(`Backup del ${formatBackupDate(backup.createdAt)} restaurado exitosamente.`);
     } catch (err) {
       logError('error restoring backup', err);
@@ -168,7 +125,7 @@ export default function BackupsPanel() {
     setError(null);
     setSuccess(null);
     try {
-      await deleteBackupFn({ backupId: backup.id });
+      await deleteBackup(backup.id);
       setSuccess(`Backup del ${formatBackupDate(backup.createdAt)} eliminado.`);
       setBackups((prev) => prev.filter((b) => b.id !== backup.id));
       setTotalCount((prev) => prev - 1);
@@ -258,7 +215,7 @@ export default function BackupsPanel() {
                 disabled={loadingMore}
                 startIcon={loadingMore ? <CircularProgress size={16} /> : undefined}
               >
-                {loadingMore ? 'Cargando...' : 'Cargar mas'}
+                {loadingMore ? 'Cargando...' : 'Cargar más'}
               </Button>
             </Box>
           )}

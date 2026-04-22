@@ -5,10 +5,12 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { logAbuse } from '../utils/abuseLogger';
 import { incrementCounter, trackWrite, trackDelete } from '../utils/counters';
 import { createNotification } from '../utils/notifications';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onCommentLikeCreated = onDocumentCreated(
   'commentLikes/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -61,12 +63,14 @@ export const onCommentLikeCreated = onDocumentCreated(
 
     await incrementCounter(db, 'commentLikes', 1);
     await trackWrite(db, 'commentLikes');
+    await trackFunctionTiming('onCommentLikeCreated', startMs);
   },
 );
 
 export const onCommentLikeDeleted = onDocumentDeleted(
   'commentLikes/{docId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -74,12 +78,17 @@ export const onCommentLikeDeleted = onDocumentDeleted(
     const data = snap.data();
     const commentId = data.commentId as string;
 
-    // Decrement likeCount on the comment
-    await db.doc(`comments/${commentId}`).update({
-      likeCount: FieldValue.increment(-1),
+    // Use transaction to floor likeCount at 0 (prevent negative counters)
+    const commentRef = db.doc(`comments/${commentId}`);
+    await db.runTransaction(async (tx) => {
+      const commentSnap = await tx.get(commentRef);
+      if (!commentSnap.exists) return;
+      const current = (commentSnap.data()!.likeCount as number) ?? 0;
+      tx.update(commentRef, { likeCount: Math.max(0, current - 1) });
     });
 
     await incrementCounter(db, 'commentLikes', -1);
     await trackDelete(db, 'commentLikes');
+    await trackFunctionTiming('onCommentLikeDeleted', startMs);
   },
 );

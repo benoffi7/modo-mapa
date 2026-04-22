@@ -58,7 +58,7 @@ export default function SocialPanel() {
             <StatCard label="Recomendaciones" value={recoStats?.total ?? 0} />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <StatCard label="Reco. leidas" value={recoStats?.read ?? 0} />
+            <StatCard label="Reco. leídas" value={recoStats?.read ?? 0} />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
             <StatCard label={`Tasa lectura (${recoStats?.readRate ?? 0}%)`} value={recoStats?.readRate ?? 0} />
@@ -83,7 +83,7 @@ export default function SocialPanel() {
             {followStats && followStats.topFollowed.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <TopList
-                  title="Top 10 — Mas seguidos"
+                  title="Top 10 — Más seguidos"
                   items={followStats.topFollowed.map((f) => ({
                     label: f.userId.slice(0, 12),
                     value: f.count,

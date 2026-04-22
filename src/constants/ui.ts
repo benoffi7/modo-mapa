@@ -1,3 +1,5 @@
+export const ANONYMOUS_DISPLAY_NAME = 'Anónimo';
+
 export const CHART_COLORS = [
   '#1976d2', '#388e3c', '#f57c00', '#d32f2f',
   '#7b1fa2', '#0097a7', '#455a64', '#c2185b',

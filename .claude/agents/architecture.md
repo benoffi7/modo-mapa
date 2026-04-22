@@ -50,3 +50,20 @@ Consulta `docs/reference/PROJECT_REFERENCE.md` para la referencia completa. Patr
 ### Recomendaciones
 ### Propuesta de refactor (si aplica, solo descripcion — no codigo)
 ```
+
+## Regression checks (#306)
+
+Ver `docs/reference/guards/306-architecture.md`.
+
+- Cero `console.error/log/warn` fuera de `src/utils/logger.ts` y `src/config/sentry.ts`.
+- Archivos en `src/` bajo 400 LOC (excepto DEV-only: `ConstantsDashboard`, `ThemePlayground`).
+- Subarbol de business tabs consume `useBusinessScope()`, no prop-drill `businessId`/`businessName`.
+- `InfoTab` prop surface agrupada en `priceLevelData`, `tagsData`, `photoData`.
+- Componentes no importan `firebase/firestore` directo — van via `src/services/`.
+- Al refactorizar un componente para consumir contexto (`useBusinessScope`), los props deben ser opcionales con fallback a contexto via `useOptionalBusinessScope()` — nunca eliminar props que callers existentes pasan directamente. Verificar todos los usos con `grep -rn "ComponentName" src/ --include="*.tsx"` antes de eliminar cualquier prop.
+
+```bash
+grep -rn "console\.\(error\|log\|warn\)(" src/ --include="*.ts" --include="*.tsx" | grep -v logger.ts | grep -v sentry.ts | grep -v test
+find src/ -name "*.tsx" -exec wc -l {} \; | awk '$1 > 400 {print}'
+grep -rn "from 'firebase/firestore'" src/components/
+```

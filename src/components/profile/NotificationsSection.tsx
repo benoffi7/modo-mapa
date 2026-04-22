@@ -46,7 +46,7 @@ export default function NotificationsSection() {
             startIcon={<DoneAllIcon />}
             onClick={markAllRead}
           >
-            Marcar todas como leidas
+            Marcar todas como leídas
           </Button>
         </Box>
       )}

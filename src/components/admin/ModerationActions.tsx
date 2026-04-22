@@ -14,6 +14,7 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { moderateComment, moderateRating, moderateCustomTag } from '../../services/admin';
 import { MODERATION_TARGET_LABELS } from '../../constants/admin';
 import { MSG_ADMIN } from '../../constants/messages/admin';
+import { logger } from '../../utils/logger';
 import type { ModerationAction, ModerationTargetCollection } from '../../types/admin';
 
 interface ModerationActionsProps {
@@ -65,7 +66,7 @@ export default function ModerationActions({
         onHidden?.(itemId);
       }
     } catch (err) {
-      console.error('Moderation error:', err);
+      logger.error('Moderation error:', err);
       toast.error(MSG_ADMIN.moderateError);
     } finally {
       setLoading(false);

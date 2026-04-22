@@ -13,9 +13,9 @@ const TYPE_ICONS = {
 } as const;
 
 const TYPE_LABELS = {
-  rating: 'califico',
-  comment: 'comento en',
-  favorite: 'agrego a favoritos',
+  rating: 'calificó',
+  comment: 'comentó en',
+  favorite: 'agregó a favoritos',
 } as const;
 
 interface ActivityFeedItemProps {

@@ -15,16 +15,16 @@ import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
 import { useToast } from '../../context/ToastContext';
-import { MSG_COMMON } from '../../constants/messages';
+import { MSG_COMMON, MSG_COMMENT } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
 import CommentsStats from './CommentsStats';
 import CommentsToolbar from './CommentsToolbar';
-import CommentsListItem from './CommentsListItem';
-import { useCommentsListFilters } from './useCommentsListFilters';
-import { useVirtualizedList } from './useVirtualizedList';
-import type { SortMode } from './useCommentsListFilters';
+import CommentsListItemSwipeable from './CommentsListItemSwipeable';
+import { useCommentsListFilters } from '../../hooks/useCommentsListFilters';
+import { useVirtualizedList } from '../../hooks/useVirtualizedList';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 import { truncate } from '../../utils/text';
 import type { Business, Comment } from '../../types';
 
@@ -60,7 +60,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete,
     onDeleteComplete: reload,
-    message: 'Comentario eliminado',
+    message: MSG_COMMENT.deleteSuccess,
   });
 
   // Edit (extracted hook)
@@ -133,7 +133,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
   }, [notifications, markRead, onSelectBusiness]);
 
   const itemProps = {
-    editingId, editText, isSavingEdit, swipe, getSwipeRef, unreadReplyCommentIds,
+    editingId, editText, isSavingEdit, unreadReplyCommentIds,
     onSelectBusiness: handleSelectBusiness,
     onStartEdit: startEdit, onSaveEdit: saveEdit, onCancelEdit: cancelEdit,
     onSetEditText: setEditText, onMarkForDelete: markForDelete,
@@ -149,8 +149,8 @@ export default function CommentsList({ onSelectBusiness }: Props) {
       hasMore={hasMore && !searchInput}
       isLoadingMore={isLoadingMore}
       emptyIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 48 }} />}
-      emptyMessage="No dejaste comentarios todavia"
-      emptySubtext="Toca un comercio en el mapa para dejar tu opinion"
+      emptyMessage="No dejaste comentarios todavía"
+      emptySubtext="Tocá un comercio en el mapa para dejar tu opinión"
       noResultsMessage={
         deferredSearch
           ? `No se encontraron resultados para "${truncate(deferredSearch, 30)}"`
@@ -192,7 +192,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
       {filteredComments.length > 0 && !shouldVirtualize && (
         <List disablePadding>
           {filteredComments.map(({ id, comment, business }) => (
-            <CommentsListItem key={id} id={id} comment={comment} business={business} {...itemProps} />
+            <CommentsListItemSwipeable key={id} id={id} comment={comment} business={business} swipe={swipe} getSwipeRef={getSwipeRef} {...itemProps} />
           ))}
         </List>
       )}
@@ -215,7 +215,7 @@ export default function CommentsList({ onSelectBusiness }: Props) {
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <CommentsListItem id={id} comment={comment} business={business} {...itemProps} />
+                  <CommentsListItemSwipeable id={id} comment={comment} business={business} swipe={swipe} getSwipeRef={getSwipeRef} {...itemProps} />
                 </Box>
               );
             })}

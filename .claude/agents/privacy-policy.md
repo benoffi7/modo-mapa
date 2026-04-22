@@ -53,3 +53,20 @@ Genera un reporte con:
 3. **Sugerencias de actualizacion** (si hay)
 
 Si encuentras discrepancias, lista exactamente que lineas de `PrivacyPolicy.tsx` necesitan actualizacion y que deberian decir.
+
+## Regression checks (#308)
+
+Ver `docs/reference/guards/308-privacy.md`.
+
+- `PrivacyPolicy.tsx` declara todos los terceros que reciben datos: Firebase, Sentry, map tile providers (Google Maps), GitHub (feedback sync).
+- Lista de eventos analiticos redactada como no-exhaustiva ("entre otros") con link al panel admin — evita drift por feature.
+- Wording de localStorage generico ("flags de onboarding, UI y cache"), no enumeracion.
+- `abuseLogs` declarado como log de seguridad/auditoria.
+- Fecha "Ultima actualizacion" se actualiza cuando aterriza nueva categoria de datos.
+
+```bash
+grep -n "Sentry\|sentry" src/components/profile/PrivacyPolicy.tsx
+grep -n "mapa\|tile" src/components/profile/PrivacyPolicy.tsx
+```
+
+Merge checklist: al agregar nuevo `logEvent` o `addDoc` pattern, verificar que la fecha en `PrivacyPolicy.tsx` se actualiza en el mismo PR.

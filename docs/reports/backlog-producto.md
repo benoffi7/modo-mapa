@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-03-31 (post merge: #255-#259 closed, v2.35.0)*
+*Actualizado: 2026-04-21 (post merge: #300,#302-#311 closed, v2.36.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -14,6 +14,7 @@
 | Issue | Titulo | Estado |
 |-------|--------|--------|
 | [#168](https://github.com/benoffi7/modo-mapa/issues/168) | Vite 8 y ESLint 10 bloqueados por peer deps | Bloqueado por dependencias upstream |
+| [#312](https://github.com/benoffi7/modo-mapa/issues/312) | Tech debt: security — fanOut N+1 dedup reads (H-3) | Abierto |
 
 ---
 
@@ -21,6 +22,6 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 1 (#168, bloqueado) |
-| Issues cerrados | #128–#259 (88) |
-| Versiones publicadas | v2.10.0 – v2.35.0 |
+| Issues abiertos | 2 (#168 bloqueado, #312 tech debt) |
+| Issues cerrados | #128–#311 (114) |
+| Versiones publicadas | v2.10.0 – v2.36.0 |

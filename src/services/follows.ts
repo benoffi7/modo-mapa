@@ -16,6 +16,7 @@ import { invalidateQueryCache } from './queryCache';
 
 /** Opaque cursor type for pagination — components should import this instead of QueryDocumentSnapshot */
 export type FollowCursor = QueryDocumentSnapshot<Follow>;
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';
@@ -36,10 +37,10 @@ export async function followUser(followerId: string, followedId: string): Promis
   if (followerId === followedId) throw new Error('Cannot follow yourself');
 
   // Check max follows limit client-side
-  const followingSnap = await getDocs(
+  const followingCount = await getCountOfflineSafe(
     query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', followerId)),
   );
-  if (followingSnap.size >= MAX_FOLLOWS) {
+  if (followingCount >= MAX_FOLLOWS) {
     throw new Error('Has alcanzado el limite de 200 usuarios seguidos');
   }
 
@@ -81,6 +82,15 @@ export async function fetchFollowing(
   const hasMore = snap.docs.length > pageSize;
   const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
   return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };
+}
+
+/**
+ * Returns the count of followers (users following userId).
+ */
+export async function fetchFollowersCount(userId: string): Promise<number> {
+  return getCountOfflineSafe(
+    query(collection(db, COLLECTIONS.FOLLOWS), where('followedId', '==', userId)),
+  );
 }
 
 // searchUsers moved to src/services/users.ts

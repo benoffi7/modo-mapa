@@ -16,7 +16,7 @@ function StatCard({ icon, count, label, onTap }: StatCardProps) {
     <Card variant="outlined" sx={{ flex: 1, minWidth: 0 }}>
       <CardActionArea onClick={onTap} sx={{ p: 1.5, textAlign: 'center' }}>
         {icon}
-        <Typography variant="h6" fontWeight={700} sx={{ mt: 0.5, lineHeight: 1 }}>
+        <Typography variant="h6" fontWeight={700} noWrap sx={{ mt: 0.5, lineHeight: 1 }}>
           {count}
         </Typography>
         <Typography variant="caption" color="text.secondary" noWrap>
@@ -45,7 +45,7 @@ export default function StatsCards({
   return (
     <Box sx={{ display: 'flex', gap: 1, px: 2, py: 1 }}>
       <StatCard icon={<PlaceIcon color="success" />} count={places} label="Lugares" onTap={onPlacesTap} />
-      <StatCard icon={<StarIcon color="warning" />} count={reviews} label="Resenas" onTap={onReviewsTap} />
+      <StatCard icon={<StarIcon color="warning" />} count={reviews} label="Reseñas" onTap={onReviewsTap} />
       <StatCard icon={<PeopleIcon color="info" />} count={followers} label="Seguidores" onTap={onFollowersTap} />
       <StatCard icon={<FavoriteIcon color="error" />} count={favorites} label="Favoritos" onTap={onFavoritesTap} />
     </Box>

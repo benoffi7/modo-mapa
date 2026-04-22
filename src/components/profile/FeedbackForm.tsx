@@ -86,7 +86,8 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
       setSelectedBusiness(null);
       setBusinessQuery('');
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error sending feedback:', error);
+      logger.error('Error sending feedback:', error);
+      toast.error(MSG_FEEDBACK.sendError);
     }
     setIsSubmitting(false);
   };
@@ -237,7 +238,8 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
         fullWidth
         variant="contained"
         onClick={handleSubmit}
-        disabled={isSubmitting || !message.trim() || (isOffline && !!mediaFile)}
+        disabled={isSubmitting || !message.trim() || isOffline}
+        title={isOffline ? 'Requiere conexión' : undefined}
         startIcon={<SendIcon />}
       >
         Enviar

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider,
-  CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button,
+  CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button, ButtonBase,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -115,9 +115,15 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleRemoveItem = async (item: ListItem) => {
-    await removeBusinessFromList(list.id, item.businessId);
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    toast.success(MSG_LIST.itemRemoved);
+    const prev = items;
+    setItems((current) => current.filter((i) => i.id !== item.id));
+    try {
+      await removeBusinessFromList(list.id, item.businessId);
+      toast.success(MSG_LIST.itemRemoved);
+    } catch {
+      setItems(prev);
+      toast.error(MSG_LIST.itemRemoveError);
+    }
   };
 
   const handleEditorsChanged = useCallback(async () => {
@@ -144,35 +150,35 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <IconButton edge="start" onClick={() => onBack({
+        <IconButton edge="start" aria-label="Volver a listas" onClick={() => onBack({
           id: list.id, color: currentColor, itemCount: items.length, isPublic, editorIds, icon: currentIcon,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEditConfig && (
           <>
-            <IconButton size="small" onClick={() => setIconPickerOpen(true)}>
+            <IconButton size="small" aria-label="Cambiar icono de lista" onClick={() => setIconPickerOpen(true)}>
               {currentIcon && getListIconById(currentIcon)
                 ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
                 : <InsertEmoticonOutlinedIcon fontSize="small" />}
             </IconButton>
-            <IconButton size="small" onClick={() => setColorPickerOpen(true)}>
+            <IconButton size="small" aria-label="Cambiar color de lista" onClick={() => setColorPickerOpen(true)}>
               <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
             </IconButton>
-            <IconButton size="small" onClick={handleTogglePublic}>
+            <IconButton size="small" aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'} onClick={handleTogglePublic}>
               {isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
             </IconButton>
             {isPublic && (
-              <IconButton size="small" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
+              <IconButton size="small" aria-label="Compartir lista" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
             )}
-            <IconButton size="small" onClick={() => setEditorsOpen(true)}>
+            <IconButton size="small" aria-label="Ver editores" onClick={() => setEditorsOpen(true)}>
               <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
                 <GroupIcon fontSize="small" />
               </Badge>
             </IconButton>
-            <IconButton size="small" onClick={() => setInviteOpen(true)}>
+            <IconButton size="small" aria-label="Invitar editor" onClick={() => setInviteOpen(true)}>
               <PersonAddIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" color="error" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
+            <IconButton size="small" color="error" aria-label="Eliminar lista" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
           </>
         )}
       </Toolbar>
@@ -199,7 +205,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         ) : items.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">Lista vacía</Typography>
-            <Typography variant="caption" color="text.disabled">Agrega comercios desde el mapa</Typography>
+            <Typography variant="caption" color="text.disabled">Agregá comercios desde el mapa</Typography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
@@ -207,10 +213,11 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
               const biz = allBusinesses.find((b) => b.id === item.businessId);
               if (!biz) return null;
               return (
-                <Box
+                <ButtonBase
                   key={item.id}
+                  aria-label={`Abrir ${biz.name}`}
                   onClick={() => navigateToBusiness(biz)}
-                  sx={cardSx}
+                  sx={{ ...cardSx, width: '100%', textAlign: 'left', display: 'block' }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -222,13 +229,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
                     {canEditItems && (
                       <IconButton
                         size="small"
+                        aria-label="Eliminar de lista"
                         onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     )}
                   </Box>
-                </Box>
+                </ButtonBase>
               );
             })}
           </Box>

@@ -11,4 +11,5 @@ export const MSG_BUSINESS = {
   emptyMenuPhoto: 'No hay foto del menú',
   noBusinessesFound: 'No se encontraron comercios',
   noRatingsLabel: 'sin calificaciones',
+  photoReportError: 'No se pudo reportar la foto',
 } as const;

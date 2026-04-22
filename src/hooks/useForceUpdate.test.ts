@@ -6,13 +6,10 @@ import {
 } from '../constants/storage';
 import { MAX_FORCE_UPDATE_RELOADS } from '../constants/timing';
 
-const mockGetDoc = vi.fn();
-const mockDoc = vi.fn();
+const mockFetchAppVersionConfig = vi.fn();
 
-vi.mock('../config/firebase', () => ({ db: {} }));
-vi.mock('firebase/firestore', () => ({
-  doc: (...args: unknown[]) => mockDoc(...args),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
+vi.mock('../services/config', () => ({
+  fetchAppVersionConfig: (...args: unknown[]) => mockFetchAppVersionConfig(...args),
 }));
 
 const mockTrackEvent = vi.fn();
@@ -59,15 +56,16 @@ describe('useForceUpdate', () => {
     localStorage.removeItem(STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT);
   });
 
-  function mockFirestoreDoc(data: Record<string, unknown> | null) {
-    mockGetDoc.mockResolvedValue({
-      exists: () => data !== null,
-      data: () => data,
-    });
+  function mockConfig(minVersion: string | undefined) {
+    mockFetchAppVersionConfig.mockResolvedValue({ minVersion });
+  }
+
+  function mockConfigError() {
+    mockFetchAppVersionConfig.mockRejectedValue(new Error('offline'));
   }
 
   it('triggers reload when server version > client version', async () => {
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -82,7 +80,7 @@ describe('useForceUpdate', () => {
   });
 
   it('does NOT reload when server version == client version', async () => {
-    mockFirestoreDoc({ minVersion: '2.30.3' });
+    mockConfig('2.30.3');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -92,7 +90,7 @@ describe('useForceUpdate', () => {
   });
 
   it('does NOT reload when server version < client version', async () => {
-    mockFirestoreDoc({ minVersion: '2.29.0' });
+    mockConfig('2.29.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -101,8 +99,8 @@ describe('useForceUpdate', () => {
     expect(mockReload).not.toHaveBeenCalled();
   });
 
-  it('handles non-existent doc without error', async () => {
-    mockFirestoreDoc(null);
+  it('handles non-existent doc without error (minVersion undefined)', async () => {
+    mockConfig(undefined);
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -111,8 +109,8 @@ describe('useForceUpdate', () => {
     expect(mockReload).not.toHaveBeenCalled();
   });
 
-  it('handles Firestore error without crash', async () => {
-    mockGetDoc.mockRejectedValue(new Error('offline'));
+  it('handles service error without crash', async () => {
+    mockConfigError();
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -123,7 +121,7 @@ describe('useForceUpdate', () => {
 
   it('respects cooldown from localStorage', async () => {
     localStorage.setItem(STORAGE_KEY_FORCE_UPDATE_LAST_REFRESH, String(Date.now()));
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -133,7 +131,7 @@ describe('useForceUpdate', () => {
   });
 
   it('increments reload counter in localStorage', async () => {
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     await _checkVersion();
@@ -150,7 +148,7 @@ describe('useForceUpdate', () => {
       STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT,
       JSON.stringify({ count: MAX_FORCE_UPDATE_RELOADS, firstAt: Date.now() }),
     );
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -164,7 +162,7 @@ describe('useForceUpdate', () => {
       STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT,
       JSON.stringify({ count: MAX_FORCE_UPDATE_RELOADS, firstAt: Date.now() - 6 * 60 * 1000 }),
     );
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -176,7 +174,7 @@ describe('useForceUpdate', () => {
 
   it('handles corrupted localStorage gracefully', async () => {
     localStorage.setItem(STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT, 'not-json');
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     const result = await _checkVersion();
@@ -191,7 +189,7 @@ describe('useForceUpdate', () => {
       STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT,
       JSON.stringify({ count: MAX_FORCE_UPDATE_RELOADS, firstAt: Date.now() }),
     );
-    mockFirestoreDoc({ minVersion: '2.31.0' });
+    mockConfig('2.31.0');
 
     const { _checkVersion } = await import('./useForceUpdate');
     await _checkVersion();
@@ -232,7 +230,7 @@ describe('useForceUpdate', () => {
 
   it('sets up and cleans up interval on mount/unmount', async () => {
     vi.useFakeTimers();
-    mockFirestoreDoc({ minVersion: '2.30.3' });
+    mockConfig('2.30.3');
 
     const { useForceUpdate } = await import('./useForceUpdate');
 

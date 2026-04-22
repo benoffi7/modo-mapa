@@ -137,7 +137,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       setReadCacheEntry(bId, result).catch((e) => logger.warn('[useBusinessData] cache write failed', e));
     } catch (err) {
       if (fetchIdRef.current !== id) return;
-      if (import.meta.env.DEV) logger.error('Error loading business data:', err);
+      logger.error('Error loading business data:', err);
       // If we served from read cache, keep showing stale data instead of error
       if (!servedFromReadCache) {
         setError(true);
@@ -176,7 +176,7 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
         patchBusinessCache(businessId, patch);
       })
       .catch((err) => {
-        if (import.meta.env.DEV) logger.error(`Error refetching ${collectionName}:`, err);
+        logger.error(`Error refetching ${collectionName}:`, err);
       });
   }, [businessId, user, load]);
 

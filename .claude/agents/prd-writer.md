@@ -131,6 +131,8 @@ Include UX considerations: how it looks, where it lives, interaction flow.}
 - [ ] Update rule tiene `affectedKeys().hasOnly()` para restringir campos modificables
 - [ ] Campos immutables (userId, businessId) no estan en la lista de affectedKeys
 - [ ] Rate limit server-side en Cloud Function trigger — DEBE llamar `snap.ref.delete()` si excede (log-only no es enforcement)
+- [ ] Toda coleccion nueva escribible por usuarios DEBE tener Cloud Function trigger con rate limit (sin trigger = billing DoS)
+- [ ] Campos `is list` DEBEN validar tamaño de cada item individual (no solo `.size()` del array)
 - [ ] Moderacion via `checkModeration()` si hay texto libre
 {Si el feature agrega campos a userSettings:}
 - [ ] Agregar campo a `keys().hasOnly()` en firestore.rules para userSettings
@@ -179,6 +181,18 @@ gh issue list --label "tech debt" --state open --json number,title
 - [ ] Archivos en `src/hooks/` DEBEN usar al menos un React hook — si no, van en `src/services/` o `src/utils/`
 - [ ] Constantes nuevas de localStorage usan key de `src/constants/storage.ts` — nunca strings hardcodeados
 - [ ] Archivos nuevos no superan 300 lineas (warn) ni 400 lineas (blocker)
+- [ ] `logger.error` NUNCA dentro de `if (import.meta.env.DEV)` — debe ejecutarse siempre para Sentry
+
+### Checklist de observabilidad
+
+- [ ] Todo Cloud Function trigger nuevo incluye `trackFunctionTiming`
+- [ ] Todo service nuevo con queries Firestore incluye `measureAsync`
+- [ ] Todo `trackEvent` nuevo registrado en `GA4_EVENT_NAMES` (analyticsReport.ts) y `ga4FeatureDefinitions.ts`
+
+### Checklist offline
+
+- [ ] Formularios/dialogs que escriben a Firestore deshabilitan submit cuando `isOffline`
+- [ ] Error handlers en catch blocks muestran `toast.error` en todos los environments (no solo DEV)
 
 ### Checklist de documentacion
 
@@ -247,6 +261,30 @@ gh issue list --label "tech debt" --state open --json number,title
 | Estado global | {+/-/=} | {ej: usa contexto existente, no crea god-context} |
 | Firebase coupling | {+/-/=} | {ej: queries en hook, no en componente} |
 | Organizacion por dominio | {+/-/=} | {ej: archivos en carpeta correcta de tab} |
+
+---
+
+## Accesibilidad y UI mobile
+
+{Para cada componente interactivo nuevo, evaluar:}
+
+### Checklist de accesibilidad
+
+- [ ] Todo `<IconButton>` tiene `aria-label` descriptivo
+- [ ] Elementos interactivos usan semantica correcta (`<Button>`, no `<Typography onClick>`, no `<Box onClick>` sin role)
+- [ ] Clickable `<Box>`, `<Avatar>` usan `role="button"` + `tabIndex={0}` + `aria-label`, o mejor usar `<ButtonBase>`
+- [ ] Touch targets minimo 44x44px en mobile (no usar `p: 0.25` en IconButtons)
+- [ ] Componentes con carga de datos tienen error state (no solo skeleton forever)
+- [ ] Imagenes con URLs dinamicas tienen `onError` fallback
+- [ ] Formularios tienen labels visibles o aria-labels
+
+### Checklist de copy
+
+- [ ] Todos los textos en espanol con tildes correctas
+- [ ] Tono consistente: voseo (Buscá, Dejá, Calificá), no tuteo (Busca, Deja, Califica)
+- [ ] Terminologia: "comercios" (no "negocios"), "reseñas" (no "reviews")
+- [ ] Strings reutilizables centralizados en `src/constants/messages/`
+- [ ] Mensajes de error accionables (no solo "Error" generico)
 
 ---
 

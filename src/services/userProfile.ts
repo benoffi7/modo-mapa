@@ -1,8 +1,6 @@
 import {
   collection,
   doc,
-  getDoc,
-  getDocs,
   setDoc,
   updateDoc,
   serverTimestamp,
@@ -24,6 +22,7 @@ import {
 import { getBusinessName } from '../utils/businessHelpers';
 import { fetchLatestRanking } from './rankings';
 import { logger } from '../utils/logger';
+import { measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 
 export interface UserProfileData {
   displayName: string;
@@ -78,17 +77,18 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
 
   // User doc may not be readable (rules restrict to owner/admin).
   // Fetch it best-effort; the rest of the data is public.
-  const userDocPromise = getDoc(userDocRef).catch((err) => { logger.error('[userProfile] getDoc failed:', err); return null; });
+  const userDocPromise = measuredGetDoc('userProfile_userDoc', userDocRef)
+    .catch((err) => { logger.error('[userProfile] getDoc failed:', err); return null; });
   const rankingPromise = fetchLatestRanking('monthly').catch((err) => { logger.error('[userProfile] fetchLatestRanking failed:', err); return null; });
 
   const [userSnap, commentsSnap, ratingsSnap, favoritesSnap, customTagsSnap, photosSnap, monthlyRanking] =
     await Promise.all([
       userDocPromise,
-      getDocs(commentsQuery),
-      getDocs(ratingsQuery),
-      getDocs(favoritesQuery),
-      getDocs(customTagsQuery),
-      getDocs(photosQuery),
+      measuredGetDocs('userProfile_comments', commentsQuery),
+      measuredGetDocs('userProfile_ratings', ratingsQuery),
+      measuredGetDocs('userProfile_favorites', favoritesQuery),
+      measuredGetDocs('userProfile_customTags', customTagsQuery),
+      measuredGetDocs('userProfile_photos', photosQuery),
       rankingPromise,
     ]);
 
@@ -130,7 +130,7 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
  */
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfile | null> {
   const ref = doc(db, COLLECTIONS.USERS, uid).withConverter(userProfileConverter);
-  const snap = await getDoc(ref);
+  const snap = await measuredGetDoc('userProfile_doc', ref);
   return snap.exists() ? snap.data() : null;
 }
 
@@ -140,7 +140,7 @@ export async function fetchUserProfileDoc(uid: string): Promise<UserProfile | nu
  */
 export async function updateUserDisplayName(uid: string, name: string): Promise<void> {
   const ref = doc(db, COLLECTIONS.USERS, uid);
-  const snap = await getDoc(ref);
+  const snap = await measuredGetDoc('userProfile_existsCheck', ref);
   if (snap.exists()) {
     await updateDoc(ref, { displayName: name, displayNameLower: name.toLowerCase() });
   } else {

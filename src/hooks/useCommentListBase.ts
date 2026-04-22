@@ -56,6 +56,8 @@ export function useCommentListBase({
 
   // Optimistic likes (unified: single Map with toggle + delta)
   const [optimisticLikes, setOptimisticLikes] = useState<Map<string, { toggled: boolean; delta: number }>>(new Map());
+  // In-flight guard: prevents double-toggle on rapid taps
+  const togglingIds = useRef<Set<string>>(new Set());
 
   const isLiked = useCallback((commentId: string) => {
     const entry = optimisticLikes.get(commentId);
@@ -78,8 +80,11 @@ export function useCommentListBase({
     return comments.filter((c) => c.userId === user?.uid && c.createdAt.toDateString() === today).length;
   }, [comments, user?.uid]);
 
-  const handleToggleLike = async (commentId: string) => {
+  const handleToggleLike = useCallback(async (commentId: string) => {
     if (!user) return;
+    if (togglingIds.current.has(commentId)) return;
+    togglingIds.current.add(commentId);
+
     const currentlyLiked = isLiked(commentId);
 
     setOptimisticLikes((prev) => {
@@ -110,10 +115,12 @@ export function useCommentListBase({
       }
     } catch (error) {
       setOptimisticLikes((prev) => { const next = new Map(prev); next.delete(commentId); return next; });
-      if (import.meta.env.DEV) logger.error('Error toggling like:', error);
+      logger.error('Error toggling like:', error);
       toast.error(MSG_COMMENT.likeError);
+    } finally {
+      togglingIds.current.delete(commentId);
     }
-  };
+  }, [user, isLiked, businessId, businessName, isOffline, toast]);
 
   const handleDelete = useCallback((comment: Comment) => {
     markForDelete(comment.id, comment);
@@ -131,7 +138,7 @@ export function useCommentListBase({
     setReplyText('');
   }, []);
 
-  const handleSubmitReply = async () => {
+  const handleSubmitReply = useCallback(async () => {
     if (!user || !replyingTo || !replyText.trim()) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     setIsSubmitting(true);
@@ -149,11 +156,11 @@ export function useCommentListBase({
       onCommentsChange();
       if (!isOffline) toast.success(MSG_COMMENT.replySuccess);
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error adding reply:', error);
+      logger.error('Error adding reply:', error);
       toast.error(MSG_COMMENT.replyError);
     }
     setIsSubmitting(false);
-  };
+  }, [user, replyingTo, replyText, userCommentsToday, isOffline, businessId, businessName, displayName, onCommentsChange, toast]);
 
   const handleShowProfile = useCallback((userId: string, userName: string) => {
     setProfileUser({ id: userId, name: userName });

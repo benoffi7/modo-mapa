@@ -32,14 +32,18 @@ export const onRatingWritten = onDocumentWritten(
         return;
       }
 
-      await incrementCounter(db, 'ratings', 1);
-      await trackWrite(db, 'ratings');
-      await updateRatingAggregates(db, businessId, 'add', score);
+      await Promise.all([
+        incrementCounter(db, 'ratings', 1),
+        trackWrite(db, 'ratings'),
+        updateRatingAggregates(db, businessId, 'add', score),
+      ]);
 
       // Fan-out to followers
-      const userSnap = await db.doc(`users/${userId}`).get();
+      const [userSnap, bizSnap] = await Promise.all([
+        db.doc(`users/${userId}`).get(),
+        db.doc(`businesses/${businessId}`).get(),
+      ]);
       const actorName = userSnap.exists ? (userSnap.data()!.displayName as string) : 'Alguien';
-      const bizSnap = await db.doc(`businesses/${businessId}`).get();
       const businessName = bizSnap.exists ? (bizSnap.data()!.name as string) : '';
       await fanOutToFollowers(db, {
         actorId: userId, actorName, type: 'rating',
@@ -59,9 +63,11 @@ export const onRatingWritten = onDocumentWritten(
       const data = before!.data()!;
       const businessId = data.businessId as string;
       const score = data.score as number;
-      await incrementCounter(db, 'ratings', -1);
-      await trackDelete(db, 'ratings');
-      await updateRatingAggregates(db, businessId, 'remove', score);
+      await Promise.all([
+        incrementCounter(db, 'ratings', -1),
+        trackDelete(db, 'ratings'),
+        updateRatingAggregates(db, businessId, 'remove', score),
+      ]);
     }
 
     await trackFunctionTiming('onRatingWritten', startMs);

@@ -20,7 +20,7 @@ export default function BusinessHeader({ business, favoriteButton, shareButton, 
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {business.name}
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>

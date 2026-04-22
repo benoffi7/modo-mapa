@@ -3,6 +3,7 @@ import { Box, Typography, Button, Chip, IconButton } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { useAuth } from '../../context/AuthContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { getUserPendingPhotos, getMenuPhotoUrl } from '../../services/menuPhotos';
 import { formatDateMedium } from '../../utils/formatDate';
 import MenuPhotoUpload from './MenuPhotoUpload';
@@ -13,13 +14,13 @@ import { logger } from '../../utils/logger';
 
 interface Props {
   menuPhoto: MenuPhoto | null;
-  businessId: string;
   isLoading: boolean;
   onPhotoChange: () => void;
 }
 
-export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onPhotoChange }: Props) {
+export default function MenuPhotoSection({ menuPhoto, isLoading, onPhotoChange }: Props) {
   const { user } = useAuth();
+  const { businessId } = useBusinessScope();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
               src={photoUrl}
               alt="Menú"
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
+              onError={() => setPhotoUrl(null)}
             />
             {user && !hasPending && (
               <IconButton
@@ -95,7 +97,7 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
                     theme.palette.mode === 'light'
                       ? alpha(theme.palette.common.black, 0.55)
                       : alpha(theme.palette.common.white, 0.15),
-                  color: 'white',
+                  color: 'common.white',
                   '&:hover': {
                     bgcolor: (theme) =>
                       theme.palette.mode === 'light'
@@ -143,7 +145,6 @@ export default function MenuPhotoSection({ menuPhoto, businessId, isLoading, onP
 
       <MenuPhotoUpload
         open={uploadOpen}
-        businessId={businessId}
         onClose={() => setUploadOpen(false)}
         onSuccess={() => {
           setUploadOpen(false);

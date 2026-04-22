@@ -69,6 +69,20 @@ If a query reads from a collection the caller doesn't own, this MUST be flagged.
 {Any triggers, scheduled functions, or callable functions needed.
 Specify the trigger path, logic, and output.}
 
+## Seed Data
+
+{MANDATORY if the feature creates new Firestore collections or adds required fields to existing ones. Omit only if no schema changes.}
+
+### Emulator seed (`scripts/seed-admin-data.ts`)
+- Collection: <name>
+- Documents: <count> with fields <list>
+- Example: { ... }
+
+### Staging seed (`scripts/seed-staging.ts`)
+- Collection: <name>
+- Documents: <count> with fields <list>
+- Example: { ... }
+
 ## Componentes
 
 {New or modified React components.
@@ -153,6 +167,39 @@ Mock strategy.}
 ### Fallback UI
 
 {Components/states needed for offline mode.}
+
+---
+
+## Accesibilidad y UI mobile
+
+{Para cada componente nuevo con elementos interactivos, especificar:}
+
+| Componente | Elemento | aria-label | Min touch target | Error state |
+|-----------|----------|------------|-----------------|-------------|
+| {ej: FavoritesList} | {IconButton delete} | {"Eliminar de favoritos"} | {44x44px} | {PaginatedListShell error} |
+
+### Reglas
+- Todo `<IconButton>` → `aria-label` obligatorio
+- Nunca `<Typography onClick>` → usar `<Button variant="text">`
+- Nunca `<Box onClick>` o `<Avatar onClick>` sin `role="button"` + `tabIndex={0}` + `aria-label` → usar `<ButtonBase>`
+- Touch targets: minimo 44x44px (no `p: 0.25`, no `width: 32`)
+- Componentes con fetch → DEBEN tener error state con retry (no skeleton forever)
+- `<img>` con URL dinamica → DEBEN tener `onError` fallback
+
+## Textos y copy
+
+{Listar TODOS los textos nuevos visibles al usuario con ortografia verificada:}
+
+| Texto | Donde | Regla aplicada |
+|-------|-------|----------------|
+| {ej: "Agregá a favoritos"} | {toast en FavoriteButton} | {voseo, tilde en á} |
+
+### Reglas de copy
+- Voseo siempre: Buscá, Dejá, Calificá, Agregá, Seguí (nunca Busca, Deja, Califica)
+- Tildes obligatorias: búsqueda, café, pizzería, panadería, heladería, reseña, edición, opinión, todavía, más, información, dirección, ubicación, configuración, sincronización
+- Terminologia: "comercios" (no "negocios"), "reseñas" (no "reviews")
+- Constante `ANONYMOUS_DISPLAY_NAME` para comparar nombre anonimo (nunca hardcodear string)
+- Strings reutilizables en `src/constants/messages/`
 
 ---
 
@@ -257,6 +304,42 @@ Which files must be created/modified first.}
 - [ ] Si se toca un archivo con deuda tecnica, se incluye el fix en el plan
 - [ ] Ningun archivo resultante supera 400 lineas
 
+## Guardrails de seguridad
+
+- [ ] Toda coleccion nueva tiene `hasOnly()` en create + `affectedKeys().hasOnly()` en update
+- [ ] Todo campo string tiene `.size() <= N` en rules
+- [ ] Todo campo list tiene `.size() <= N` en rules — Y cada item del list tiene validacion de tipo y tamaño
+- [ ] Admin writes tambien tienen validacion de campos (defense contra admin comprometido)
+- [ ] Counter decrements en triggers usan `Math.max(0, ...)` (nunca negativo)
+- [ ] Rate limits llaman `snap.ref.delete()` cuando exceden (log-only no es enforcement)
+- [ ] Toda coleccion nueva escribible por usuarios tiene Cloud Function trigger con rate limit
+- [ ] No hay secrets, admin emails, ni credenciales en archivos commiteados
+- [ ] `getCountFromServer` → usar `getCountOfflineSafe` siempre
+
+## Guardrails de observabilidad
+
+- [ ] Todo CF trigger nuevo tiene `trackFunctionTiming` (functions/src/utils/perfTracker.ts)
+- [ ] Todo service nuevo con queries Firestore tiene `measureAsync` (src/utils/perfMetrics.ts)
+- [ ] Todo `trackEvent` nuevo esta registrado en `GA4_EVENT_NAMES` (functions/src/admin/analyticsReport.ts)
+- [ ] Todo `trackEvent` nuevo tiene feature card en `ga4FeatureDefinitions.ts`
+- [ ] `logger.error` NUNCA dentro de `if (import.meta.env.DEV)` — debe ejecutarse en prod para Sentry
+
+## Guardrails de accesibilidad y UI
+
+- [ ] Todo `<IconButton>` tiene `aria-label`
+- [ ] No hay `<Typography onClick>` — usar `<Button variant="text">`
+- [ ] Touch targets minimo 44x44px (no `p: 0.25`, no `width: 32`)
+- [ ] Componentes con fetch tienen error state con retry
+- [ ] `<img>` con URL dinamica tienen `onError` fallback
+- [ ] httpsCallable en componentes user-facing tienen guard offline (`useConnectivity`)
+
+## Guardrails de copy
+
+- [ ] Todos los textos nuevos usan voseo (Buscá, no Busca)
+- [ ] Tildes correctas en todos los textos en espanol
+- [ ] Terminologia consistente: "comercios" no "negocios"
+- [ ] Strings reutilizables en `src/constants/messages/`
+
 ## Fase final: Documentacion (OBLIGATORIA)
 
 {Toda implementacion DEBE incluir una fase final de actualizacion de docs. No se acumula deuda de documentacion.}
@@ -300,6 +383,7 @@ Before finishing, verify:
 - [ ] Monolith % guard — verify: (1) no component imports `firebase/firestore` directly, (2) new files go in domain-aligned folder (NOT `components/menu/`), (3) no new god-context, (4) business logic in hooks/services not components. If any check fails, add remediation step to the plan
 - [ ] Security hardening — verify: (1) every new writable collection has `hasOnly()` + rate limit + moderation if text, (2) every new readable collection evaluates scraping risk, (3) no new secrets in committed files, (4) `mediaUrl`/`href` fields validated. Reference: open security issues via `gh issue list --label security --state open`
 - [ ] Tech debt non-aggravation — if the plan touches a file with known tech debt (check `gh issue list --label "tech debt" --state open`), include the fix in the plan. Never make existing debt worse
+- [ ] Seed data section — if the feature introduces new Firestore collections or adds required fields to existing ones, the specs MUST include a "Seed Data" section with example documents for both `seed-admin-data.ts` and `seed-staging.ts`
 
 ## After creating
 

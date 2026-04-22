@@ -34,7 +34,7 @@ const {
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnThis() }),
-  doc: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnThis() }),
+  doc: vi.fn().mockReturnValue({ id: 'mock-generated-id', withConverter: vi.fn().mockReturnThis() }),
   getDoc: (...args: unknown[]) => mockGetDoc(...args),
   getDocs: (...args: unknown[]) => mockGetDocs(...args),
   setDoc: (...args: unknown[]) => mockSetDoc(...args),
@@ -54,6 +54,7 @@ vi.mock('firebase/firestore', () => ({
 
 import {
   createList,
+  generateListId,
   toggleListPublic,
   updateList,
   deleteList,
@@ -76,6 +77,14 @@ describe('sharedLists', () => {
     vi.clearAllMocks();
   });
 
+  describe('generateListId', () => {
+    it('returns the id from doc() — no network call', () => {
+      const id = generateListId();
+      expect(typeof id).toBe('string');
+      expect(id.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('createList', () => {
     it('creates a list and returns id', async () => {
       mockAddDoc.mockResolvedValueOnce({ id: 'list1' });
@@ -84,6 +93,19 @@ describe('sharedLists', () => {
       expect(id).toBe('list1');
       expect(invalidateQueryCache).toHaveBeenCalled();
       expect(trackEvent).toHaveBeenCalledWith('list_created', { list_id: 'list1' });
+    });
+
+    it('uses setDoc with explicit id when listId is provided', async () => {
+      const id = await createList('u1', 'My List', 'desc', undefined, 'client-gen-id');
+      expect(mockSetDoc).toHaveBeenCalled();
+      expect(mockAddDoc).not.toHaveBeenCalled();
+      expect(id).toBe('client-gen-id');
+      expect(trackEvent).toHaveBeenCalledWith('list_created', { list_id: 'client-gen-id' });
+    });
+
+    it('returns the provided listId when using setDoc path', async () => {
+      const result = await createList('u1', 'Test', '', undefined, 'fixed-id-123');
+      expect(result).toBe('fixed-id-123');
     });
   });
 

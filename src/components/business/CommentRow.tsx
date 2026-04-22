@@ -20,6 +20,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { formatDateMedium } from '../../utils/formatDate';
 import { LIKE_COLOR } from '../../constants/ui';
 import { MAX_COMMENT_LENGTH } from '../../constants/validation';
+import { MSG_COMMENT } from '../../constants/messages';
 import type { Comment } from '../../types';
 
 export interface CommentRowProps {
@@ -88,21 +89,35 @@ const CommentRow = memo(function CommentRow({
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-          <Typography
-            component="span"
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              fontSize: isReply ? '0.8rem' : undefined,
-              ...(isProfilePublic ? {
-                cursor: 'pointer',
-                '&:hover': { textDecoration: 'underline' },
-              } : {}),
-            }}
-            onClick={() => isProfilePublic && onShowProfile?.(comment.userId, comment.userName)}
-          >
-            {isDeletedParent ? 'Comentario eliminado' : (comment.userName || 'Anónimo')}
-          </Typography>
+          {isProfilePublic ? (
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => onShowProfile?.(comment.userId, comment.userName)}
+              sx={{
+                fontWeight: 600,
+                fontSize: isReply ? '0.8rem' : 'body2.fontSize',
+                textTransform: 'none',
+                p: 0,
+                minWidth: 0,
+                lineHeight: 'inherit',
+                verticalAlign: 'baseline',
+              }}
+            >
+              {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
+            </Button>
+          ) : (
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                fontSize: isReply ? '0.8rem' : undefined,
+              }}
+            >
+              {isDeletedParent ? MSG_COMMENT.deleteSuccess : (comment.userName || 'Anónimo')}
+            </Typography>
+          )}
           <Typography variant="caption" color="text.secondary">
             {formatDateMedium(comment.createdAt)}
           </Typography>
@@ -158,7 +173,7 @@ const CommentRow = memo(function CommentRow({
                 <IconButton
                   size="small"
                   onClick={() => onToggleLike(comment.id)}
-                  sx={{ color: isLiked ? LIKE_COLOR : 'text.secondary', p: 0.5 }}
+                  sx={{ color: isLiked ? LIKE_COLOR : 'text.secondary', minWidth: 44, minHeight: 44 }}
                   aria-label={isLiked ? 'Quitar like' : 'Dar like'}
                 >
                   {isLiked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
@@ -218,7 +233,7 @@ const CommentRow = memo(function CommentRow({
             <IconButton
               size="small"
               onClick={() => onStartEdit(comment)}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }}
               aria-label="Editar comentario"
             >
               <EditOutlinedIcon sx={{ fontSize: 18 }} />
@@ -227,7 +242,7 @@ const CommentRow = memo(function CommentRow({
           <IconButton
             size="small"
             onClick={() => onDelete(comment)}
-            sx={{ color: 'text.secondary' }}
+            sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }}
             aria-label="Eliminar comentario"
           >
             <DeleteOutlineIcon sx={{ fontSize: 18 }} />

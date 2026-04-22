@@ -32,7 +32,7 @@ export default function ActivityReminder({ open, onCreateAccount, onDismiss }: P
             <Button color="inherit" size="small" onClick={handleClick} sx={{ fontWeight: 600 }}>
               Crear cuenta
             </Button>
-            <IconButton size="small" color="inherit" onClick={onDismiss}>
+            <IconButton size="small" color="inherit" aria-label="Cerrar recordatorio" onClick={onDismiss}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </>

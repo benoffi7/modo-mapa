@@ -43,7 +43,7 @@ vi.mock('../utils/perfMetrics', () => ({
   measureAsync: (...args: unknown[]) => mockMeasureAsync(...args),
 }));
 
-vi.mock('../utils/getCountOfflineSafe', () => ({
+vi.mock('./getCountOfflineSafe', () => ({
   getCountOfflineSafe: (...args: unknown[]) => mockGetCountOfflineSafe(...args),
 }));
 

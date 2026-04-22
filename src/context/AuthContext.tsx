@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await signInAnonymously(auth);
           } catch (error) {
-            if (import.meta.env.DEV) logger.error('Error signing in anonymously:', error);
+            logger.error('Error signing in anonymously:', error);
           }
         }
       }
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateUserAvatar(user.uid, id);
     } catch (error) {
       setAvatarIdState(prev);
-      if (import.meta.env.DEV) logger.error('Error setting avatar:', error);
+      logger.error('Error setting avatar:', error);
     }
   }, [user, avatarId]);
 
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión con Google';
       setAuthError(message);
-      if (import.meta.env.DEV) logger.error('Error signing in with Google:', error);
+      logger.error('Error signing in with Google:', error);
       return null;
     }
   }, []);
@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOutAndReset();
       trackEvent('sign_out', { method: previousMethod });
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
     }
   }, [authMethod]);
 

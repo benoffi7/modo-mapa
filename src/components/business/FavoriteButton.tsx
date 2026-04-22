@@ -5,23 +5,23 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { addFavorite, removeFavorite } from '../../services/favorites';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { MSG_BUSINESS } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   isFavorite: boolean;
   isLoading: boolean;
   onToggle: () => void;
 }
 
-export default memo(function FavoriteButton({ businessId, businessName, isFavorite, isLoading, onToggle }: Props) {
+export default memo(function FavoriteButton({ isFavorite, isLoading, onToggle }: Props) {
   const { user } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { businessId, businessName } = useBusinessScope();
   const [isToggling, setIsToggling] = useState(false);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
   const [prevIsFavorite, setPrevIsFavorite] = useState(isFavorite);
@@ -62,7 +62,7 @@ export default memo(function FavoriteButton({ businessId, businessName, isFavori
       onToggle();
     } catch (error) {
       setOptimistic(null);
-      if (import.meta.env.DEV) logger.error('Error toggling favorite:', error);
+      logger.error('Error toggling favorite:', error);
       toast.error(MSG_BUSINESS.favoriteError);
     }
     setIsToggling(false);

@@ -32,7 +32,7 @@ export default function AuditKpiCards({ logs }: AuditKpiCardsProps) {
             {kpis.successRate}%
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Tasa de exito
+            Tasa de éxito
           </Typography>
         </CardContent>
       </Card>
@@ -42,7 +42,7 @@ export default function AuditKpiCards({ logs }: AuditKpiCardsProps) {
             {kpis.lastDeletion ? formatRelativeTime(kpis.lastDeletion) : '-'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Ultima eliminacion
+            Última eliminación
           </Typography>
         </CardContent>
       </Card>

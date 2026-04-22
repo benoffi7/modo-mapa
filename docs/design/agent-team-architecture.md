@@ -1,8 +1,8 @@
 # Arquitectura de Equipo de Agentes — Modo Mapa
 
-**Version:** 1.0 (draft)
-**Fecha:** 2026-03-30
-**Estado:** Propuesta para review
+**Version:** 1.2
+**Fecha:** 2026-04-01
+**Estado:** Fase 1 completa (Manu + Luna + Nico), Fase 2 parcial (Cami como validador pre-commit)
 
 ---
 

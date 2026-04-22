@@ -2,8 +2,7 @@ import { Box, TextField, IconButton, Autocomplete, ToggleButtonGroup, ToggleButt
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import type { Business } from '../../types';
-
-type SortMode = 'recent' | 'oldest' | 'useful';
+import type { SortMode } from '../../hooks/useCommentsListFilters';
 
 interface Props {
   sortMode: SortMode;

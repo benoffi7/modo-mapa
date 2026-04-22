@@ -43,6 +43,7 @@ export default function ListsScreen() {
         <Typography variant="h6" fontWeight={700}>Mis Listas</Typography>
         <IconButton
           size="small"
+          aria-label="Crear nueva lista"
           onClick={() => setCreateOpen(true)}
           sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
         >

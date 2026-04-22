@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Dialog, DialogTitle, DialogContent, List, ListItemButton, ListItemText, IconButton } from '@mui/material';
+import { Box, Typography, Dialog, DialogTitle, DialogContent, List, ListItemButton, ListItemText, IconButton, ButtonBase } from '@mui/material';
 import { cardSx, iconCircleSx } from '../../theme/cards';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
@@ -18,6 +18,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { CATEGORY_LABELS } from '../../constants/business';
 import type { Special, Business, BusinessCategory } from '../../types';
 import { fetchActiveSpecials } from '../../services/specials';
+import { MSG_COMMON } from '../../constants/messages';
 
 const ICON_MAP: Record<string, React.ReactElement> = {
   LocalFireDepartment: <LocalFireDepartmentIcon color="error" />,
@@ -31,7 +32,7 @@ const ICON_MAP: Record<string, React.ReactElement> = {
 };
 
 const FALLBACK_SPECIALS: Special[] = [
-  { id: '1', title: 'Trending esta semana', subtitle: 'Los comercios mas populares', icon: 'LocalFireDepartment', type: 'trending', referenceId: '', order: 0, active: true },
+  { id: '1', title: 'Trending esta semana', subtitle: 'Los comercios más populares', icon: 'LocalFireDepartment', type: 'trending', referenceId: '', order: 0, active: true },
   { id: '2', title: 'Mejor calificados', subtitle: 'Top 10 por rating', icon: 'Star', type: 'trending', referenceId: '', order: 1, active: true },
   { id: '3', title: 'En crecimiento', subtitle: 'Nuevos favoritos de la comunidad', icon: 'TrendingUp', type: 'trending', referenceId: '', order: 2, active: true },
 ];
@@ -81,10 +82,11 @@ export default function SpecialsSection() {
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {specials.slice(0, 3).map((item) => (
-          <Box
+          <ButtonBase
             key={item.id}
+            aria-label={item.title}
             onClick={() => handleClick(item)}
-            sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
+            sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', textAlign: 'left' }}
           >
             <Box sx={iconCircleSx('action.selected')}>
               {ICON_MAP[item.icon] ?? <StarIcon color="primary" />}
@@ -94,7 +96,7 @@ export default function SpecialsSection() {
               <Typography variant="caption" color="text.secondary">{item.subtitle}</Typography>
             </Box>
             <ChevronRightIcon color="action" />
-          </Box>
+          </ButtonBase>
         ))}
       </Box>
 
@@ -113,6 +115,7 @@ export default function SpecialsSection() {
                 <Typography variant="caption" color="text.secondary">{selectedSpecial.subtitle}</Typography>
               </Box>
               <IconButton
+                aria-label={MSG_COMMON.closeAriaLabel}
                 onClick={() => setSelectedSpecial(null)}
                 sx={{ position: 'absolute', right: 8, top: 8 }}
               >
@@ -136,8 +139,10 @@ export default function SpecialsSection() {
                     <ListItemText
                       primary={biz.name}
                       secondary={CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category}
-                      primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                      slotProps={{
+                        primary: { sx: { fontSize: '0.9rem', fontWeight: 500 } },
+                        secondary: { sx: { fontSize: '0.75rem' } },
+                      }}
                     />
                   </ListItemButton>
                 ))}

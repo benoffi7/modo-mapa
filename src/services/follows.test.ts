@@ -7,6 +7,11 @@ vi.mock('../config/collections', () => ({
 vi.mock('../config/converters', () => ({ followConverter: {} }));
 vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
+
+const mockGetCountOfflineSafe = vi.fn();
+vi.mock('./getCountOfflineSafe', () => ({
+  getCountOfflineSafe: (...args: unknown[]) => mockGetCountOfflineSafe(...args),
+}));
 vi.mock('../constants/analyticsEvents', () => ({
   EVT_FOLLOW: 'follow',
   EVT_UNFOLLOW: 'unfollow',
@@ -55,12 +60,12 @@ describe('followUser', () => {
   });
 
   it('throws when max follows limit is reached', async () => {
-    mockGetDocs.mockResolvedValueOnce({ size: 200 });
+    mockGetCountOfflineSafe.mockResolvedValueOnce(200);
     await expect(followUser('u1', 'u2')).rejects.toThrow('Has alcanzado el limite de 200 usuarios seguidos');
   });
 
   it('writes follow document and invalidates cache', async () => {
-    mockGetDocs.mockResolvedValueOnce({ size: 5 });
+    mockGetCountOfflineSafe.mockResolvedValueOnce(5);
     await followUser('u1', 'u2');
     expect(mockSetDoc).toHaveBeenCalledWith(
       expect.anything(),

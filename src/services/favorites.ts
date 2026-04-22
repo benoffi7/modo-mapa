@@ -4,12 +4,13 @@
  * All Firestore reads/writes for favorites go through this module so
  * components never import Firestore SDK directly.
  */
-import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import type { CollectionReference } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
+import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { trackEvent } from '../utils/analytics';
 import type { Favorite } from '../types';
 
@@ -33,6 +34,15 @@ export async function addFavorite(userId: string, businessId: string): Promise<v
   });
   invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
   trackEvent('favorite_toggle', { business_id: businessId, action: 'add' });
+}
+
+/**
+ * Returns the count of favorites for userId.
+ */
+export async function fetchUserFavoritesCount(userId: string): Promise<number> {
+  return getCountOfflineSafe(
+    query(collection(db, COLLECTIONS.FAVORITES), where('userId', '==', userId)),
+  );
 }
 
 export async function removeFavorite(userId: string, businessId: string): Promise<void> {

@@ -75,4 +75,53 @@ describe('offlineInterceptor', () => {
 
     expect(mockToast.info).not.toHaveBeenCalled();
   });
+
+  it('offline: propagates listId in actionMeta to enqueued action', async () => {
+    const enqueueSpy = vi.spyOn(offlineQueue, 'enqueue').mockResolvedValue({
+      id: 'test',
+      type: 'list_create',
+      payload: { name: 'Lista', description: '' },
+      userId: 'u1',
+      businessId: 'list-client-id',
+      listId: 'list-client-id',
+      createdAt: Date.now(),
+      retryCount: 0,
+      status: 'pending',
+    });
+
+    await withOfflineSupport(
+      true, 'list_create',
+      { userId: 'u1', businessId: 'list-client-id', listId: 'list-client-id' },
+      { name: 'Lista', description: '' },
+      vi.fn(),
+      mockToast,
+    );
+
+    expect(enqueueSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ listId: 'list-client-id' }),
+    );
+  });
+
+  it('offline: does not include listId when not in actionMeta', async () => {
+    const enqueueSpy = vi.spyOn(offlineQueue, 'enqueue').mockResolvedValue({
+      id: 'test',
+      type: 'rating_upsert',
+      payload: { score: 3 },
+      userId: 'u1',
+      businessId: 'b1',
+      createdAt: Date.now(),
+      retryCount: 0,
+      status: 'pending',
+    });
+
+    await withOfflineSupport(
+      true, 'rating_upsert',
+      { userId: 'u1', businessId: 'b1' },
+      { score: 3 },
+      vi.fn(),
+    );
+
+    const calledWith = enqueueSpy.mock.calls[0][0];
+    expect(calledWith).not.toHaveProperty('listId');
+  });
 });

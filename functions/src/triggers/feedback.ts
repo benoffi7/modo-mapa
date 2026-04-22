@@ -4,10 +4,12 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { checkModeration } from '../utils/moderator';
 import { incrementCounter, trackWrite } from '../utils/counters';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onFeedbackCreated = onDocumentCreated(
   'feedback/{feedbackId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     const snap = event.data;
     if (!snap) return;
@@ -51,5 +53,6 @@ export const onFeedbackCreated = onDocumentCreated(
     // 4. Counters
     await incrementCounter(db, 'feedback', 1);
     await trackWrite(db, 'feedback');
+    await trackFunctionTiming('onFeedbackCreated', startMs);
   },
 );

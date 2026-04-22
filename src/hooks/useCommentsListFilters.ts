@@ -1,6 +1,6 @@
 import { useMemo, useState, useDeferredValue, useEffect, useRef } from 'react';
-import { allBusinesses } from '../../hooks/useBusinesses';
-import type { Business, Comment } from '../../types';
+import { allBusinesses } from './useBusinesses';
+import type { Business, Comment } from '../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
 

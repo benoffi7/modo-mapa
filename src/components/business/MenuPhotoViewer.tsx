@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, IconButton, Typography, Box, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ReportIcon from '@mui/icons-material/Report';
 import { reportMenuPhoto } from '../../services/menuPhotos';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useToast } from '../../context/ToastContext';
 import { formatDateMedium } from '../../utils/formatDate';
 import { logger } from '../../utils/logger';
+import { MSG_BUSINESS } from '../../constants/messages/business';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface Props {
   open: boolean;
@@ -19,8 +22,12 @@ interface Props {
 export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, onClose }: Props) {
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
+  const toast = useToast();
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => { setImageError(false); }, [photoUrl]);
 
   const handleReport = async () => {
     setReporting(true);
@@ -28,7 +35,8 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
       await reportMenuPhoto(photoId);
       setReported(true);
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Error reporting photo:', err);
+      logger.error('Error reporting photo:', err);
+      toast.error(MSG_BUSINESS.photoReportError);
     } finally {
       setReporting(false);
     }
@@ -36,10 +44,10 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen>
-      <Box sx={{ position: 'relative', height: '100%', bgcolor: 'black', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ position: 'relative', height: '100%', bgcolor: 'common.black', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
           {reviewedAt && (
-            <Typography variant="body2" sx={{ color: 'white', pl: 1 }}>
+            <Typography variant="body2" sx={{ color: 'common.white', pl: 1 }}>
               {`Menú actualizado: ${formatDateMedium(reviewedAt)}`}
             </Typography>
           )}
@@ -56,17 +64,24 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
                 {reported ? 'Reportada' : 'Reportar'}
               </Button>
             )}
-            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <IconButton onClick={onClose} sx={{ color: 'common.white' }} aria-label={MSG_COMMON.closeAriaLabel}>
               <CloseIcon />
             </IconButton>
           </Box>
         </Box>
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1 }}>
-          <img
-            src={photoUrl}
-            alt="Foto del menú"
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-          />
+          {imageError ? (
+            <Box sx={{ textAlign: 'center', color: 'grey.500' }}>
+              <Typography variant="body2">No se pudo cargar la imagen</Typography>
+            </Box>
+          ) : (
+            <img
+              src={photoUrl}
+              alt="Foto del menú"
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              onError={() => setImageError(true)}
+            />
+          )}
         </Box>
       </Box>
     </Dialog>

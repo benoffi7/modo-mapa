@@ -53,7 +53,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
     trackEvent(EVT_RECOMMENDATION_LIST_VIEWED);
     if (userId) {
       markAllRecommendationsAsRead(userId).catch((err) => {
-        if (import.meta.env.DEV) logger.error('markAllRead failed:', err);
+        logger.error('markAllRead failed:', err);
       });
     }
   }, [userId]);
@@ -72,7 +72,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
           {},
           () => markRecommendationAsRead(rec.id),
         ).catch((err) => {
-          if (import.meta.env.DEV) logger.error('markRead failed:', err);
+          logger.error('markRead failed:', err);
         });
       }
       trackEvent(EVT_RECOMMENDATION_OPENED, { business_id: rec.businessId, sender_id: rec.senderId });
@@ -91,7 +91,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
           isLoadingMore={isLoadingMore}
           emptyIcon={<SendIcon sx={{ fontSize: 48 }} />}
           emptyMessage={MSG_SOCIAL.emptyRecommendations}
-          emptySubtext="Segui a otros usuarios para empezar!"
+          emptySubtext="Seguí a otros usuarios para empezar!"
           onRetry={reload}
           onLoadMore={loadMore}
         >

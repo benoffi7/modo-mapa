@@ -9,6 +9,7 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { getAvatarById } from '../../constants/avatars';
+import { ANONYMOUS_DISPLAY_NAME } from '../../constants/ui';
 import StatsCards from './StatsCards';
 import SettingsMenu from './SettingsMenu';
 import type { SettingsSection } from './SettingsMenu';
@@ -36,8 +37,8 @@ const SECTION_TITLES: Record<string, string> = {
   privacy: 'Privacidad',
   config: 'Configuración',
   help: 'Ayuda y soporte',
-  reviews: 'Resenas',
-  stats: 'Estadisticas',
+  reviews: 'Reseñas',
+  stats: 'Estadísticas',
   achievements: 'Logros',
   interests: 'Tus intereses',
 };
@@ -62,14 +63,14 @@ export default function ProfileScreen() {
 
   const avatar = getAvatarById(avatarId ?? undefined);
 
-  const userName = displayName || 'Anonimo';
+  const userName = displayName || ANONYMOUS_DISPLAY_NAME;
   const hasPendingActions = isOffline;
 
   if (activeSection) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
-          <IconButton edge="start" onClick={() => setActiveSection(null)}>
+          <IconButton edge="start" aria-label="Volver al perfil" onClick={() => setActiveSection(null)}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="subtitle1" fontWeight={600}>
@@ -111,14 +112,18 @@ export default function ProfileScreen() {
       {/* Header */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 3, pb: 1 }}>
         <Avatar
+          role="button"
+          tabIndex={0}
+          aria-label="Cambiar avatar"
           onClick={() => setAvatarPickerOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setAvatarPickerOpen(true); }}
           sx={{ width: 64, height: 64, bgcolor: 'primary.main', fontSize: avatar ? 32 : 28, mb: 1, cursor: 'pointer' }}
         >
           {avatar ? avatar.emoji : userName.charAt(0).toUpperCase()}
         </Avatar>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Typography variant="h6" fontWeight={700}>{userName}</Typography>
-          <IconButton size="small" onClick={() => setNameDialogOpen(true)}>
+          <IconButton size="small" aria-label="Editar nombre" onClick={() => setNameDialogOpen(true)}>
             <EditIcon fontSize="small" />
           </IconButton>
         </Box>

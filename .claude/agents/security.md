@@ -135,3 +135,19 @@ Para cada hallazgo incluir siempre:
 - **Escenario de ataque IA**: como un bot/script automatizado explotaria esto
 - **Impacto**: que puede pasar si se explota
 - **Recomendacion**: fix concreto con codigo cuando sea posible
+
+## Regression checks (#300)
+
+Invariantes que NO pueden romperse tras el merge de #300. Ver `docs/reference/guards/300-security.md` para el detalle completo.
+
+- `grep -rn "onCall" functions/src/ | grep -v ENFORCE_APP_CHECK` — todo callable user-facing debe enforcear App Check.
+- `npm audit --audit-level=high` en root y en `functions/` debe salir con exit 0.
+- `fanOutToFollowers` (favorites/ratings/comments triggers) debe deduplicar por `_fanoutDedup/{actor}_{type}_{business}_{follower}`.
+- `ipRateLimiter` debe hashear IPv6 por `/64`.
+- `getFeaturedLists` y `getPublicLists` deben usar `.limit(100)` + cursor.
+- `firestore.rules` `/users/{uid}` read requiere `profilePublic == true || owner || isAdmin()`.
+- `displayName` en rules tiene regex `^[\p{L}\p{N} _.-]+$`.
+- `feedback.mediaUrl` updates exigen path `feedback-media/{uid}/`.
+- `listItems` trigger: rate-limit ANTES del counter increment.
+- `beforeUserCreated` seedea `userSettings/{uid}` con `profilePublic: false`.
+- `ADMIN_EMAIL` y `APP_CHECK_ENFORCEMENT` en Secret Manager, NO en `functions/.env`.

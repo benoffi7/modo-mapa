@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { COLLECTIONS } from '../config/collections';
 import { useAuth } from '../context/AuthContext';
 import { useMyCheckIns } from './useMyCheckIns';
-import { getCountOfflineSafe } from '../utils/getCountOfflineSafe';
+import { fetchUserRatingsCount } from '../services/ratings';
+import { fetchUserFavoritesCount } from '../services/favorites';
+import { fetchFollowersCount } from '../services/follows';
 
 interface ProfileStats {
   places: number;
@@ -24,12 +23,14 @@ export function useProfileStats(): ProfileStats {
     const uid = user.uid;
 
     Promise.all([
-      getCountOfflineSafe(query(collection(db, COLLECTIONS.RATINGS), where('userId', '==', uid))),
-      getCountOfflineSafe(query(collection(db, COLLECTIONS.FAVORITES), where('userId', '==', uid))),
-      getCountOfflineSafe(query(collection(db, COLLECTIONS.FOLLOWS), where('followedId', '==', uid))),
-    ]).then(([r, f, fl]) => { if (!cancelled) setCounts({ reviews: r, favorites: f, followers: fl }); });
+      fetchUserRatingsCount(uid),
+      fetchUserFavoritesCount(uid),
+      fetchFollowersCount(uid),
+    ]).then(([reviews, favorites, followers]) => {
+      if (!cancelled) setCounts({ reviews, favorites, followers });
+    });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.uid]);
 
   return {
     places: checkInStats.uniqueBusinesses,

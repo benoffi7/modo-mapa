@@ -18,6 +18,13 @@ const mockGetCountFromServer = vi.fn();
 const mockBatchUpdate = vi.fn();
 const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
 const mockWriteBatch = vi.fn().mockReturnValue({ update: mockBatchUpdate, commit: mockBatchCommit });
+const mockMeasureAsync = vi.fn((_name: string, fn: () => Promise<unknown>) => fn());
+const mockMeasuredGetDocs = vi.fn((_name: string, q: unknown) => mockGetDocs(q));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measureAsync: (name: string, fn: () => Promise<unknown>) => mockMeasureAsync(name, fn),
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+}));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
@@ -30,6 +37,14 @@ vi.mock('firebase/firestore', () => ({
   query: vi.fn(),
   where: vi.fn(),
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
+}));
+
+vi.mock('./getCountOfflineSafe', () => ({
+  getCountOfflineSafe: async (...args: unknown[]) => {
+    if (!navigator.onLine) return 0;
+    const snap = await mockGetCountFromServer(...args);
+    return snap.data().count;
+  },
 }));
 
 import {
@@ -150,6 +165,18 @@ describe('countUnreadRecommendations', () => {
     const result = await countUnreadRecommendations('u1');
     expect(result).toBe(0);
   });
+
+  it('returns 0 when offline', async () => {
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    try {
+      const result = await countUnreadRecommendations('u1');
+      expect(result).toBe(0);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
+  });
 });
 
 describe('countRecommendationsSentToday', () => {
@@ -159,5 +186,57 @@ describe('countRecommendationsSentToday', () => {
     mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 3 }) });
     const result = await countRecommendationsSentToday('u1');
     expect(result).toBe(3);
+  });
+
+  it('returns 0 when offline and cache is empty', async () => {
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    try {
+      const result = await countRecommendationsSentToday('u1');
+      expect(result).toBe(0);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
+  });
+
+  it('returns cached count when offline and cache exists', async () => {
+    // Populate cache via an online call first
+    mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 2 }) });
+    await countRecommendationsSentToday('u1');
+
+    const original = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+    vi.clearAllMocks();
+    try {
+      const result = await countRecommendationsSentToday('u1');
+      // Cache hit — returns immediately without server call
+      expect(result).toBe(2);
+      expect(mockGetCountFromServer).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'onLine', { value: original, writable: true, configurable: true });
+    }
+  });
+});
+
+describe('measureAsync instrumentation', () => {
+  beforeEach(() => { vi.clearAllMocks(); _resetSentTodayCacheForTest(); });
+
+  it('markAllRecommendationsAsRead emits name recommendations_unreadList', async () => {
+    mockGetDocs.mockResolvedValueOnce({ empty: true, docs: [] });
+    await markAllRecommendationsAsRead('u1');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('recommendations_unreadList');
+  });
+
+  it('countUnreadRecommendations emits name recommendations_unreadCount', async () => {
+    mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 0 }) });
+    await countUnreadRecommendations('u1');
+    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('recommendations_unreadCount');
+  });
+
+  it('countRecommendationsSentToday emits name recommendations_sentTodayCount', async () => {
+    mockGetCountFromServer.mockResolvedValueOnce({ data: () => ({ count: 0 }) });
+    await countRecommendationsSentToday('u1');
+    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('recommendations_sentTodayCount');
   });
 });

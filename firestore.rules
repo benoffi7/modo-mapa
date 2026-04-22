@@ -15,15 +15,23 @@ service cloud.firestore {
 
     // Perfiles de usuario — owner puede leer/escribir su propio documento.
     // Admin puede leer todos los perfiles (para el dashboard).
-    // displayName: string, 1-30 chars. createdAt solo en create.
+    // Usuarios ajenos solo pueden leer si profilePublic==true (denormalizado).
+    // displayName: string, 1-30 chars, charset conservador (sin RTL/ZWJ/control).
+    // createdAt solo en create.
     // followersCount/followingCount: server-only (Admin SDK via Cloud Functions).
     match /users/{userId} {
-      allow read: if request.auth != null;
+      // #300 R-6: restrict read to owner + public profiles + admin.
+      allow read: if request.auth != null
+        && (request.auth.uid == userId
+            || resource.data.get('profilePublic', false) == true
+            || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.keys().hasOnly(['displayName', 'displayNameLower', 'avatarId', 'createdAt'])
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
+        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
+        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
         && request.resource.data.displayNameLower is string
         && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
         && request.resource.data.createdAt == request.time;
@@ -32,6 +40,8 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
+        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
+        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
         && (!('displayNameLower' in request.resource.data) || request.resource.data.displayNameLower is string)
         && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string);
     }
@@ -109,8 +119,10 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['userId', 'userName', 'businessId', 'text', 'createdAt', 'parentId', 'type'])
         && request.resource.data.userId == request.auth.uid
         && isValidBusinessId(request.resource.data.businessId)
+        && request.resource.data.userName is string
         && request.resource.data.userName.size() > 0
         && request.resource.data.userName.size() <= 30
+        && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.createdAt == request.time
@@ -119,6 +131,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt'])
+        && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.updatedAt == request.time;
@@ -170,22 +183,31 @@ service cloud.firestore {
         && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{1,6}$')))
         && (!('businessName' in request.resource.data) || (request.resource.data.businessName is string && request.resource.data.businessName.size() > 0 && request.resource.data.businessName.size() <= 100))
         && (!('rating' in request.resource.data) || (request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5))
-        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*')))
+        // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/ — sin prefijo el owner
+        // podria substituir por cualquier archivo de Storage.
+        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')))
         && (!('mediaType' in request.resource.data) || request.resource.data.mediaType in ['image', 'pdf']);
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
-      allow update: if isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy', 'githubIssueUrl'])
-        || (request.auth != null
+      allow update: if (
+          isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'adminResponse', 'respondedAt', 'respondedBy', 'githubIssueUrl'])
+          && (!('githubIssueUrl' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.githubIssueUrl is string && request.resource.data.githubIssueUrl.matches('^https://github\\.com/.*')))
+        ) || (
+          request.auth != null
           && resource.data.userId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedByUser'])
-          && request.resource.data.viewedByUser == true)
-        || (request.auth != null
+          && request.resource.data.viewedByUser == true
+        ) || (
+          request.auth != null
           && resource.data.userId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mediaUrl', 'mediaType'])
           && request.resource.data.mediaUrl is string
-          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*')
-          && request.resource.data.mediaType in ['image', 'pdf']);
+          // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/
+          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')
+          && request.resource.data.mediaType in ['image', 'pdf']
+        );
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }
@@ -316,14 +338,47 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
-    // Configuración de usuario — cualquier usuario autenticado puede leer (para profilePublic).
-    // Solo el owner puede leer/escribir. Admin puede leer (dashboard).
+    // #289: Validate followedTags list items are strings with max 50 chars each.
+    // CEL cannot iterate lists, so we check each index up to the max (20).
+    function isValidFollowedTags(tags) {
+      return tags is list && tags.size() <= 20
+        && (tags.size() < 1 || (tags[0] is string && tags[0].size() <= 50))
+        && (tags.size() < 2 || (tags[1] is string && tags[1].size() <= 50))
+        && (tags.size() < 3 || (tags[2] is string && tags[2].size() <= 50))
+        && (tags.size() < 4 || (tags[3] is string && tags[3].size() <= 50))
+        && (tags.size() < 5 || (tags[4] is string && tags[4].size() <= 50))
+        && (tags.size() < 6 || (tags[5] is string && tags[5].size() <= 50))
+        && (tags.size() < 7 || (tags[6] is string && tags[6].size() <= 50))
+        && (tags.size() < 8 || (tags[7] is string && tags[7].size() <= 50))
+        && (tags.size() < 9 || (tags[8] is string && tags[8].size() <= 50))
+        && (tags.size() < 10 || (tags[9] is string && tags[9].size() <= 50))
+        && (tags.size() < 11 || (tags[10] is string && tags[10].size() <= 50))
+        && (tags.size() < 12 || (tags[11] is string && tags[11].size() <= 50))
+        && (tags.size() < 13 || (tags[12] is string && tags[12].size() <= 50))
+        && (tags.size() < 14 || (tags[13] is string && tags[13].size() <= 50))
+        && (tags.size() < 15 || (tags[14] is string && tags[14].size() <= 50))
+        && (tags.size() < 16 || (tags[15] is string && tags[15].size() <= 50))
+        && (tags.size() < 17 || (tags[16] is string && tags[16].size() <= 50))
+        && (tags.size() < 18 || (tags[17] is string && tags[17].size() <= 50))
+        && (tags.size() < 19 || (tags[18] is string && tags[18].size() <= 50))
+        && (tags.size() < 20 || (tags[19] is string && tags[19].size() <= 50));
+    }
+
+    // Configuración de usuario — solo el owner puede leer/escribir. Admin puede leer (dashboard).
     // profilePublic is denormalized onto users doc for cross-user access.
+    // No delete — userSettings es permanente (#265a).
     match /userSettings/{userId} {
       allow read: if (request.auth != null && request.auth.uid == userId)
                   || isAdmin();
-      allow write: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos', 'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers', 'notifyRecommendations', 'notificationDigest', 'analyticsEnabled', 'locality', 'localityLat', 'localityLng', 'followedTags', 'followedTagsUpdatedAt', 'followedTagsLastSeenAt', 'updatedAt'])
+
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+            'profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos',
+            'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers',
+            'notifyRecommendations', 'notificationDigest', 'analyticsEnabled',
+            'locality', 'localityLat', 'localityLng',
+            'followedTags', 'followedTagsUpdatedAt', 'followedTagsLastSeenAt', 'updatedAt'
+          ])
         && request.resource.data.profilePublic is bool
         && request.resource.data.notificationsEnabled is bool
         && request.resource.data.notifyLikes is bool
@@ -337,13 +392,44 @@ service cloud.firestore {
         && (!('notifyRecommendations' in request.resource.data) || request.resource.data.notifyRecommendations is bool)
         && (!('notificationDigest' in request.resource.data) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
         // #251: followedTags fields validation
-        && (!('followedTags' in request.resource.data) || (request.resource.data.followedTags is list && request.resource.data.followedTags.size() <= 20))
+        && (!('followedTags' in request.resource.data) || isValidFollowedTags(request.resource.data.followedTags))
         && (!('followedTagsUpdatedAt' in request.resource.data) || request.resource.data.followedTagsUpdatedAt is timestamp)
         && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
-        && (!('locality' in request.resource.data) || request.resource.data.locality is string)
+        // #264c: locality size limit
+        && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
         && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
         && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
         && request.resource.data.updatedAt == request.time;
+
+      // #265a: use affectedKeys for update (not keys().hasOnly which would require all fields)
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'profilePublic', 'notificationsEnabled', 'notifyLikes', 'notifyPhotos',
+            'notifyRankings', 'notifyFeedback', 'notifyReplies', 'notifyFollowers',
+            'notifyRecommendations', 'notificationDigest', 'analyticsEnabled',
+            'locality', 'localityLat', 'localityLng',
+            'followedTags', 'followedTagsUpdatedAt', 'followedTagsLastSeenAt', 'updatedAt'
+          ])
+        && (!('profilePublic' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.profilePublic is bool)
+        && (!('notificationsEnabled' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notificationsEnabled is bool)
+        && (!('notifyLikes' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyLikes is bool)
+        && (!('notifyPhotos' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyPhotos is bool)
+        && (!('notifyRankings' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyRankings is bool)
+        && (!('notifyFeedback' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyFeedback is bool)
+        && (!('notifyReplies' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyReplies is bool)
+        && (!('notifyFollowers' in request.resource.data) || request.resource.data.notifyFollowers is bool)
+        && (!('notifyRecommendations' in request.resource.data) || request.resource.data.notifyRecommendations is bool)
+        && (!('notificationDigest' in request.resource.data) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
+        && (!('analyticsEnabled' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.analyticsEnabled is bool)
+        && (!('followedTags' in request.resource.data) || isValidFollowedTags(request.resource.data.followedTags))
+        && (!('followedTagsUpdatedAt' in request.resource.data) || request.resource.data.followedTagsUpdatedAt is timestamp)
+        && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
+        // #264c: locality size limit
+        && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
+        && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
+        && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
+        && request.resource.data.updatedAt == request.time;
+      // No delete — userSettings es permanente
     }
 
     // Performance metrics — escritura via Cloud Function (writePerfMetrics) con rate limit.
@@ -435,7 +521,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['listId', 'businessId', 'addedBy', 'createdAt'])
         && request.resource.data.listId is string
         && request.resource.data.listId.size() > 0
-        && request.resource.data.businessId is string
+        && request.resource.data.listId.size() <= 128
+        && isValidBusinessId(request.resource.data.businessId)
         && request.resource.data.createdAt == request.time
         && (!('addedBy' in request.resource.data) || request.resource.data.addedBy == request.auth.uid)
         && isItemListOwnerOrEditor();
@@ -445,16 +532,68 @@ service cloud.firestore {
 
     // Specials — tarjetas especiales en la pantalla Inicio.
     // Cualquier usuario autenticado puede leer. Solo admin puede escribir.
+    // Admin writes validados con hasOnly() como defense-in-depth (#263).
     match /specials/{docId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'subtitle', 'imageUrl', 'businessId', 'category', 'active', 'order', 'createdAt', 'updatedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+        && (!('subtitle' in request.resource.data) || (request.resource.data.subtitle is string && request.resource.data.subtitle.size() <= 200))
+        && (!('imageUrl' in request.resource.data) || (request.resource.data.imageUrl is string && request.resource.data.imageUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*')))
+        && (!('businessId' in request.resource.data) || isValidBusinessId(request.resource.data.businessId))
+        && (!('category' in request.resource.data) || (request.resource.data.category is string && request.resource.data.category.size() <= 30))
+        && request.resource.data.active is bool
+        && (!('order' in request.resource.data) || (request.resource.data.order is int && request.resource.data.order >= 0))
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'subtitle', 'imageUrl', 'businessId', 'category', 'active', 'order', 'updatedAt'])
+        && (!('title' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100))
+        && (!('subtitle' in request.resource.data) || (request.resource.data.subtitle is string && request.resource.data.subtitle.size() <= 200))
+        && (!('imageUrl' in request.resource.data) || (request.resource.data.imageUrl is string && request.resource.data.imageUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*')))
+        && (!('businessId' in request.resource.data) || isValidBusinessId(request.resource.data.businessId))
+        && (!('category' in request.resource.data) || (request.resource.data.category is string && request.resource.data.category.size() <= 30))
+        && (!('active' in request.resource.data) || request.resource.data.active is bool)
+        && (!('order' in request.resource.data) || (request.resource.data.order is int && request.resource.data.order >= 0))
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
     }
 
     // Achievements — definiciones de logros.
     // Cualquier usuario autenticado puede leer. Solo admin puede escribir.
+    // Admin writes validados con hasOnly() como defense-in-depth (#263).
     match /achievements/{docId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['id', 'title', 'description', 'icon', 'category', 'threshold', 'createdAt', 'updatedAt'])
+        && request.resource.data.id is string
+        && request.resource.data.id.size() > 0
+        && request.resource.data.id.size() <= 50
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 200
+        && request.resource.data.icon is string
+        && request.resource.data.icon.size() > 0
+        && request.resource.data.icon.size() <= 50
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        && request.resource.data.category.size() <= 30
+        && request.resource.data.threshold is int
+        && request.resource.data.threshold >= 1
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'description', 'icon', 'category', 'threshold', 'updatedAt'])
+        && (!('title' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60))
+        && (!('description' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.description is string && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 200))
+        && (!('icon' in request.resource.data) || (request.resource.data.icon is string && request.resource.data.icon.size() > 0 && request.resource.data.icon.size() <= 50))
+        && (!('category' in request.resource.data) || (request.resource.data.category is string && request.resource.data.category.size() > 0 && request.resource.data.category.size() <= 30))
+        && (!('threshold' in request.resource.data) || (request.resource.data.threshold is int && request.resource.data.threshold >= 1));
+      allow delete: if isAdmin();
     }
 
     // Trending businesses — cualquier usuario autenticado puede leer.
@@ -506,10 +645,15 @@ service cloud.firestore {
         && request.resource.data.followerId == request.auth.uid
         && request.resource.data.followedId is string
         && request.resource.data.followedId.size() > 0
+        && request.resource.data.followedId.size() <= 128
         && request.resource.data.followerId != request.resource.data.followedId
         && request.resource.data.createdAt == request.time
-        && (!exists(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId))
-            || get(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId)).data.profilePublic != false);
+        // #300 M-6: exigir userSettings explicito — cierra TOCTOU con onUserCreated
+        // El blocking function `onBeforeUserCreated` seeds userSettings con
+        // profilePublic=false asi que un follow al target espera hasta que el
+        // target haya explicitamente seteado profilePublic=true.
+        && exists(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId))
+        && get(/databases/$(database)/documents/userSettings/$(request.resource.data.followedId)).data.profilePublic == true;
       allow update: if false;
       allow delete: if request.auth != null
         && resource.data.followerId == request.auth.uid;
@@ -563,6 +707,12 @@ service cloud.firestore {
 
     // IP rate limits — solo Cloud Functions (admin SDK) lee/escribe.
     match /_ipRateLimits/{docId} {
+      allow read, write: if false;
+    }
+
+    // #300 H-3: Fan-out dedup tracking — solo Cloud Functions (admin SDK) lee/escribe.
+    // Un doc por (actor,type,business,follower) dentro de la ventana de dedup (24h).
+    match /_fanoutDedup/{docId} {
       allow read, write: if false;
     }
 

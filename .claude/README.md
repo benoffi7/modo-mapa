@@ -50,19 +50,76 @@ That's it. All agents, commands, and skills are tracked in the repo under `.clau
 | `/test-local` | Local testing protocol with emulators | Testing features locally |
 | `/modotren` | Offline mode (no network operations) | Working with unstable connectivity |
 
-### Agents (`.claude/agents/`)
+### Agents (`.claude/agents/`) — 27 agents
 
+#### Coordination & Role-based
 | Agent | Type | Model | Description |
 |-------|------|-------|-------------|
-| `ci-guardian` | Read/Write | Opus | Diagnoses and fixes CI/CD failures. Has solution matrix |
-| `admin-metrics-auditor` | Read/Write | Opus | Audits admin dashboard completeness vs all data/events |
-| `dark-mode-auditor` | Read-only | Default | Scans for hardcoded colors that break dark mode |
-| `seed-manager` | Read/Write | Default | Keeps seed data in sync with schema changes |
-| `changelog-writer` | Read/Write | Default | Maintains CHANGELOG.md |
-| `continuous-improvement` | Read/Write | Default | Analyzes workflow, proposes improvements |
+| `manu` | Coordinator | Opus | Staff Engineer / Tech Lead. Orchestrates implementation, delegates to specialists. Does NOT write code |
+| `luna` | Implementation (frontend) | Default | Senior Frontend Engineer. Components, UI hooks, pages, theme, map. Mobile-first. |
+| `nico` | Implementation (backend) | Default | Senior Backend Engineer. Cloud Functions, Firestore rules, services, types. Security-first. |
+| `cami` | Validation (copy) | Default | UX Writer. Scans user-facing strings for tildes, voseo, terminology. Read-only |
+| `orchestrator` | **DEPRECATED** | Default | Replaced by `manu`. Kept for compatibility only |
 
-### Skills (`.claude/skills/`)
+#### Read-only auditors (report only, don't modify code)
+| Agent | Type | Description |
+|-------|------|-------------|
+| `architecture` | Read-only | Validates folder structure, patterns, separation of concerns |
+| `security` | Read-only | XSS, injection, race conditions, Firestore rules, auth bypass |
+| `ui-reviewer` | Read-only | 360px layout, accessibility, dark mode, empty states |
+| `dark-mode-auditor` | Read-only | Detects hardcoded colors that break dark mode |
+| `copy-auditor` | Read-only | Spelling, tildes, tone consistency in user-facing strings |
+| `offline-auditor` | Read-only | Uncached reads, unqueued writes, missing fallbacks |
+| `privacy-policy` | Read-only | Data collection vs privacy policy consistency |
+| `perf-auditor` | Read-only (Opus) | Firestore query instrumentation (`measureAsync`) + Cloud Function timing (`trackFunctionTiming`) |
+| `admin-metrics-auditor` | Read-only (Opus) | Verifies all data/events have admin dashboard visibility |
+| `help-docs-reviewer` | Read-only | Validates HelpSection content vs features.md |
+| `pr-reviewer` | Read-only | Pull Request code review (quality, security, patterns) |
+| `pre-implementation-gate` | Read-only | Validates PRD/specs/plan exist before implementation |
 
+#### Implementation agents (can modify code)
+| Agent | Type | Description |
+|-------|------|-------------|
+| `performance` | Read/Write | Bundle size, re-renders, lazy loading, Core Web Vitals optimization |
+| `ui-ux-accessibility` | Read/Write | UI/UX improvements, WCAG accessibility fixes |
+| `testing` | Read/Write | Writes unit and integration tests (Vitest + Testing Library) |
+| `seed-manager` | Read/Write | Keeps seed data in sync with schema changes |
+| `documentation` | Read/Write | Technical documentation writer (Spanish) |
+| `dependency-updater` | Read/Write | Reviews and upgrades dependencies (minor/patch auto, major reported) |
+
+#### Operations agents
+| Agent | Type | Description |
+|-------|------|-------------|
+| `git-expert` | Exclusive | ONLY agent authorized to run git commands |
+| `ci-guardian` | Read/Write (Opus) | Diagnoses and fixes CI/CD failures |
+| `changelog-writer` | Read/Write | Maintains CHANGELOG.md |
+| `docs-site-maintainer` | Read/Write | Maintains Docsify site (sidebar, READMEs) |
+| `continuous-improvement` | Read/Write | Analyzes workflow friction, proposes improvements |
+| `prd-writer` | Read/Write | Generates PRDs from GitHub issues |
+| `specs-plan-writer` | Read/Write | Generates specs and plans from approved PRDs |
+
+**Scope clarification:** `performance` optimizes general web performance (bundle, re-renders, vitals). `perf-auditor` only audits instrumentation (measureAsync, trackFunctionTiming). They don't overlap.
+
+### Skills (`.claude/skills/`) — 8 user-invocable + 2 modifiers
+
+#### Workflow skills
+| Skill | Description |
+|-------|-------------|
+| `/start` | Create worktree + branch for a new feature/fix |
+| `/merge` | Full pre-merge checklist (Phase 0-8: gate, quality, 11 audits, docs, merge, bump, push, reflection) |
+| `/stage` | Deploy feature branch to staging |
+| `/health-check` | Full project audit (12 agents) without merging |
+| `/bulk-prd` | Create PRDs in batch from GitHub issues |
+
+#### On-demand skills (new)
+| Skill | Description |
+|-------|-------------|
+| `/audit <type>` | Run a specific auditor (security, architecture, dark-mode, ui, performance, perf-instrumentation, privacy, offline, copy, admin-metrics, help-docs, pr-review) |
+| `/review-pr <number>` | Review a GitHub PR with the pr-reviewer agent |
+| `/test [files\|coverage]` | Write tests for changed files or fill coverage gaps |
+| `/deps` | Review and update dependencies (minor/patch auto-upgraded) |
+
+#### Modifier skills
 | Skill | Description |
 |-------|-------------|
 | `read-only` | Restricts agent to read-only operations |
@@ -119,10 +176,11 @@ Memory files persist learnings across conversations. They are NOT in the repo be
 
 When Claude needs specialized help, it delegates to agents:
 
-- **Read-only agents** (report only): `dark-mode-auditor`, `architecture`, `security`, `ui-reviewer`, `pr-reviewer`, `help-docs-reviewer`, `admin-metrics-auditor`
-- **Implementation agents**: `testing`, `documentation`, `performance`, `ui-ux-accessibility`, `seed-manager`, `changelog-writer`, `continuous-improvement`, `ci-guardian`
-- **Exclusive agents**: `git-expert` (only agent allowed to run git commands)
-- **Coordinator**: `orchestrator` (delegates to the right specialist)
+- **Coordinators**: `manu` (Tech Lead, orchestrates features), ~~`orchestrator`~~ (deprecated, use manu)
+- **Role-based implementors**: `luna` (Senior Frontend — components, UI hooks, theme, map), `nico` (Senior Backend — functions, rules, services, types)
+- **Read-only auditors** (report only): `architecture`, `security`, `ui-reviewer`, `dark-mode-auditor`, `copy-auditor`, `offline-auditor`, `privacy-policy`, `perf-auditor`, `admin-metrics-auditor`, `help-docs-reviewer`, `pr-reviewer`, `pre-implementation-gate`
+- **Implementation agents**: `performance`, `ui-ux-accessibility`, `testing`, `seed-manager`, `documentation`, `dependency-updater`
+- **Operations agents**: `git-expert` (exclusive git access), `ci-guardian`, `changelog-writer`, `docs-site-maintainer`, `continuous-improvement`, `prd-writer`, `specs-plan-writer`
 
 ## Troubleshooting
 

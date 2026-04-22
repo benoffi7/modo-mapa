@@ -77,7 +77,41 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
 
   useEffect(() => {
     let ignore = false;
-    fetchFeaturedLists().then((result) => { if (!ignore) setFeaturedLists(result); }).catch((err) => logger.error('[SharedListsView] fetchFeaturedLists failed:', err));
+    const CACHE_KEY = 'mm_featured_lists';
+
+    // Warm from cache immediately — always use cached data, even if stale
+    let warmedFromCache = false;
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data } = JSON.parse(cached) as { data: SharedList[]; ts: number };
+        if (!ignore) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- warm from localStorage cache before async fetch
+          setFeaturedLists(data.map((l) => ({
+            ...l,
+            createdAt: new Date(l.createdAt),
+            updatedAt: new Date(l.updatedAt),
+          })));
+          warmedFromCache = true;
+        }
+      }
+    } catch { /* ignore malformed cache */ }
+
+    fetchFeaturedLists()
+      .then((result) => {
+        if (!ignore) {
+          setFeaturedLists(result);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result, ts: Date.now() }));
+          } catch { /* storage full */ }
+        }
+      })
+      .catch((err) => {
+        logger.error('[SharedListsView] fetchFeaturedLists failed:', err);
+        // If cache data was loaded (fresh or stale), it remains in state — no cleanup needed
+        // If no cache was available, featuredLists stays empty
+        void warmedFromCache;
+      });
     return () => { ignore = true; };
   }, []);
 
@@ -141,7 +175,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <BookmarkBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
           <Typography variant="body2" color="text.secondary">{MSG_LIST.emptyLists}</Typography>
-          <Typography variant="caption" color="text.secondary">Crea una para organizar tus comercios favoritos</Typography>
+          <Typography variant="caption" color="text.secondary">Creá una para organizar tus comercios favoritos</Typography>
         </Box>
       ) : (
         <ListCardGrid

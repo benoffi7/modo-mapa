@@ -11,6 +11,7 @@ import { ACTION_LABELS, SCORING, getUserTier } from '../../constants/rankings';
 import { evaluateBadges } from '../../constants/badges';
 import { useVerificationBadges } from '../../hooks/useVerificationBadges';
 import { trackEvent } from '../../utils/analytics';
+import { MSG_COMMON } from '../../constants/messages';
 import BadgesList from './BadgesList';
 import type { UserRankingEntry } from '../../types';
 
@@ -59,7 +60,7 @@ export default function UserProfileModal({ entry, position, onClose }: Props) {
             {position != null && ` · #${position}`}
           </Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} aria-label="Cerrar">
+        <IconButton size="small" onClick={onClose} aria-label={MSG_COMMON.closeAriaLabel}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>

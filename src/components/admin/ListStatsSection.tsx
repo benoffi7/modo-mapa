@@ -24,13 +24,13 @@ export default function ListStatsSection() {
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Estadisticas de Listas</Typography>
+      <Typography variant="h6" sx={{ mb: 2 }}>Estadísticas de Listas</Typography>
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatCard label="Total listas" value={stats.totalLists} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-          <StatCard label="Publicas" value={stats.publicLists} />
+          <StatCard label="Públicas" value={stats.publicLists} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <StatCard label="Privadas" value={stats.privateLists} />
@@ -49,7 +49,7 @@ export default function ListStatsSection() {
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
             <TopList
-              title="Top 10 — Listas mas grandes"
+              title="Top 10 — Listas más grandes"
               items={topLists.map((l) => ({
                 label: `${l.name}${l.isPublic ? '' : ' (privada)'}`,
                 value: l.itemCount,

@@ -19,6 +19,7 @@ export interface AdminCounters {
 }
 
 export interface DailyMetrics extends PublicMetrics {
+  id: string;
   dailyReads: number;
   dailyWrites: number;
   dailyDeletes: number;
@@ -185,6 +186,11 @@ export interface ActivityFeedDiagItem {
 export interface ActivityFeedDiagResponse {
   items: ActivityFeedDiagItem[];
   total: number;
+}
+
+export interface BackupEntry {
+  id: string;
+  createdAt: string;
 }
 
 export type ModerationAction = 'delete' | 'hide';

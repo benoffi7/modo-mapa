@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { List, ListItemButton, ListItemText, Typography, Chip, Box } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import { useBusinesses } from '../../hooks/useBusinesses';
@@ -38,7 +39,7 @@ function BusinessRow({ business, distance, onSelect }: BusinessRowProps) {
             </Typography>
           </Box>
         }
-        primaryTypographyProps={{ fontWeight: 500, fontSize: '0.95rem' }}
+        slotProps={{ primary: { sx: { fontWeight: 500, fontSize: '0.95rem' } } }}
       />
       <StarIcon sx={{ color: 'warning.main', fontSize: 18 }} />
     </ListItemButton>
@@ -50,11 +51,13 @@ export default function SearchListView() {
   const { setSelectedBusiness } = useSelection();
   const sortLocation = useSortLocation();
 
-  const sorted = [...businesses].sort((a, b) => {
-    const dA = distanceKm(sortLocation.lat, sortLocation.lng, a.lat, a.lng);
-    const dB = distanceKm(sortLocation.lat, sortLocation.lng, b.lat, b.lng);
-    return dA - dB;
-  });
+  const sorted = useMemo(() =>
+    [...businesses].sort((a, b) => {
+      const dA = distanceKm(sortLocation.lat, sortLocation.lng, a.lat, a.lng);
+      const dB = distanceKm(sortLocation.lat, sortLocation.lng, b.lat, b.lng);
+      return dA - dB;
+    }),
+  [businesses, sortLocation.lat, sortLocation.lng]);
 
   if (sorted.length === 0) {
     return (

@@ -2,36 +2,25 @@
  * Seed script for staging database.
  * Run with: cp scripts/seed-staging.ts functions/seed.ts && cd functions && npx tsx seed.ts && rm seed.ts
  * Uses firebase-admin with application default credentials to write to the 'staging' database.
+ *
+ * Prerequisite: run `gcloud auth application-default login` before executing this script.
  */
 
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 
-// Create ADC file from firebase-tools refresh token
-const firebaseConfig = JSON.parse(readFileSync(resolve(process.env.HOME!, '.config/configstore/firebase-tools.json'), 'utf-8'));
+// Validate that Application Default Credentials exist before proceeding
 const adcPath = resolve(process.env.HOME!, '.config/gcloud/application_default_credentials.json');
-
-// Ensure directory exists
-import { mkdirSync } from 'fs';
-mkdirSync(resolve(process.env.HOME!, '.config/gcloud'), { recursive: true });
-
-// Write ADC file
-const adcContent = {
-  type: 'authorized_user',
-  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-  refresh_token: firebaseConfig.tokens.refresh_token,
-};
-writeFileSync(adcPath, JSON.stringify(adcContent));
-process.env.GOOGLE_APPLICATION_CREDENTIALS = adcPath;
+if (!existsSync(adcPath)) {
+  console.error('ERROR: Application Default Credentials no encontradas.');
+  console.error('Ejecutar primero: gcloud auth application-default login');
+  process.exit(1);
+}
 
 initializeApp({ projectId: 'modo-mapa-app' });
 const db = getFirestore('staging');
-
-// Cleanup ADC on exit
-process.on('exit', () => { try { unlinkSync(adcPath); } catch {} });
 
 const BUSINESS_IDS = [
   'biz_001', 'biz_002', 'biz_003', 'biz_004', 'biz_005',
@@ -410,6 +399,72 @@ async function seed() {
       updatedAt: new Date(),
     });
   }
+
+  // 21. Moderation Logs (#255)
+  console.log('Creating moderation logs...');
+  const moderationActions = ['delete', 'hide'] as const;
+  const moderationTargets = ['comments', 'ratings', 'customTags'] as const;
+  for (let i = 0; i < 8; i++) {
+    const target = moderationTargets[i % moderationTargets.length];
+    await db.collection('moderationLogs').add({
+      adminId: USER_IDS[0],
+      action: moderationActions[i % 2],
+      targetCollection: target,
+      targetDocId: `seed_${target}_${randomInt(1, 50)}`,
+      targetUserId: USER_IDS[randomInt(1, 9)],
+      reason: randomFrom(['Spam', 'Contenido inapropiado', 'Datos falsos', null]),
+      snapshot: target === 'comments'
+        ? { text: randomFrom(COMMENT_TEXTS), userId: USER_IDS[randomInt(0, 9)] }
+        : target === 'ratings'
+        ? { score: randomInt(1, 5), userId: USER_IDS[randomInt(0, 9)] }
+        : { label: randomFrom(['Spam tag', 'Test', 'AAAA']), userId: USER_IDS[randomInt(0, 9)] },
+      timestamp: daysAgo(randomInt(0, 14)),
+    });
+  }
+
+  // 22. Deletion Audit Logs (#258)
+  console.log('Creating deletion audit logs...');
+  const deletionStatuses = ['success', 'partial_failure', 'failure'] as const;
+  const deletionTypes = ['account_delete', 'anonymous_clean'] as const;
+  for (let i = 0; i < 5; i++) {
+    const status = deletionStatuses[i % 3];
+    await db.collection('deletionAuditLogs').add({
+      uidHash: `sha256_${Math.random().toString(36).slice(2, 14)}`,
+      type: deletionTypes[i % 2],
+      status,
+      collectionsProcessed: status === 'failure' ? randomInt(3, 8) : 15,
+      collectionsFailed: status === 'success' ? [] : ['menuPhotos', ...(status === 'failure' ? ['ratings', 'comments'] : [])],
+      storageFilesDeleted: randomInt(0, 5),
+      storageFilesFailed: status === 'success' ? 0 : randomInt(1, 3),
+      aggregatesCorrected: status !== 'failure',
+      durationMs: randomInt(800, 5000),
+      triggeredBy: 'user',
+      timestamp: daysAgo(randomInt(0, 30)),
+    });
+  }
+
+  // 23. Cron Runs (#257)
+  console.log('Creating cron run heartbeats...');
+  const cronNames = [
+    'cleanupRejectedPhotos', 'cleanupExpiredNotifications', 'cleanupActivityFeed',
+    'generateFeaturedLists', 'dailyMetrics', 'computeTrendingBusinesses',
+    'computeWeeklyRanking', 'computeMonthlyRanking', 'computeAlltimeRanking',
+  ];
+  for (const cronName of cronNames) {
+    const isError = cronName === 'cleanupActivityFeed';
+    await db.doc(`_cronRuns/${cronName}`).set({
+      lastRunAt: isError ? daysAgo(3) : daysAgo(randomInt(0, 1)),
+      result: isError ? 'error' : 'success',
+      detail: isError ? 'Timeout after 60s' : `Processed ${randomInt(5, 50)} items`,
+      durationMs: randomInt(200, 8000),
+    });
+  }
+
+  // Update counters with new collections
+  await db.doc('config/counters').update({
+    moderationLogs: 8,
+    deletionAuditLogs: 5,
+  });
 
   console.log('\nStaging seed complete!');
   console.log('Collections seeded: users, comments, ratings, favorites, userTags, customTags,');

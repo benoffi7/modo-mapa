@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Box, Typography, Button, CircularProgress, Skeleton } from '@mui/material';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface PaginatedListShellProps {
   isLoading: boolean;
@@ -107,10 +108,10 @@ export function PaginatedListShell({
             size="small"
             onClick={onLoadMore}
             disabled={isLoadingMore}
-            aria-label="Cargar más"
+            aria-label={MSG_COMMON.loadMore}
             startIcon={isLoadingMore ? <CircularProgress size={16} /> : null}
           >
-            {isLoadingMore ? 'Cargando...' : 'Cargar más'}
+            {isLoadingMore ? MSG_COMMON.loading : MSG_COMMON.loadMore}
           </Button>
         </Box>
       )}

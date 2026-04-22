@@ -124,8 +124,13 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
     <Card variant="outlined" sx={{ mx: 2, mb: 1, borderRadius: 2 }}>
       <CardContent sx={{ py: 2, px: 2, '&:last-child': { pb: 2 } }}>
         <Box
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
           onClick={toggleExpanded}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleExpanded(); }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
@@ -136,14 +141,14 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}>
+            <IconButton size="small" sx={{ minWidth: 44, minHeight: 44 }} aria-label={expanded ? 'Colapsar primeros pasos' : 'Expandir primeros pasos'}>
               {expanded ? <ExpandLessIcon sx={{ fontSize: 18 }} /> : <ExpandMoreIcon sx={{ fontSize: 18 }} />}
             </IconButton>
             <IconButton
               size="small"
               onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
               aria-label="Cerrar primeros pasos"
-              sx={{ p: 0.25 }}
+              sx={{ minWidth: 44, minHeight: 44 }}
             >
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
@@ -167,10 +172,14 @@ export default function OnboardingChecklist({ menuOpen }: Props) {
                 </ListItemIcon>
                 <ListItemText
                   primary={task.label}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    fontSize: '0.8rem',
-                    sx: task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined,
+                  slotProps={{
+                    primary: {
+                      variant: 'body2',
+                      sx: {
+                        fontSize: '0.8rem',
+                        ...(task.isComplete ? { textDecoration: 'line-through', color: 'text.disabled' } : {}),
+                      },
+                    },
                   }}
                 />
                 <task.icon sx={{ fontSize: 14, color: task.isComplete ? 'text.disabled' : 'text.secondary', opacity: 0.5 }} />

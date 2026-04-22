@@ -4,6 +4,15 @@ import { processQueue, executeAction, _resetSyncingForTest } from './syncEngine'
 import * as offlineQueue from './offlineQueue';
 import type { OfflineAction } from '../types/offline';
 
+vi.mock('./sharedLists', () => ({
+  createList: vi.fn().mockResolvedValue('list1'),
+  updateList: vi.fn().mockResolvedValue(undefined),
+  toggleListPublic: vi.fn().mockResolvedValue(undefined),
+  deleteList: vi.fn().mockResolvedValue(undefined),
+  addBusinessToList: vi.fn().mockResolvedValue(undefined),
+  removeBusinessFromList: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock all Firestore services
 vi.mock('./ratings', () => ({
   upsertRating: vi.fn().mockResolvedValue(undefined),
@@ -48,6 +57,7 @@ import { addUserTag, removeUserTag } from './tags';
 import { createCheckIn, deleteCheckIn } from './checkins';
 import { followUser, unfollowUser } from './follows';
 import { createRecommendation, markRecommendationAsRead } from './recommendations';
+import { createList, updateList, toggleListPublic, deleteList, addBusinessToList, removeBusinessFromList } from './sharedLists';
 
 function makeFullAction(overrides: Partial<OfflineAction> = {}): OfflineAction {
   return {
@@ -198,6 +208,117 @@ describe('syncEngine', () => {
       }));
       expect(markRecommendationAsRead).toHaveBeenCalledWith('rec-legacy');
     });
+
+    // List domain action types (#304)
+    it('maps list_create with optional listId', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_create',
+        listId: 'list-client-id',
+        payload: { name: 'Mi lista', description: 'desc', icon: 'heart' },
+      }));
+      expect(createList).toHaveBeenCalledWith('u1', 'Mi lista', 'desc', 'heart', 'list-client-id');
+    });
+
+    it('maps list_create without listId', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_create',
+        payload: { name: 'Sin id', description: '' },
+      }));
+      expect(createList).toHaveBeenCalledWith('u1', 'Sin id', '', undefined, undefined);
+    });
+
+    it('maps list_update', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_update',
+        listId: 'list1',
+        payload: { name: 'Nuevo', description: 'Desc', color: '#fff', icon: 'star' },
+      }));
+      expect(updateList).toHaveBeenCalledWith('list1', 'Nuevo', 'Desc', '#fff', 'star');
+    });
+
+    it('maps list_toggle_public', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_toggle_public',
+        listId: 'list1',
+        payload: { isPublic: true },
+      }));
+      expect(toggleListPublic).toHaveBeenCalledWith('list1', true);
+    });
+
+    it('maps list_delete', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_delete',
+        listId: 'list1',
+        payload: { ownerId: 'u1' },
+      }));
+      expect(deleteList).toHaveBeenCalledWith('list1', 'u1');
+    });
+
+    it('maps list_item_add', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_item_add',
+        listId: 'list1',
+        businessId: 'biz1',
+        payload: { addedBy: 'u2' },
+      }));
+      expect(addBusinessToList).toHaveBeenCalledWith('list1', 'biz1', 'u2');
+    });
+
+    it('maps list_item_remove', async () => {
+      await executeAction(makeFullAction({
+        type: 'list_item_remove',
+        listId: 'list1',
+        businessId: 'biz1',
+        payload: {},
+      }));
+      expect(removeBusinessFromList).toHaveBeenCalledWith('list1', 'biz1');
+    });
+
+    // Error paths for list actions that require listId — omit listId to test the guard
+    it('throws descriptive error for list_update without listId', async () => {
+      await expect(
+        executeAction(makeFullAction({
+          type: 'list_update',
+          payload: { name: 'X', description: '' },
+        })),
+      ).rejects.toThrow('list_update requires listId');
+    });
+
+    it('throws descriptive error for list_toggle_public without listId', async () => {
+      await expect(
+        executeAction(makeFullAction({
+          type: 'list_toggle_public',
+          payload: { isPublic: false },
+        })),
+      ).rejects.toThrow('list_toggle_public requires listId');
+    });
+
+    it('throws descriptive error for list_delete without listId', async () => {
+      await expect(
+        executeAction(makeFullAction({
+          type: 'list_delete',
+          payload: { ownerId: 'u1' },
+        })),
+      ).rejects.toThrow('list_delete requires listId');
+    });
+
+    it('throws descriptive error for list_item_add without listId', async () => {
+      await expect(
+        executeAction(makeFullAction({
+          type: 'list_item_add',
+          payload: {},
+        })),
+      ).rejects.toThrow('list_item_add requires listId');
+    });
+
+    it('throws descriptive error for list_item_remove without listId', async () => {
+      await expect(
+        executeAction(makeFullAction({
+          type: 'list_item_remove',
+          payload: {},
+        })),
+      ).rejects.toThrow('list_item_remove requires listId');
+    });
   });
 
   describe('processQueue', () => {
@@ -237,6 +358,21 @@ describe('syncEngine', () => {
       expect(offlineQueue.updateStatus).toHaveBeenCalledWith(action.id, 'failed', 3);
       expect(onFailed).toHaveBeenCalledTimes(1);
       expect(onComplete).toHaveBeenCalledWith(0, 1);
+    });
+
+    it('wraps non-Error throws in Error when marking failed', async () => {
+      const action = makeFullAction({ retryCount: 2 });
+      vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+      vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([action]);
+      vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+      vi.mocked(upsertRating).mockRejectedValueOnce('string-error');
+
+      const onFailed = vi.fn();
+      await processQueue(vi.fn(), onFailed, vi.fn());
+
+      const wrappedErr = onFailed.mock.calls[0]?.[1];
+      expect(wrappedErr).toBeInstanceOf(Error);
+      expect(wrappedErr.message).toBe('string-error');
     });
 
     it('defers failed actions instead of blocking with backoff', async () => {

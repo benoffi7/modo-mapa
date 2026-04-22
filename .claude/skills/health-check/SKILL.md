@@ -1,7 +1,7 @@
 ---
 name: health-check
-description: "Run full project audit (quality gates + all 7 merge agents) without merging. Generates tech debt issues."
-user_invocable: true
+description: "Run full project audit (quality gates + all 12 audit agents) without merging. Generates tech debt issues."
+user-invocable: true
 ---
 
 # Project Health Check
@@ -22,10 +22,11 @@ Run sequentially — report results but don't abort:
 
 Report as summary table. **If coverage is below threshold, flag as blocker** — CI will reject the deploy.
 
-### Step 2: Full audit (all 7 agents, in parallel)
+### Step 2: Full audit (all 12 agents, in parallel)
 
-Launch ALL 7 audit agents against the entire `src/` directory (not a diff — full project scan):
+Launch ALL audit agents against the entire `src/` directory (not a diff — full project scan):
 
+**Core auditors (always run):**
 1. **dark-mode-auditor** — hardcoded colors across all `.tsx`/`.ts` files
 2. **security** — XSS, injection, race conditions, rules, auth bypass
 3. **architecture** — separation of concerns, duplication, antipatterns
@@ -33,6 +34,13 @@ Launch ALL 7 audit agents against the entire `src/` directory (not a diff — fu
 5. **performance** — bundle size, re-renders, memoization, query optimization
 6. **privacy-policy** — data collection vs privacy policy consistency
 7. **offline-auditor** — uncached reads, unqueued writes, missing fallbacks
+8. **copy-auditor** — spelling errors, missing tildes, tone inconsistencies in user-facing strings
+
+**Specialized auditors (always run in health-check):**
+9. **perf-auditor** — Firestore query instrumentation (measureAsync) and Cloud Function trigger timing (trackFunctionTiming)
+10. **admin-metrics-auditor** — verify all data collections and analytics events have admin dashboard visibility
+11. **help-docs-reviewer** — validate HelpSection content matches features.md
+12. **pr-reviewer** — overall code quality review of `src/` (treat as a full-project PR review)
 
 Wait for all results before proceeding.
 
@@ -77,7 +85,7 @@ Group findings by domain and create GitHub issues:
 gh issue create --title "Tech debt: <domain> — <summary>" --body "<findings>" --label "enhancement"
 ```
 
-Domains: security, performance, offline, ui-ux, architecture, dark-mode, privacy.
+Domains: security, performance, perf-instrumentation, offline, ui-ux, architecture, dark-mode, privacy, copy, admin-metrics, help-docs.
 
 Only create issues for domains with medium+ findings. Skip if an open issue already covers the same domain — check with `gh issue list --state open`.
 

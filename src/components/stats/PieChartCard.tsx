@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { CHART_COLORS } from '../../constants/ui';
 
-interface PieChartCardProps {
+export interface PieChartCardProps {
   title: string;
   data: Array<{ name: string; value: number }>;
 }

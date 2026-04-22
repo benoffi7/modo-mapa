@@ -23,18 +23,49 @@ interface AnalyticsReportResponse {
 // ── Constants ─────────────────────────────────────────────────────────
 
 const GA4_EVENT_NAMES = [
+  // Auth
+  'account_created',
+  'email_sign_in',
+  'sign_out',
+  'password_changed',
+  // Check-in
+  'checkin_created',
+  'checkin_deleted',
+  'checkin_cooldown_blocked',
+  'checkin_proximity_warning',
+  // Verification badges
+  'verification_badge_earned',
+  'verification_badge_viewed',
+  'verification_badge_tooltip',
+  // Core actions
+  'comment_submit',
+  'comment_like',
+  'rating_submit',
+  'criteria_rating_submit',
+  'favorite_toggle',
+  'feedback_submit',
+  'price_level_vote',
+  'tag_vote',
+  'custom_tag_create',
   // Existing
   'surprise_me',
   'list_created',
   'list_item_added',
+  'list_item_removed',
+  'list_deleted',
   'list_icon_changed',
   'business_search',
+  'business_filter_price',
+  'business_filter_tag',
   'business_share',
   'menu_photo_upload',
   'dark_mode_toggle',
   'business_view',
   'question_created',
-  'question_answered',
+  'question_viewed',
+  // Search
+  'search_view_toggled',
+  'search_list_item_clicked',
   // Onboarding
   'onboarding_banner_shown',
   'onboarding_banner_clicked',
@@ -57,6 +88,7 @@ const GA4_EVENT_NAMES = [
   'special_tapped',
   'for_you_tapped',
   'quick_action_tapped',
+  'quick_actions_edited',
   'recent_search_tapped',
   // Interests
   'tag_followed',
@@ -96,10 +128,21 @@ const GA4_EVENT_NAMES = [
   'force_update_triggered',
   'force_update_limit_reached',
   'account_deleted',
+  'perf_vitals_captured',
+  // GA4 auto-events (for volume context)
+  'page_view',
+  'screen_view',
   // Navigation
   'tab_switched',
   'sub_tab_switched',
   'business_sheet_tab_changed',
+  // Admin tools (#310)
+  'admin_config_viewed',
+  'admin_moderation_updated',
+  'admin_activity_feed_diag',
+  'admin_list_items_inspected',
+  'admin_rate_limit_reset',
+  'admin_list_item_deleted',
 ] as const;
 
 const CACHE_TTL_MS = 3_600_000; // 1 hour

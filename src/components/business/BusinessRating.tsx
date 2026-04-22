@@ -46,7 +46,7 @@ export default memo(function BusinessRating({ ratingData, ratings, isLoading }: 
             size="medium"
           />
           {myRating != null && (
-            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', p: 0.25 }} aria-label="Borrar calificación">
+            <IconButton size="small" onClick={handleDeleteRating} sx={{ color: 'text.secondary', minWidth: 44, minHeight: 44 }} aria-label="Borrar calificación">
               <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
           )}

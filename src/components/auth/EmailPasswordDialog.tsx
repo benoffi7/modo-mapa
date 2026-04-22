@@ -18,6 +18,7 @@ import {
 
 import { useAuth } from '../../context/AuthContext';
 import { EMAIL_REGEX, validatePassword } from '../../constants/auth';
+import { ANONYMOUS_DISPLAY_NAME } from '../../constants/ui';
 import { sendResetEmail, getAuthErrorMessage } from '../../services/emailAuth';
 import { usePasswordConfirmation } from '../../hooks/usePasswordConfirmation';
 import { useRememberedEmail } from '../../hooks/useRememberedEmail';
@@ -89,7 +90,7 @@ export default function EmailPasswordDialog({
     setLoading(true);
     try {
       await linkEmailPassword(email, password);
-      if (name.trim() && (!displayName || displayName === 'Anonimo')) {
+      if (name.trim() && (!displayName || displayName === ANONYMOUS_DISPLAY_NAME)) {
         await setDisplayName(name.trim());
       }
       saveEmail(email);
@@ -170,7 +171,7 @@ export default function EmailPasswordDialog({
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-              {tab === 'register' && (!displayName || displayName === 'Anonimo') && (
+              {tab === 'register' && (!displayName || displayName === ANONYMOUS_DISPLAY_NAME) && (
                 <TextField
                   label="Tu nombre"
                   placeholder="Ej: Juan"

@@ -1,10 +1,12 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { getDb } from '../helpers/env';
 import { incrementCounter, trackWrite } from '../utils/counters';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export const onUserCreated = onDocumentCreated(
   'users/{userId}',
   async (event) => {
+    const startMs = performance.now();
     const db = getDb();
     await incrementCounter(db, 'users', 1);
     await trackWrite(db, 'users');
@@ -18,5 +20,6 @@ export const onUserCreated = onDocumentCreated(
         followingCount: 0,
       });
     }
+    await trackFunctionTiming('onUserCreated', startMs);
   },
 );

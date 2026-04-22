@@ -16,6 +16,7 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useToast } from '../../context/ToastContext';
+import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { createQuestion } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
@@ -29,16 +30,15 @@ import type { Comment } from '../../types';
 import { logger } from '../../utils/logger';
 
 interface Props {
-  businessId: string;
-  businessName?: string;
   comments: Comment[];
   userCommentLikes: Set<string>;
   isLoading: boolean;
   onCommentsChange: () => void;
 }
 
-export default memo(function BusinessQuestions({ businessId, businessName, comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
+export default memo(function BusinessQuestions({ comments, userCommentLikes, isLoading, onCommentsChange }: Props) {
   const toast = useToast();
+  const { businessId, businessName } = useBusinessScope();
   const [questionText, setQuestionText] = useState('');
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 
@@ -117,7 +117,7 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
       onCommentsChange();
       if (!isOffline) toast.success(MSG_QUESTION.publishSuccess);
     } catch (error) {
-      if (import.meta.env.DEV) logger.error('Error creating question:', error);
+      logger.error('Error creating question:', error);
       toast.error(MSG_QUESTION.publishError);
     }
   };
@@ -321,25 +321,26 @@ export default memo(function BusinessQuestions({ businessId, businessName, comme
                       color="primary"
                       onClick={handleSubmitReply}
                       disabled={isSubmitting || !replyText.trim()}
+                      aria-label="Enviar respuesta"
                       sx={{
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
-                        width: 32,
-                        height: 32,
+                        width: 44,
+                        height: 44,
                         flexShrink: 0,
                         '&:hover': { bgcolor: 'primary.dark' },
                         '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
                       }}
                     >
-                      <SendIcon sx={{ fontSize: 14 }} />
+                      <SendIcon sx={{ fontSize: 20 }} />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={handleCancelReply}
-                      sx={{ color: 'text.secondary', width: 32, height: 32, flexShrink: 0 }}
+                      sx={{ color: 'text.secondary', width: 44, height: 44, flexShrink: 0 }}
                       aria-label="Cancelar respuesta"
                     >
-                      <CloseIcon sx={{ fontSize: 16 }} />
+                      <CloseIcon sx={{ fontSize: 20 }} />
                     </IconButton>
                   </Box>
                 </Box>

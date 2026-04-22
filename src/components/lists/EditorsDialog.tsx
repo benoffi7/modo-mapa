@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { useToast } from '../../context/ToastContext';
-import { MSG_LIST } from '../../constants/messages';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { MSG_LIST, MSG_OFFLINE } from '../../constants/messages';
 import { removeEditor, fetchEditorName } from '../../services/sharedLists';
 
 interface Props {
@@ -31,6 +32,7 @@ interface EditorInfo {
 
 export default function EditorsDialog({ open, onClose, listId, editorIds, onEditorRemoved }: Props) {
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [editors, setEditors] = useState<EditorInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -59,6 +61,10 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
   }, [open, editorIds]);
 
   const handleRemove = async (targetUid: string) => {
+    if (isOffline) {
+      toast.warning(MSG_OFFLINE.noConnection);
+      return;
+    }
     setRemoving(targetUid);
     try {
       await removeEditor(listId, targetUid);
@@ -93,7 +99,7 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
                     edge="end"
                     size="small"
                     onClick={() => handleRemove(editor.uid)}
-                    disabled={removing === editor.uid}
+                    disabled={removing === editor.uid || isOffline}
                     aria-label={`Remover ${editor.displayName}`}
                     sx={{ color: 'error.main' }}
                   >
@@ -104,8 +110,10 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
                 <ListItemText
                   primary={editor.displayName}
                   secondary="Editor"
-                  primaryTypographyProps={{ fontSize: '0.9rem' }}
-                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                  slotProps={{
+                    primary: { sx: { fontSize: '0.9rem' } },
+                    secondary: { sx: { fontSize: '0.7rem' } },
+                  }}
                 />
               </ListItem>
             ))}

@@ -32,7 +32,7 @@ export function useFollow(targetUserId: string | undefined) {
         setLoading(false);
       }
     }).catch((err) => {
-      if (import.meta.env.DEV) logger.error('isFollowing check failed:', err);
+      logger.error('isFollowing check failed:', err);
       if (!cancelled) setLoading(false);
     });
 
@@ -66,7 +66,7 @@ export function useFollow(targetUserId: string | undefined) {
       }
     } catch (err) {
       setFollowing(wasFollowing);
-      if (import.meta.env.DEV) logger.error('Follow toggle failed:', err);
+      logger.error('Follow toggle failed:', err);
       toast.error(err instanceof Error ? err.message : MSG_SOCIAL.followError);
     } finally {
       setToggling(false);

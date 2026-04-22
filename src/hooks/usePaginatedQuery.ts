@@ -124,7 +124,7 @@ export function usePaginatedQuery<T>(
         setItems((prev) => [...prev, ...pageItems]);
       }
     } catch (err) {
-      if (import.meta.env.DEV) logger.error('Error loading data:', err);
+      logger.error('Error loading data:', err);
       setError('No se pudieron cargar los datos');
     }
 

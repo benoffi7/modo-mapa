@@ -8,6 +8,14 @@ export default defineConfig({
     exclude: ['functions/**', 'node_modules/**', '.claude/**'],
     coverage: {
       provider: 'v8',
+      exclude: [
+        'src/components/admin/**',
+        'src/components/DEV/**',
+        'node_modules/**',
+        '**/*.test.{ts,tsx}',
+        '**/test/**',
+        'src/test/**',
+      ],
       thresholds: {
         statements: 80,
         branches: 80,

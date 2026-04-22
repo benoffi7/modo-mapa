@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box, Typography, Button, Skeleton } from '@mui/material';
+import { Box, ButtonBase, Typography, Button, Skeleton } from '@mui/material';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -36,24 +36,25 @@ function DigestItem({ group }: { group: DigestGroup }) {
   };
 
   return (
-    <Box
+    <ButtonBase
       onClick={handleTap}
       sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 1.5,
         py: 0.75,
-        cursor: 'pointer',
-        '&:hover': { bgcolor: 'action.hover' },
+        width: '100%',
         borderRadius: 1,
         px: 1,
+        textAlign: 'left',
+        '&:hover': { bgcolor: 'action.hover' },
       }}
     >
       {ICON_MAP[group.icon] ?? <NotificationsNoneIcon fontSize="small" color="primary" />}
       <Typography variant="body2" sx={{ flex: 1 }}>
         {group.label}
       </Typography>
-    </Box>
+    </ButtonBase>
   );
 }
 
@@ -89,7 +90,7 @@ export default function ActivityDigestSection() {
           No hay novedades recientes
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          Califica y comenta negocios para recibir actividad
+          Calificá y comentá comercios para recibir actividad
         </Typography>
         <Button
           variant="outlined"
@@ -99,7 +100,7 @@ export default function ActivityDigestSection() {
             navigateToSearch();
           }}
         >
-          Explorar negocios
+          Explorar comercios
         </Button>
       </Box>
     );
@@ -109,17 +110,17 @@ export default function ActivityDigestSection() {
     <Box sx={{ px: 2, py: 1.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionTitleSx }}>
         <Typography variant="subtitle2">Tu actividad</Typography>
-        <Typography
-          variant="caption"
-          color="primary"
-          sx={{ cursor: 'pointer' }}
+        <Button
+          variant="text"
+          size="small"
           onClick={() => {
             trackEvent('digest_item_tapped', { type: 'view_all', count: 0 });
             setActiveTab('perfil');
           }}
+          sx={{ minWidth: 44, minHeight: 44, fontSize: '0.75rem', textTransform: 'none', px: 1 }}
         >
           Ver todas
-        </Typography>
+        </Button>
       </Box>
       {groups.map((g) => (
         <DigestItem key={g.type} group={g} />
