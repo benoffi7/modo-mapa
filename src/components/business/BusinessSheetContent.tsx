@@ -163,13 +163,7 @@ export default function BusinessSheetContent({
       ) : showError ? (
         <BusinessSheetError onRetry={() => data.refetch()} />
       ) : (
-        <Box sx={{
-          '@keyframes fadeIn': {
-            from: { opacity: 0 },
-            to: { opacity: 1 },
-          },
-          animation: 'fadeIn 200ms ease-in',
-        }}>
+        <>
           {data.stale && (
             <StaleBanner
               businessId={business.id}
@@ -229,27 +223,33 @@ export default function BusinessSheetContent({
             </Tabs>
           </Box>
 
-          {/* Tab content */}
-          <Box sx={{ display: activeTab === 'info' ? 'block' : 'none' }}>
-            <InfoTab
-              ratingData={ratingData}
-              priceLevelData={priceLevelData}
-              tagsData={tagsData}
-              photoData={photoData}
-              isLoading={data.isLoading}
-            />
+          {/* Tab content — outside the fadeIn box so the animation stacking context
+              does not interfere with the sticky header/tabs above */}
+          <Box sx={{
+            '@keyframes fadeIn': { from: { opacity: 0 }, to: { opacity: 1 } },
+            animation: 'fadeIn 200ms ease-in',
+          }}>
+            <Box sx={{ display: activeTab === 'info' ? 'block' : 'none' }}>
+              <InfoTab
+                ratingData={ratingData}
+                priceLevelData={priceLevelData}
+                tagsData={tagsData}
+                photoData={photoData}
+                isLoading={data.isLoading}
+              />
+            </Box>
+            <Box sx={{ display: activeTab === 'opiniones' ? 'block' : 'none' }}>
+              <OpinionesTab
+                comments={data.comments}
+                regularComments={regularComments}
+                userCommentLikes={data.userCommentLikes}
+                isLoading={data.isLoading}
+                onCommentsChange={() => data.refetch('comments')}
+                onDirtyChange={setCommentsDirty}
+              />
+            </Box>
           </Box>
-          <Box sx={{ display: activeTab === 'opiniones' ? 'block' : 'none' }}>
-            <OpinionesTab
-              comments={data.comments}
-              regularComments={regularComments}
-              userCommentLikes={data.userCommentLikes}
-              isLoading={data.isLoading}
-              onCommentsChange={() => data.refetch('comments')}
-              onDirtyChange={setCommentsDirty}
-            />
-          </Box>
-        </Box>
+        </>
       )}
 
       <AddToListDialog
