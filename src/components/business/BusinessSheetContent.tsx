@@ -214,7 +214,7 @@ export default function BusinessSheetContent({
               position: 'sticky',
               top: headerHeight,
               zIndex: 2,
-              bgcolor: 'background.paper',
+              background: 'inherit',
               px: 2,
             }}
           >
