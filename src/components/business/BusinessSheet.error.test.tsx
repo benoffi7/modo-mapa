@@ -1,13 +1,11 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const mockRefetch = vi.fn();
 
 vi.mock('../../hooks/useBusinessData', () => ({
   useBusinessData: () => ({
     isLoading: false,
-    error: true,
-    refetch: mockRefetch,
+    error: false,
+    refetch: vi.fn(),
     isFavorite: false,
     ratings: [],
     comments: [],
@@ -26,11 +24,13 @@ vi.mock('../../context/AuthContext', () => ({
 
 vi.mock('../../context/SelectionContext', () => ({
   useSelection: () => ({
-    selectedBusiness: { id: 'biz-1', name: 'Test Business', category: 'restaurant', lat: 0, lng: 0, tags: [] },
+    selectedBusiness: { id: 'biz_001', name: 'Test Business', category: 'restaurant', lat: 0, lng: 0, tags: [] },
     setSelectedBusiness: vi.fn(),
-    selectedBusinessTab: null,
-    setSelectedBusinessTab: vi.fn(),
   }),
+}));
+
+vi.mock('../../context/BusinessScopeContext', () => ({
+  BusinessScopeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock('../../hooks/useBusinessRating', () => ({
@@ -38,8 +38,12 @@ vi.mock('../../hooks/useBusinessRating', () => ({
     averageRating: 0,
     totalRatings: 0,
     myRating: null,
+    criteriaAverages: {},
+    myCriteria: {},
+    hasCriteriaData: false,
     handleRate: vi.fn(),
     handleDeleteRating: vi.fn(),
+    handleCriterionRate: vi.fn(),
   }),
 }));
 
@@ -51,46 +55,39 @@ vi.mock('../../hooks/useTrending', () => ({
   useTrending: () => ({ data: null }),
 }));
 
-vi.mock('../../hooks/useUnsavedChanges', () => ({
-  useUnsavedChanges: () => ({ confirmClose: (fn: () => void) => fn(), dialogProps: {} }),
-}));
-
 vi.mock('../../utils/analytics', () => ({ trackEvent: vi.fn() }));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => vi.fn(),
+}));
 
 vi.mock('./BusinessSheetSkeleton', () => ({ default: () => <div>skeleton</div> }));
 vi.mock('./BusinessSheetHeader', () => ({ default: () => <div>header</div> }));
-vi.mock('./InfoTab', () => ({ default: () => <div>info</div> }));
-vi.mock('./OpinionesTab', () => ({ default: () => <div>opiniones</div> }));
 vi.mock('./FavoriteButton', () => ({ default: () => <div>fav</div> }));
 vi.mock('./ShareButton', () => ({ default: () => <div>share</div> }));
-vi.mock('./CheckInButton', () => ({ default: () => <div>checkin</div> }));
 vi.mock('./AddToListDialog', () => ({ default: () => null }));
 vi.mock('./RecommendDialog', () => ({ default: () => null }));
 vi.mock('../ui/StaleBanner', () => ({ default: () => null }));
-vi.mock('../common/DiscardDialog', () => ({ default: () => null }));
 
 import BusinessSheet from './BusinessSheet';
 
-describe('BusinessSheet error state', () => {
+describe('BusinessSheet', () => {
   beforeEach(() => {
-    mockRefetch.mockClear();
-    localStorage.setItem('drag_handle_seen', '1');
+    localStorage.setItem('dragHandleSeen', '1');
   });
 
-  it('renderiza el mensaje de error cuando useBusinessData devuelve error: true', () => {
+  it('renderiza el header del comercio cuando hay selectedBusiness', () => {
     render(<BusinessSheet />);
-    expect(screen.getByText(/No se pudo cargar la información del comercio/)).toBeInTheDocument();
+    expect(screen.getByText('header')).toBeInTheDocument();
   });
 
-  it('no renderiza el skeleton cuando isLoading es false y error es true', () => {
+  it('renderiza el botón Ver detalles', () => {
     render(<BusinessSheet />);
-    expect(screen.queryByText('skeleton')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ver detalles del comercio/i })).toBeInTheDocument();
   });
 
-  it('el botón Reintentar llama a data.refetch', () => {
+  it('no renderiza tabs de contenido', () => {
     render(<BusinessSheet />);
-    const retryBtn = screen.getByRole('button', { name: /reintentar/i });
-    fireEvent.click(retryBtn);
-    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
   });
 });

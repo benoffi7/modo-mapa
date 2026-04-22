@@ -5,7 +5,8 @@ import { useTab } from '../context/TabContext';
 import { allBusinesses } from './useBusinesses';
 import { ALL_TAB_IDS } from '../types';
 import type { TabId } from '../types';
-const BUSINESS_ID_RE = /^biz_\d{1,6}$/;
+import { BUSINESS_ID_REGEX } from '../constants/validation';
+import { STORAGE_KEY_LAST_BUSINESS_SHEET } from '../constants/storage';
 
 /**
  * Handles URL deep links on mount:
@@ -21,7 +22,7 @@ export function useDeepLinks() {
     let changed = false;
 
     const bizId = searchParams.get('business');
-    if (bizId && BUSINESS_ID_RE.test(bizId)) {
+    if (bizId && BUSINESS_ID_REGEX.test(bizId)) {
       const biz = allBusinesses.find((b) => b.id === bizId);
       if (biz) {
         setActiveTab('buscar');
@@ -44,6 +45,16 @@ export function useDeepLinks() {
     if (changed) {
       setSearchParams(searchParams, { replace: true });
     }
+
+    const lastBusinessId = sessionStorage.getItem(STORAGE_KEY_LAST_BUSINESS_SHEET);
+    if (lastBusinessId && BUSINESS_ID_REGEX.test(lastBusinessId)) {
+      const lastBusiness = allBusinesses.find((b) => b.id === lastBusinessId);
+      if (lastBusiness) {
+        setActiveTab('buscar');
+        setSelectedBusiness(lastBusiness);
+      }
+    }
+    try { sessionStorage.removeItem(STORAGE_KEY_LAST_BUSINESS_SHEET); } catch (e) { void e; }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run only on mount
   }, []);
 }

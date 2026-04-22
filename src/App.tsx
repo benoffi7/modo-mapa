@@ -15,6 +15,7 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ThemePlayground = lazy(() => import('./pages/ThemePlayground'));
 const ConstantsDashboard = lazy(() => import('./pages/ConstantsDashboard'));
 const MapAppShell = lazy(() => import('./components/layout/MapAppShell'));
+const BusinessDetailPage = lazy(() => import('./pages/BusinessDetailPage'));
 
 function AdminFallback() {
   return (
@@ -56,6 +57,14 @@ function App() {
                 />
               </>
             )}
+            <Route
+              path="/comercio/:id"
+              element={
+                <Suspense fallback={<AdminFallback />}>
+                  <BusinessDetailPage />
+                </Suspense>
+              }
+            />
             <Route
               path="/admin/*"
               element={

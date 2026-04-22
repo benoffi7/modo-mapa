@@ -29,3 +29,6 @@ export type {
 } from './offline';
 
 export type { Special, AchievementCondition, Achievement } from './admin';
+
+export type { BusinessDetailTab } from './businessDetail';
+export { BUSINESS_DETAIL_TABS } from './businessDetail';

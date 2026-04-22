@@ -12,7 +12,7 @@ export default function ShareButton({ business }: Props) {
   const [snackOpen, setSnackOpen] = useState(false);
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/?business=${business.id}`;
+    const url = `${window.location.origin}/comercio/${business.id}`;
     const text = `Mirá ${business.name} en Modo Mapa — ${business.address}`;
 
     if (navigator.share) {
