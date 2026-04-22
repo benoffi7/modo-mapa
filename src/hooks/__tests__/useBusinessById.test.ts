@@ -1,4 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('../usePriceLevelFilter', () => ({ usePriceLevelFilter: () => new Map() }));
+vi.mock('../../context/FiltersContext', () => ({
+  useFilters: () => ({ searchQuery: '', activeFilters: [], activePriceFilter: null }),
+  FiltersContext: { Provider: ({ children }: { children: unknown }) => children },
+}));
+
 import { useBusinessById } from '../useBusinessById';
 import { allBusinesses } from '../useBusinesses';
 
