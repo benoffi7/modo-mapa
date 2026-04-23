@@ -357,7 +357,7 @@ Alternativa considerada: usar `useNavigate` con `state` y preservar via `locatio
 
 ### Validacion de `:id` y `?tab=`
 
-- `:id` -> `BUSINESS_ID_RE = /^biz_\d{1,6}$/` (misma constante que `useDeepLinks`). Si no matchea, `BusinessDetailPage` renderiza `<BusinessNotFound reason="invalid_id" />`
+- `:id` -> `BUSINESS_ID_REGEX = /^biz_\d{1,6}$/` exportado desde `src/constants/validation.ts` e importado en `useDeepLinks.ts` y `useBusinessById.ts`. Acepta exactamente el prefijo `biz_` seguido de 1 a 6 dígitos. Si no matchea, `useBusinessById` retorna `status: 'invalid_id'` y `BusinessDetailPage` renderiza `<BusinessNotFound reason="invalid_id" />`. Si matchea el formato pero no existe en el mapa, retorna `status: 'not_found'`.
 - `?tab=` -> whitelist `BUSINESS_DETAIL_TABS`. Si no matchea, se ignora y se usa default `'criterios'`
 
 ### Analytics
