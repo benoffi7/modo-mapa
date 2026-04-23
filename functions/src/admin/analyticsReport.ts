@@ -127,6 +127,7 @@ const GA4_EVENT_NAMES = [
   // System
   'force_update_triggered',
   'force_update_limit_reached',
+  'app_version_active',
   'account_deleted',
   'perf_vitals_captured',
   // GA4 auto-events (for volume context)
