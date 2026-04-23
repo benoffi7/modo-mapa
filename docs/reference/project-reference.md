@@ -1,6 +1,6 @@
 # Modo Mapa — Referencia del proyecto
 
-**Version:** 2.40.2
+**Version:** 2.40.4
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
 **Ultima actualizacion:** 2026-04-23
@@ -105,4 +105,4 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **Offline Lists CRUD** (#304): 6 nuevas variantes de `OfflineActionType` para operaciones de listas. `list_delete` bloqueado intencionalmente (cascade delete inseguro). ID generado client-side via `generateListId()` para writes optimistas sin conexion. `MapErrorBoundary` en `SearchScreen` con auto-fallback a list view
 - **HELP_GROUPS registry** (#311): Array declarativo `HELP_GROUPS` en `src/components/profile/helpGroups.tsx` — patron equivalente a `HOME_SECTIONS`. `HelpSection.tsx` itera el array; agregar topic nuevo = agregar entrada al array, sin tocar JSX del orquestador
 - **business-detail-screen**: Sheet compacto `BusinessSheetCompactContent` (50dvh, header + CTA "Ver detalles") + pantalla full `BusinessDetailScreen` en `/comercio/:id` con chip tabs sticky (Criterios/Precio/Tags/Foto/Opiniones). URL canónica deep-linkeable. Restore del sheet al volver via `sessionStorage`. Backward compat con `?business={id}`. 3 eventos analytics: `business_detail_opened`, `business_detail_tab_changed`, `business_detail_cta_clicked`
-- **Tests**: 215+ test files (156 frontend + 55 functions), 1447 frontend + 478 functions tests. Incluye: utils, services, hooks, contexts, auth, onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, BusinessScopeContext, businessMap, MapErrorBoundary, helpGroups, forceUpdate utils, fanOut batch. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
+- **Tests**: 215+ test files (157 frontend + 55 functions), 1455 frontend + 478 functions tests. Incluye: utils, services, hooks, contexts, auth, onboarding, follows, activity feed, triggers, aggregates, helpers, readCache, contrast, useRatingPrompt, useCommentEdit, useVerificationCooldown, sharedLists, BusinessScopeContext, businessMap, MapErrorBoundary, helpGroups, forceUpdate utils, fanOut batch, useForceUpdate concurrency+debounce guards. Politica: >=80% cobertura para features nuevas. Ver [tests.md](tests.md)
