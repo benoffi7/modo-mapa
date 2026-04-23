@@ -14,6 +14,7 @@ import { validatePassword } from '../../constants/auth';
 import { usePasswordConfirmation } from '../../hooks/usePasswordConfirmation';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -58,7 +59,9 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     setLoading(true);
     setSuccess(false);
     try {
-      await changePassword(currentPassword, newPassword);
+      await withBusyFlag('password_change', async () => {
+        await changePassword(currentPassword, newPassword);
+      });
       setSuccess(true);
       closeTimerRef.current = setTimeout(handleClose, 1500);
     } catch {

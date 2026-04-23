@@ -3,7 +3,7 @@
 **Version:** 2.35.7
 **Repo:** <https://github.com/benoffi7/modo-mapa>
 **Produccion:** <https://modo-mapa-app.web.app>
-**Ultima actualizacion:** 2026-04-21
+**Ultima actualizacion:** 2026-04-22
 
 ---
 

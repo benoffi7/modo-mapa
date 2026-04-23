@@ -6,6 +6,7 @@ import { useConnectivity } from '../context/ConnectivityContext';
 import { useToast } from '../context/ToastContext';
 import { createCheckIn, deleteCheckIn, fetchCheckInsForBusiness } from '../services/checkins';
 import { withOfflineSupport } from '../services/offlineInterceptor';
+import { withBusyFlag } from '../utils/busyFlag';
 import { CHECKIN_COOLDOWN_HOURS, CHECKIN_PROXIMITY_RADIUS_M } from '../constants/checkin';
 import { distanceKm } from '../utils/distance';
 import { trackEvent } from '../utils/analytics';
@@ -95,14 +96,16 @@ export function useCheckIn(
     setError(null);
 
     try {
-      const id = await withOfflineSupport(
-        isOffline,
-        'checkin_create',
-        { userId: user.uid, businessId, businessName },
-        { businessName, location: userLocation ?? undefined },
-        () => createCheckIn(user.uid, businessId, businessName, userLocation ?? undefined),
-        toast,
-      );
+      const id = await withBusyFlag('checkin_submit', async () => {
+        return withOfflineSupport(
+          isOffline,
+          'checkin_create',
+          { userId: user.uid, businessId, businessName },
+          { businessName, location: userLocation ?? undefined },
+          () => createCheckIn(user.uid, businessId, businessName, userLocation ?? undefined),
+          toast,
+        );
+      });
       setStatus('success');
       setHasCheckedInRecently(true);
       if (id) setRecentCheckInId(id);
@@ -122,14 +125,16 @@ export function useCheckIn(
     setError(null);
 
     try {
-      await withOfflineSupport(
-        isOffline,
-        'checkin_delete',
-        { userId: user.uid, businessId },
-        { checkInId: recentCheckInId },
-        () => deleteCheckIn(user.uid, recentCheckInId),
-        toast,
-      );
+      await withBusyFlag('checkin_submit', async () => {
+        await withOfflineSupport(
+          isOffline,
+          'checkin_delete',
+          { userId: user.uid, businessId },
+          { checkInId: recentCheckInId },
+          () => deleteCheckIn(user.uid, recentCheckInId),
+          toast,
+        );
+      });
       setStatus('idle');
       setHasCheckedInRecently(false);
       setRecentCheckInId(null);

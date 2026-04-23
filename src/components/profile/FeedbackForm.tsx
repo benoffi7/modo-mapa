@@ -25,6 +25,7 @@ import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
 import { MSG_FEEDBACK } from '../../constants/messages';
 import type { FeedbackCategory, Business } from '../../types';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
 
@@ -81,7 +82,9 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
     if (!user || !message.trim()) return;
     setIsSubmitting(true);
     try {
-      await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined, selectedBusiness ?? undefined);
+      await withBusyFlag('feedback_submit', async () => {
+        await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined, selectedBusiness ?? undefined);
+      });
       setSent(true);
       setSelectedBusiness(null);
       setBusinessQuery('');

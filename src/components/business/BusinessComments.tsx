@@ -12,6 +12,7 @@ import { useToast } from '../../context/ToastContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { withBusyFlag } from '../../utils/busyFlag';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
@@ -124,13 +125,15 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
     if (!user) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     try {
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
-        toast,
-      );
+      await withBusyFlag('comment_submit', async () => {
+        await withOfflineSupport(
+          isOffline, 'comment_create',
+          { userId: user.uid, businessId, businessName },
+          { userName: displayName || 'Anónimo', text },
+          () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
+          toast,
+        );
+      });
       onCommentsChange();
       if (!isOffline) toast.success(MSG_COMMENT.publishSuccess);
       if (localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT) !== 'true') {

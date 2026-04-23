@@ -170,7 +170,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     id: 'system',
     label: 'System',
     features: [
-      { key: 'force_update', name: 'Force update', icon: icon(SettingsOutlinedIcon), eventNames: ['force_update_triggered', 'force_update_limit_reached'], color: '#607D8B' },
+      { key: 'force_update', name: 'Force update', icon: icon(SettingsOutlinedIcon), eventNames: ['force_update_triggered', 'force_update_limit_reached', 'app_version_active'], color: '#607D8B' },
       { key: 'account_deleted', name: 'Cuenta eliminada', icon: icon(SettingsOutlinedIcon), eventNames: ['account_deleted'], color: '#78909C' },
       { key: 'perf_page_screen', name: 'Perf / Paginas', icon: icon(SettingsOutlinedIcon), eventNames: ['perf_vitals_captured', 'page_view', 'screen_view'], color: '#90A4AE' },
     ],

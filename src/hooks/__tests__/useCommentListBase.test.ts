@@ -4,21 +4,27 @@ import type { Comment } from '../../types';
 
 // --- Mocks ---
 
-const mockLikeComment = vi.fn();
-const mockUnlikeComment = vi.fn();
-const mockAddComment = vi.fn();
-const mockDeleteComment = vi.fn();
+const mockLikeComment = vi.hoisted(() => vi.fn());
+const mockUnlikeComment = vi.hoisted(() => vi.fn());
+const mockAddComment = vi.hoisted(() => vi.fn());
+const mockDeleteComment = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/comments', () => ({
-  likeComment: (...args: unknown[]) => mockLikeComment(...args),
-  unlikeComment: (...args: unknown[]) => mockUnlikeComment(...args),
-  addComment: (...args: unknown[]) => mockAddComment(...args),
-  deleteComment: (...args: unknown[]) => mockDeleteComment(...args),
+  likeComment: mockLikeComment,
+  unlikeComment: mockUnlikeComment,
+  addComment: mockAddComment,
+  deleteComment: mockDeleteComment,
 }));
 
-const mockWithOfflineSupport = vi.fn();
+const mockWithOfflineSupport = vi.hoisted(() => vi.fn());
 vi.mock('../../services/offlineInterceptor', () => ({
-  withOfflineSupport: (...args: unknown[]) => mockWithOfflineSupport(...args),
+  withOfflineSupport: mockWithOfflineSupport,
+}));
+
+const mockWithBusyFlag = vi.hoisted(() => vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {})));
+vi.mock('../../utils/busyFlag', () => ({
+  withBusyFlag: mockWithBusyFlag,
+  isBusyFlagActive: vi.fn(() => false),
 }));
 
 const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
@@ -278,6 +284,23 @@ describe('useCommentListBase – handleSubmitReply', () => {
 
     expect(mockToast.error).toHaveBeenCalled();
     expect(onCommentsChange).not.toHaveBeenCalled();
+  });
+
+  it('handleSubmitReply invoca withBusyFlag con kind: comment_submit', async () => {
+    const { result } = renderHook(() => useCommentListBase(defaultParams));
+
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    await act(async () => {
+      result.current.setReplyText('mi respuesta');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('comment_submit', expect.any(Function));
   });
 
   it('does nothing when daily comment limit is reached', async () => {

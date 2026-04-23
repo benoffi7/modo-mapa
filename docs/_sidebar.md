@@ -132,6 +132,8 @@
     - [Specs](/feat/infra/304-offline-lists-notifications/specs.md)
     - [Plan](/feat/infra/304-offline-lists-notifications/plan.md)
   - [Force Update Reliability (followup de #191)](/feat/infra/force-update-reliability/prd.md)
+    - [Specs](/feat/infra/force-update-reliability/specs.md)
+    - [Plan](/feat/infra/force-update-reliability/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)

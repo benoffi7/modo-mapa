@@ -34,6 +34,12 @@ describe('GA4_FEATURE_CATEGORIES', () => {
     expect(uniqueIds.size).toBe(ids.length);
   });
 
+  it('force_update feature includes app_version_active in eventNames', () => {
+    const systemCategory = GA4_FEATURE_CATEGORIES.find((c) => c.id === 'system');
+    const forceUpdate = systemCategory?.features.find((f) => f.key === 'force_update');
+    expect(forceUpdate?.eventNames).toContain('app_version_active');
+  });
+
   it('every feature has all required fields', () => {
     for (const feature of allFeatures) {
       expect(feature.key, `Feature missing key`).toBeTruthy();
