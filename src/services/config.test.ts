@@ -35,12 +35,18 @@ function makeSnap(exists: boolean, data?: Record<string, unknown>) {
 }
 
 function makeFirestoreError(code: string): FirestoreError {
-  return Object.assign(new Error(`Firestore error: ${code}`), { code, name: 'FirestoreError' }) as unknown as FirestoreError;
+  // FirestoreError is mocked with a public constructor — safe to call at test runtime
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new (FirestoreError as any)(code, `Firestore error: ${code}`) as FirestoreError;
 }
 
 describe('fetchAppVersionConfig', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.useRealTimers();
+  });
+
+  afterEach(() => {
     vi.useRealTimers();
   });
 
