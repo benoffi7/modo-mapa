@@ -8,6 +8,9 @@ import {
 } from '../constants/fanOut';
 import { trackFunctionTiming } from './perfTracker';
 
+/** Firestore batched write hard limit (500 ops per batch). */
+export const BATCH_COMMIT_MAX_OPS = 500;
+
 interface FanOutData {
   actorId: string;
   actorName: string;
@@ -154,8 +157,8 @@ export async function fanOutToFollowers(
     });
 
     count += 2;
-    // Firestore batch hard cap is 500 writes; we write 2 per recipient
-    if (count >= 500) {
+    // Firestore batch hard cap is BATCH_COMMIT_MAX_OPS writes; we write 2 per recipient
+    if (count >= BATCH_COMMIT_MAX_OPS) {
       await batch.commit();
       batch = db.batch();
       count = 0;
