@@ -2,10 +2,12 @@
  * Firestore service for the `config` collection.
  * Reads global app configuration documents.
  */
-import { doc, getDoc, getDocFromServer, FirestoreError, type Timestamp } from 'firebase/firestore';
+import { doc, getDocFromServer, FirestoreError, type Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { logger } from '../utils/logger';
+import { measuredGetDoc } from '../utils/perfMetrics';
+import { FORCE_UPDATE_FETCH_RETRY_DELAYS_MS } from '../constants/timing';
 
 export interface AppVersionConfig {
   minVersion: string | undefined;
@@ -26,7 +28,6 @@ export interface AppVersionConfig {
   source: 'server' | 'server-retry' | 'cache' | 'empty';
 }
 
-const RETRY_DELAYS_MS = [500, 1500];
 const RETRYABLE_CODES = new Set(['unavailable', 'deadline-exceeded']);
 
 function isRetryable(err: unknown): boolean {
@@ -50,7 +51,7 @@ export async function fetchAppVersionConfig(): Promise<AppVersionConfig> {
       return { minVersion: data.minVersion, ...(data.updatedAt !== undefined ? { updatedAt: data.updatedAt } : {}), source };
     } catch (e) {
       if (attempt < 2 && isRetryable(e)) {
-        await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+        await new Promise((r) => setTimeout(r, FORCE_UPDATE_FETCH_RETRY_DELAYS_MS[attempt]));
         continue;
       }
       if (attempt < 2) {
@@ -62,7 +63,7 @@ export async function fetchAppVersionConfig(): Promise<AppVersionConfig> {
   }
 
   // Fallback: cache local de Firestore (IndexedDB).
-  const snap = await getDoc(ref);
+  const snap = await measuredGetDoc('appVersionConfig', ref);
   if (!snap.exists()) return { minVersion: undefined, source: 'empty' };
   const data = snap.data() as { minVersion?: string; updatedAt?: Timestamp };
   return { minVersion: data.minVersion, ...(data.updatedAt !== undefined ? { updatedAt: data.updatedAt } : {}), source: 'cache' };

@@ -1,4 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+const mockGetDocFromServer = vi.hoisted(() => vi.fn());
+const mockGetDoc = vi.hoisted(() => vi.fn());
+const mockDoc = vi.hoisted(() => vi.fn().mockReturnValue({}));
+const mockMeasuredGetDoc = vi.hoisted(() => vi.fn());
 
 vi.mock('../config/firebase', () => ({ db: {} }));
 vi.mock('../config/collections', () => ({
@@ -6,13 +11,16 @@ vi.mock('../config/collections', () => ({
 }));
 vi.mock('../utils/logger', () => ({ logger: { warn: vi.fn() } }));
 
-const mockGetDocFromServer = vi.fn();
-const mockGetDoc = vi.fn();
-const mockDoc = vi.fn().mockReturnValue({});
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDoc: mockMeasuredGetDoc,
+}));
+
+vi.mock('../constants/timing', () => ({
+  FORCE_UPDATE_FETCH_RETRY_DELAYS_MS: [500, 1500],
+}));
 
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => mockDoc(...args),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
   getDocFromServer: (...args: unknown[]) => mockGetDocFromServer(...args),
   FirestoreError: class FirestoreError extends Error {
     code: string;
@@ -44,6 +52,10 @@ describe('fetchAppVersionConfig', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.useRealTimers();
+    mockDoc.mockReturnValue({});
+    // Transparent proxy: measuredGetDoc forwards to the legacy mockGetDoc so
+    // existing tests that pre-configure mockGetDoc keep working unchanged.
+    mockMeasuredGetDoc.mockImplementation((_name: string, ref: unknown) => mockGetDoc(ref));
   });
 
   afterEach(() => {
@@ -164,6 +176,28 @@ describe('fetchAppVersionConfig', () => {
     expect(err).toBe(cacheError);
     expect(mockGetDocFromServer).toHaveBeenCalledTimes(3);
     expect(mockGetDoc).toHaveBeenCalledTimes(1);
+  });
+
+  // ---------------------------------------------------------------------------
+  // g) Perf instrumentation — cache fallback goes through measuredGetDoc
+  // ---------------------------------------------------------------------------
+
+  it('g) uses measuredGetDoc with appVersionConfig metric name on cache fallback', async () => {
+    vi.useFakeTimers();
+
+    mockGetDocFromServer
+      .mockRejectedValueOnce(makeFirestoreError('unavailable'))
+      .mockRejectedValueOnce(makeFirestoreError('unavailable'))
+      .mockRejectedValueOnce(makeFirestoreError('unavailable'));
+
+    mockGetDoc.mockResolvedValue(makeSnap(true, { minVersion: '2.30.0' }));
+
+    const promise = fetchAppVersionConfig();
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(mockMeasuredGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockMeasuredGetDoc).toHaveBeenCalledWith('appVersionConfig', expect.anything());
   });
 
   // ---------------------------------------------------------------------------
