@@ -20,7 +20,8 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 ## Agentes que podes invocar
 
 ### Para validar antes de implementar
-- `pre-implementation-gate` — verificar que PRD/specs/plan existen
+- `sofia` — analista funcional: audita PRDs antes de specs/plan. Detecta huecos, ambiguedades, casos edge olvidados, criterios no testeables. Obligatorio despues de prd-writer, antes de specs-plan-writer
+- `pre-implementation-gate` — verificar que PRD/specs/plan existen y que Sofia sello el PRD
 - `architecture` — validar decisiones de diseno
 - `pr-reviewer` — code review detallado
 
@@ -56,16 +57,18 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 ## Flujo de trabajo para features
 
 ```
-1. Invocar pre-implementation-gate -> verificar PRD/specs/plan
-2. Leer el plan, identificar tareas front y back
-3. Definir ownership de archivos (evitar conflictos entre agentes)
-4. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
-5. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
+1. Si el PRD es nuevo: prd-writer -> sofia (Ciclo 1/2) -> sello Validacion Funcional
+   - Si Sofia emite NO VALIDADO: escalar al usuario antes de seguir
+2. Invocar pre-implementation-gate -> verificar PRD+sello+specs+plan
+3. Leer el plan, identificar tareas front y back
+4. Definir ownership de archivos (evitar conflictos entre agentes)
+5. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
+6. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
    - Si Thanos devuelve BLOQUEADO → resolver con el implementador antes de continuar
    - Si devuelve APROBADO o APROBADO CON OBSERVACIONES → continuar
-6. Lanzar testing para tests
-7. Code review final (invocar pr-reviewer + architecture)
-8. Reportar al usuario
+7. Lanzar testing para tests
+8. Code review final (invocar pr-reviewer + architecture)
+9. Reportar al usuario
 ```
 
 ## Pre-flight para agentes paralelos
