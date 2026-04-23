@@ -47,7 +47,7 @@ export async function fetchAppVersionConfig(): Promise<AppVersionConfig> {
       const source: 'server' | 'server-retry' = attempt === 0 ? 'server' : 'server-retry';
       if (!snap.exists()) return { minVersion: undefined, source: 'empty' };
       const data = snap.data() as { minVersion?: string; updatedAt?: Timestamp };
-      return { minVersion: data.minVersion, updatedAt: data.updatedAt, source };
+      return { minVersion: data.minVersion, ...(data.updatedAt !== undefined ? { updatedAt: data.updatedAt } : {}), source };
     } catch (e) {
       if (attempt < 2 && isRetryable(e)) {
         await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
@@ -65,5 +65,5 @@ export async function fetchAppVersionConfig(): Promise<AppVersionConfig> {
   const snap = await getDoc(ref);
   if (!snap.exists()) return { minVersion: undefined, source: 'empty' };
   const data = snap.data() as { minVersion?: string; updatedAt?: Timestamp };
-  return { minVersion: data.minVersion, updatedAt: data.updatedAt, source: 'cache' };
+  return { minVersion: data.minVersion, ...(data.updatedAt !== undefined ? { updatedAt: data.updatedAt } : {}), source: 'cache' };
 }

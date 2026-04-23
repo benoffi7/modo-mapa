@@ -35,7 +35,7 @@ function makeSnap(exists: boolean, data?: Record<string, unknown>) {
 }
 
 function makeFirestoreError(code: string): FirestoreError {
-  return new FirestoreError(code, `Firestore error: ${code}`);
+  return Object.assign(new Error(`Firestore error: ${code}`), { code, name: 'FirestoreError' }) as unknown as FirestoreError;
 }
 
 describe('fetchAppVersionConfig', () => {
