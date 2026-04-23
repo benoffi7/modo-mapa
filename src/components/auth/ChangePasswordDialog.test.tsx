@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChangePasswordDialog from './ChangePasswordDialog';
 
 const mockChangePassword = vi.fn();
@@ -9,6 +10,12 @@ vi.mock('../../context/AuthContext', () => ({
     authError: null,
     clearAuthError: vi.fn(),
   }),
+}));
+
+const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
+vi.mock('../../utils/busyFlag', () => ({
+  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  isBusyFlagActive: vi.fn(() => false),
 }));
 
 describe('ChangePasswordDialog', () => {
@@ -93,5 +100,17 @@ describe('ChangePasswordDialog', () => {
     fireEvent.change(screen.getByLabelText('Contraseña actual'), { target: { value: 'test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it('submit invoca withBusyFlag con kind: password_change', async () => {
+    render(<ChangePasswordDialog {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText('Contraseña actual'), { target: { value: 'oldpass123' } });
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'NewPass1!' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), { target: { value: 'NewPass1!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
+
+    await waitFor(() => {
+      expect(mockWithBusyFlag).toHaveBeenCalledWith('password_change', expect.any(Function));
+    });
   });
 });

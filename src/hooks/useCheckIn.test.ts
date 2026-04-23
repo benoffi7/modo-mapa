@@ -19,6 +19,12 @@ vi.mock('../services/offlineInterceptor', () => ({
   withOfflineSupport: (...args: unknown[]) => mockWithOfflineSupport(...args),
 }));
 
+const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
+vi.mock('../utils/busyFlag', () => ({
+  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  isBusyFlagActive: vi.fn(() => false),
+}));
+
 vi.mock('../utils/analytics', () => ({
   trackEvent: (...args: unknown[]) => mockTrackEvent(...args),
 }));
@@ -297,5 +303,27 @@ describe('useCheckIn', () => {
 
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('No se pudo desmarcar la visita');
+  });
+
+  it('performCheckIn invoca withBusyFlag con kind: checkin_submit', async () => {
+    const { result } = renderHook(() => useCheckIn('biz1', 'Test Biz'));
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+
+    await act(async () => { await result.current.performCheckIn(); });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('checkin_submit', expect.any(Function));
+  });
+
+  it('undoCheckIn invoca withBusyFlag con kind: checkin_submit', async () => {
+    const { result } = renderHook(() => useCheckIn('biz1', 'Test Biz'));
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+
+    // Perform check-in first so recentCheckInId is set
+    await act(async () => { await result.current.performCheckIn(); });
+    mockWithBusyFlag.mockClear();
+
+    await act(async () => { await result.current.undoCheckIn(); });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('checkin_submit', expect.any(Function));
   });
 });

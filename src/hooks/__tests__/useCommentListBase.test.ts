@@ -21,6 +21,12 @@ vi.mock('../../services/offlineInterceptor', () => ({
   withOfflineSupport: (...args: unknown[]) => mockWithOfflineSupport(...args),
 }));
 
+const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
+vi.mock('../../utils/busyFlag', () => ({
+  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  isBusyFlagActive: vi.fn(() => false),
+}));
+
 const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
 vi.mock('../../context/ToastContext', () => ({
   useToast: () => mockToast,
@@ -278,6 +284,23 @@ describe('useCommentListBase – handleSubmitReply', () => {
 
     expect(mockToast.error).toHaveBeenCalled();
     expect(onCommentsChange).not.toHaveBeenCalled();
+  });
+
+  it('handleSubmitReply invoca withBusyFlag con kind: comment_submit', async () => {
+    const { result } = renderHook(() => useCommentListBase(defaultParams));
+
+    await act(async () => {
+      result.current.handleStartReply(baseComment);
+    });
+    await act(async () => {
+      result.current.setReplyText('mi respuesta');
+    });
+
+    await act(async () => {
+      await result.current.handleSubmitReply();
+    });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('comment_submit', expect.any(Function));
   });
 
   it('does nothing when daily comment limit is reached', async () => {
