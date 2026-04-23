@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-04-22 (post merge: Sofia analyst + Thanos auditor + force-update PRD, v2.37.0)*
+*Actualizado: 2026-04-22 (post merge: force-update reliability pipeline #191, v2.39.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---

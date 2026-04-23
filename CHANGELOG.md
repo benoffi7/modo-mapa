@@ -4,6 +4,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.39.0] — 2026-04-22
+
+### Added
+
+- `withBusyFlag(kind, fn)` utility: wraps user-explicit submits (rating, comment, check-in, form saves, photo upload) to block PWA reload during critical operations; ref-counted, heartbeat-aware, AbortSignal-safe
+- `fetchAppVersionConfig`: server-first Firestore read with 2-retry exponential backoff (500ms/1500ms) for transient errors, then local cache fallback; returns `source` tag (`server | server-retry | cache | empty`)
+- `useForceUpdate` now emits `EVT_APP_VERSION_ACTIVE` analytics event once per session with version gap details
+- `useForceUpdate` now polls on `visibilitychange` and `online` events (in addition to interval)
+- `registerPwa.ts`: explicit PWA registration with `registerType: 'prompt'`, checks busy-flag and cooldown before triggering SW reload
+- `update-min-version.js` script: CI-injectable functions for setting `minVersion` in Firestore
+- Storage keys: `STORAGE_KEY_FORCE_UPDATE_LAST_CHECK`, `STORAGE_KEY_FORCE_UPDATE_BUSY`, `STORAGE_KEY_APP_VERSION_EVENT_EMITTED`
+- Timing constants: `FORCE_UPDATE_CHECK_INTERVAL_MS`, `FORCE_UPDATE_FETCH_RETRY_DELAYS_MS`, `BUSY_FLAG_MAX_AGE_MS`, `BUSY_FLAG_HEARTBEAT_MS`, `PWA_FALLBACK_GRACE_MS`
+- Analytics: `EVT_APP_VERSION_ACTIVE` added to `system.ts` barrel and GA4 report
+- Docs: rollback procedure (`docs/procedures/rollback.md`), patterns, Firestore schema, security notes updated
+- Tests: 15 new test files, 1399 total passing; branches 80.25%, functions 79.41%
+
+### Changed
+
+- `vite.config.ts`: `registerType` changed from `'autoUpdate'` to `'prompt'` (explicit control over SW reload timing)
+- `useForceUpdate`: `checkVersion()` now returns `{ status, minVersion, source }` for richer telemetry
+
 ## [Unreleased]
 
 ### Added
