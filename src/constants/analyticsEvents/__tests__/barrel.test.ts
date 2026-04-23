@@ -80,8 +80,7 @@ describe('analyticsEvents barrel', () => {
     expect(typeof events[name]).toBe('string');
   });
 
-  it('exports exactly the expected number of events', () => {
-    const exportedKeys = Object.keys(events);
-    expect(exportedKeys).toHaveLength(expectedExports.length);
+  it('snapshot of exported event keys', () => {
+    expect(Object.keys(events).sort()).toMatchSnapshot();
   });
 });

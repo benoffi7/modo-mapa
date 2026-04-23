@@ -10,9 +10,10 @@ interface Props {
   ratingData: UseBusinessRatingReturn;
   ratings: RatingType[];
   isLoading: boolean;
+  readOnly?: boolean;
 }
 
-export default memo(function BusinessRating({ ratingData, ratings, isLoading }: Props) {
+export default memo(function BusinessRating({ ratingData, ratings, isLoading, readOnly = false }: Props) {
   const { user } = useAuth();
   const { averageRating, totalRatings, myRating, handleRate, handleDeleteRating } = ratingData;
 
@@ -28,14 +29,14 @@ export default memo(function BusinessRating({ ratingData, ratings, isLoading }: 
     <Box sx={{ py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-          {averageRating > 0 ? averageRating.toFixed(1) : '\u2014'}
+          {averageRating > 0 ? averageRating.toFixed(1) : '—'}
         </Typography>
         <Rating value={averageRating} precision={0.1} readOnly size="small" />
         <Typography variant="body2">
           ({totalRatings} {totalRatings === 1 ? 'opinión' : 'opiniones'})
         </Typography>
       </Box>
-      {user && (
+      {!readOnly && user && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Tu calificación:
