@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { addComment, deleteComment, likeComment, unlikeComment } from '../services/comments';
 import { withOfflineSupport } from '../services/offlineInterceptor';
+import { withBusyFlag } from '../utils/busyFlag';
 import { useProfileVisibility } from './useProfileVisibility';
 import { useUndoDelete } from './useUndoDelete';
 import { MAX_COMMENTS_PER_DAY } from '../constants/validation';
@@ -144,13 +145,15 @@ export function useCommentListBase({
     setIsSubmitting(true);
     try {
       const trimmedReply = replyText.trim();
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
-        toast,
-      );
+      await withBusyFlag('comment_submit', async () => {
+        await withOfflineSupport(
+          isOffline, 'comment_create',
+          { userId: user.uid, businessId, businessName },
+          { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
+          () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
+          toast,
+        );
+      });
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();

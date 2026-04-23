@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { upsertRating, deleteRating, upsertCriteriaRating } from '../services/ratings';
 import { withOfflineSupport } from '../services/offlineInterceptor';
+import { withBusyFlag } from '../utils/busyFlag';
 import { RATING_CRITERIA } from '../constants/criteria';
 import { STORAGE_KEY_HINT_POST_FIRST_RATING, STORAGE_KEY_ONBOARDING_COMPLETED } from '../constants/storage';
 import { MSG_BUSINESS } from '../constants/messages';
@@ -95,14 +96,16 @@ export function useBusinessRating({
     if (!user || !value) return;
     setPendingRating(value);
     try {
-      await withOfflineSupport(
-        isOffline,
-        'rating_upsert',
-        { userId: user.uid, businessId, businessName },
-        { score: value },
-        () => upsertRating(user.uid, businessId, value),
-        toast,
-      );
+      await withBusyFlag('rating_submit', async () => {
+        await withOfflineSupport(
+          isOffline,
+          'rating_upsert',
+          { userId: user.uid, businessId, businessName },
+          { score: value },
+          () => upsertRating(user.uid, businessId, value),
+          toast,
+        );
+      });
       onRatingChange();
       localStorage.setItem(STORAGE_KEY_ONBOARDING_COMPLETED, 'true');
       if (user.isAnonymous) incrementAnonRatingCount();
@@ -140,7 +143,9 @@ export function useBusinessRating({
     if (!user || !value) return;
     setPendingCriteria((prev) => ({ ...(prev ?? {}), [criterionId]: value }));
     try {
-      await upsertCriteriaRating(user.uid, businessId, { [criterionId]: value });
+      await withBusyFlag('rating_submit', async () => {
+        await upsertCriteriaRating(user.uid, businessId, { [criterionId]: value });
+      });
       onRatingChange();
     } catch {
       setPendingCriteria((prev) => {
