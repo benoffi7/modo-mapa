@@ -6,6 +6,7 @@
 
 | Version | Issues | Descripcion |
 |---------|--------|-------------|
+| v2.40.4 | [#316](https://github.com/benoffi7/modo-mapa/issues/316) | **Tech debt** (#316): `checkingRef` concurrency guard en `run()` con `try/finally` garantizado — bloquea invocaciones simultáneas desde intervalo y eventos. `lastCheckTs` debounce 5s en `handleVisibilityChange` y `handleOnline` — evita checks redundantes por flip de tab o reconexión rápida. Mount y `setInterval` no afectados. `FORCE_UPDATE_EVENT_DEBOUNCE_MS = 5_000` en `timing.ts`. 8 tests nuevos (concurrencia + debounce + cleanup). 1455 frontend tests. |
 | v2.40.3 | [#313](https://github.com/benoffi7/modo-mapa/issues/313) | **Tech debt** (#313): `src/utils/forceUpdate.ts` nuevo con 4 funciones puras (`isCooldownActive`, `getReloadCount`, `incrementReloadCount`, `isReloadLimitReached`). `useForceUpdate.ts` reducido de 232→155 líneas. Re-exports `@internal` para backward compat. 16 tests en `forceUpdate.test.ts`. |
 | v2.40.2 | [#312](https://github.com/benoffi7/modo-mapa/issues/312) | **Tech debt** (#312): fanOut N+1 → db.getAll() chunks. `fanOutToFollowers` reemplaza N reads secuenciales por `Promise.all(chunks.map(db.getAll))` en chunks de 30. `FANOUT_MAX_RECIPIENTS_PER_ACTION` 5000→500. Nuevo `trackFunctionTiming('fanOutDedupBatch')`. 478 functions tests. |
 | v2.40.1 | [#317](https://github.com/benoffi7/modo-mapa/issues/317) | **Tech debt** (#317): barrel.test.ts — count hardcodeado reemplazado por snapshot de 59 eventos ordenados alfabéticamente. Falla clara con diff en PRs que agregan eventos. |
