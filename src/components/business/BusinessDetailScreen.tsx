@@ -151,7 +151,8 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
 
   return (
     <BusinessScopeProvider scope={scope}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: 'background.paper' }}>
+      <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: 'background.paper', maxWidth: { sm: 640, md: 720 }, mx: 'auto' }}>
         <Box sx={{ px: 1, pt: 1 }}>
           <IconButton onClick={handleBack} aria-label="Volver al mapa">
             <ArrowBackIcon />
@@ -269,6 +270,7 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
             </Box>
           </>
         )}
+      </Box>
       </Box>
 
       <AddToListDialog open={listDialogOpen} onClose={() => setListDialogOpen(false)} />

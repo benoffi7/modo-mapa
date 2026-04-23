@@ -104,6 +104,7 @@ export default function BusinessSheetCompactContent({ business }: Props) {
               ) : undefined
             }
             checkInButton={null}
+            ratingReadOnly
           />
           <Box sx={{ px: 2, pb: 2, pt: 1 }}>
             <Button

@@ -19,10 +19,11 @@ interface Props {
   recommendButton?: ReactNode;
   addToListButton?: ReactNode;
   checkInButton: ReactNode;
+  ratingReadOnly?: boolean;
 }
 
 const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessSheetHeader(
-  { business, isTrending, ratings, isLoading, ratingData, favoriteButton, shareButton, recommendButton, addToListButton, checkInButton },
+  { business, isTrending, ratings, isLoading, ratingData, favoriteButton, shareButton, recommendButton, addToListButton, checkInButton, ratingReadOnly = false },
   ref,
 ) {
   const { userLocation } = useFilters();
@@ -62,6 +63,7 @@ const BusinessSheetHeader = forwardRef<HTMLDivElement, Props>(function BusinessS
         ratingData={ratingData}
         ratings={ratings}
         isLoading={isLoading}
+        readOnly={ratingReadOnly}
       />
       <Divider />
     </Box>
