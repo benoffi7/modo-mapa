@@ -20,6 +20,53 @@ Podes leer y escribir archivos de tests. Preferentemente no toques codigo de pro
 - `verbatimModuleSyntax: true` → usa `import type` para tipos
 - `exactOptionalPropertyTypes: true` en tsconfig
 
+## Patrones de mocks obligatorios (Vitest)
+
+### vi.hoisted() — regla universal
+
+Cualquier variable usada dentro de una factory de `vi.mock()` DEBE declararse con `vi.hoisted()`. Usar `vi.fn()` a nivel de módulo causa errores TDZ porque Vitest hoist los `vi.mock()` por encima de los imports.
+
+```ts
+// MAL — causa TDZ error en runtime
+const mockFn = vi.fn();
+vi.mock('./module', () => ({ fn: mockFn }));
+
+// BIEN
+const mockFn = vi.hoisted(() => vi.fn());
+vi.mock('./module', () => ({ fn: mockFn }));
+```
+
+Esto aplica a TODOS los archivos de test, no solo triggers.
+
+### beforeEach/afterEach estándar con fake timers
+
+Cuando un test llama `vi.useFakeTimers()`, siempre cleanup:
+
+```ts
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.resetAllMocks(); // NO clearAllMocks
+});
+```
+
+Usar `vi.resetAllMocks()` (resetea call history + implementaciones), NO `vi.clearAllMocks()` (solo resetea call history — las implementaciones persisten y contaminan otros tests).
+
+### Mockear una clase para instanceof checks
+
+```ts
+vi.mock('firebase/firestore', () => ({
+  FirestoreError: class FirestoreError extends Error {
+    constructor(public code: string, message: string) { super(message); }
+  },
+}));
+// En test: throw new (FirestoreError as any)('unavailable', 'msg');
+```
+
+### Mock functions de cero argumentos
+
+Para mocks sin parámetros usar `() => mockFn()`, NO `(...args: unknown[]) => mockFn(...args)`. TypeScript strict rechaza el spread en firmas de cero argumentos (TS2556).
+
 ## Estrategia (segun PROCEDURES.md)
 
 1. Lee el codigo a testear y entende su contrato
