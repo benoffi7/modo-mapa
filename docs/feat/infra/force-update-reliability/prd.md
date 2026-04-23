@@ -183,6 +183,13 @@ Registrar el SW con auto-prompt + skipWaiting al detectar nueva version, sin esp
 
 Hoy el hook hace hard-refresh cuando detecta `minVersion > __APP_VERSION__`. Pero eso depende de que el ciclo de Firestore funcione. Como defense-in-depth, tambien escuchar el evento nativo de vite-plugin-pwa:
 
+**Nota de configuración:** `vite.config.ts` actualmente usa `registerType: 'autoUpdate'`. El hook `onNeedRefresh` del snippet de abajo solo se dispara en modo `prompt`. Hay dos caminos válidos y el PRD no prescribe cuál:
+
+1. Cambiar a `registerType: 'prompt'` y usar `onNeedRefresh` como en el snippet. Impacto: se pierde el auto-update nativo del plugin (clientes que hoy se actualizan cerrando tabs dependerán exclusivamente del hook Firestore + fallback manual).
+2. Mantener `registerType: 'autoUpdate'` y disparar el fallback vía otra señal (ej: `navigator.serviceWorker.addEventListener('controllerchange')` o similar). No usar `onNeedRefresh`.
+
+Owner de la decisión: specs-plan-writer. Criterios de aceptación observables independientes del mecanismo exacto: (a) con SW nuevo en "waiting" y hook muerto >60min, el SW nuevo toma control sin cerrar tabs; (b) cooldown y busy-flag se respetan.
+
 ```ts
 import { registerSW } from 'virtual:pwa-register';
 
@@ -230,8 +237,8 @@ trackEvent('app_version_active', {
 
 **Registro en el catalogo GA4:**
 
-- Agregar `app_version_active` al enum `GA4_EVENT_NAMES` en `src/constants/analyticsEvents/analyticsReport.ts`.
-- Agregar la definicion en `src/config/ga4FeatureDefinitions.ts` bajo el grupo del feature #259 (o el grupo "infra" correspondiente).
+- Registrar `app_version_active` como constante `EVT_APP_VERSION_ACTIVE` en el archivo de dominio `system` de `constants/analyticsEvents/` (donde ya viven `EVT_FORCE_UPDATE_TRIGGERED` y `EVT_FORCE_UPDATE_LIMIT_REACHED`). El barrel `constants/analyticsEvents/index.ts` lo re-exporta automáticamente.
+- Registrar el evento en el catálogo consumido por admin (`GA4_FEATURE_CATEGORIES` en `components/admin/features/ga4FeatureDefinitions.ts`), asociado a un feature con `eventNames` que lo incluya. Si no existe un feature "infra"/"force-update" en ese catálogo, crear uno nuevo como parte de este entregable. Owner de la decisión: specs-plan-writer.
 
 **Justificacion:**
 - Permite ver en admin/GA4 que porcentaje de sesiones estan en `minVersion` vs. atrasadas.
@@ -255,6 +262,16 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 - Ambos caminos (hook Firestore y fallback PWA) consultan `isBusyFlagActive()` antes de recargar. Si esta activo, skip silencioso en ese tick.
 - **Timeout de seguridad:** si `Date.now() - startedAt > BUSY_FLAG_MAX_AGE_MS` (propuesta: 90 segundos), el flag se considera stale y se ignora. Previene flags pegados por crashes a mitad de operacion.
 - **Que pasa cuando la operacion termina:** NO disparamos update inmediato. Confiamos en el proximo tick del interval, visibilitychange u online. Esto evita race con el `finally` y simplifica el flujo.
+
+**Interacción con la offline queue (IndexedDB):**
+
+El proyecto tiene una cola offline (`offlineQueue.ts` + `ConnectivityContext`) que encola writes cuando el usuario está sin red (comments, ratings, lists CRUD, follows). Al volver online, se dispara un auto-sync que drena la cola.
+
+**Decisión v1:** el auto-sync de la offline queue **no prende** el busy-flag. Los writes encolados son idempotentes (clave determinística o check de existencia) y tolerantes a reload — si el reload interrumpe el drain, los writes pendientes se reintentan en el próximo montaje. El usuario puede ver un flash de estado "sincronizando" que se reinicia, lo cual es aceptable.
+
+**Alternativa considerada (rechazada v1):** extender busy-flag a operaciones de sync. Descartada porque bloquearía el reload durante minutos en casos de cola grande, y la idempotencia del queue ya cubre el caso.
+
+**Criterio observable:** un usuario con N writes en cola que vuelve online y encuentra gap de versión debe ver sus N writes sincronizados después del reload (puede ser antes o después del reload). No hay pérdida de datos user-visible.
 
 **Multi-tab (scope-out explicito):**
 
@@ -285,6 +302,10 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 ### Backwards compatibility
 - Clientes en versiones <2.31 (pre-#191) no tienen el hook. No podemos forzarlos a actualizar via Firestore — deben abrir la app y el browser eventualmente les servira el SW nuevo. Aceptable: son una minoria residual.
 - `getDocFromServer` esta disponible desde firebase-js-sdk v9.7+. Ya usamos v9+ en el proyecto.
+
+### Estado inicial post-rollout de este feature
+
+Usuarios que abren la app por primera vez en la versión con estos cambios no tienen `STORAGE_KEY_FORCE_UPDATE_LAST_CHECK` en `localStorage`. El fallback PWA debe tratar ese caso como "hook todavía no corrió en esta sesión" e inhibirse hasta que el hook setee la key al menos una vez, para evitar doble-trigger en el primer montaje. El cooldown compartido acota el peor caso a un solo reload, pero la intención es que el fallback arranque silencioso.
 
 ### Costo de reads de Firestore
 - Cambio 1: escritura de `minVersion` ocurre en cada deploy. Escrituras son gratis a esta escala.
@@ -328,7 +349,7 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 - Cambio 4 (fallback): con busy-flag activo → `updateSW(true)` NO se llama
 - Cambio 6: `withBusyFlag` prende y apaga el flag correctamente en success y en fail
 - Cambio 6: `isBusyFlagActive()` retorna `false` si `startedAt` tiene >90s (stale)
-- CI: test de `update-min-version.js` (ya existe en specs de #191, mantener)
+- CI: nuevo test unitario de `scripts/update-min-version.js` como parte de este feature. Cubre: (a) lectura correcta de `version` desde `package.json`, (b) escritura a `config/appVersion.minVersion` via mock de Firestore Admin, (c) exit code ≠ 0 si la escritura falla. El Cambio 1 incrementa la criticidad del script al correrlo en todo deploy, incluyendo deploys `chore: bump` aislados.
 
 ### Integracion
 - E2E en staging: deploy fake, verificar que el evento `app_version_active` aparece en el feed GA4
@@ -372,6 +393,12 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 - **Tradeoff chore-only / functions-only deploys (OBSERVACION):** documentado en Cambio 1 > Justificacion. Tradeoff aceptado conscientemente.
 - **Catalogo GA4 (OBSERVACION):** `app_version_active` se agrega a `GA4_EVENT_NAMES` (analyticsReport.ts) y a `ga4FeatureDefinitions.ts`. Detalle en Cambio 5.
 
+## Decisiones post-review (ciclo 2)
+
+1. **Cambio 4 — `onNeedRefresh` vs `autoUpdate`**: ambos caminos documentados en el PRD como Opción 1 (cambiar a `'prompt'`) y Opción 2 (mantener `'autoUpdate'` con otra señal). Owner de decisión final: specs-plan-writer. El PRD no prescribe — define criterios observables independientes del mecanismo.
+2. **Cambio 6 — Offline queue**: el auto-sync de la offline queue NO prende el busy-flag en v1. Justificación: idempotencia de los writes encolados cubre el caso; extender el flag bloquearía el reload durante minutos en colas grandes.
+3. **Cambio 5 — Grupo admin en catálogo GA4**: si no existe un feature "infra" / "force-update" en `GA4_FEATURE_CATEGORIES`, crear uno nuevo como parte del entregable de este feature. La decisión concreta (feature existente vs crear nuevo) queda para specs-plan-writer al leer el archivo real.
+
 ## Criterios de aceptacion
 
 - [ ] Cambio 1: un commit `chore: bump version X.Y.Z` push-eado solo a main dispara el write a Firestore
@@ -382,11 +409,12 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 - [ ] Cambio 4 (coordinacion): si el hook recargo hace <5 min, el fallback PWA no dispara (test unitario + manual en staging)
 - [ ] Cambio 4 (coordinacion): si el hook corrio un check hace <60 min, el fallback PWA no dispara aunque haya SW nuevo (test unitario)
 - [ ] Cambio 5: evento `app_version_active` aparece en GA4 **una sola vez por sesion** (no se re-emite por visibilitychange/online/ticks)
-- [ ] Cambio 5: `app_version_active` esta registrado en `GA4_EVENT_NAMES` y `ga4FeatureDefinitions.ts`
+- [ ] Cambio 5: `EVT_APP_VERSION_ACTIVE` está exportado desde `constants/analyticsEvents/system.ts` (o archivo de dominio equivalente) y visible via barrel `constants/analyticsEvents/index.ts`.
+- [ ] Cambio 5: El evento aparece en `GA4_FEATURE_CATEGORIES` (`components/admin/features/ga4FeatureDefinitions.ts`) bajo un feature correspondiente, con tests que cubren el registro (siguiendo el patrón de `ga4FeatureDefinitions.test.ts` existente).
 - [ ] Cambio 6: durante un upload de Storage simulado, el hook encuentra gap y NO recarga; al terminar, el proximo tick recarga
 - [ ] Cambio 6: si el busy-flag tiene >90s de antiguedad (stale), ambos caminos lo ignoran y recargan
 - [ ] `docs/procedures/rollback.md` existe y documenta el paso de revertir `minVersion` antes del rollback de hosting
-- [ ] Post-deploy (medicion via **GA4 Exploration query sobre `app_version_active`**): en **3 releases consecutivos**, el % de sesiones en `minVersion` llega a 95%+ en <30 min desde el deploy. Si no se cumple al 3er release, rollback de Cambios 4-6 y se ajusta.
+- [ ] Post-deploy (medicion via GA4 Exploration sobre `app_version_active`): definiendo **T0 = timestamp del write de `minVersion` a Firestore** (paso final del pipeline de deploy) y **denominador = sesiones que emitieron `app_version_active` entre T0 y T0+30min**, en **3 releases consecutivos** el % de sesiones cuya `version == minVersionSeen` llega a 95%+. Si no se cumple al 3er release, rollback de Cambios 4-6 y se ajusta.
 - [ ] Gonzalo confirma en staging (y en el primer release prod post-merge) que **no** tuvo que hacer hard-reset despues del deploy
 
 ## Riesgos
@@ -395,17 +423,38 @@ Problema: un reload disparado durante una operacion in-flight puede corromper es
 - **Riesgo medio:** Cambio 2 (`getDocFromServer`) puede aumentar latencia perceptible al montar la app si la red es mala. **Mitigacion:** el hook ya corre en background, no bloquea UI.
 - **Riesgo medio:** tab multiple sin coordinacion activa puede forzar reload de Tab A mientras Tab B recien recargo. **Mitigacion:** cooldown compartido de 5 min acota el caso al usuario que tiene >5 min de upload continuo, lo cual es raro. Telemetria `app_version_active` nos dejara ver si pasa en prod.
 - **Riesgo bajo:** Cambio 1 fuerza reloads en deploys de emergencia/hotfix con bugs — cada usuario pasa a la version nueva rotada. Aceptable; el flujo de rollback (ahora documentado) actualiza minVersion en el sentido opuesto.
+- **Riesgo bajo:** `getDocFromServer` en redes marginales (3G, edge rural) puede fallar por timeout y caer al fallback de `getDoc` (cache), que devolvería la `minVersion` previa. El check queda inefectivo en ese tick pero el próximo trigger (interval, `visibilitychange`, `online`) reintenta. Aceptado.
 
-## Validacion Funcional
+## Validacion Funcional — Sofia
 
-**Estado:** VALIDADO CON OBSERVACIONES
+**Estado:** VALIDADO
 **Revisora:** Sofia (Analista Funcional Senior)
 **Fecha:** 2026-04-22
 **Ciclos:** 2
 
-Observaciones para el plan de implementacion (no bloqueantes):
+### Hallazgos cerrados
 
-- **Uploads >90s en red lenta:** el timeout del busy-flag (90s) puede marcarse stale durante uploads largos en 3G. Considerar en specs/plan: (a) usar `uploadBytesResumable` con heartbeat que refresque `startedAt` mientras hay progreso, o (b) subir `BUSY_FLAG_MAX_AGE_MS` a 3-5 min. Tradeoff entre "flag pegado por crash" y "upload largo interrumpido". Owner decision: specs-plan-writer + Gonzalo.
-- **Hotfix urgente vs ventana "3 releases":** la ventana de 3 releases para medir el 95% puede abreviarse por decision manual ante falla evidente (ej: usuarios reportando reload en loop). No es un commit ciego a 3 releases. Owner: Gonzalo.
-- **rollback.md como gate de merge:** el criterio de aceptacion exige que el doc exista antes del merge. El implementador debe incluir la creacion del doc en el mismo PR (o al menos antes del merge). Owner: Gonzalo.
-- **Coherencia grace/interval verificada:** `FORCE_UPDATE_CHECK_INTERVAL_MS = 30 min` (confirmado en `src/constants/timing.ts`). Grace de 60 min = 2x interval; no hay ventana donde ambos caminos disparen simultaneamente.
+**Ciclo 1 (8 hallazgos):** coordinacion hook vs fallback PWA, busy-flag para operaciones criticas, scope-out de multi-tab coordination, medicion del 95% con ventana de 3 releases, listener `online` para caso subte/tunel, sampling una-vez-por-sesion de `app_version_active`, dashboard del 95% fuera de scope, scope-in de `docs/procedures/rollback.md`, tradeoff chore-only/functions-only, catalogo GA4. Detalles en "Decisiones post-review (ciclo 1)".
+
+**Ciclo 2 (7 hallazgos):**
+- BLOQ #1 — Rutas GA4 correctas: Cambio 5 ahora referencia `constants/analyticsEvents/system.ts` (EVT_APP_VERSION_ACTIVE) y `components/admin/features/ga4FeatureDefinitions.ts` (GA4_FEATURE_CATEGORIES). Ambos archivos verificados en disco.
+- BLOQ #2 — Test de `update-min-version.js` declarado como nuevo entregable en Tests > Unitarios, con tres casos (package.json, write a mock Firestore, exit code).
+- IMP #3 — Interaccion con offline queue (IndexedDB) resuelta en Cambio 6: decision v1 = auto-sync NO prende busy-flag; idempotencia de writes encolados cubre el caso.
+- IMP #4 — Cambio 4 documenta Opcion 1 (`registerType: 'prompt'` + `onNeedRefresh`) y Opcion 2 (mantener `autoUpdate` + otra senal). Criterios observables independientes del mecanismo. Owner: specs-plan-writer.
+- IMP #5 — Criterio del 95%: T0 = write de minVersion a Firestore; denominador = sesiones con `app_version_active` entre T0 y T0+30min; ventana = 3 releases consecutivos.
+- OBS #6 — Sub-seccion "Estado inicial post-rollout" cubre el caso del key ausente en localStorage: fallback PWA debe inhibirse hasta que el hook setee `STORAGE_KEY_FORCE_UPDATE_LAST_CHECK`.
+- OBS #7 — Riesgo bajo agregado: `getDocFromServer` en redes marginales puede fallar por timeout y caer al cache; el proximo trigger reintenta.
+
+Detalles en "Decisiones post-review (ciclo 2)".
+
+### Observaciones abiertas (no bloqueantes)
+
+- **Uploads >90s en red lenta:** el timeout del busy-flag (90s) puede marcarse stale durante uploads largos en 3G. Considerar en specs/plan: (a) `uploadBytesResumable` con heartbeat que refresque `startedAt` mientras hay progreso, o (b) subir `BUSY_FLAG_MAX_AGE_MS` a 3-5 min. Tradeoff entre "flag pegado por crash" y "upload largo interrumpido". Owner: specs-plan-writer + Gonzalo.
+- **Hotfix urgente vs ventana "3 releases":** la ventana puede abreviarse por decision manual ante falla evidente (reload en loop, usuarios reportando). No es commit ciego. Owner: Gonzalo.
+- **rollback.md como gate de merge:** el criterio exige que el doc exista antes del merge. Implementador debe incluirlo en el mismo PR. Owner: Gonzalo.
+- **Decisiones delegadas a specs-plan-writer:** Cambio 4 (mecanismo SW), Cambio 5 (feature GA4 existente vs nuevo). Son decisiones tecnicas explicitas, no huecos del PRD.
+- **Coherencia grace/interval verificada:** `FORCE_UPDATE_CHECK_INTERVAL_MS = 30 min`. Grace de 60 min = 2x interval; no hay ventana de disparo simultaneo.
+
+### Listo para specs-plan-writer
+
+**Si.** No quedan bloqueantes ni huecos que requieran un tercer ciclo.
