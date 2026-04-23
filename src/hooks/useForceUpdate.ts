@@ -11,8 +11,12 @@ import {
 import {
   STORAGE_KEY_FORCE_UPDATE_LAST_REFRESH,
   STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT,
+  STORAGE_KEY_FORCE_UPDATE_LAST_CHECK,
+  STORAGE_KEY_APP_VERSION_EVENT_EMITTED,
 } from '../constants/storage';
 import { EVT_FORCE_UPDATE_TRIGGERED, EVT_FORCE_UPDATE_LIMIT_REACHED } from '../constants/analyticsEvents';
+import { EVT_APP_VERSION_ACTIVE } from '../constants/analyticsEvents/system';
+import { isBusyFlagActive } from '../utils/busyFlag';
 
 async function performHardRefresh(): Promise<void> {
   try {
@@ -94,15 +98,43 @@ function isReloadLimitReached(): boolean {
   return count >= MAX_FORCE_UPDATE_RELOADS;
 }
 
-async function checkVersion(): Promise<'reloading' | 'limit-reached' | 'up-to-date' | 'error'> {
+type CheckVersionStatus = 'reloading' | 'limit-reached' | 'up-to-date' | 'error';
+type CheckVersionSource = 'server' | 'server-retry' | 'cache' | 'empty' | 'unknown';
+
+interface CheckVersionResult {
+  status: CheckVersionStatus;
+  minVersion: string | undefined;
+  source: CheckVersionSource;
+}
+
+function writeLastCheck(): void {
   try {
-    const { minVersion } = await fetchAppVersionConfig();
-    if (!minVersion) return 'up-to-date';
+    localStorage.setItem(STORAGE_KEY_FORCE_UPDATE_LAST_CHECK, String(Date.now()));
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+async function checkVersion(): Promise<CheckVersionResult> {
+  try {
+    const { minVersion, source } = await fetchAppVersionConfig();
+
+    if (!minVersion) {
+      writeLastCheck();
+      return { status: 'up-to-date', minVersion: undefined, source };
+    }
 
     if (isUpdateRequired(minVersion, __APP_VERSION__)) {
+      if (isBusyFlagActive()) {
+        logger.log('Force update deferred: busy flag active');
+        writeLastCheck();
+        return { status: 'up-to-date', minVersion, source };
+      }
+
       if (isCooldownActive()) {
         logger.warn(`Force update cooldown active, skipping refresh (${__APP_VERSION__} → ${minVersion})`);
-        return 'up-to-date';
+        writeLastCheck();
+        return { status: 'up-to-date', minVersion, source };
       }
 
       if (isReloadLimitReached()) {
@@ -113,7 +145,8 @@ async function checkVersion(): Promise<'reloading' | 'limit-reached' | 'up-to-da
           to: minVersion,
           reloadCount: count,
         });
-        return 'limit-reached';
+        writeLastCheck();
+        return { status: 'limit-reached', minVersion, source };
       }
 
       logger.log(`Force update: ${__APP_VERSION__} → ${minVersion}`);
@@ -126,14 +159,17 @@ async function checkVersion(): Promise<'reloading' | 'limit-reached' | 'up-to-da
       }
 
       incrementReloadCount();
+      writeLastCheck();
       await performHardRefresh();
-      return 'reloading';
+      return { status: 'reloading', minVersion, source };
     }
 
-    return 'up-to-date';
+    writeLastCheck();
+    return { status: 'up-to-date', minVersion, source };
   } catch {
     // Offline or Firestore error — fail silently
-    return 'error';
+    writeLastCheck();
+    return { status: 'error', minVersion: undefined, source: 'unknown' };
   }
 }
 
@@ -151,13 +187,45 @@ export function useForceUpdate(): { updateAvailable: boolean } {
     if (import.meta.env.DEV) return;
 
     async function run() {
-      const result = await checkVersion();
-      if (result === 'limit-reached') setUpdateAvailable(true);
+      const { status, minVersion, source } = await checkVersion();
+      if (status === 'limit-reached') setUpdateAvailable(true);
+
+      // Emitir app_version_active solo desde server/server-retry/empty, nunca cache
+      if (
+        status !== 'error' &&
+        (source === 'server' || source === 'server-retry' || source === 'empty') &&
+        !sessionStorage.getItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED)
+      ) {
+        trackEvent(EVT_APP_VERSION_ACTIVE, {
+          version: __APP_VERSION__,
+          minVersionSeen: minVersion ?? '',
+          gap: minVersion ? isUpdateRequired(minVersion, __APP_VERSION__) : false,
+          source,
+        });
+        try {
+          sessionStorage.setItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED, '1');
+        } catch {
+          // sessionStorage may be unavailable
+        }
+      }
     }
 
-    run();
-    const id = setInterval(run, FORCE_UPDATE_CHECK_INTERVAL_MS);
-    return () => clearInterval(id);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void run();
+    };
+    const handleOnline = () => void run();
+
+    void run();
+    const id = setInterval(() => void run(), FORCE_UPDATE_CHECK_INTERVAL_MS);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   return { updateAvailable };
