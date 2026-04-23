@@ -138,6 +138,8 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 
 **BLOCKER:** Run full coverage locally. Do NOT rely on `vitest run` alone — it doesn't check thresholds. CI enforces 80% branches and will fail even at 79.97%.
 
+**NEVER run coverage as a background task.** Coverage output piped from a background process frequently produces empty files or truncated output (the process completes before stdout is fully flushed). Always run in the foreground and wait for it to finish before reading results.
+
 ```bash
 npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
 ```
@@ -720,6 +722,16 @@ If any docs changed → run the **docs-site-maintainer** agent to regenerate REA
 If any docs were updated in this phase, commit them now before merging.
 
 ## Phase 4: Merge
+
+**CRITICAL: Confirm branch identity before merging.** Worktree mix-ups (where `git branch --show-current` reports a different branch than expected) have caused commits to land directly on `new-home` instead of the feature branch. Verify with two independent checks:
+
+```bash
+# Both must agree — if they differ, you are in a worktree/checkout confusion state. STOP.
+git branch --show-current
+git rev-parse --abbrev-ref HEAD
+```
+
+If either shows `new-home`, `main`, or `staging` → **abort**. You are not on the feature branch. Investigate with `git worktree list` before proceeding.
 
 ```bash
 # If merging from a worktree, switch to the main repo directory first.
