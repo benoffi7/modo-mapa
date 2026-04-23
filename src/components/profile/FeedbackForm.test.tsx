@@ -3,15 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mocks ---
 
-const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
+const mockWithBusyFlag = vi.hoisted(() => vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {})));
 vi.mock('../../utils/busyFlag', () => ({
-  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  withBusyFlag: mockWithBusyFlag,
   isBusyFlagActive: vi.fn(() => false),
 }));
 
-const mockSendFeedback = vi.fn();
+const mockSendFeedback = vi.hoisted(() => vi.fn());
 vi.mock('../../services/feedback', () => ({
-  sendFeedback: (...args: unknown[]) => mockSendFeedback(...args),
+  sendFeedback: mockSendFeedback,
   fetchUserFeedback: vi.fn(() => Promise.resolve([])),
   markFeedbackViewed: vi.fn(),
 }));

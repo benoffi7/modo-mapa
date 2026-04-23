@@ -4,25 +4,25 @@ import type { Rating } from '../types';
 
 // --- Mocks ---
 
-const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
-const mockIsBusyFlagActive = vi.fn(() => false);
+const mockWithBusyFlag = vi.hoisted(() => vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {})));
+const mockIsBusyFlagActive = vi.hoisted(() => vi.fn(() => false));
 vi.mock('../utils/busyFlag', () => ({
-  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  withBusyFlag: mockWithBusyFlag,
   isBusyFlagActive: () => mockIsBusyFlagActive(),
 }));
 
-const mockUpsertRating = vi.fn();
-const mockDeleteRating = vi.fn();
-const mockUpsertCriteriaRating = vi.fn();
+const mockUpsertRating = vi.hoisted(() => vi.fn());
+const mockDeleteRating = vi.hoisted(() => vi.fn());
+const mockUpsertCriteriaRating = vi.hoisted(() => vi.fn());
 vi.mock('../services/ratings', () => ({
-  upsertRating: (...args: unknown[]) => mockUpsertRating(...args),
-  deleteRating: (...args: unknown[]) => mockDeleteRating(...args),
-  upsertCriteriaRating: (...args: unknown[]) => mockUpsertCriteriaRating(...args),
+  upsertRating: mockUpsertRating,
+  deleteRating: mockDeleteRating,
+  upsertCriteriaRating: mockUpsertCriteriaRating,
 }));
 
-const mockWithOfflineSupport = vi.fn();
+const mockWithOfflineSupport = vi.hoisted(() => vi.fn());
 vi.mock('../services/offlineInterceptor', () => ({
-  withOfflineSupport: (...args: unknown[]) => mockWithOfflineSupport(...args),
+  withOfflineSupport: mockWithOfflineSupport,
 }));
 
 const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
@@ -66,11 +66,11 @@ import { useBusinessRating } from './useBusinessRating';
 // --- Helpers ---
 
 const baseRating: Rating = {
-  id: 'r1',
   userId: 'other',
   businessId: 'biz1',
   score: 4,
   createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 const defaultParams = {

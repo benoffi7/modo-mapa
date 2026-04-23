@@ -16,7 +16,7 @@ vi.mock('../services/config', () => ({
 
 const mockIsBusyFlagActive = vi.fn(() => false);
 vi.mock('../utils/busyFlag', () => ({
-  isBusyFlagActive: (...args: unknown[]) => mockIsBusyFlagActive(...args),
+  isBusyFlagActive: () => mockIsBusyFlagActive(),
 }));
 
 const mockTrackEvent = vi.fn();

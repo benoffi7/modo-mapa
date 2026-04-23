@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChangePasswordDialog from './ChangePasswordDialog';
 
-const mockChangePassword = vi.fn();
+const mockChangePassword = vi.hoisted(() => vi.fn());
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -12,9 +12,9 @@ vi.mock('../../context/AuthContext', () => ({
   }),
 }));
 
-const mockWithBusyFlag = vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {}));
+const mockWithBusyFlag = vi.hoisted(() => vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {})));
 vi.mock('../../utils/busyFlag', () => ({
-  withBusyFlag: (...args: unknown[]) => mockWithBusyFlag(...args),
+  withBusyFlag: mockWithBusyFlag,
   isBusyFlagActive: vi.fn(() => false),
 }));
 
