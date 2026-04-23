@@ -5,6 +5,7 @@ import { useConnectivity } from '../../context/ConnectivityContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface Props {
   open: boolean;
@@ -43,14 +44,22 @@ export default function MenuPhotoUpload({ open, onClose, onSuccess }: Props) {
     abortRef.current = abort;
 
     try {
-      const { default: imageCompression } = await import('browser-image-compression');
-      const compressed = await imageCompression(selectedFile, {
-        maxSizeMB: 2,
-        maxWidthOrHeight: 2048,
-        useWebWorker: false,
-      });
+      await withBusyFlag('menu_photo_upload', async (heartbeat) => {
+        const { default: imageCompression } = await import('browser-image-compression');
+        const compressed = await imageCompression(selectedFile, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 2048,
+          useWebWorker: false,
+        });
 
-      await uploadMenuPhoto(user.uid, businessId, compressed, setProgress, abort.signal);
+        await uploadMenuPhoto(
+          user.uid,
+          businessId,
+          compressed,
+          (p) => { setProgress(p); heartbeat(); },
+          abort.signal,
+        );
+      });
       onSuccess();
       handleReset();
     } catch (err) {

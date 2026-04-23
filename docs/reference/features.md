@@ -448,3 +448,10 @@ La app implementa **dos sistemas separados** de gamificacion:
 - **Modelo de datos**: campos `followedTags`, `followedTagsUpdatedAt`, `followedTagsLastSeenAt` en `UserSettings`
 - **Constantes**: `MAX_FOLLOWED_TAGS=20`, `INTERESTS_MAX_BUSINESSES_PER_TAG=5`, `SUGGESTED_TAGS` en `constants/interests.ts`
 - **Analytics**: 6 eventos (`tag_followed`, `tag_unfollowed`, `interests_section_viewed`, `interests_business_tapped`, `interests_cta_tapped`, `interests_suggested_tapped`)
+
+---
+
+## Sistema / Infraestructura
+
+- **Force update** (#191): CI/CD escribe `config/appVersion.minVersion` tras cada deploy exitoso. Cliente usa `useForceUpdate` hook que compara con `__APP_VERSION__` al montar + cada 30 min. Si servidor > cliente: desregistra SW, limpia caches, hard refresh. Cooldown 5 min + max 3 reloads previenen loops.
+- **Force update reliability** (v2.38+): re-check en `visibilitychange` + `online`, busy-flag para uploads in-flight, fallback PWA con triple guard (cooldown / busy / hook-alive), telemetría `app_version_active`. [PRD](/feat/infra/force-update-reliability/prd.md)

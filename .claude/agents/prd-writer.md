@@ -308,20 +308,86 @@ Before finishing, verify:
 
 ## Full mode: PRD + Specs + Plan in one pass
 
-When the prompt includes the keyword **"full"** or **"completo"**, produce all three documents in a single run:
+When the prompt includes the keyword **"full"** or **"completo"**, produce all three documents in a single run with validation gates between each:
 
 1. Write `prd.md` as usual
-2. Read the existing source code referenced in the PRD (hooks, components, services, types)
-3. Write `specs.md` following the template from the specs-plan-writer agent
-4. Write `plan.md` following the template from the specs-plan-writer agent
+2. **Invoke `sofia` to validate the PRD** (see "Validacion con Sofia" below). If NO VALIDADO — stop and escalate. If VALIDADO — stamp and continue.
+3. Read the existing source code referenced in the PRD (hooks, components, services, types)
+4. Write `specs.md` following the template from the specs-plan-writer agent
+5. **Invoke `diego` to validate the specs** (same protocol as specs-plan-writer uses — see that agent's "Validacion tecnica con Diego" section). If NO VALIDADO — stop and escalate. If VALIDADO — stamp the specs and continue.
+6. Write `plan.md` following the template from the specs-plan-writer agent
+7. **Invoke `pablo` to validate the plan** (same protocol as specs-plan-writer uses — see that agent's "Validacion de plan con Pablo" section). If NO VALIDADO — stop and escalate. If VALIDADO — stamp the plan.
 
 Read `docs/reference/patterns.md`, `docs/reference/architecture.md`, `docs/reference/firestore.md` before writing specs (same as specs-plan-writer would).
 
-This mode saves a full round-trip of user approval between PRD and specs/plan. The user still reviews all three documents before implementation begins.
+This mode saves a full round-trip of user approval between documents, but **does NOT skip the three validation gates** (Sofia, Diego, Pablo). The user still reviews all three documents — now with seals — before implementation begins.
 
 **When NOT to use full mode:** If the feature is exploratory or the user wants to discuss the PRD before committing to specs.
 
 ## After creating
 
 1. Update `docs/_sidebar.md` — add PRD entry (and specs/plan entries if full mode) under correct category
-2. Do NOT commit — let the caller handle commits
+2. **Invocar a Sofia (analista funcional) para validar el PRD.** Ver seccion "Validacion con Sofia" abajo.
+3. Do NOT commit — let the caller handle commits
+
+## Validacion con Sofia
+
+Todo PRD que salga de este agente debe pasar por `sofia` antes de considerarse listo para specs/plan. Sofia es la analista funcional del proyecto y detecta huecos, ambiguedades, casos edge olvidados, y criterios de aceptacion no testeables.
+
+### Protocolo
+
+1. **Spawnar `sofia`** con el prompt:
+   ```
+   Audita el PRD en docs/feat/{category}/{slug}/prd.md. Contexto: [1-2 frases sobre el issue y que resuelve].
+   Aplica tu checklist funcional completo. Devolveme tu Reporte de Analisis inicial (Ciclo 1). No entres en Ciclo 2 automaticamente — yo decido como seguir.
+   ```
+
+2. **Si Sofia emite VALIDADO sin hallazgos**: agregar al final del PRD (antes de cualquier seccion de apendice, despues de "Success Criteria" o equivalente):
+
+   ```markdown
+   ---
+
+   ## Validacion Funcional
+
+   **Analista**: Sofia
+   **Fecha**: {YYYY-MM-DD}
+   **Estado**: VALIDADO
+   **Hallazgos**: Sin hallazgos. Listo para specs-plan-writer.
+   ```
+
+3. **Si Sofia reporta BLOQUEANTES o IMPORTANTES**:
+   a. Leer cada hallazgo con su escenario real.
+   b. Para cada hallazgo que se pueda resolver con una edicion acotada al PRD (aclarar un flow, definir un criterio, agregar un escenario edge): aplicala. Reusa el lenguaje del propio hallazgo de Sofia — no inventes solucion tecnica.
+   c. Para hallazgos que requieren decision de producto (Gonzalo) — ej: "el scope es muy grande, hay que partir", "no esta claro que pasa si el usuario hace X y el PRD no lo define" — NO los resuelvas solo. Dejalos abiertos y escala al usuario.
+   d. Volver a spawnar `sofia` con: "Aplique los fixes. Revisa el PRD de nuevo y emiti Veredicto (Ciclo 2)."
+   e. Si Sofia emite **VALIDADO** o **VALIDADO CON OBSERVACIONES**, agregar la seccion de Validacion Funcional como en el punto 2, incluyendo los hallazgos cerrados y los justificados.
+   f. Si Sofia emite **NO VALIDADO**, no escribir la seccion. Reportar al usuario con el detalle de los BLOQUEANTES abiertos y pedir decision.
+
+4. **Regla**: el PRD no se considera listo para pasar a specs/plan si no tiene la seccion "Validacion Funcional" con estado VALIDADO o VALIDADO CON OBSERVACIONES. El `pre-implementation-gate` bloquea si falta.
+
+### Formato de la seccion de validacion
+
+Para estado VALIDADO CON OBSERVACIONES:
+
+```markdown
+---
+
+## Validacion Funcional
+
+**Analista**: Sofia
+**Fecha**: {YYYY-MM-DD}
+**Estado**: VALIDADO CON OBSERVACIONES
+
+### Hallazgos cerrados en esta iteracion
+
+- BLOQUEANTE: "[titulo]" → resuelto en seccion "[X]" del PRD
+- IMPORTANTE: "[titulo]" → justificado: [razon sintetica]
+
+### Observaciones abiertas para el implementador
+
+- [observacion #N] — riesgo bajo, ver al armar el plan
+```
+
+### Excepcion: full mode
+
+Si el usuario pidio "full" o "completo" (PRD + specs + plan en una sola pasada), la validacion con Sofia corre **entre el PRD y los specs**. No saltees este paso — pero no demores indefinidamente: si Sofia emite NO VALIDADO, escala al usuario y NO escribas specs/plan hasta resolver.

@@ -197,6 +197,47 @@
 | **shared/ folder** | Directorio `shared/` en la raiz del proyecto para codigo que se importa tanto desde `src/` (frontend) como desde `functions/src/` (Cloud Functions). Cada archivo exporta constantes o tipos puros (sin dependencias de framework). Ejemplo: `shared/userOwnedCollections.ts` define `USER_OWNED_COLLECTIONS` registry usado por `deleteUserAccount` (functions) y `deleteAllUserData` helper. Nota: `shared/userOwnedCollections.ts` es la fuente canonica; `functions/src/shared/` contiene una copia para el build de Cloud Functions. |
 | **userOwnedCollections registry** | `shared/userOwnedCollections.ts` — lista centralizada de las 19 colecciones que contienen datos de usuario. Cada entrada tiene `collection`, `field` (campo que contiene el userId) y `type` ('doc-id' o 'field'). Usado por `deleteUserAccount` para iterar y borrar todos los datos. Cross-validated con test que verifica consistencia con `COLLECTIONS` config. |
 
+## Busy-flag pattern (`withBusyFlag`)
+
+Protege operaciones críticas (upload, submit explícito del usuario) de ser interrumpidas por un force-update. El flag vive en `sessionStorage` por tab.
+
+**Cuándo usarlo:**
+
+- Submits explícitos del usuario con botón ("Guardar", "Enviar", "Confirmar")
+- Uploads de archivos (especialmente resumables — usar heartbeat)
+
+**Cuándo NO usarlo:**
+
+- Reads (`getDoc`, `getDocs`, `fetch*`)
+- Writes fire-and-forget (preferences, tracking, `lastSeen`)
+- Toggles optimistas rápidos (`toggleFavorite`, `toggleFollow`) — el cooldown de 5 min es protección suficiente
+- Auto-sync (`syncEngine.processQueue`) — el flag solo refleja operaciones iniciadas por el usuario en esta tab
+
+**Uso básico:**
+
+```ts
+import { withBusyFlag } from '../utils/busyFlag';
+
+await withBusyFlag('submit_kind', async () => {
+  await myService.doSomething();
+});
+```
+
+**Con heartbeat para uploads largos:**
+
+```ts
+await withBusyFlag('file_upload', async (heartbeat) => {
+  await uploadService.upload(file, {
+    onProgress: (p) => {
+      setProgress(p);
+      heartbeat(); // refresca el flag cada vez que hay progreso
+    },
+  });
+});
+```
+
+**Dónde va (capa correcta):** en el callsite del hook/componente, nunca en el service. Si el wrap estuviera en el service, `syncEngine.processQueue` al drenar la cola online prendería el flag durante auto-sync — violación de la invariante.
+
 ## Accesibilidad
 
 | Patron | Descripcion |

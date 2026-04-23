@@ -13,6 +13,7 @@ import { useToast } from '../../context/ToastContext';
 import { MSG_LIST } from '../../constants/messages';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { inviteEditor } from '../../services/sharedLists';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface Props {
   listId: string | null;
@@ -30,7 +31,9 @@ export default function InviteEditorDialog({ listId, onClose, onInvited }: Props
     if (!listId || !email.trim()) return;
     setIsInviting(true);
     try {
-      await inviteEditor(listId, email.trim());
+      await withBusyFlag('list_editor_invite', async () => {
+        await inviteEditor(listId, email.trim());
+      });
       toast.success(MSG_LIST.editorInvited(email.trim()));
       setEmail('');
       onClose();

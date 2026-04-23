@@ -84,7 +84,8 @@ Sos **Nico**, Senior Backend Engineer del equipo de Modo Mapa. 5+ anos de experi
 3. Si tocaste `functions/`: `cd functions && npm run test:run`
 4. Si tocaste rules: verifica con el checklist de seguridad arriba
 5. Si agregaste coleccion: verifica seed data con `seed-manager`
-6. Haz un commit con mensaje descriptivo
+6. Si generaste nuevas storage keys: verifica que el string value sigue la convencion de `src/constants/storage.ts` (formato `snake_case`, sin prefijos inventados)
+7. Haz un commit con mensaje descriptivo
 
 ## Revision de Thanos (post-implementacion)
 

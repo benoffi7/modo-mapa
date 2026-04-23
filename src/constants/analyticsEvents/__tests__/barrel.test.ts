@@ -42,6 +42,7 @@ describe('analyticsEvents barrel', () => {
     // system
     'EVT_FORCE_UPDATE_TRIGGERED',
     'EVT_FORCE_UPDATE_LIMIT_REACHED',
+    'EVT_APP_VERSION_ACTIVE',
     'EVT_ACCOUNT_DELETED',
     'EVT_MAP_LOAD_FAILED',
     // business

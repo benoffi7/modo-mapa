@@ -47,10 +47,20 @@ Skip this phase for `fix/`, `chore/`, and `docs/` branches.
 
 Not all guards apply to every branch type. Skip irrelevant checks to reduce friction:
 
-- **`feat/`** — Run ALL guards (1a through 1p)
+- **`feat/`** (code in `src/` or `functions/`) — Run ALL guards (1a through 1p)
 - **`fix/`** — Run ALL guards (1a through 1p)
 - **`chore/`** — Run only: 1a (sync), 1b (lint), 1e (build), 1i2 (conflict markers), 1n (secrets), 1p (sensitive data). Skip: tests, coverage, file size, boundary guards, Firestore rules checks
 - **`docs/`** — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip everything else (docs don't affect code)
+- **`feat/` tooling-only** (changes only under `.claude/`, `docs/`, `scripts/`, or repo config — NO `src/` or `functions/`) — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip all code-specific guards. Detect with:
+  ```bash
+  CHANGED=$(git diff --name-only origin/new-home)
+  if echo "$CHANGED" | grep -qvE '^(\.claude/|docs/|scripts/|\.github/|package(-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$|vitest\.config\.ts$)'; then
+    TOOLING_ONLY=false
+  else
+    TOOLING_ONLY=true
+  fi
+  ```
+  If `TOOLING_ONLY=true`, also skip ALL of Phase 2 (audits operate on `src/` and don't apply).
 
 Run these sequentially — any failure aborts the merge:
 
@@ -66,6 +76,19 @@ git merge origin/new-home --no-edit
 Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
 
 **IMPORTANT:** The base branch is `new-home` (not `main`, which is deprecated). Always branch from latest `new-home` HEAD. Never reuse branches that merged other feature branches. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
+
+**Drift check — local `new-home` vs `origin/new-home`:** Before merging, verify that the local `new-home` has no unpushed commits. Unpushed commits on `new-home` are a red flag: they indicate a previous merge skipped `/merge` (violation of `feedback_never_skip_merge_skill`). From the main repo (not the worktree):
+
+```bash
+git fetch origin new-home
+LOCAL_AHEAD=$(git rev-list --count origin/new-home..new-home 2>/dev/null || echo 0)
+if [ "$LOCAL_AHEAD" -gt 0 ]; then
+  echo "WARN: local new-home is $LOCAL_AHEAD commit(s) ahead of origin/new-home"
+  git log --oneline origin/new-home..new-home
+fi
+```
+
+If any commits show up: inspect them, confirm with the user whether they passed through `/merge`, and capture any skipped-audit debt as a tech-debt issue before completing this merge.
 
 ### 1b. Lint
 
@@ -755,9 +778,22 @@ If the push fails due to pre-push hooks, check `git stash list` — the WIP may 
 
 ### 5c. Verify CI
 
+`new-home` does NOT trigger any workflow directly (see `.github/workflows/` — only `main` and `staging` are listeners). CI validation happens on the **next `/stage` run** (which opens a PR into `staging` and triggers `deploy-staging.yml`).
+
+Strategy:
+
 ```bash
-gh run watch $(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+# 1. Check if a workflow run exists on new-home (usually none)
+LATEST=$(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId')
+if [ -n "$LATEST" ]; then
+  gh run watch "$LATEST" --exit-status
+else
+  echo "INFO: no CI workflow runs on new-home (by design — CI runs on staging/main)"
+  echo "INFO: validation will happen on next /stage or /release"
+fi
 ```
+
+Do NOT treat the absence of a run as failure — it is expected. The merge-time guards (Phase 1b build, tests, lint) already covered the bulk of what CI would catch; the remainder is validated at staging/release time.
 
 ### 5d. Clean up branches
 

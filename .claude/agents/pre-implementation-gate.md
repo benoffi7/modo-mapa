@@ -51,6 +51,21 @@ Verify:
 - PRD has all required sections (Contexto, Problema, Solucion, Scope, Tests, Seguridad, Success Criteria)
 - If no PRD exists: **BLOCK** — report that PRD must be created first
 
+### 1b. PRD validated by Sofia (functional analyst)
+
+Every PRD must have a **Validacion Funcional** section added by the functional analyst (`sofia`). This section is the seal that confirms the PRD is free of ambiguities, has testable acceptance criteria, and covers edge cases.
+
+```bash
+# Check the PRD has the Validacion Funcional section with a valid state
+PRD_PATH="docs/feat/{category}/{slug}/prd.md"
+grep -A 3 "## Validacion Funcional" "$PRD_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — report "PRD must be validated by Sofia. Spawn `sofia` against this PRD before proceeding."
+  - **Bootstrap exception (pre-Sofia PRDs):** Sofia was introduced in v2.37.0. PRDs created before that (check `git log --follow --diff-filter=A --format=%aI docs/feat/{slug}/prd.md | head -1`) are not auto-blocked but still REQUIRE a retroactive Sofia pass before specs/plan. Report as **WARN** (not BLOCK) with message: "PRD predates Sofia — run `sofia` retroactively against this PRD and apply the Validacion Funcional section before the user approves specs/plan."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES and require prd-writer to resolve them.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — note any observations for the implementer in the gate output.
+
 ### 2. Specs exist
 
 Check for `specs.md` in the same directory as the PRD.
@@ -58,12 +73,40 @@ Check for `specs.md` in the same directory as the PRD.
 - If missing: **BLOCK** — report that specs must be created first
 - If present: verify it has data model, components, hooks, and tests sections
 
+### 2b. Specs validated by Diego (Solution Architect)
+
+Every `specs.md` must carry Diego's seal (section "Validacion Tecnica") added by `diego` after the technical review cycle. Diego was introduced in v2.38.0.
+
+```bash
+SPECS_PATH="docs/feat/{category}/{slug}/specs.md"
+grep -A 3 "## Validacion Tecnica" "$SPECS_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — "Specs must be validated by Diego. Spawn `diego` against this specs.md before proceeding."
+  - **Bootstrap exception (pre-Diego specs):** specs created before v2.38.0 (check creation date via `git log --follow --diff-filter=A --format=%aI <path>/specs.md | head -1`) are WARN (not BLOCK), with message: "Specs predates Diego — run `diego` retroactively before implementation."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES and require specs-plan-writer to resolve them.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — surface technical observations for manu.
+
 ### 3. Plan exists
 
 Check for `plan.md` in the same directory as the PRD.
 
 - If missing: **BLOCK** — report that plan must be created first
 - If present: verify it has implementation phases with specific file paths
+
+### 3b. Plan validated by Pablo (Delivery Lead)
+
+Every `plan.md` must carry Pablo's seal (section "Validacion de Plan") added by `pablo` after the plan review cycle. Pablo was introduced in v2.38.0.
+
+```bash
+PLAN_PATH="docs/feat/{category}/{slug}/plan.md"
+grep -A 3 "## Validacion de Plan" "$PLAN_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — "Plan must be validated by Pablo. Spawn `pablo` against this plan.md before proceeding."
+  - **Bootstrap exception (pre-Pablo plans):** plans created before v2.38.0 are WARN (not BLOCK), with message: "Plan predates Pablo — run `pablo` retroactively before manu delegates implementation."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — surface delivery observations for manu.
 
 ### 4. Branch is clean and based on latest base branch
 
@@ -100,6 +143,15 @@ echo $?  # 0 = good, 1 = branch is behind new-home
 - If on a protected branch (main, staging, new-home): **BLOCK** — must create a dedicated feature branch first via `/start`
 - If branch doesn't follow naming convention: **WARN** — recommend renaming
 - If branch is behind new-home: **WARN** — recommend rebasing/merging new-home
+- If the current working directory is the **main repo** (not a `.claude/worktrees/` path) and the current branch name does NOT match the feature being implemented: **BLOCK** — report "You are in the main repo on an unrelated branch. Run `/start` to create a worktree. Editing here risks IDE watchers reverting your changes (incident v2.30.4). See memory: feedback_worktree_skill_edits."
+
+```bash
+# Detect main-repo vs worktree
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+if echo "$WORKTREE_ROOT" | grep -qv '\.claude/worktrees/'; then
+  echo "IN_MAIN_REPO=true"
+fi
+```
 
 ### 5. No uncommitted changes from previous work
 
@@ -124,8 +176,11 @@ git status --short
 |-------|--------|--------|
 | PRD exists | PASS/BLOCK | {path or "not found"} |
 | PRD complete | PASS/WARN | {missing sections if any} |
+| PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
+| Specs validated by Diego | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
+| Plan validated by Pablo | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
 | Working tree | PASS/WARN | {clean or dirty file count} |
 
@@ -182,8 +237,11 @@ Check the PRD's "Modularizacion y % monolitico" section:
 |-------|--------|--------|
 | PRD exists | PASS/BLOCK | {path or "not found"} |
 | PRD complete | PASS/WARN | {missing sections if any} |
+| PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
+| Specs validated by Diego | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
+| Plan validated by Pablo | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
 | Working tree | PASS/WARN | {clean or dirty file count} |
 | Security issues | PASS/WARN | {related open issues or "none affecting this feature"} |

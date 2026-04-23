@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface EditDisplayNameDialogProps {
   open: boolean;
@@ -24,7 +25,9 @@ export default function EditDisplayNameDialog({ open, onClose }: EditDisplayName
     const trimmed = nameValue.trim();
     if (!trimmed) return;
     setIsSaving(true);
-    await setDisplayName(trimmed);
+    await withBusyFlag('profile_save', async () => {
+      await setDisplayName(trimmed);
+    });
     setIsSaving(false);
     onClose();
   };

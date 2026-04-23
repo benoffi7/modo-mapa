@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { MSG_LIST } from '../../constants/messages';
 import { createList } from '../../services/sharedLists';
+import { withBusyFlag } from '../../utils/busyFlag';
 import { getListIconById } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
 import IconPicker from './IconPicker';
@@ -40,7 +41,9 @@ export default function CreateListDialog({ open, onClose, onCreated }: Props) {
     if (!user || !name.trim()) return;
     setIsCreating(true);
     try {
-      const listId = await createList(user.uid, name, desc, selectedIcon);
+      const listId = await withBusyFlag('list_create', async () => {
+        return createList(user.uid, name, desc, selectedIcon);
+      });
       const createdName = name.trim();
       const createdDesc = desc.trim();
       const createdIcon = selectedIcon;

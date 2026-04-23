@@ -31,6 +31,7 @@ import {
 import type { SharedList } from '../../types';
 import { MSG_LIST } from '../../constants/messages';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface Props {
   open: boolean;
@@ -111,16 +112,18 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
     if (!user || !newName.trim()) return;
     setIsCreating(true);
     try {
-      const listId = await createList(user.uid, newName);
-      // Add business to the new list immediately
-      await addBusinessToList(listId, businessId);
-      setNewName('');
-      setShowCreate(false);
-      toast.success(MSG_LIST.createAndAddSuccess);
-      // Reload lists
-      const refreshed = await fetchUserLists(user.uid);
-      setLists(refreshed);
-      setCheckedIds((prev) => new Set(prev).add(listId));
+      await withBusyFlag('list_create', async () => {
+        const listId = await createList(user.uid, newName);
+        // Add business to the new list immediately
+        await addBusinessToList(listId, businessId);
+        setNewName('');
+        setShowCreate(false);
+        toast.success(MSG_LIST.createAndAddSuccess);
+        // Reload lists
+        const refreshed = await fetchUserLists(user.uid);
+        setLists(refreshed);
+        setCheckedIds((prev) => new Set(prev).add(listId));
+      });
     } catch (err) {
       logger.error('[AddToListDialog] create failed:', err);
       toast.error(MSG_LIST.createError);
