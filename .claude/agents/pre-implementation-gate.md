@@ -51,6 +51,20 @@ Verify:
 - PRD has all required sections (Contexto, Problema, Solucion, Scope, Tests, Seguridad, Success Criteria)
 - If no PRD exists: **BLOCK** — report that PRD must be created first
 
+### 1b. PRD validated by Sofia (functional analyst)
+
+Every PRD must have a **Validacion Funcional** section added by the functional analyst (`sofia`). This section is the seal that confirms the PRD is free of ambiguities, has testable acceptance criteria, and covers edge cases.
+
+```bash
+# Check the PRD has the Validacion Funcional section with a valid state
+PRD_PATH="docs/feat/{category}/{slug}/prd.md"
+grep -A 3 "## Validacion Funcional" "$PRD_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — report "PRD must be validated by Sofia. Spawn `sofia` against this PRD before proceeding."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES and require prd-writer to resolve them.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — note any observations for the implementer in the gate output.
+
 ### 2. Specs exist
 
 Check for `specs.md` in the same directory as the PRD.
@@ -124,6 +138,7 @@ git status --short
 |-------|--------|--------|
 | PRD exists | PASS/BLOCK | {path or "not found"} |
 | PRD complete | PASS/WARN | {missing sections if any} |
+| PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
@@ -182,6 +197,7 @@ Check the PRD's "Modularizacion y % monolitico" section:
 |-------|--------|--------|
 | PRD exists | PASS/BLOCK | {path or "not found"} |
 | PRD complete | PASS/WARN | {missing sections if any} |
+| PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
