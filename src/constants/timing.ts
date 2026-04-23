@@ -44,3 +44,7 @@ export const BUSY_FLAG_HEARTBEAT_MS = 30 * 1000;
  * `unavailable` o `deadline-exceeded`. Dos reintentos: 500ms y 1500ms.
  */
 export const FORCE_UPDATE_FETCH_RETRY_DELAYS_MS = [500, 1500];
+
+/** Debounce applied to visibility-change and online event handlers in useForceUpdate.
+ *  Does NOT affect the periodic setInterval check. */
+export const FORCE_UPDATE_EVENT_DEBOUNCE_MS = 5_000;

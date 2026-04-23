@@ -583,4 +583,225 @@ describe('useForceUpdate', () => {
       expect(result.minVersion).toBe('2.31.0');
     });
   });
+
+  // ── concurrency guard ─────────────────────────────────────────────────
+
+  describe('concurrency guard', () => {
+    it('segunda invocacion simultanea no llama fetchAppVersionConfig dos veces', async () => {
+      vi.stubEnv('DEV', false);
+      let resolve!: () => void;
+      const deferred = new Promise<void>((res) => { resolve = res; });
+      mockFetchAppVersionConfig.mockReturnValue(
+        deferred.then(() => ({ minVersion: undefined, source: 'server' as const }))
+      );
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Segundo run via online event — bloqueado por checkingRef
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig).toHaveBeenCalledTimes(1);
+
+      resolve();
+      vi.unstubAllEnvs();
+    });
+
+    it('finally libera el flag en path error', async () => {
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockRejectedValueOnce(new Error('offline'));
+      const { useForceUpdate } = await import('./useForceUpdate');
+
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Drenar microtasks para asegurar que el run() del mount terminó
+      await act(async () => { await Promise.resolve(); });
+
+      // Segundo run debería proceder porque finally liberó el flag
+      mockFetchAppVersionConfig.mockResolvedValueOnce({ minVersion: undefined, source: 'server' as const });
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig).toHaveBeenCalledTimes(2);
+      vi.unstubAllEnvs();
+    });
+
+    it('finally libera el flag en path limit-reached', async () => {
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValueOnce({ minVersion: '99.0.0', source: 'server' as const });
+      const { useForceUpdate } = await import('./useForceUpdate');
+
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Drenar microtasks para asegurar que el run() del mount terminó
+      await act(async () => { await Promise.resolve(); });
+
+      mockFetchAppVersionConfig.mockResolvedValueOnce({ minVersion: undefined, source: 'server' as const });
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig).toHaveBeenCalledTimes(2);
+      vi.unstubAllEnvs();
+    });
+  });
+
+  // ── debounce guard ────────────────────────────────────────────────────
+
+  describe('debounce guard', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('segundo evento online dentro de 5s no llama fetchAppVersionConfig', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Primer evento online — pasa el debounce (lastCheckTs=0, Date.now()-0 >> 5000)
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+      const callsAfterFirst = mockFetchAppVersionConfig.mock.calls.length;
+
+      // Segundo evento dentro de 2s — debounce lo bloquea
+      vi.setSystemTime(Date.now() + 2000);
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBe(callsAfterFirst);
+      vi.unstubAllEnvs();
+    });
+
+    it('evento online despues de 5s SI llama fetchAppVersionConfig', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+      const callsAfterFirst = mockFetchAppVersionConfig.mock.calls.length;
+
+      // Avanzar 6s — fuera de la ventana de debounce
+      vi.setSystemTime(Date.now() + 6000);
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+      vi.unstubAllEnvs();
+    });
+
+    it('visibilitychange hidden no consume el debounce', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+      const callsAfterMount = mockFetchAppVersionConfig.mock.calls.length;
+
+      // Disparar hidden — no debería contar como check
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+
+      // Disparar visible inmediatamente (debounce no debe haberse consumido)
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBeGreaterThan(callsAfterMount);
+      vi.unstubAllEnvs();
+    });
+
+    it('mount y setInterval no son afectados por debounce', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+      const callsAfterMount = mockFetchAppVersionConfig.mock.calls.length;
+      expect(callsAfterMount).toBeGreaterThan(0);
+
+      // Avanzar el intervalo — debería llamar sin debounce (intervalo = 30 min)
+      await act(async () => {
+        vi.advanceTimersByTime(30 * 60 * 1000); // 30min
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBeGreaterThan(callsAfterMount);
+      vi.unstubAllEnvs();
+    });
+  });
+
+  // ── cleanup ───────────────────────────────────────────────────────────
+
+  it('cleanup: removeEventListener llamado en unmount', async () => {
+    vi.stubEnv('DEV', false);
+    mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+    const docRemove = vi.spyOn(document, 'removeEventListener');
+    const winRemove = vi.spyOn(window, 'removeEventListener');
+
+    const { useForceUpdate } = await import('./useForceUpdate');
+    let unmount!: () => void;
+    await act(async () => {
+      const result = renderHook(() => useForceUpdate());
+      unmount = result.unmount;
+      await Promise.resolve();
+    });
+
+    unmount();
+
+    expect(docRemove).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    expect(winRemove).toHaveBeenCalledWith('online', expect.any(Function));
+
+    docRemove.mockRestore();
+    winRemove.mockRestore();
+    vi.unstubAllEnvs();
+  });
 });

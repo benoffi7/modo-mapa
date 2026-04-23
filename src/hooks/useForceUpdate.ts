@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isUpdateRequired } from '../utils/version';
 import { fetchAppVersionConfig } from '../services/config';
 import { logger } from '../utils/logger';
 import { trackEvent } from '../utils/analytics';
-import { FORCE_UPDATE_CHECK_INTERVAL_MS, MAX_FORCE_UPDATE_RELOADS } from '../constants/timing';
+import { FORCE_UPDATE_CHECK_INTERVAL_MS, FORCE_UPDATE_EVENT_DEBOUNCE_MS, MAX_FORCE_UPDATE_RELOADS } from '../constants/timing';
 import {
   STORAGE_KEY_FORCE_UPDATE_LAST_REFRESH,
   STORAGE_KEY_FORCE_UPDATE_LAST_CHECK,
@@ -126,38 +126,54 @@ export { isReloadLimitReached as _isReloadLimitReached } from '../utils/forceUpd
 
 export function useForceUpdate(): { updateAvailable: boolean } {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const checkingRef = useRef<boolean>(false);
+  const lastCheckTs = useRef<number>(0);
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
 
     async function run() {
-      const { status, minVersion, source } = await checkVersion();
-      if (status === 'limit-reached') setUpdateAvailable(true);
+      if (checkingRef.current) return;
+      checkingRef.current = true;
+      try {
+        const { status, minVersion, source } = await checkVersion();
+        if (status === 'limit-reached') setUpdateAvailable(true);
 
-      // Emitir app_version_active solo desde server/server-retry/empty, nunca cache
-      if (
-        status !== 'error' &&
-        (source === 'server' || source === 'server-retry' || source === 'empty') &&
-        !sessionStorage.getItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED)
-      ) {
-        trackEvent(EVT_APP_VERSION_ACTIVE, {
-          version: __APP_VERSION__,
-          minVersionSeen: minVersion ?? '',
-          gap: minVersion ? isUpdateRequired(minVersion, __APP_VERSION__) : false,
-          source,
-        });
-        try {
-          sessionStorage.setItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED, '1');
-        } catch {
-          // sessionStorage may be unavailable
+        // Emitir app_version_active solo desde server/server-retry/empty, nunca cache
+        if (
+          status !== 'error' &&
+          (source === 'server' || source === 'server-retry' || source === 'empty') &&
+          !sessionStorage.getItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED)
+        ) {
+          trackEvent(EVT_APP_VERSION_ACTIVE, {
+            version: __APP_VERSION__,
+            minVersionSeen: minVersion ?? '',
+            gap: minVersion ? isUpdateRequired(minVersion, __APP_VERSION__) : false,
+            source,
+          });
+          try {
+            sessionStorage.setItem(STORAGE_KEY_APP_VERSION_EVENT_EMITTED, '1');
+          } catch {
+            // sessionStorage may be unavailable
+          }
         }
+      } finally {
+        checkingRef.current = false;
       }
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') void run();
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastCheckTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
+      lastCheckTs.current = Date.now();
+      void run();
     };
-    const handleOnline = () => void run();
+
+    const handleOnline = () => {
+      if (Date.now() - lastCheckTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
+      lastCheckTs.current = Date.now();
+      void run();
+    };
 
     void run();
     const id = setInterval(() => void run(), FORCE_UPDATE_CHECK_INTERVAL_MS);
