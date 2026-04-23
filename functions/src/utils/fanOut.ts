@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 import {
   FANOUT_DEDUP_WINDOW_MS,
+  FANOUT_GETALL_CHUNK_SIZE,
   FANOUT_MAX_RECIPIENTS_PER_ACTION,
 } from '../constants/fanOut';
 import { trackFunctionTiming } from './perfTracker';
@@ -38,7 +39,11 @@ export function fanOutDedupKey(
  * - Skip if actor's profile is private (`userSettings.profilePublic === false`).
  * - Dedup per (actor, type, business, follower) via `_fanoutDedup/{sha256}`
  *   within FANOUT_DEDUP_WINDOW_MS (24h default).
- * - Cap total recipients at FANOUT_MAX_RECIPIENTS_PER_ACTION (5000 default).
+ * - Cap total recipients at FANOUT_MAX_RECIPIENTS_PER_ACTION (500 default).
+ *
+ * Perf improvement added in #312:
+ * - Dedup reads batched via db.getAll() in chunks of FANOUT_GETALL_CHUNK_SIZE (30)
+ *   instead of N+1 sequential reads. Chunks fetched in parallel with Promise.all.
  */
 export async function fanOutToFollowers(
   db: Firestore,
@@ -72,16 +77,46 @@ export async function fanOutToFollowers(
 
   const recipients = followersSnap.docs;
 
-  let batch = db.batch();
-  let count = 0;
-
-  for (const followDoc of recipients) {
+  // --- Phase 1: build dedup entries without any I/O ---
+  const dedupEntries = recipients.map((followDoc) => {
     const followerId = followDoc.data().followerId as string;
     const dedupKey = fanOutDedupKey(data.actorId, data.type, data.businessId, followerId);
     const dedupRef = db.collection('_fanoutDedup').doc(dedupKey);
-    const dedupSnap = await dedupRef.get();
+    return { followerId, dedupKey, dedupRef };
+  });
 
-    if (dedupSnap.exists) {
+  // --- Phase 2: batch-read dedup docs in parallel chunks ---
+  const batchStartMs = performance.now();
+
+  const chunks: typeof dedupEntries[] = [];
+  for (let i = 0; i < dedupEntries.length; i += FANOUT_GETALL_CHUNK_SIZE) {
+    chunks.push(dedupEntries.slice(i, i + FANOUT_GETALL_CHUNK_SIZE));
+  }
+
+  const chunkResults = await Promise.all(
+    chunks.map((chunk) => db.getAll(...chunk.map((e) => e.dedupRef))),
+  );
+
+  await trackFunctionTiming('fanOutDedupBatch', batchStartMs);
+
+  // Build a Map<dedupKey, snapshot> aligned by index within each chunk
+  const dedupSnapMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+  for (let ci = 0; ci < chunks.length; ci++) {
+    const chunk = chunks[ci];
+    const snaps = chunkResults[ci];
+    for (let si = 0; si < chunk.length; si++) {
+      dedupSnapMap.set(chunk[si].dedupKey, snaps[si]);
+    }
+  }
+
+  // --- Phase 3: write loop — zero additional reads ---
+  let batch = db.batch();
+  let count = 0;
+
+  for (const { followerId, dedupKey, dedupRef } of dedupEntries) {
+    const dedupSnap = dedupSnapMap.get(dedupKey);
+
+    if (dedupSnap?.exists) {
       // Support both Timestamp (prod) and number (tests) for createdAt
       const raw = dedupSnap.get('createdAt');
       let createdAtMs = 0;
