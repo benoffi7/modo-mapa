@@ -106,15 +106,5 @@ jobs:
       - name: Deploy to production hosting
         run: npx firebase-tools deploy --only hosting:production --project modo-mapa-app
 
-      - name: Check if src/ or functions/ changed
-        id: check-changes
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep -qE '^(src/|functions/)'; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Update minVersion in Firestore
-        if: steps.check-changes.outputs.changed == 'true'
         run: node scripts/update-min-version.js
