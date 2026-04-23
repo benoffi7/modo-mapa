@@ -131,6 +131,10 @@
   - [#304 Offline Lists + Notifications](/feat/infra/304-offline-lists-notifications/prd.md)
     - [Specs](/feat/infra/304-offline-lists-notifications/specs.md)
     - [Plan](/feat/infra/304-offline-lists-notifications/plan.md)
+  - [#313 Tech Debt: isCooldownActive Dedup](/feat/infra/313-cooldown-dedup/prd.md)
+  - [#315 measureAsync en fetchAppVersionConfig](/feat/infra/315-measureasync-config/prd.md)
+  - [#317 Barrel Test Export Count](/feat/infra/317-barrel-test-export-count/prd.md)
+  - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
