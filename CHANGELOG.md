@@ -4,6 +4,32 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.40.0] — 2026-04-23
+
+### Added
+
+- Business Detail Screen: compact bottom sheet (50dvh) + full-screen route `/comercio/:id` with sticky chip tab bar (Criterios/Precio/Tags/Foto/Opiniones)
+- Canonical deep-linkeable URL for businesses; backward-compatible with `?business=` query param
+- Analytics events: `business_detail_opened`, `business_detail_tab_changed`, `business_detail_cta_clicked`, `sub_tab_switched`
+- Admin GA4 dashboard: `business_detail` feature section with 3 tracked events
+- Tests: `useDeepLinks.test.ts` (10 cases), `ShareButton.test.tsx` (3 cases)
+
+### Fixed
+
+- Offline UX: show cached content when offline instead of redirecting to NotFound
+- Chip bar jitter: use `useLayoutEffect` + `getBoundingClientRect` for initial measurement
+
+### Changed
+
+- `useBusinessById` memoized with `useMemo`
+- Types `PriceLevelData`, `TagsData`, `PhotoData` moved to `src/types/businessDetail.ts`
+- `MSG_BUSINESS_DETAIL` constants centralized
+- Docs: `features.md`, `architecture.md`, `patterns.md`, `project-reference.md` updated
+
+### Removed
+
+- `InfoTab.tsx` zombie component deleted
+
 ## [2.39.0] — 2026-04-22
 
 ### Added
