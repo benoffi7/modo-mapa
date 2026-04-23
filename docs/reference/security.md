@@ -351,6 +351,14 @@ Converters disponibles: `userProfileConverter`, `ratingConverter`, `commentConve
 
 ---
 
+## Cache de Firestore como vector de desactualización
+
+`fetchAppVersionConfig` usaba `getDoc()` que puede devolver datos del cache local (IndexedDB), permitiendo que el cliente no detecte una actualización requerida si el cache no fue invalidado.
+
+**Mitigación:** `getDocFromServer()` fuerza fetch desde el servidor. Si el servidor no está disponible (offline/error transiente), se reintenta 2 veces antes de caer al cache local. La telemetría `source: 'cache'` permite detectar sesiones que no pudieron verificar la versión real.
+
+---
+
 ## Cuándo actualizar este documento
 
 - Al agregar una nueva colección de Firestore

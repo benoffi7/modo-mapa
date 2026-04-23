@@ -33,6 +33,15 @@
 | `_cronRuns` | `{cronName}` | lastRunAt (timestamp), result ('success'/'error'), detail? (string), durationMs? (number) | Admin read; write false (Cloud Functions write via admin SDK). Heartbeat de ejecucion de scheduled functions. |
 | `_ipRateLimits` | variable | (interno — rate limits por IP) | No client access; Functions write (admin SDK) |
 
+### `config/appVersion` — campos
+
+| Campo | Tipo | Descripcion |
+|-------|------|-------------|
+| `minVersion` | string (semver) | Version minima requerida. Escrito por `scripts/update-min-version.js` en cada deploy exitoso de CI. Clientes con `__APP_VERSION__ < minVersion` son forzados a recargar. |
+| `updatedAt` | Timestamp (opcional) | Marca de tiempo del ultimo write desde CI. Escrito por `scripts/update-min-version.js`. Backwards-compatible: puede estar ausente en docs escritos antes del feature #191-reliability. |
+
+**Reglas:** `allow read: if true` (publico por naturaleza — cualquier cliente anonimo necesita leerlo en mount). `allow write: if false` (solo Admin SDK desde CI).
+
 ### Subcollections
 
 | Parent | Subcollection | Doc ID | Campos | Proposito |
