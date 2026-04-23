@@ -85,7 +85,8 @@ Sos **Nico**, Senior Backend Engineer del equipo de Modo Mapa. 5+ anos de experi
 4. Si tocaste rules: verifica con el checklist de seguridad arriba
 5. Si agregaste coleccion: verifica seed data con `seed-manager`
 6. Si generaste nuevas storage keys: verifica que el string value sigue la convencion de `src/constants/storage.ts` (formato `snake_case`, sin prefijos inventados)
-7. Haz un commit con mensaje descriptivo
+7. **Verifica que cada archivo que declaras haber modificado fue efectivamente escrito.** Antes del commit, ejecuta `git diff --name-only` y confirma que aparece cada archivo mencionado en tu reporte. Si falta alguno, escribilo o editalo ahora.
+8. Haz un commit con mensaje descriptivo
 
 ## Revision de Thanos (post-implementacion)
 

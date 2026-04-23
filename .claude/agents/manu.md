@@ -94,7 +94,8 @@ Antes de terminar:
 1. Ejecuta `npx tsc --noEmit` y corrige todos los errores de tipo
 2. Ejecuta `npx eslint --fix src/path/to/changed/files`
 3. Corrige manualmente cualquier error de lint restante
-4. Haz un commit con mensaje descriptivo
+4. Verifica que cada archivo que declaras haber modificado fue efectivamente escrito: ejecuta `git diff --name-only` y confirma que aparece cada archivo mencionado en tu reporte. Si falta alguno, escribilo o editalo ahora.
+5. Haz un commit con mensaje descriptivo
 ```
 
 **Regla adicional para refactors de prop interface:** Si el agente va a eliminar o renombrar un prop de un componente, DEBE primero hacer `grep -rn "NombreComponente" src/ --include="*.tsx"` y verificar que ningún caller existente use ese prop directamente. Si hay callers fuera del contexto refactorizado, el prop debe ser opcional con fallback a contexto — nunca eliminar props con callers activos.

@@ -30,7 +30,7 @@ Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
 ## Phase 0: Pre-implementation gate (feat/ branches only)
 
-For `feat/` branches, verify that PRD, specs, and plan exist and were approved before merging implementation work:
+For `feat/` branches, verify that PRD, specs, and plan exist and were reviewed before merging implementation work:
 
 Launch a **pre-implementation-gate** agent with the branch name and issue number. The agent checks:
 1. PRD exists in `docs/feat/{category}/{slug}/prd.md`
@@ -38,6 +38,8 @@ Launch a **pre-implementation-gate** agent with the branch name and issue number
 3. Plan exists in `docs/feat/{category}/{slug}/plan.md`
 
 If any are missing → **WARN** (not blocker, but report prominently). This catches features that bypassed the PRD workflow.
+
+**IMPORTANT — Validacion section over-blocking at merge time:** The gate agent may issue BLOCK for missing `## Validacion Funcional`, `## Validacion Tecnica`, or `## Validacion de Plan` sections. At merge time, **downgrade these to WARN**. The formal stamp sections are required before implementation starts; by merge time, the review may have happened inline (editorial commits, reviewer notes in the doc body) without stamping a dedicated section. The real question at merge is "was the code reviewed?" (answered by Phase 2 audits), not "does the PRD have the exact markdown header?". Only treat missing Validacion sections as a BLOCKER if the docs also lack any evidence of review (no reviewer comments, no inline findings, no Diego/Pablo/Sofia commits).
 
 Skip this phase for `fix/`, `chore/`, and `docs/` branches.
 
@@ -141,8 +143,13 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 **NEVER run coverage as a background task.** Coverage output piped from a background process frequently produces empty files or truncated output (the process completes before stdout is fully flushed). Always run in the foreground and wait for it to finish before reading results.
 
 ```bash
-npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
+npx vitest run --coverage 2>&1 | grep -E "does not meet|All files|% Branches|% Stmts"
 ```
+
+This command has three possible outcomes:
+- Shows `does not meet` → threshold violated, **BLOCKER**
+- Shows `% Branches` and `% Stmts` lines (coverage table rows) → coverage ran and passed all thresholds
+- Shows nothing (empty output) → command failed silently — re-run without grep to diagnose
 
 If `does not meet` appears, use a two-step strategy:
 
