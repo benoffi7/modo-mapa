@@ -8,9 +8,13 @@ export const FANOUT_DEDUP_WINDOW_HOURS = 24;
 export const FANOUT_DEDUP_WINDOW_MS = FANOUT_DEDUP_WINDOW_HOURS * 3_600_000;
 
 /**
- * Max recipients per single fan-out action (conservative cap to bound write cost).
- * 500 = 250 recipients × 2 writes each (feed + dedup) stays within one Firestore batch limit,
- * and keeps per-invocation cost predictable.
+ * Max recipients per fan-out action (product decision — caps blast radius).
+ *
+ * Arithmetic: 500 recipients × 2 writes (feed + dedup) = 1000 writes total,
+ * which triggers 2 Firestore batched commits of BATCH_COMMIT_MAX_OPS (500 ops each).
+ *
+ * Separate from BATCH_COMMIT_MAX_OPS (defined in utils/fanOut.ts), which is
+ * the SDK-imposed per-batch cap. This constant is the business-level cap.
  */
 export const FANOUT_MAX_RECIPIENTS_PER_ACTION = 500;
 
