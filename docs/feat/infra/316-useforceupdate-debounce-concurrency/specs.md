@@ -175,6 +175,8 @@ No hay cambios de integracion. `useForceUpdate` es consumido por un unico punto 
 
 ## Tests
 
+> **ADVERTENCIA DE REGRESIÓN — revisado por Diego (2026-04-23):** Los 3 tests de listeners existentes que dispatchean eventos inmediatamente después del mount (líneas ~310, ~340, ~374 del test file actual) pueden fallar con el guard `checkingRef` si el `run()` del mount sigue in-flight cuando el evento llega — el guard hace `early-return` y el test recibe igualdad donde espera incremento. El implementador DEBE revisar esos tests durante TDD y, si fallan, ajustar el pattern de `await` (usar `await vi.waitFor(...)` o `await act(async () => { await Promise.resolve(); })` adicional antes del dispatch). Esto no es un bug del guard sino una consecuencia correcta del comportamiento esperado.
+
 El archivo `src/hooks/useForceUpdate.test.ts` ya existe con 27 tests. Se amplia con los siguientes tests nuevos (todos en ese mismo archivo):
 
 ### Tests nuevos a agregar

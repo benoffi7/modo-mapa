@@ -284,6 +284,18 @@ No aplica: `security.md` (sin cambios de rules), `firestore.md` (sin cambios de 
 
 ---
 
+## Dependencias de ordering entre issues
+
+> **BLOQUEANTE — revisado por Pablo (2026-04-23):** Este issue DEBE empezar **SOLO DESPUÉS** de que #313 esté mergeado a `new-home`. Ambos issues modifican `src/hooks/useForceUpdate.ts`. Implementarlos en paralelo genera conflicto de merge garantizado.
+>
+> Wave de implementación:
+> 1. **#313** → merge a `new-home` primero
+> 2. **#316** → crear branch desde `new-home` post-merge de #313
+
+> **ADVERTENCIA sobre tests existentes de listeners — revisado por Diego (2026-04-23):** Los tests en `useForceUpdate.test.ts` que dispatchean `visibilitychange`/`online` inmediatamente después del mount (líneas ~310, ~340, ~374) pueden fallar con el nuevo `checkingRef` si el `run()` del mount sigue in-flight cuando el evento llega. El guard hace `early-return` para la segunda invocación, y el test podría recibir igualdad donde espera incremento. El implementador DEBE revisar esos 3 tests y ajustar el pattern de `await` (usar `await vi.waitFor(...)` o drenar microtasks antes del dispatch) si fallan. Esto es esperado, no un bug del guard.
+
+---
+
 ## Criterios de done
 
 - [x] `FORCE_UPDATE_EVENT_DEBOUNCE_MS` definida en `timing.ts`

@@ -88,6 +88,16 @@ No aplica — no hay textos visibles al usuario.
 
 ---
 
+## Dependencias de ordering entre issues
+
+> **IMPORTANTE — revisado por Pablo (2026-04-23):** Este issue DEBE mergearse a `new-home` **ANTES** de iniciar la implementación de #316 (`useForceUpdate` debounce + concurrency guard). Ambos issues tocan `src/hooks/useForceUpdate.ts`. Implementarlos en paralelo o en orden inverso genera conflicto de merge garantizado.
+>
+> Wave de implementación recomendada:
+> 1. **#313** (este) → merge
+> 2. **#316** → puede empezar solo después de que #313 esté en `new-home`
+
+---
+
 ## Criterios de done
 
 - [x] `src/utils/forceUpdate.ts` existe con las 4 funciones (`isCooldownActive`, `getReloadCount`, `incrementReloadCount`, `isReloadLimitReached`) sin logica de React
