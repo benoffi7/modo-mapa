@@ -73,12 +73,40 @@ Check for `specs.md` in the same directory as the PRD.
 - If missing: **BLOCK** — report that specs must be created first
 - If present: verify it has data model, components, hooks, and tests sections
 
+### 2b. Specs validated by Diego (Solution Architect)
+
+Every `specs.md` must carry Diego's seal (section "Validacion Tecnica") added by `diego` after the technical review cycle. Diego was introduced in v2.38.0.
+
+```bash
+SPECS_PATH="docs/feat/{category}/{slug}/specs.md"
+grep -A 3 "## Validacion Tecnica" "$SPECS_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — "Specs must be validated by Diego. Spawn `diego` against this specs.md before proceeding."
+  - **Bootstrap exception (pre-Diego specs):** specs created before v2.38.0 (check creation date via `git log --follow --diff-filter=A --format=%aI <path>/specs.md | head -1`) are WARN (not BLOCK), with message: "Specs predates Diego — run `diego` retroactively before implementation."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES and require specs-plan-writer to resolve them.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — surface technical observations for manu.
+
 ### 3. Plan exists
 
 Check for `plan.md` in the same directory as the PRD.
 
 - If missing: **BLOCK** — report that plan must be created first
 - If present: verify it has implementation phases with specific file paths
+
+### 3b. Plan validated by Pablo (Delivery Lead)
+
+Every `plan.md` must carry Pablo's seal (section "Validacion de Plan") added by `pablo` after the plan review cycle. Pablo was introduced in v2.38.0.
+
+```bash
+PLAN_PATH="docs/feat/{category}/{slug}/plan.md"
+grep -A 3 "## Validacion de Plan" "$PLAN_PATH" | grep -E "Estado.*:\s*(VALIDADO|VALIDADO CON OBSERVACIONES)"
+```
+
+- If the section is **missing**: **BLOCK** — "Plan must be validated by Pablo. Spawn `pablo` against this plan.md before proceeding."
+  - **Bootstrap exception (pre-Pablo plans):** plans created before v2.38.0 are WARN (not BLOCK), with message: "Plan predates Pablo — run `pablo` retroactively before manu delegates implementation."
+- If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES.
+- If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — surface delivery observations for manu.
 
 ### 4. Branch is clean and based on latest base branch
 
@@ -150,7 +178,9 @@ git status --short
 | PRD complete | PASS/WARN | {missing sections if any} |
 | PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
+| Specs validated by Diego | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
+| Plan validated by Pablo | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
 | Working tree | PASS/WARN | {clean or dirty file count} |
 
@@ -209,7 +239,9 @@ Check the PRD's "Modularizacion y % monolitico" section:
 | PRD complete | PASS/WARN | {missing sections if any} |
 | PRD validated by Sofia | PASS/BLOCK | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing} |
 | Specs exist | PASS/BLOCK | {path or "not found"} |
+| Specs validated by Diego | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Plan exists | PASS/BLOCK | {path or "not found"} |
+| Plan validated by Pablo | PASS/BLOCK/WARN | {VALIDADO / VALIDADO CON OBSERVACIONES / NO VALIDADO / missing / bootstrap} |
 | Branch valid | PASS/BLOCK | {branch name and status} |
 | Working tree | PASS/WARN | {clean or dirty file count} |
 | Security issues | PASS/WARN | {related open issues or "none affecting this feature"} |

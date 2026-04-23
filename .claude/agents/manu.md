@@ -21,8 +21,10 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 
 ### Para validar antes de implementar
 - `sofia` — analista funcional: audita PRDs antes de specs/plan. Detecta huecos, ambiguedades, casos edge olvidados, criterios no testeables. Obligatorio despues de prd-writer, antes de specs-plan-writer
-- `pre-implementation-gate` — verificar que PRD/specs/plan existen y que Sofia sello el PRD
-- `architecture` — validar decisiones de diseno
+- `diego` — solution architect: audita specs tecnicas antes del plan. Detecta gaps de cobertura PRD→specs, data model incompleto, security model faltante, edge cases tecnicos. Obligatorio despues de specs-plan-writer (specs.md), antes de generar plan.md
+- `pablo` — delivery lead: audita el plan antes de la implementacion. Detecta ordering bugs, conflictos de ownership entre agentes, risk staging invertido, tests al final. Obligatorio despues de Diego, antes de implementar
+- `pre-implementation-gate` — verificar que PRD/specs/plan existen y que Sofia/Diego/Pablo sellaron sus respectivos docs
+- `architecture` — validar decisiones de diseno (libre demanda, no bloqueante)
 - `pr-reviewer` — code review detallado
 
 ### Para implementar (delegar trabajo)
@@ -59,16 +61,20 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 ```
 1. Si el PRD es nuevo: prd-writer -> sofia (Ciclo 1/2) -> sello Validacion Funcional
    - Si Sofia emite NO VALIDADO: escalar al usuario antes de seguir
-2. Invocar pre-implementation-gate -> verificar PRD+sello+specs+plan
-3. Leer el plan, identificar tareas front y back
-4. Definir ownership de archivos (evitar conflictos entre agentes)
-5. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
-6. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
+2. Si specs es nuevo: specs-plan-writer escribe specs.md -> diego (Ciclo 1/2) -> sello Validacion Tecnica
+   - Si Diego emite NO VALIDADO: escalar al usuario antes de seguir
+3. Si plan es nuevo: specs-plan-writer escribe plan.md -> pablo (Ciclo 1/2) -> sello Validacion de Plan
+   - Si Pablo emite NO VALIDADO: escalar al usuario antes de seguir
+4. Invocar pre-implementation-gate -> verificar PRD/specs/plan + los 3 sellos (Sofia, Diego, Pablo)
+5. Leer el plan, identificar tareas front y back
+6. Definir ownership de archivos (evitar conflictos entre agentes) — aprovechar las observaciones de Pablo sobre ownership
+7. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
+8. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
    - Si Thanos devuelve BLOQUEADO → resolver con el implementador antes de continuar
    - Si devuelve APROBADO o APROBADO CON OBSERVACIONES → continuar
-7. Lanzar testing para tests
-8. Code review final (invocar pr-reviewer + architecture)
-9. Reportar al usuario
+9. Lanzar testing para tests
+10. Code review final (invocar pr-reviewer + architecture)
+11. Reportar al usuario
 ```
 
 ## Pre-flight para agentes paralelos
