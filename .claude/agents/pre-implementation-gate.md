@@ -62,6 +62,7 @@ grep -A 3 "## Validacion Funcional" "$PRD_PATH" | grep -E "Estado.*:\s*(VALIDADO
 ```
 
 - If the section is **missing**: **BLOCK** — report "PRD must be validated by Sofia. Spawn `sofia` against this PRD before proceeding."
+  - **Bootstrap exception (pre-Sofia PRDs):** Sofia was introduced in v2.37.0. PRDs created before that (check `git log --follow --diff-filter=A --format=%aI docs/feat/{slug}/prd.md | head -1`) are not auto-blocked but still REQUIRE a retroactive Sofia pass before specs/plan. Report as **WARN** (not BLOCK) with message: "PRD predates Sofia — run `sofia` retroactively against this PRD and apply the Validacion Funcional section before the user approves specs/plan."
 - If the section exists with state **NO VALIDADO**: **BLOCK** — report the open BLOQUEANTES and require prd-writer to resolve them.
 - If the section exists with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: **PASS** — note any observations for the implementer in the gate output.
 
@@ -114,6 +115,15 @@ echo $?  # 0 = good, 1 = branch is behind new-home
 - If on a protected branch (main, staging, new-home): **BLOCK** — must create a dedicated feature branch first via `/start`
 - If branch doesn't follow naming convention: **WARN** — recommend renaming
 - If branch is behind new-home: **WARN** — recommend rebasing/merging new-home
+- If the current working directory is the **main repo** (not a `.claude/worktrees/` path) and the current branch name does NOT match the feature being implemented: **BLOCK** — report "You are in the main repo on an unrelated branch. Run `/start` to create a worktree. Editing here risks IDE watchers reverting your changes (incident v2.30.4). See memory: feedback_worktree_skill_edits."
+
+```bash
+# Detect main-repo vs worktree
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+if echo "$WORKTREE_ROOT" | grep -qv '\.claude/worktrees/'; then
+  echo "IN_MAIN_REPO=true"
+fi
+```
 
 ### 5. No uncommitted changes from previous work
 
