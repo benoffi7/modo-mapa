@@ -308,16 +308,19 @@ Before finishing, verify:
 
 ## Full mode: PRD + Specs + Plan in one pass
 
-When the prompt includes the keyword **"full"** or **"completo"**, produce all three documents in a single run:
+When the prompt includes the keyword **"full"** or **"completo"**, produce all three documents in a single run with validation gates between each:
 
 1. Write `prd.md` as usual
-2. Read the existing source code referenced in the PRD (hooks, components, services, types)
-3. Write `specs.md` following the template from the specs-plan-writer agent
-4. Write `plan.md` following the template from the specs-plan-writer agent
+2. **Invoke `sofia` to validate the PRD** (see "Validacion con Sofia" below). If NO VALIDADO — stop and escalate. If VALIDADO — stamp and continue.
+3. Read the existing source code referenced in the PRD (hooks, components, services, types)
+4. Write `specs.md` following the template from the specs-plan-writer agent
+5. **Invoke `diego` to validate the specs** (same protocol as specs-plan-writer uses — see that agent's "Validacion tecnica con Diego" section). If NO VALIDADO — stop and escalate. If VALIDADO — stamp the specs and continue.
+6. Write `plan.md` following the template from the specs-plan-writer agent
+7. **Invoke `pablo` to validate the plan** (same protocol as specs-plan-writer uses — see that agent's "Validacion de plan con Pablo" section). If NO VALIDADO — stop and escalate. If VALIDADO — stamp the plan.
 
 Read `docs/reference/patterns.md`, `docs/reference/architecture.md`, `docs/reference/firestore.md` before writing specs (same as specs-plan-writer would).
 
-This mode saves a full round-trip of user approval between PRD and specs/plan. The user still reviews all three documents before implementation begins.
+This mode saves a full round-trip of user approval between documents, but **does NOT skip the three validation gates** (Sofia, Diego, Pablo). The user still reviews all three documents — now with seals — before implementation begins.
 
 **When NOT to use full mode:** If the feature is exploratory or the user wants to discuss the PRD before committing to specs.
 
