@@ -132,7 +132,7 @@ interface BusinessDetailScreenProps {
 - `useBusinessData(business.id)` provee datos
 - `useBusinessRating({ ... })` provee el rating + criterios (misma fuente que el sheet)
 - `useState<BusinessDetailTab>` inicializado con `initialTab ?? 'criterios'`
-- Al cambiar chip: `setActiveTab(chip)` + `trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'comercio', sub_tab: chip })` + `trackEvent(EVT_BUSINESS_DETAIL_TAB_CHANGED, { business_id, tab, previous_tab })`
+- Al cambiar chip: `setActiveChip(chip)` + `trackEvent(EVT_BUSINESS_DETAIL_TAB_CHANGED, { business_id, tab, previous_tab })` + `trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'comercio', tab: chip })`
 - Back button: `useNavigate()` → `navigate(-1)` si hay history, o `navigate('/')` si es deep link directo (se detecta con `useLocation().key === 'default'`)
 - Mount: `trackEvent(EVT_BUSINESS_DETAIL_OPENED, { business_id, source: initialTab ? 'deep_link' : 'sheet_cta' })` y `recordVisit(business.id)`
 
@@ -277,9 +277,11 @@ El unico estado mutable es `activeTab` de la pantalla full, que se sincroniza co
 | "Opiniones" | Chip label | Sin tilde |
 | "No encontramos este comercio" | BusinessNotFound reason=not_found | Sin tilde |
 | "El link parece estar roto" | BusinessNotFound reason=invalid_id | Sin tilde |
-| "Necesitas conexion para ver este comercio" | BusinessNotFound reason=offline_no_cache | Sin tilde |
+| "Necesitás conexión para ver este comercio." | BusinessNotFound reason=offline_no_cache | Con tildes (voseo rioplatense) |
+| "No se pudo cargar la información del comercio." | DetailError (error online, inline en BusinessDetailScreen) | - |
+| "Reintentar" | Botón en DetailError | - |
 
-Todos los strings se agregan a `src/constants/messages/business.ts` (si existe) o a un nuevo archivo `src/constants/messages/businessDetail.ts` re-exportado desde `constants/messages/index.ts`.
+**Implementado:** `src/constants/messages/businessDetail.ts` (`MSG_BUSINESS_DETAIL`) re-exportado desde `constants/messages/index.ts`. `BusinessNotFound`, `BusinessDetailScreen` (DetailError inline), y `BusinessSheetCompactContent` consumen este objeto.
 
 ---
 
@@ -312,7 +314,7 @@ No hace fetch de Firestore. Si en el futuro los comercios migran a Firestore, es
 
 **Caching:** N/A (datos estaticos en memoria).
 
-### useBusinessRating (existente, sin cambios)
+### useBusinessRating (existente, con ajustes menores)
 
 Se consume tal cual en `BusinessSheetCompactContent` (a traves de `BusinessSheetHeader`) y en `BusinessDetailScreen`. La sincronizacion de "tu calificacion" entre sheet y screen funciona porque ambos consumen de `useBusinessData` que tiene cache en memoria con TTL 5min + escritura optimista via `refetch('ratings')`.
 

@@ -17,9 +17,13 @@
 
 ---
 
-## Comercio (BusinessSheet)
+## Comercio (BusinessSheet + Pantalla detalle)
 
-- **Layout**: sticky header + 2 tabs (Info / Opiniones). Header siempre visible sin scroll con nombre, categoria, trending badge, action buttons y rating compacto. Tabs sticky debajo del header. Contenido de tab inactivo oculto con `display: none` para preservar estado interno (scroll, threads expandidos). Analytics: `business_sheet_tab_changed`. Deep link: `?business={id}&sheetTab=info|opiniones`
+- **Sheet compacto** (`BusinessSheetCompactContent`): `maxHeight: 50dvh`. Header (nombre, rating, trending badge, botones accion) + CTA "Ver detalles" → `/comercio/:id`. Sin chip tabs internos. Analytics: `business_detail_cta_clicked`. Al navegar a `/comercio/:id` guarda el businessId en `sessionStorage` (`mm_last_business_sheet`) para restaurar el sheet al volver.
+- **Pantalla full** (`BusinessDetailScreen` en `/comercio/:id`): chip tabs sticky (Criterios / Precio / Tags / Foto / Opiniones). Header sticky + chip bar sticky (`top: headerHeight` medido con ResizeObserver+useLayoutEffect). Contenido de tab inactivo oculto con `display: none`. Botón "Volver" navega `-1` o a `/` si es deep link directo. Analytics: `business_detail_opened`, `business_detail_tab_changed`, `business_detail_cta_clicked`, `sub_tab_switched`. Deep link: `/comercio/:id?tab=criterios|precio|tags|foto|opiniones`.
+- **Backward compat**: `?business={id}` en URL sigue procesándose por `useDeepLinks` (abre el sheet sobre el mapa). URL canónica es `/comercio/:id`. No hay redirect 301 entre ambas formas.
+- **Offline**: sheet compacto y pantalla full muestran datos estáticos bundled (nombre, dirección, categoría, tags) cuando hay error de red. Las secciones dinámicas (opiniones, precios, fotos) quedan vacías sin error.
+- **Layout historial**: sticky header + 2 tabs (Info / Opiniones). ~~Deprecado~~ → reemplazado por sheet compacto + pantalla full con chip tabs.
 - Nombre, categoria, direccion, telefono (link `tel:`)
 - Boton favorito (toggle corazon). Optimistic UI con derived state pattern. Toast de exito/error via `useToast()`. Color theme-aware (`error.main`)
 - Boton check-in y boton direcciones en la misma fila (50/50 en mobile, centrado en desktop)

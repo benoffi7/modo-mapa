@@ -155,6 +155,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
       { key: 'business_directions', name: 'Direcciones', icon: icon(StorefrontOutlinedIcon), eventNames: ['business_directions'], color: '#FFA726' },
       { key: 'rating_prompt', name: 'Prompt calificacion', icon: icon(StorefrontOutlinedIcon), eventNames: ['rating_prompt_shown', 'rating_prompt_clicked', 'rating_prompt_dismissed', 'rating_prompt_converted'], color: '#FFB74D' },
       { key: 'business_sheet', name: 'Sheet negocio', icon: icon(StorefrontOutlinedIcon), eventNames: ['business_sheet_phase1_ms', 'business_sheet_phase2_ms', 'business_sheet_cache_hit'], color: '#FFCC80' },
+      { key: 'business_detail', name: 'Pantalla detalle', icon: icon(StorefrontOutlinedIcon), eventNames: ['business_detail_opened', 'business_detail_tab_changed', 'business_detail_cta_clicked'], color: '#FFE0B2' },
     ],
   },
   {

@@ -29,14 +29,14 @@ En paralelo, `ListsScreen` estrena un patron de chip tabs (horizontal, scrollabl
 **Principio rector:** la pantalla full es la vista canonica del comercio. El sheet es una vista reducida / preview sobre el mapa, pero todo lo que muestra el sheet **tambien** esta en la pantalla full (nunca al reves: ninguna info critica solo existe en el sheet).
 
 1. **Achicar el sheet** a lo minimo de "primera impresion":
-   - Header (nombre, favorite, share, check-in, directions)
+   - Header (nombre, favorite, share, recommend, addToList) — sin check-in (decisión: check-in queda solo en la pantalla full)
    - Rating promedio
-   - **Tu calificacion** (input para puntuar)
    - CTA primario **"Ver detalles"** que navega a `/comercio/:id`
+   - Nota de implementación: "Tu calificacion" se omitió del sheet compacto para mantenerlo ultra-compacto. Issue [#318](https://github.com/benoffi7/modo-mapa/issues/318) item #5 documenta la decisión pendiente.
 
 2. **Crear `BusinessDetailScreen`** (pantalla full, ruta nueva `/comercio/:id`):
-   - Header del comercio (mismo que el sheet: nombre, acciones fav/share/check-in/directions) + boton back
-   - Rating promedio + **Tu calificacion** (replicado del sheet, mismo componente)
+   - Header del comercio (nombre, fav/share/recommend/addToList/check-in) + boton back
+   - Rating promedio + **Tu calificacion** (en header via `useBusinessRating`)
    - **Chip tabs** horizontales (patron de `ListsScreen`): `Criterios` | `Precio` | `Tags` | `Foto` | `Opiniones`
    - Cada chip renderiza la seccion correspondiente (componentes existentes, reusados sin cambios de logica)
 
@@ -133,7 +133,7 @@ Nota: chips sticky bajo el header + rating. El bloque header + rating es superse
 | Back-button: vuelve al mapa con sheet reabierto en el mismo comercio | Should | S |
 | Share del sheet y de la pantalla full comparten URL `/comercio/:id` | Should | S |
 | Deep link con chip activo: `?tab=opiniones` | Should | S |
-| Analytics: `business_detail_opened`, `business_detail_tab_changed` | Should | S |
+| Analytics: `business_detail_opened`, `business_detail_tab_changed`, `business_detail_cta_clicked` | Should | S |
 | Actualizar `BusinessSheetSkeleton` al nuevo layout compacto | Must | S |
 | Skeleton para `BusinessDetailScreen` | Must | S |
 

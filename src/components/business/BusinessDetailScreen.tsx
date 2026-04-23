@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Box, IconButton, Chip, Button, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -18,34 +18,29 @@ import { trackEvent } from '../../utils/analytics';
 import {
   EVT_BUSINESS_DETAIL_OPENED,
   EVT_BUSINESS_DETAIL_TAB_CHANGED,
+  EVT_SUB_TAB_SWITCHED,
 } from '../../constants/analyticsEvents';
 import { NAV_CHIP_SX } from '../../constants/ui';
+import { MSG_BUSINESS_DETAIL } from '../../constants/messages/businessDetail';
 import BusinessSheetHeader from './BusinessSheetHeader';
 import CheckInButton from './CheckInButton';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
-import BusinessNotFound from './BusinessNotFound';
 import StaleBanner from '../ui/StaleBanner';
 import CriteriaSection from './CriteriaSection';
 import BusinessPriceLevel from './BusinessPriceLevel';
 import BusinessTags from './BusinessTags';
 import MenuPhotoSection from './MenuPhotoSection';
 import OpinionesTab from './OpinionesTab';
-import type { PriceLevelData, TagsData, PhotoData } from './InfoTab';
+import type { PriceLevelData, TagsData, PhotoData } from '../../types/businessDetail';
 import type { Business } from '../../types';
 import type { BusinessDetailTab } from '../../types';
 
 const RecommendDialog = lazy(() => import('./RecommendDialog'));
 
-const CHIP_LABELS: Record<BusinessDetailTab, string> = {
-  criterios: 'Criterios',
-  precio: 'Precio',
-  tags: 'Tags',
-  foto: 'Foto',
-  opiniones: 'Opiniones',
-};
+const CHIP_LABELS: Record<BusinessDetailTab, string> = MSG_BUSINESS_DETAIL.chipLabels;
 
 const CHIP_ORDER: BusinessDetailTab[] = ['criterios', 'precio', 'tags', 'foto', 'opiniones'];
 
@@ -59,10 +54,10 @@ function DetailError({ onRetry }: { onRetry: () => void }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, px: 3, gap: 2 }}>
       <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
       <Typography variant="body2" color="text.secondary" textAlign="center">
-        No se pudo cargar la información del comercio.
+        {MSG_BUSINESS_DETAIL.loadError}
       </Typography>
       <Button variant="outlined" size="small" onClick={onRetry} startIcon={<RefreshIcon />}>
-        Reintentar
+        {MSG_BUSINESS_DETAIL.retry}
       </Button>
     </Box>
   );
@@ -86,8 +81,9 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!headerRef.current) return;
+    setHeaderHeight(headerRef.current.getBoundingClientRect().height);
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) setHeaderHeight(entry.contentRect.height);
     });
@@ -142,6 +138,7 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
     setActiveChip(chip);
     setSearchParams({ tab: chip }, { replace: true });
     trackEvent(EVT_BUSINESS_DETAIL_TAB_CHANGED, { business_id: business.id, tab: chip, previous_tab: previous });
+    trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'comercio', tab: chip });
   };
 
   const handleBack = () => {
@@ -151,10 +148,6 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
       navigate(-1);
     }
   };
-
-  if (data.error && isOffline) {
-    return <BusinessNotFound reason="offline_no_cache" />;
-  }
 
   return (
     <BusinessScopeProvider scope={scope}>
@@ -167,7 +160,7 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
 
         {data.isLoading ? (
           <BusinessSheetSkeleton />
-        ) : data.error ? (
+        ) : (data.error && !isOffline) ? (
           <DetailError onRetry={() => data.refetch()} />
         ) : (
           <>

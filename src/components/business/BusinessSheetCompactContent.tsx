@@ -14,6 +14,7 @@ import { useTrending } from '../../hooks/useTrending';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_BUSINESS_DETAIL_CTA_CLICKED } from '../../constants/analyticsEvents';
 import { STORAGE_KEY_LAST_BUSINESS_SHEET } from '../../constants/storage';
+import { MSG_BUSINESS_DETAIL } from '../../constants/messages/businessDetail';
 import BusinessSheetHeader from './BusinessSheetHeader';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
@@ -112,7 +113,7 @@ export default function BusinessSheetCompactContent({ business }: Props) {
               onClick={handleViewDetails}
               aria-label="Ver detalles del comercio"
             >
-              Ver detalles
+              {MSG_BUSINESS_DETAIL.viewDetails}
             </Button>
           </Box>
         </>

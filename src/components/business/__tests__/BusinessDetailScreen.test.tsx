@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   setSearchParams: vi.fn(),
   trackEvent: vi.fn(),
   recordVisit: vi.fn(),
+  isOffline: false,
+  dataError: false,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -19,7 +21,7 @@ vi.mock('../../../utils/analytics', () => ({ trackEvent: mocks.trackEvent }));
 vi.mock('../../../hooks/useBusinessData', () => ({
   useBusinessData: () => ({
     isLoading: false,
-    error: false,
+    error: mocks.dataError,
     refetch: vi.fn(),
     isFavorite: false,
     ratings: [],
@@ -38,7 +40,7 @@ vi.mock('../../../context/AuthContext', () => ({
 }));
 
 vi.mock('../../../context/ConnectivityContext', () => ({
-  useConnectivity: () => ({ isOffline: false }),
+  useConnectivity: () => ({ isOffline: mocks.isOffline }),
 }));
 
 vi.mock('../../../context/BusinessScopeContext', () => ({
@@ -97,6 +99,8 @@ const business = {
 describe('BusinessDetailScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isOffline = false;
+    mocks.dataError = false;
   });
 
   it('renderiza los chips de navegación', () => {
@@ -148,5 +152,31 @@ describe('BusinessDetailScreen', () => {
       'business_detail_tab_changed',
       expect.objectContaining({ business_id: 'biz_001', tab: 'precio' }),
     );
+  });
+
+  it('dispara sub_tab_switched con parent=comercio al cambiar chip', () => {
+    render(<BusinessDetailScreen business={business as never} />);
+    fireEvent.click(screen.getByText('Opiniones'));
+    expect(mocks.trackEvent).toHaveBeenCalledWith(
+      'sub_tab_switched',
+      expect.objectContaining({ parent: 'comercio', tab: 'opiniones' }),
+    );
+  });
+
+  it('offline con error: muestra el header y los chips (no BusinessNotFound)', () => {
+    mocks.isOffline = true;
+    mocks.dataError = true;
+    render(<BusinessDetailScreen business={business as never} />);
+    expect(screen.getByText('header')).toBeInTheDocument();
+    expect(screen.getByText('Criterios')).toBeInTheDocument();
+    expect(screen.queryByText(/not-found/)).not.toBeInTheDocument();
+  });
+
+  it('online con error: muestra DetailError con botón Reintentar', () => {
+    mocks.isOffline = false;
+    mocks.dataError = true;
+    render(<BusinessDetailScreen business={business as never} />);
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+    expect(screen.queryByText('header')).not.toBeInTheDocument();
   });
 });

@@ -61,6 +61,9 @@ const GA4_EVENT_NAMES = [
   'menu_photo_upload',
   'dark_mode_toggle',
   'business_view',
+  'business_detail_opened',
+  'business_detail_tab_changed',
+  'business_detail_cta_clicked',
   'question_created',
   'question_viewed',
   // Search
