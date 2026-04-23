@@ -152,6 +152,15 @@
   - [#317 Barrel Test Export Count](/feat/infra/317-barrel-test-export-count/prd.md)
     - [Specs](/feat/infra/317-barrel-test-export-count/specs.md)
     - [Plan](/feat/infra/317-barrel-test-export-count/plan.md)
+  - [#319 Tech Debt: setMetaTag + Chip Focus + noop onDirtyChange](/feat/infra/319-techdebt-meta-chipfocus-dirty/prd.md)
+    - [Specs](/feat/infra/319-techdebt-meta-chipfocus-dirty/specs.md)
+    - [Plan](/feat/infra/319-techdebt-meta-chipfocus-dirty/plan.md)
+  - [#320 fanOut Constant Naming](/feat/infra/320-fanout-constant-naming/prd.md)
+    - [Specs](/feat/infra/320-fanout-constant-naming/specs.md)
+    - [Plan](/feat/infra/320-fanout-constant-naming/plan.md)
+  - [#321 useForceUpdate — Separate lastCheckTs per event](/feat/infra/321-useforceupdate-separate-last-check-refs/prd.md)
+    - [Specs](/feat/infra/321-useforceupdate-separate-last-check-refs/specs.md)
+    - [Plan](/feat/infra/321-useforceupdate-separate-last-check-refs/plan.md)
   - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
 
 - **Security**
