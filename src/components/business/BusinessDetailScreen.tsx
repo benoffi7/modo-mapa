@@ -113,11 +113,6 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
     };
   }, []);
 
-  const activeIdx = CHIP_ORDER.indexOf(activeChip);
-  useEffect(() => {
-    chipRefs.current[activeIdx]?.focus();
-  }, [activeIdx]);
-
   const handleRatingChange = useCallback(() => refetch('ratings'), [refetch]);
   const handleTagsChange = useCallback(() => { refetch('userTags'); refetch('customTags'); }, [refetch]);
 
@@ -163,6 +158,7 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
   const handleChipChange = useCallback((chip: BusinessDetailTab) => {
     const previous = activeChip;
     setActiveChip(chip);
+    chipRefs.current[CHIP_ORDER.indexOf(chip)]?.focus();
     setSearchParams({ tab: chip }, { replace: true });
     trackEvent(EVT_BUSINESS_DETAIL_TAB_CHANGED, { business_id: business.id, tab: chip, previous_tab: previous });
     trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'comercio', tab: chip });
@@ -333,7 +329,6 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
                   userCommentLikes={data.userCommentLikes}
                   isLoading={data.isLoading}
                   onCommentsChange={() => data.refetch('comments')}
-                  onDirtyChange={() => {}}
                 />
               </Box>
             </Box>
