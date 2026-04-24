@@ -189,6 +189,7 @@
 | **businessMap singleton** (#302) | `src/utils/businessMap.ts` — `getBusinessMap()` construye un `Map<string, Business>` desde `allBusinesses` la primera vez y cachea la referencia a nivel modulo. `getBusinessById(id)` wrappea el lookup para conveniencia. Patron para evitar `allBusinesses.find((b) => b.id === id)` (O(n)) y `new Map(allBusinesses.map((b) => [b.id, b]))` construidos localmente en cada componente. `__resetBusinessMap()` exportado solo para tests (`beforeEach`). No usar en codigo de produccion. |
 | **Progressive radius filtering** | `useLocalTrending` filtra trending businesses por proximidad con expansion progresiva de radio (1km → 2km → 5km) para garantizar minimo de resultados. Patron reutilizable para cualquier filtrado geolocal client-side. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
+| **DOM meta helper** (#319) | `src/utils/meta.ts` exporta `setMetaTag(property, content)` para crear/actualizar meta tags `property=` (OpenGraph) en `<head>`. Consumido por `useBusinessPageMeta` (`src/hooks/useBusinessPageMeta.ts`) que setea `document.title` + 4 OG tags en la pagina de detalle de comercio y restaura el title al desmontar. Disponible para futuras paginas con OG tags (perfil publico, lista publica, etc.). No maneja tags `name=` (viewport, description) — genericizar cuando haya caso. `content` se escribe via `setAttribute`, pero callers con user-content deben validar upstream (no sanitiza). |
 
 ## Codigo compartido frontend/functions
 
@@ -245,6 +246,7 @@ await withBusyFlag('file_upload', async (heartbeat) => {
 | **aria-live en contadores dinamicos** | Contadores que cambian en respuesta a acciones del usuario (ej: "X/20 comentarios hoy", like counts) usan `aria-live="polite"` para que screen readers anuncien los cambios sin interrumpir al usuario. |
 | **role=alertdialog** | Dialogs destructivos (`DeleteAccountDialog`, `DiscardDialog`) usan `role="alertdialog"` en vez del default `role="dialog"` para comunicar urgencia a tecnologias asistivas. |
 | **PasswordField helperText nativo** | `PasswordField` usa la prop `helperText` de MUI TextField que genera automaticamente `aria-describedby` vinculando el campo con su texto de ayuda, en vez de texto externo sin vinculacion semantica. |
+| **Focus on user interaction only** (#319) | Cuando un widget tipo tablist requiere mover el foco al cambiar de tab (ej: roving tabindex en `BusinessDetailScreen` chips), llamar `focus()` **dentro del handler** (`handleChipChange`) inmediatamente despues de `setActiveChip`, no en un `useEffect` que observa el indice activo. Un `useEffect` con deps sobre el activeIdx dispara tambien en el mount inicial — roba el foco al Back button e interrumpe al screen reader con el anuncio del primer tab. Patron declarativo: el foco sigue al usuario, no al montaje. |
 
 ## Component decomposition (#195)
 
@@ -252,6 +254,7 @@ await withBusyFlag('file_upload', async (heartbeat) => {
 |--------|-------------|
 | **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 4 hooks activos: `useCommentEdit` (edit state + handlers), `useVerificationCooldown` (60s cooldown timer), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). Nota: `useOptimisticLikes`, `useCommentSort`, `useCommentThreads` y `useQuestionThreads` fueron eliminados en #232 — su logica fue inlined en los componentes consumidores. |
 | **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). Nota: `QuestionInput` fue eliminado en #232 — logica integrada directamente en BusinessQuestions. |
+| **No noop props** (#319) | Prop signal (callback) no debe propagarse a traves de wrappers intermedios si nadie arriba la consume. Caso resuelto: `onDirtyChange` se declaraba en `OpinionesTab.Props` y se pasaba `() => {}` desde `BusinessDetailScreen` — se elimino el acoplamiento. `BusinessComments` conserva `onDirtyChange?` opcional para consumidores que si lo usen. Regla: si el callback upstream es `() => {}`, remover la prop en la cadena intermedia. |
 
 ## Integridad de datos
 
