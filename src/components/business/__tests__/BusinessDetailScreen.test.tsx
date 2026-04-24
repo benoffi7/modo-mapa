@@ -170,6 +170,79 @@ describe('BusinessDetailScreen', () => {
     );
   });
 
+  describe('chip focus', () => {
+    it('al montar sin initialTab, el primer chip NO recibe focus automáticamente', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      // Ningún chip (role=tab) debería haberse focado durante el mount.
+      const tabFocusCalls = focusSpy.mock.instances.filter(
+        (inst) => inst instanceof HTMLElement && inst.getAttribute('role') === 'tab',
+      );
+      expect(tabFocusCalls.length).toBe(0);
+      focusSpy.mockRestore();
+    });
+
+    it('click en un chip dispara focus() sobre ese chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const precioChip = screen.getByText('Precio').closest('[role="tab"]') as HTMLElement;
+      fireEvent.click(precioChip);
+      expect(focusSpy).toHaveBeenCalled();
+      // Al menos una de las invocaciones fue sobre el chip role=tab con label Precio.
+      const focusedOnPrecio = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Precio',
+      );
+      expect(focusedOnPrecio).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('ArrowRight sobre el chip activo dispara focus() sobre el siguiente', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const criteriosChip = screen.getByText('Criterios').closest('[role="tab"]') as HTMLElement;
+      fireEvent.keyDown(criteriosChip, { key: 'ArrowRight' });
+      const focusedOnPrecio = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Precio',
+      );
+      expect(focusedOnPrecio).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('Home lleva el foco al primer chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} initialTab="opiniones" />);
+      const opinionesChip = screen.getByText('Opiniones').closest('[role="tab"]') as HTMLElement;
+      focusSpy.mockClear();
+      fireEvent.keyDown(opinionesChip, { key: 'Home' });
+      const focusedOnCriterios = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Criterios',
+      );
+      expect(focusedOnCriterios).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('End lleva el foco al último chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const criteriosChip = screen.getByText('Criterios').closest('[role="tab"]') as HTMLElement;
+      focusSpy.mockClear();
+      fireEvent.keyDown(criteriosChip, { key: 'End' });
+      const focusedOnOpiniones = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Opiniones',
+      );
+      expect(focusedOnOpiniones).toBe(true);
+      focusSpy.mockRestore();
+    });
+  });
+
   it('offline con error: muestra el header y los chips (no BusinessNotFound)', () => {
     mocks.isOffline = true;
     mocks.dataError = true;
