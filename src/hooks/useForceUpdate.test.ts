@@ -755,6 +755,70 @@ describe('useForceUpdate', () => {
       vi.unstubAllEnvs();
     });
 
+    it('visible y online dentro de 5s con fetch resuelto: ambos disparan fetch', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Primer evento: visibility → visible
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve(); // drena el fetch del handler visible
+        await Promise.resolve(); // drena finally (checkingRef = false)
+      });
+      const callsAfterVisible = mockFetchAppVersionConfig.mock.calls.length;
+
+      // Avanzar 2s (dentro de 5s). lastVisibilityTs está set; lastOnlineTs sigue en 0.
+      vi.setSystemTime(Date.now() + 2000);
+
+      // Segundo evento: online (debe pasar porque lastOnlineTs=0 >> 5s de separación)
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBeGreaterThan(callsAfterVisible);
+      vi.unstubAllEnvs();
+    });
+
+    it('segundo visibilitychange dentro de 5s no llama fetchAppVersionConfig', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      mockFetchAppVersionConfig.mockResolvedValue({ minVersion: undefined, source: 'server' as const });
+
+      const { useForceUpdate } = await import('./useForceUpdate');
+      await act(async () => {
+        renderHook(() => useForceUpdate());
+        await Promise.resolve();
+      });
+
+      // Primer visibilitychange → visible (pasa: lastVisibilityTs=0)
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      const callsAfterFirst = mockFetchAppVersionConfig.mock.calls.length;
+
+      // Segundo visibilitychange dentro de 2s — debounce lo bloquea
+      vi.setSystemTime(Date.now() + 2000);
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+      });
+
+      expect(mockFetchAppVersionConfig.mock.calls.length).toBe(callsAfterFirst);
+      vi.unstubAllEnvs();
+    });
+
     it('mount y setInterval no son afectados por debounce', async () => {
       vi.useFakeTimers();
       vi.stubEnv('DEV', false);

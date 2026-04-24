@@ -127,7 +127,8 @@ export { isReloadLimitReached as _isReloadLimitReached } from '../utils/forceUpd
 export function useForceUpdate(): { updateAvailable: boolean } {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const checkingRef = useRef<boolean>(false);
-  const lastCheckTs = useRef<number>(0);
+  const lastVisibilityTs = useRef<number>(0);
+  const lastOnlineTs = useRef<number>(0);
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
@@ -164,14 +165,14 @@ export function useForceUpdate(): { updateAvailable: boolean } {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return;
-      if (Date.now() - lastCheckTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
-      lastCheckTs.current = Date.now();
+      if (Date.now() - lastVisibilityTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
+      lastVisibilityTs.current = Date.now();
       void run();
     };
 
     const handleOnline = () => {
-      if (Date.now() - lastCheckTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
-      lastCheckTs.current = Date.now();
+      if (Date.now() - lastOnlineTs.current < FORCE_UPDATE_EVENT_DEBOUNCE_MS) return;
+      lastOnlineTs.current = Date.now();
       void run();
     };
 
