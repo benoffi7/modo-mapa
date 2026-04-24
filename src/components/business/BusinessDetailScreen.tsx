@@ -329,7 +329,6 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
                   userCommentLikes={data.userCommentLikes}
                   isLoading={data.isLoading}
                   onCommentsChange={() => data.refetch('comments')}
-                  onDirtyChange={() => {}}
                 />
               </Box>
             </Box>
