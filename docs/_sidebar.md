@@ -161,6 +161,8 @@
   - [#321 useForceUpdate — Separate lastCheckTs per event](/feat/infra/321-useforceupdate-separate-last-check-refs/prd.md)
     - [Specs](/feat/infra/321-useforceupdate-separate-last-check-refs/specs.md)
     - [Plan](/feat/infra/321-useforceupdate-separate-last-check-refs/plan.md)
+  - [#324 Performance — allBusinesses.find x13, lazy img, MUI chunk split](/feat/infra/324-performance-bundle-business-lookup/prd.md)
+  - [#323 Offline — Services Queue Coverage](/feat/infra/323-offline-services-queue-coverage/prd.md)
   - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
 
 - **Security**
@@ -230,6 +232,7 @@
   - [#308 Privacy Policy Drift](/feat/security/308-privacy-policy-drift/prd.md)
     - [Specs](/feat/security/308-privacy-policy-drift/specs.md)
     - [Plan](/feat/security/308-privacy-policy-drift/plan.md)
+  - [#322 Firestore Rules Hardening + Bootstrap Admin](/feat/security/322-firestore-rules-hardening-bootstrap-admin/prd.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
