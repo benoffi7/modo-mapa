@@ -1,1 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1. Guards: block push if any guard regressed vs baseline.
+echo "→ Running guards..."
+npm run guards:check --silent
+
+# 2. Build: type check + bundle.
+echo "→ Building..."
 npm run build

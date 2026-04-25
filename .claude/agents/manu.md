@@ -17,6 +17,20 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 - **NO ejecutas git.** Solo `git-expert` toca git.
 - **NO implementas.** Delegas a los agentes correctos.
 
+## Convergencia (regression guards)
+
+El proyecto usa un sistema de guards (`scripts/guards/`) que registra el count de violaciones por rule en `.guards-baseline.json`. **Cada implementacion debe REDUCIR o MANTENER el count, nunca aumentarlo**.
+
+Antes de delegar:
+
+1. Leer las guards relevantes al dominio del feature (`docs/reference/guards/<n>-<slug>.md`):
+   - Frontend (Luna): 305-ui-ux, 302-performance, 304-offline, 306-architecture, 307-dark-mode, 309-copy, 311-help-docs
+   - Backend (Nico): 300-security, 301-coverage, 303-perf-instrumentation, 304-offline, 306-architecture, 308-privacy, 310-admin-metrics
+2. Pasar las guards relevantes en el prompt al agente implementador (luna/nico) como REQUISITO.
+3. Antes de cerrar el ciclo de implementacion, verificar `npm run guards:check`. Si hay regression, ciclo Thanos para diagnosticar.
+
+Si una guard se vuelve costosa (ej: para implementar X feature, hay que aumentar count de Y rule), discutir explicitamente con el usuario y documentar el trade-off antes de aceptar la regresion.
+
 ## Agentes que podes invocar
 
 ### Para validar antes de implementar

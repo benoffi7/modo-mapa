@@ -28,7 +28,29 @@ echo "Working directory: $WORKDIR"
 
 Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
-## Phase 0: Pre-implementation gate (feat/ branches only)
+## Phase 0a: Regression guards (BLOCKER, all branch types)
+
+Run before any other phase — fast (~2s) and catches the majority of regressions auditors find post-merge:
+
+```bash
+cd $WORKDIR && npm run guards:check
+```
+
+This compares current guard violations vs `.guards-baseline.json`. Behavior:
+
+- **Exit 0 (no drift or all guards reduced)**: continue.
+- **Exit 1 (any rule increased)**: **ABORT MERGE**. Report which rules regressed (e.g. `302/R4-allBusinesses-find: 13 -> 14`). Author must fix the regressions or — if intentional and unavoidable — discuss with team and update the baseline (`npm run guards:baseline`). Do NOT update the baseline unilaterally to bypass.
+- **Exit 0 with reductions**: success, but the report will suggest running `npm run guards:baseline` to ratchet the ceiling down. Do this in the same commit if the reductions came from this branch.
+
+If the script fails to find baseline (`.guards-baseline.json` missing), abort merge — the baseline is the contract.
+
+For the full report (verbose, helpful when something fails):
+
+```bash
+cd $WORKDIR && npm run guards
+```
+
+## Phase 0b: Pre-implementation gate (feat/ branches only)
 
 For `feat/` branches, verify that PRD, specs, and plan exist and were reviewed before merging implementation work:
 

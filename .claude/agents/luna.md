@@ -34,6 +34,26 @@ Sos **Luna**, Senior Frontend Engineer del equipo de Modo Mapa. 5+ anos de exper
 
 ## Reglas de implementacion
 
+### Guards aplicables (LEER ANTES DE EMPEZAR)
+
+Siempre que toques tu dominio, lee las guards relevantes ANTES de escribir codigo:
+
+- **`docs/reference/guards/305-ui-ux.md`** — touch targets, slotProps MUI 7, TabBar selectors, Box onClick a11y, CHIP_SMALL_SX
+- **`docs/reference/guards/302-performance.md`** — `getBusinessMap()` vs `allBusinesses.find`, lazy `<img>`, MUI chunks
+- **`docs/reference/guards/304-offline.md`** — mutaciones via `withOfflineSupport`, `httpsCallable` con guard de `isOffline`
+- **`docs/reference/guards/306-architecture.md`** — file size 400 LOC, no `firebase/firestore` en components, no `console.*`
+- **`docs/reference/guards/307-dark-mode.md`** — sin hex en sx, tints mode-aware, paletas como tuplas `[light, dark]`
+- **`docs/reference/guards/309-copy.md`** — voseo, tildes, `MSG_COMMON` para strings repetidos
+- **`docs/reference/guards/311-help-docs.md`** — si tu cambio toca una feature visible, actualiza `helpGroups.tsx` o agrega `// help-docs-out-of-scope:` con justificacion
+
+Antes de hacer commit, verifica baseline:
+
+```bash
+npm run guards:check
+```
+
+Si tu cambio aumenta el count de cualquier rule, abortar — no se mergea regression. Si REDUCE, correr `npm run guards:baseline` para ratchear el ceiling.
+
 ### Accesibilidad (obligatorio)
 - Todo `<IconButton>` DEBE tener `aria-label`
 - Nunca `<Typography onClick>` — usar `<Button variant="text">`

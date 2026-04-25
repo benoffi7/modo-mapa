@@ -1,0 +1,62 @@
+name: Guards
+
+on:
+  pull_request:
+    branches: [main, new-home]
+  push:
+    branches: [main, new-home]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: guards-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guards:
+    name: Regression guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need full history so we can compare baseline against PR head.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run guards (baseline check)
+        run: npm run guards:check
+
+      - name: Generate full report on failure
+        if: failure()
+        run: |
+          echo "## Guards report (failed)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npm run guards 2>&1 | sed 's/\x1b\[[0-9;]*m//g' >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See \`docs/reference/guards/\` for rule descriptions." >> $GITHUB_STEP_SUMMARY
+          echo "Baseline lives at \`.guards-baseline.json\` — push lowers it; never raises." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload report
+        if: always()
+        run: node scripts/guards/run.mjs --report-file guards-report.json || true
+
+      - name: Save report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guards-report
+          path: guards-report.json
+          if-no-files-found: ignore

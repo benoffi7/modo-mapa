@@ -15,6 +15,10 @@
     "test:coverage": "vitest run --coverage --maxWorkers=4",
     "seed": "cp scripts/seed-admin-data.ts functions/seed.ts && cd functions && npx tsx seed.ts; rm -f seed.ts",
     "analyze": "ANALYZE=true vite build",
+    "guards": "node scripts/guards/run.mjs --pretty",
+    "guards:json": "node scripts/guards/run.mjs",
+    "guards:check": "node scripts/guards/check-baseline.mjs",
+    "guards:baseline": "node scripts/guards/check-baseline.mjs --update",
     "prepare": "husky"
   },
   "lint-staged": {
