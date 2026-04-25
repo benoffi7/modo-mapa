@@ -45,6 +45,9 @@ Piensa como un atacante con herramientas de IA a su disposicion. Los atacantes m
 - **Cuando se agregan campos a userSettings**: verificar que estan en `keys().hasOnly()` — olvidar = feature silenciosamente rota en prod (SEC-34-02)
 - Operator precedence en reglas con `||` (AND binds tighter than OR)
 - Colecciones sin reglas explicitas (default deny pero indica gap en defense-in-depth)
+- **R12 — Type guards explicitos antes de `.size()` o range checks (#300/#322).** `.size()` aplica a strings, listas y maps. Sin `is string`, un atacante manda `message: ['x','y',...50]` y bypassa el byte-cap. Aplica analogamente a booleanos (`is bool` en `notifications.read`) y numeros lat/lng (`is number` + range `>= -90 && <= 90` / `>= -180 && <= 180`). Tambien: `displayNameLower` debe equivaler a `displayName.lower()` (no se acepta arbitrario).
+- **R13 — Callables que aceptan email no leak existencia (#322).** `inviteListEditor`, `removeListEditor` y similares devuelven respuesta uniforme regardless of whether el email mapea a un usuario registrado. Mensajes de error distintos por estado = enumeration oracle.
+- **R14 — Bootstrap admin gateado tras primer admin (#322).** `setAdminClaim` con `isBootstrap` (`email_verified === true && email === ADMIN_EMAIL`) DEBE rechazar tras el primer admin asignado, gateado por `config/bootstrap.adminAssigned`. Si no hay gate, una toma de control del email de bootstrap = admin permanente.
 
 ### 2. Cloud Functions
 - Rate limiting en TODOS los triggers user-facing (no solo comments/check-ins)

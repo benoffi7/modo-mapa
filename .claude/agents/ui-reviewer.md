@@ -37,7 +37,7 @@ Eres un revisor experto en UI para el proyecto **Modo Mapa** — app mobile-firs
 ### Sugerencias
 ```
 
-## Regression checks (#305)
+## Regression checks (#305/#326)
 
 Ver `docs/reference/guards/305-ui-ux.md`.
 
@@ -47,8 +47,13 @@ Ver `docs/reference/guards/305-ui-ux.md`.
 - `setState` durante render prohibido. No `eslint-disable react-hooks/rules-of-hooks`.
 - Chips: usar `size="small"` directo, no pelear contra `height` en sx.
 - 360px overflow: Typography con contenido al lado necesita `noWrap`.
+- **R7 (#326)** — Cards/rows interactivas son `<ListItemButton>`, `<CardActionArea>`, `<ButtonBase>` o `<Button>`. `<Box onClick>` solo permitido con `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Space) y comentario justificando por que no MUI. WCAG 2.1.1.
+- **R8 (#326)** — `CHIP_SMALL_SX` debe existir y exportarse desde `src/theme/cards.ts`. Chips chicos usan ese sx — no se permite `<Chip sx={{ height: ... }}>` ad-hoc.
 
 ```bash
 grep -rn "primaryTypographyProps\|secondaryTypographyProps" src/ --include="*.tsx"
 grep -rn "eslint-disable.*react-hooks" src/components/
+grep -rn "<Box[^>]*onClick" src/components/ --include="*.tsx"
+grep -n "CHIP_SMALL_SX" src/theme/cards.ts
+grep -rn "<Chip" src/components/ --include="*.tsx" | grep "height:"
 ```

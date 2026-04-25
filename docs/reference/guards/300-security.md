@@ -15,6 +15,14 @@ Regression-guard para los fixes del issue #300 (tech debt de seguridad — depen
 - **R9 — `listItems` trigger: rate limit ANTES del counter.** `onListItemCreated` (`functions/src/triggers/listItems.ts`) DEBE chequear rate limit y borrar el doc ANTES de `incrementCounter`. Mismo patron aplica a `onUserSettingsWritten` y `onSharedListCreated` (ya enforced por #289, no regresar).
 - **R10 — `beforeUserCreated` seed de `userSettings`.** El blocking function `beforeUserCreated` (`functions/src/triggers/authBlocking.ts`) DEBE crear `userSettings/{uid}` con al menos `{ profilePublic: false, updatedAt: serverTimestamp() }` de forma idempotente antes de permitir el alta. Garantiza que la rule de `follows` (que exige `exists(userSettings)`) nunca falle por race con `onUserCreated`.
 - **R11 — `ADMIN_EMAIL` y `APP_CHECK_ENFORCEMENT` en Secret Manager.** Ninguno de los dos valores puede vivir en `functions/.env`. `assertAdmin` lee `ADMIN_EMAIL` via `defineSecret('ADMIN_EMAIL').value()`, y `APP_CHECK_ENFORCEMENT` se inyecta via GitHub Secret en el workflow de deploy. `functions/.env` puede documentar con comentario que apunte a Secret Manager.
+- **R12 — Type guards explicitos en firestore.rules.** Toda regla `create`/`update` que valide tamaños o estructura DEBE chequear el tipo primitivo antes de operar:
+  - Strings con `.size()` requieren `is string` (`.size()` aplica a strings, listas y maps).
+  - Booleanos requieren `is bool`.
+  - Numeros lat/lng requieren `is number` + range check (`>= -90 && <= 90` / `>= -180 && <= 180`).
+  - Numeros con semantica de ID (`displayNameLower == displayName.lower()`) requieren equality contra el campo source.
+  Aplica especificamente a: `feedback.message`, `notifications.read`, `userSettings.localityLat/localityLng`, `users.displayNameLower`, y cualquier campo nuevo.
+- **R13 — Callables que aceptan email no deben enumerar usuarios.** `inviteListEditor`, `removeListEditor`, y cualquier callable que reciba `targetEmail` DEBE devolver respuesta uniforme (success generico) sin importar si el email mapea a un usuario registrado. La accion real (agregar editor, enviar invitacion) se ejecuta solo cuando el usuario existe; la API no leak la existencia.
+- **R14 — Bootstrap admin gateado tras primer admin.** `setAdminClaim` (`functions/src/admin/claims.ts`) tiene una rama de bootstrap (`isBootstrap` via `email_verified === true && email === ADMIN_EMAIL`). Esta rama DEBE quedar deshabilitada despues del primer admin asignado: gatear con un flag `config/bootstrap.adminAssigned == true` que el handler setea atomicamente al asignar el primer claim. Una vez asignado, la rama de bootstrap rechaza con `permission-denied`.
 
 ## Detection patterns
 
@@ -57,6 +65,22 @@ rg -n "userSettings" functions/src/triggers/authBlocking.ts
 # R11 — secretos en functions/.env
 rg -n "^(ADMIN_EMAIL|APP_CHECK_ENFORCEMENT)=" functions/.env
 rg -n "defineSecret\\('ADMIN_EMAIL'\\)" functions/src
+
+# R12 — campos sin type guard en firestore.rules
+# feedback.message sin "is string"
+rg -n "feedback" firestore.rules -A 30 | rg "message" | rg -v "is string"
+# notifications.read sin "is bool"
+rg -n "notifications" firestore.rules -A 30 | rg "'read'" | rg -v "is bool"
+# locality lat/lng sin range check
+rg -n "localityLat|localityLng" firestore.rules -A 1 | rg -v ">=|<="
+# displayNameLower sin equality contra displayName.lower()
+rg -n "displayNameLower" firestore.rules | rg -v "displayName\\.lower\\(\\)"
+
+# R13 — inviteListEditor/removeListEditor con error messages distintos por estado de email
+rg -n "no encontrado|no existe|invalid email|user not found|invitarte a vos mismo|ya es editor" functions/src/callable/
+
+# R14 — bootstrap admin sin gate
+rg -n "isBootstrap|bootstrap.adminAssigned" functions/src/admin/claims.ts
 ```
 
 ## Correct patterns

@@ -126,6 +126,64 @@ const business = allBusinesses.find((b) => b.id === businessId);
 
 **Nota:** si necesitas el Map crudo (ej: para iterar), usa `getBusinessMap()`. No construyas tu propio `new Map(allBusinesses.map(...))` en cada componente — consolidate en el singleton.
 
+### 6. Imagenes con `<img>` deben tener `loading="lazy"` y `decoding="async"`
+
+Toda etiqueta `<img>` que renderice contenido remoto (Firebase Storage, Google avatars, menu photos) DEBE incluir:
+
+- `loading="lazy"` — diferir carga hasta que entra al viewport.
+- `decoding="async"` — no bloquear el main thread mientras se decodifica.
+- `width` y `height` explicitos (px o %) — evita CLS y reservas de layout.
+
+**Por que:** `MenuPhotoSection`, `MenuPhotoViewer` y similares cargan imagenes >100KB en LCP path sin lazy/async, costando ~300-500ms en LCP en 3G.
+
+**Correcto:**
+
+```tsx
+<img
+  src={photoUrl}
+  alt={alt}
+  loading="lazy"
+  decoding="async"
+  width={400}
+  height={300}
+/>
+```
+
+**Excepcion:** la primera imagen above-the-fold (hero) puede usar `loading="eager"` + `fetchpriority="high"` documentando el motivo en un comentario.
+
+### 7. `manualChunks` debe separar @mui/icons-material de @mui/material
+
+**Archivo:** `vite.config.ts`
+
+El bundle MUI tiene que separar el core (~150KB) de los icons (~250-300KB porque cada icono se inlinea). El bundler genera dos chunks distintos:
+
+```ts
+// vite.config.ts
+manualChunks: {
+  'mui-core': ['@mui/material', '@mui/system'],
+  'mui-icons': ['@mui/icons-material'],
+  // ... otros
+}
+```
+
+**Por que:** `@mui/icons-material` puede defererse (los icons aparecen en interacciones, no en LCP), mientras que `@mui/material` es critical-path.
+
+### 8. `firebase/storage` no en chunk critico de firebase
+
+**Archivo:** `vite.config.ts`
+
+El manualChunk de Firebase no debe incluir `firebase/storage` (que solo se usa en uploads de avatares y menu photos — paths lazy):
+
+```ts
+// vite.config.ts — correcto
+manualChunks: {
+  'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+  // 'firebase/storage' se carga lazy desde MenuPhotoUpload / AvatarPicker
+}
+```
+
+**Por que:** `firebase/storage` agrega ~40-60KB al chunk critico sin necesidad — los flujos que lo usan ya estan detras de `lazy(() => import(...))`.
+
 ### 5. Tabs no-iniciales en `TabShell` deben ser `React.lazy`
 
 **Archivo:** `src/components/shell/TabShell.tsx`
@@ -192,6 +250,27 @@ grep -rn "COMMENT_LIKES" src/services/businessData.ts
 ```bash
 grep -rn "new Map(allBusinesses" src/
 # Resultado esperado: 0 matches en componentes. Solo permitido en src/utils/businessMap.ts.
+```
+
+### Check 7 — Imagenes sin loading=lazy
+
+```bash
+grep -rn "<img" src/components/ --include="*.tsx" | grep -v "loading=\"lazy\"" | grep -v "loading={lazy"
+# Resultado esperado: 0 matches (o 1 hero documentado).
+```
+
+### Check 8 — manualChunks no separa MUI icons
+
+```bash
+grep -E "mui-core|mui-icons|@mui/icons-material" vite.config.ts
+# Esperar lineas separadas para mui-core y mui-icons.
+```
+
+### Check 9 — firebase/storage en chunk critico
+
+```bash
+grep -A 5 "'firebase':" vite.config.ts | grep "firebase/storage"
+# Resultado esperado: 0 matches.
 ```
 
 ### Check 6 — TabShell tabs eager

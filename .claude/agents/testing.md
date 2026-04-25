@@ -87,7 +87,7 @@ Para mocks sin parámetros usar `() => mockFn()`, NO `(...args: unknown[]) => mo
 - **Integration**: interaccion entre componentes y servicios
 - Priorizar tests de hooks/logica sobre UI
 
-## Coverage gate (#301)
+## Coverage gate (#301/#330)
 
 El threshold global de branches en `vitest.config.ts` es 80%. CI rechaza deploys por debajo. Ver `docs/reference/guards/301-coverage.md`.
 
@@ -97,3 +97,5 @@ El threshold global de branches en `vitest.config.ts` es 80%. CI rechaza deploys
 - El autor del PR corre `npm run test:coverage` local y pega el summary en el PR.
 - Patron de mocks para services: SDK mocking (ver `ratings.test.ts`).
 - Patron de mocks para triggers: captura de handler via `vi.hoisted` (ver `comments.test.ts`).
+- **R5 (#330)** — Todo hook con logica condicional en `src/hooks/` necesita `.test.ts` co-localizado. Logica condicional incluye: `useMemo` con derivacion, `useEffect` con branches, `useCallback` con condicionales, manejo de errores async, debouncing, geolocation, deep linking, paginacion, dirty-state, position-diff. Hooks proxy puros estan exentos pero deben llevar `// pure-proxy: no logic, no test required` en la primera linea.
+- **R6 (#330)** — Validators security-adjacent en `src/utils/` (URL/path/MIME/scheme validators) necesitan `.test.ts` cubriendo: happy path + bypass attempts + edge cases. Aplica a `isValidStorageUrl`, etc.
