@@ -28,9 +28,9 @@ echo "Working directory: $WORKDIR"
 
 Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
-## Phase 0a: Regression guards (BLOCKER, all branch types)
+## Phase 0a: Regression guards script (BLOCKER, all branch types)
 
-Run before any other phase — fast (~2s) and catches the majority of regressions auditors find post-merge:
+Fast mechanical check (~2s) — **complement** to Phase 2 audits (which do deep semantic analysis with sub-agents). This phase catches the deterministic regressions early so they don't burn audit cycles. The agent-based audits in Phase 2 remain the primary validation layer.
 
 ```bash
 cd $WORKDIR && npm run guards:check
@@ -49,6 +49,8 @@ For the full report (verbose, helpful when something fails):
 ```bash
 cd $WORKDIR && npm run guards
 ```
+
+**Important:** A green Phase 0a does NOT mean the merge is safe — Phase 2 (sub-agent auditors) still runs and may find issues that grep cannot. Phase 0a is a fast-fail; Phase 2 is the substantive review.
 
 ## Phase 0b: Pre-implementation gate (feat/ branches only)
 

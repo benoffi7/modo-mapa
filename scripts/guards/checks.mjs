@@ -229,9 +229,9 @@ export const guards = [
       },
       {
         id: 'R7-box-onclick-without-a11y',
-        desc: '<Box onClick> sin role/tabIndex/onKeyDown a11y triplet',
-        // Heuristic: any Box with onClick that is not also showing role="button"+tabIndex within next 3 lines.
-        cmd: `for hit in $(grep -rln "Box[^>]*onClick" src/components/ --include="*.tsx"); do awk '/<Box[^>]*onClick/{ flag=1; ctx=""; next } flag && /role="button"/ { flag=0 } flag { ctx=ctx $0 } /<\\/Box>/ && flag { print FILENAME": "$0; flag=0 }' "$hit" 2>/dev/null; done | head -50 || true`,
+        desc: '<Box onClick> sin role/tabIndex/onKeyDown a11y triplet (multi-line aware)',
+        // Multi-line aware Node script — replaces AWK heuristic which failed on JSX spanning lines.
+        cmd: `node scripts/guards/lib/check-box-onclick.mjs || true`,
       },
       {
         id: 'R8-chip-small-sx-exists',

@@ -24,6 +24,7 @@ const baselinePath = resolve(repoRoot, '.guards-baseline.json');
 
 const args = process.argv.slice(2);
 const updateMode = args.includes('--update');
+const forceMode = args.includes('--force');
 const quiet = args.includes('--quiet');
 
 const RED = '\x1b[31m';
@@ -63,8 +64,8 @@ for (const guard of guards) {
 current._total = total;
 
 if (updateMode) {
-  // Block UPDATE that would raise the ceiling.
-  if (existsSync(baselinePath)) {
+  // Block UPDATE that would raise the ceiling, unless --force.
+  if (existsSync(baselinePath) && !forceMode) {
     const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
     const raised = [];
     for (const [gid, rules] of Object.entries(current)) {
@@ -79,10 +80,18 @@ if (updateMode) {
       for (const r of raised) warn(`  ${r}`);
       warn(
         `\nFix the regressions first, then re-run with --update.\n` +
-          `Baseline is meant to ratchet DOWN, not UP.\n`,
+          `Baseline is meant to ratchet DOWN, not UP.\n` +
+          `\nIf the check itself changed (new coverage exposing pre-existing debt,\n` +
+          `not new violations), use --force with explicit commit message justification.\n`,
       );
       process.exit(2);
     }
+  }
+  if (forceMode) {
+    warn(
+      `${YELLOW}--force: bypassing regression check.${RESET} Make sure the commit message\n` +
+        `explains WHY (e.g. "rule R7 detection improved — no new violations introduced").\n`,
+    );
   }
   writeFileSync(baselinePath, JSON.stringify(current, null, 2) + '\n');
   log(`${GREEN}Baseline updated${RESET} — total ${total} violations.`);
