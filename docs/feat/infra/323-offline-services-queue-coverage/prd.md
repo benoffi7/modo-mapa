@@ -50,13 +50,13 @@ Cada item especifica el patron a aplicar. Resumen:
 
 | Superficie | Archivo caller | Accion requerida |
 |-----------|----------------|------------------|
-| `editComment` | `BusinessComments.tsx:163`, `CommentsList.tsx:70`, `useCommentListBase.ts` | wrappear con `withOfflineSupport('comment_edit', ...)` (nuevo type) o, si decidimos no agregar type, gatear con `isOffline` y deshabilitar el modo edit |
-| `deleteComment` | `CommentsList.tsx:52`, `useCommentListBase.ts:48` (via `useUndoDelete`) | wrappear con `withOfflineSupport('comment_delete', ...)` (nuevo type — los undo-delete ya tienen UI de pending, encaja bien) |
+| `editComment` | `BusinessComments.tsx:163`, `CommentsList.tsx:70`, `useCommentListBase.ts` | wrappear con `withOfflineSupport('comment_edit', ...)` (nuevo type). **Gated por presencia de pending `comment_create` del mismo comment** (ver S5): si la UI detecta que el comment todavia no se sincronizo, los botones "Editar"/"Eliminar" quedan disabled con tooltip "Esperando sincronización" |
+| `deleteComment` | `CommentsList.tsx:52`, `useCommentListBase.ts:48` (via `useUndoDelete`) | wrappear con `withOfflineSupport('comment_delete', ...)` (nuevo type). **Gated por presencia de pending `comment_create` del mismo comment** (ver S5). Snackbar diferenciado online vs offline (ver S3 / decision sobre undo) |
 | `upsertCriteriaRating` | `useBusinessRating.ts:147` | wrappear con `'rating_upsert'` reutilizando el type existente con el branch que recibe `criteria` parcial — o agregar `'rating_criteria_upsert'` para distinguir replay (preferido por claridad de payload) |
 | `createList` | `CreateListDialog.tsx:45`, `AddToListDialog.tsx:116` | wrappear con `'list_create'` (ya existe). Generar `listId` client-side via `generateListId()` para optimistic UI |
 | `updateList` | `ListDetailScreen.tsx:77,142` | wrappear con `'list_update'` (ya existe) |
 | `toggleListPublic` | `ListDetailScreen.tsx:88` | wrappear con `'list_toggle_public'` (ya existe) |
-| `deleteList` | `ListDetailScreen.tsx:108` | **gated** (no encolable: cascade delete inseguro). `isOffline` → toast.error + return. Confirmado por #304 |
+| `deleteList` | `ListDetailScreen.tsx:108` | **gated en el caller** (no encolable a pesar de tipo existente). Ver decision detallada abajo. `isOffline` → toast "No podés eliminar listas sin conexión, intentá de nuevo cuando vuelvas online" + return |
 | `addBusinessToList` | `AddToListDialog.tsx:100,118` | wrappear con `'list_item_add'` (ya existe) |
 | `removeBusinessFromList` | `ListDetailScreen.tsx:121`, `AddToListDialog.tsx:95`, `FavoritesList.tsx:100` | wrappear con `'list_item_remove'` (ya existe) |
 | `markAllRecommendationsAsRead` | `ReceivedRecommendations.tsx:55` | gated (writeBatch — no encolable). Si `isOffline`, no llamar; el unread badge se reconcilia al volver |
@@ -65,6 +65,17 @@ Cada item especifica el patron a aplicar. Resumen:
 | `deleteAccount` (callable destructivo) | `DeleteAccountDialog.tsx:56` | gated. Si offline, toast.error con mensaje claro de seguridad ("Necesitas conexion estable para eliminar tu cuenta — esta accion es irreversible") y abortar |
 | `cleanAnonymousData` (callable destructivo) | `SettingsMenu.tsx:62` | gated. Idem deleteAccount |
 | `removeFavorite` directo | `FavoritesList.tsx:100` | wrappear con `'favorite_remove'` (ya existe). Hoy es la unica llamada a removeFavorite que NO esta wrappeada (FavoriteButton si lo esta) |
+
+#### S2.1 — Decision sobre `list_delete` (resolucion bloqueante Sofia Ciclo 1)
+
+`OfflineActionType.list_delete` ya existe en `src/types/offline.ts:24`, su payload `ListDeletePayload` esta definido, y `syncEngine.ts:149-155` tiene el branch correspondiente. **Decision: conservar el tipo + branch + payload, gatear el caller**.
+
+Justificacion:
+- **No borrar el tipo**: borrarlo seria breaking change para queues persistentes pre-#323. Si un usuario instalo la PWA antes de este feature y tiene una accion `list_delete` enqueued en su IndexedDB local, al cargar la nueva version el syncEngine debe poder replayarla. El branch existente lo asegura (defensivo).
+- **No encolar nuevas**: el caller (`ListDetailScreen.tsx:108`, futuros callers como `useDeleteList` si se extrae) **gatea con `isOffline` antes de invocar `withOfflineSupport`**. Si offline → toast con mensaje en voseo ("No podés eliminar listas sin conexión, intentá de nuevo cuando vuelvas online") y NO encolar. Cascade delete sobre listas con N items es inseguro de replayar a ciegas (cambios concurrentes server-side, ownership transfer, etc).
+- **Consistencia con #304**: el guard `docs/reference/guards/304-offline.md` ya documenta esta excepcion como "list_delete (bloqueada offline, pero tipo definido para replay)". Este PRD la formaliza en codigo.
+
+Resultado neto: el branch en syncEngine es defensivo (replay de queues legacy), el contrato del PRD lo declara explicitamente, y nuevos `list_delete` no se encuen.
 
 ### S3 — Cobertura de superficies MEDIUM (silent fail, no data loss critico)
 
@@ -90,6 +101,23 @@ useEffect(() => {
 }, [isOffline, user?.uid]);
 ```
 
+El flush escribe el **state local de la tab** (no merge con server) — explicitado en S5 multi-tab.
+
+#### S3.1 — `comment_delete` / `comment_edit` offline + undo (resolucion importante Sofia Ciclo 1)
+
+El caller actual de delete (`useCommentListBase.ts:48` via `useUndoDelete`) hace optimistic remove + `setTimeout(4s)` + opcion "Deshacer" en snackbar. Al integrar `withOfflineSupport`, **el undo offline NO aplica**. Decision:
+
+- **Online** (comportamiento actual, sin cambios): `withOfflineSupport` ejecuta directo (no encola — ver `offlineInterceptor.ts:22-24`). Snackbar mantiene "Deshacer" + setTimeout 4s. Si el usuario presiona "Deshacer", el delete nunca llega a ejecutarse (ya que la accion real corre dentro del `setTimeout`, no antes). Sin cambios sobre lo existente.
+- **Offline**: la accion se encola. Snackbar muestra **"Eliminado offline (se sincronizara cuando vuelvas online)"** **sin boton "Deshacer"**. Una vez encolado, el undo no es practico (requeriria modificar la firma de `withOfflineSupport` para devolver `actionId` y exponer un `offlineQueue.remove(actionId)` desde la UI — scope creep).
+- **Firma de `withOfflineSupport` SIN cambios**: el wrapper sigue como esta (no devuelve `actionId`, no se modifica). El caller diferencia los dos paths chequeando `isOffline` y eligiendo el snackbar correcto antes de invocar el wrapper.
+
+Mismo patron para `comment_edit`:
+
+- **Online**: comportamiento actual, edit instantaneo + toast.
+- **Offline**: optimistic UI con badge "Sincronizando..." en la entrada de comment editada. Una vez encolada, no hay undo posible — el edit se aplica al reconectar. Si el usuario quiere revertir, debe editar de nuevo (offline u online).
+
+Esto **NO afecta la firma publica de `withOfflineSupport`** ni `offlineQueue`. La logica de "elegir snackbar" vive en el caller (componente o sub-hook).
+
 ### S4 — Cobertura de superficies LOW
 
 | Superficie | Accion |
@@ -110,19 +138,77 @@ Total: 3 types nuevos. Total final del enum: 26 (23 + 3).
 
 **Replay order y conflictos en queue de un mismo recurso**:
 
-- La queue procesa en orden de `createdAt` (ya garantizado por `getPending` con sort). Si el usuario edita y luego elimina un comment offline, ambas se enquen — al sincronizar, el edit corre primero (succede), luego el delete corre (succede); resultado consistente con la intencion del usuario.
+- La queue procesa en orden de `createdAt` (ya garantizado por `getPending` con sort). Si el usuario edita y luego elimina un comment **ya sincronizado** offline, ambas se enquen — al sincronizar, el edit corre primero (succede), luego el delete corre (succede); resultado consistente con la intencion del usuario.
 - Si el usuario elimina y luego intenta editar el mismo comment offline (caso raro: la UI debe deshabilitar el edit despues de un delete pendiente, pero por defensa): el edit fallara en el servidor con "doc no existe" tras el delete; el syncEngine reintenta hasta `OFFLINE_MAX_RETRIES` y luego marca `failed`. Aceptable. La UI debe asegurarse de que la lista de comentarios no muestre comentarios marcados como pending-delete (ver requisito en S2).
-- Multi-tab: `useUserSettings` flush escribe la version mas reciente del state local cuando se reconecta. Si dos tabs hacen cambios offline distintos al mismo userSettings doc, el orden de flush sera por tab — la ultima en sincronizar gana. Aceptable: settings son eventually consistent y la UI se actualiza con un re-fetch al reconectar.
+- **`comment_create + comment_edit` / `comment_delete` del mismo comment offline** (resolucion bloqueante Sofia Ciclo 1): **out-of-scope #323**. Solo permitir `edit`/`delete` de comments **ya sincronizados**. La UI **deshabilita** los botones "Editar" y "Eliminar" en cualquier comment que tenga un `comment_create` pendiente en la queue. Implementacion sugerida:
+  - `useOfflineQueue` (o un hook nuevo `usePendingActions(commentId)`) expone `hasPendingCreate(localCommentId)` consultando la queue por `type === 'comment_create'` con el local id correspondiente.
+  - Si retorna `true`, los botones de edit/delete quedan `disabled` con `<Tooltip title="Esperando sincronización">`.
+  - Esto evita el problema de "comment recien creado offline no tiene `commentId` server-side" — directamente no se permite editarlo hasta que sincronice.
+  - Documentado explicitamente en Out of Scope: "Edit/delete de un comment que aun no se sincronizo. Tracked como follow-up si surge demanda real (probable: tunear UX para que el edit pendiente se aplique al ack del create)."
+- **`rating_upsert + rating_criteria_upsert` del mismo rating**: el orden por `createdAt` garantiza global-primero. El merge semantics de `upsertCriteriaRating` debe respetar el global (`upsertCriteriaRating(userId, businessId, { [criterionId]: value })` hace merge no destructivo del campo `criteria`). Confirmar con test explicito (caller online: write global + write criteria; caller offline: queue las dos; replay: queda igual).
+- **Multi-device del mismo usuario**: queue de mobile con edit, queue de desktop con delete. Reconectar primero desktop = delete pasa; mobile reconecta luego = edit falla con doc-no-existe → `OFFLINE_MAX_RETRIES` → `failed` → toast.error informativo. Aceptable; coordinacion cross-device es out-of-scope.
+- **Multi-tab `useUserSettings`**: el flush escribe el **state local de la tab** (no merge con server). Si dos tabs hacen cambios offline distintos al mismo userSettings doc, el orden de flush sera por tab — la ultima en sincronizar gana. Aceptable: settings son eventually consistent y la UI se actualiza con un re-fetch al reconectar. **Nota explicita** (resolucion observacion Sofia): el flush no hace merge con server; escribe el snapshot local completo al volver online.
+
+**Re-moderacion en `comment_edit` replay** (resolucion importante Sofia Ciclo 1): el replay de `comment_edit` produce el **mismo resultado que un edit online**. La re-moderacion es responsabilidad del trigger `onCommentUpdated` (`functions/src/triggers/comments.ts:113-142`); este PRD no la modifica. Si el comment estaba `flagged: true` y el edit lo limpia, el flag se levanta — ese comportamiento existe online y no es regresion de #323. Cambiar la moderacion (ej: sticky moderation que retiene flags tras edit) es out-of-scope; tracked como follow-up si producto decide cambiarlo.
 
 NO se agrega type para `markAllRecommendationsAsRead`, `inviteEditor`, `removeEditor`, `deleteAccount`, `cleanAnonymousData`, `sendFeedback`, `uploadMenuPhoto`, `saveAllSpecials`, `saveAllAchievements`, `updateUserSettings`, `updateUserDisplayName`, `updateUserAvatar` — son **gated**, no encolables.
 
-### S6 — Tests de regresion
+### S6 — Tests de regresion y cobertura de callers
 
 Aprovechar que `docs/reference/guards/304-offline.md` ya tiene los `grep` patterns. Los specs deberian:
 
 1. Asegurar que `pre-staging-check.sh` corre los 3 greps del guard (mutaciones, callables, getCountFromServer) y falla si hay nuevos hits no whitelisted.
-2. Agregar tests unitarios para los 3 nuevos branches en `syncEngine.executeAction` (`comment_edit`, `comment_delete`, `rating_criteria_upsert`).
-3. Tests de componentes para verificar que los botones HIGH (lists CRUD, callables) se deshabilitan correctamente cuando `isOffline=true`.
+2. **Agregar greps de callers** que detecten violaciones del contrato S1 desde el lado de quien invoca (ver S6.1).
+3. Agregar tests unitarios para los 3 nuevos branches en `syncEngine.executeAction` (`comment_edit`, `comment_delete`, `rating_criteria_upsert`).
+4. Tests de componentes para verificar que los botones HIGH (lists CRUD, callables) se deshabilitan correctamente cuando `isOffline=true`.
+
+#### S6.1 — Cobertura de callers en `pre-staging-check.sh` (resolucion bloqueante Sofia Ciclo 1)
+
+El guard #304 corre `grep "addDoc|setDoc|updateDoc" src/services/`. Eso cubre **definiciones** de servicios, no **invocaciones** desde componentes. El contrato S1 se viola tipicamente desde `src/components/` o `src/hooks/` cuando alguien importa `editComment(...)` directo sin envolver. Para cerrar el loop, **agregar a `scripts/pre-staging-check.sh`** un nuevo grep dedicado a callers.
+
+**Path del script**: `scripts/pre-staging-check.sh` (existente; este PRD lo extiende).
+
+**Lista de mutadores user-facing** que el grep debe vigilar (callers en `src/components/` y `src/hooks/`):
+
+```
+addComment, editComment, deleteComment,
+toggleCommentLike,
+toggleFavorite, removeFavorite,
+upsertRating, deleteRating, upsertCriteriaRating,
+addCheckin, deleteCheckin,
+upsertPriceLevel, deletePriceLevel,
+addBusinessTag, removeBusinessTag,
+followUser, unfollowUser,
+createList, updateList, toggleListPublic, deleteList,
+addBusinessToList, removeBusinessFromList,
+sendRecommendation, markRecommendationAsRead, markAllRecommendationsAsRead,
+inviteEditor, removeEditor,
+deleteAccount, cleanAnonymousData,
+sendFeedback, markFeedbackViewed,
+updateUserSettings, updateUserDisplayName, updateUserAvatar,
+uploadMenuPhoto, reportMenuPhoto,
+saveAllSpecials, saveAllAchievements
+```
+
+**Heuristica**: para cada nombre de la lista, buscar invocaciones en `src/components/` y `src/hooks/`. Para cada hit, validar que cumpla **al menos uno** de:
+
+- Esta envuelto en una llamada a `withOfflineSupport(...)` cercana en el mismo archivo (mismo bloque de scope, heuristica `grep -B5 -A0` con `withOfflineSupport`).
+- El componente/hook tiene un `disabled={... isOffline ...}` o un guard `if (isOffline) ... return` cercano al callsite.
+- El archivo esta en la whitelist documentada.
+
+**Whitelist documentada** (no son violaciones — el script las ignora):
+
+- `src/services/**` (definiciones, no callers)
+- `src/services/admin/**` (admin con red garantizada — ver S1 excepciones)
+- `src/services/syncEngine.ts` (replay de la queue, por diseño no usa wrapper)
+- `src/services/offlineInterceptor.ts` (la wrapper misma)
+- `src/**/__tests__/**`, `src/**/*.test.ts`, `src/**/*.test.tsx` (tests)
+
+**Definicion de "violacion"**: un hit en componente/hook que no cumple ninguna de las condiciones de cumplimiento ni esta en whitelist. El script imprime el archivo + linea y exit code 1 → bloquea el push.
+
+**Falsos positivos esperados**: bajo. La heuristica del bloque de scope cercano (`-B5`) es laxa pero suficiente para uso real. Casos limite (ej: `withOfflineSupport` en una funcion declarada en un archivo distinto y exportada) se whitelistean caso por caso con un comentario `// pre-staging-check:allow` en la linea del callsite.
+
+**Test de regresion del propio script**: agregar un test en CI que crea un branch artificial con un nuevo `await editComment(...)` directo en un componente nuevo, corre `pre-staging-check.sh`, y verifica que el script falla con exit code 1 mencionando el archivo. Esto asegura que el guard no se "rompe en silencio" si alguien rompe la heuristica.
 
 ---
 
@@ -133,20 +219,25 @@ Aprovechar que `docs/reference/guards/304-offline.md` ya tiene los `grep` patter
 | Definir contract en `docs/reference/patterns.md` (offline section) | Alta | S |
 | Agregar 3 nuevos `OfflineActionType` + payloads en `types/offline.ts` | Alta | S |
 | Agregar 3 nuevos branches en `syncEngine.executeAction` | Alta | S |
-| Wrappear edits/deletes de comments (3 callsites) | Alta | M |
+| Wrappear edits/deletes de comments (3 callsites) + **gating por pending `comment_create`** (S5 / B3) | Alta | M |
+| **Hook `usePendingActions(commentId)` o equivalente** para detectar pending creates | Alta | S |
 | Wrappear lists CRUD (5 callsites en 3 archivos) | Alta | M |
 | Wrappear `upsertCriteriaRating` (1 callsite) | Alta | S |
 | Wrappear `removeFavorite` directo en FavoritesList (1 callsite) | Alta | S |
 | Gatear callables HIGH (5 callsites: invite/remove editor, delete account, cleanAnon, deleteList) | Alta | M |
+| **Snackbar diferenciado online/offline para comment delete/edit** (S3.1 / I3) | Alta | S |
 | Gatear writes MEDIUM (sendFeedback, settings flush, displayName/avatar, uploadMenuPhoto, markAllRecsRead, markFeedbackViewed) | Media | M |
 | Gatear admin LOW (saveAllSpecials, saveAllAchievements) | Baja | S |
 | Subir OfflineIndicator a App.tsx (root) para cubrir todos los viewports | Baja | S |
-| Tests de regresion para syncEngine (3 nuevos branches) | Alta | S |
+| Tests de regresion para syncEngine (3 nuevos branches + branch defensivo `list_delete`) | Alta | S |
 | Tests de componentes para gating offline (3-5 lugares clave) | Alta | M |
-| Actualizar `pre-staging-check.sh` para correr greps del guard de #304 | Alta | S |
-| Actualizar `docs/reference/guards/304-offline.md` con los nuevos types y archivos cubiertos | Media | S |
+| **Render test SC2.3** — `OfflineIndicator` visible en `ListDetailScreen` (route ajena a TabShell) | Media | S |
+| **Test especifico SC2.2** — settings flush al reconectar | Media | S |
+| Actualizar `pre-staging-check.sh` con greps existentes #304 **+ greps de callers nuevos S6.1** | Alta | M |
+| **Test de regresion del propio script** `pre-staging-check.sh` (SC2.4) | Alta | S |
+| Actualizar `docs/reference/guards/304-offline.md` con los nuevos types, archivos cubiertos y decision sobre `list_delete` | Media | S |
 
-**Esfuerzo total estimado:** L (15-20 horas, no XL porque los servicios mismos NO se tocan — solo callers + types + tests).
+**Esfuerzo total estimado:** L (18-24 horas — sigue siendo L, no XL: los servicios mismos NO se tocan; el incremento sobre la estimacion previa cubre los greps de callers, hook de pending-actions y tests granulares).
 
 ---
 
@@ -157,6 +248,11 @@ Aprovechar que `docs/reference/guards/304-offline.md` ya tiene los `grep` patter
 - Optimistic UI para writes recien encolados en lists (mostrar la lista creada en `useUserLists` antes de que sincronice). Esto ya existe parcialmente via #304 con `generateListId()`, pero ampliarlo a updates/toggles esta fuera de este PRD.
 - Cambios al UI del `OfflineIndicator` (icono, copy). Solo se evalua donde se monta.
 - Reemplazar el `<APIProvider>` guard — ya esta correcto. No tocar.
+- **Edit/delete de un comment que aun no se sincronizo offline** (`comment_create` pendiente). La UI deshabilita esos botones hasta que el create sincronice. Tracked como follow-up si surge demanda real (probable: tunear UX para que el edit pendiente se aplique al ack del create).
+- **Undo de un `comment_delete` o `comment_edit` ya encolado offline**. El undo solo funciona online (ya que ahi la accion real corre dentro del setTimeout). Tracked como follow-up si surge demanda real (requeriria modificar la firma de `withOfflineSupport` para exponer `actionId`).
+- **Sticky moderation** (que el flag `flagged: true` se preserve tras un `comment_edit` que limpia el texto). El comportamiento online actual lo levanta; este PRD no lo modifica. Decision de producto si se prioriza.
+- **Coordinacion cross-device** del mismo usuario (queues distintas en mobile y desktop con conflictos). El conflict se resuelve via `OFFLINE_MAX_RETRIES` + toast.error — no hay merge logic.
+- **`EVT_OFFLINE_GATE_BLOCKED` analytics event**. Decision (Sofia Ciclo 1): NO agregar evento nuevo. Sin valor analitico claro vs el costo de mantenerlo.
 
 ---
 
@@ -172,8 +268,8 @@ Politica de `docs/reference/tests.md`: cobertura >= 80% del codigo nuevo.
 | `src/types/offline.ts` | Types | Si hay validacion runtime (no la hay hoy), testear discriminated union |
 | `src/hooks/useBusinessRating.ts` | Hook | Que `handleCriterionRate` enquee cuando offline (test ya existe — extender) |
 | `src/hooks/useCommentListBase.ts` | Hook | Que delete/edit pasen por `withOfflineSupport` |
-| `src/components/business/BusinessComments.tsx` | Component | Que el boton "Editar" de un comentario propio se deshabilite o funcione offline |
-| `src/components/profile/CommentsList.tsx` | Component | Idem para list view |
+| `src/components/business/BusinessComments.tsx` | Component | Que el boton "Editar" de un comentario propio se deshabilite o funcione offline. **Test adicional**: si el comment tiene `comment_create` pending en queue, los botones Edit/Delete quedan disabled con tooltip "Esperando sincronización" |
+| `src/components/profile/CommentsList.tsx` | Component | Idem para list view. Test adicional: snackbar diferenciado online (con "Deshacer") vs offline (sin "Deshacer") |
 | `src/components/lists/ListDetailScreen.tsx` | Component | Que cada CTA de la pantalla (rename, toggle public, delete, remove item) respete offline |
 | `src/components/business/AddToListDialog.tsx` | Component | Que add/remove/create se enquen offline |
 | `src/components/lists/EditorsDialog.tsx` + `InviteEditorDialog.tsx` | Component | Botones disabled offline + tooltip/toast |
@@ -181,8 +277,10 @@ Politica de `docs/reference/tests.md`: cobertura >= 80% del codigo nuevo.
 | `src/components/profile/SettingsMenu.tsx` | Component | "Empezar de cero" gated offline |
 | `src/components/profile/FeedbackForm.tsx` | Component | Submit disabled offline |
 | `src/components/admin/SpecialsPanel.tsx` + `AchievementsPanel.tsx` | Component | Save disabled offline |
-| `src/hooks/useUserSettings.ts` | Hook | Flush al volver online — los toggles offline se aplican cuando vuelve la red |
-| `pre-staging-check.sh` | Script | Que los greps del guard #304 corren y bloquean nuevos hits |
+| `src/hooks/useUserSettings.ts` | Hook | Flush al volver online — los toggles offline se aplican cuando vuelve la red. **Test especifico SC2.2**: pending settings escritos offline se aplican via flush effect (no via replay de toggles individuales) |
+| `src/services/syncEngine.ts` (defensivo) | Service | Que `list_delete` branch sigue replayando correctamente queues pre-#323 (test del comportamiento defensivo S2.1) |
+| `scripts/pre-staging-check.sh` | Script | Greps de servicios (existentes) + **greps de callers nuevos S6.1** corren y bloquean nuevos hits. Test de regresion del propio script: branch artificial con `await editComment(...)` directo en componente nuevo → exit code 1 |
+| `src/components/lists/ListDetailScreen.tsx` (extra para SC2.3) | Component | Render test que confirma `OfflineIndicator` montado en viewport cuando `isOffline=true` (cubre routes ajenas a TabShell) |
 
 ### Criterios de testing
 
@@ -232,15 +330,19 @@ Issues abiertos consultados (`gh issue list`):
 
 | Issue | Relacion | Accion |
 |-------|----------|--------|
-| #304 (cerrado) | Define los `list_*` types y el guard que este PRD ejecuta | Reusar el guard tal cual; agregar nuevos types como continuacion natural |
+| #304 (cerrado) | Define los `list_*` types y el guard que este PRD ejecuta | Reusar el guard tal cual; agregar nuevos types como continuacion natural; mantener `list_delete` como branch defensivo (ver S2.1) |
 | #294 (cerrado) | logger.error nunca dentro de `if (DEV)` | Confirmar que ningun handler nuevo lo viola |
+| #322 (abierto) | security: firestore rules type guards + bootstrap admin path | Cross-dep ligero: este PRD no cambia rules, pero los nuevos types (`comment_edit`, `comment_delete`, `rating_criteria_upsert`) replayan via servicios que pasan por las rules existentes. Si #322 endurece guards, los nuevos types deben seguir pasando. No bloquea, pero coordinar orden de merge si ambos aterrizan en la misma sprint |
+| #324 (abierto) | performance: `allBusinesses.find()` x13 | No relacionado a offline en si, pero tocan archivos overlap (`ListDetailScreen.tsx`, hooks de comments). Si ambos avanzan en paralelo, planear orden de merge para evitar conflictos de merge |
 
 ### Mitigacion incorporada
 
 Este PRD **es en si mismo** la mitigacion: cierra una vulnerabilidad de UX (data loss silencioso) que el guard de #304 detecta pero que no estaba enforced en CI hasta ahora. Items concretos de mitigacion:
 
 - Activar `pre-staging-check.sh` con los 3 greps del guard de #304 (hoy esta documentado pero no automatizado en CI). Mitiga regresiones futuras.
+- **Extender `pre-staging-check.sh` con greps de callers** (S6.1) — cubre el angulo que #304 dejo abierto: violaciones del contrato desde `src/components/` y `src/hooks/`. Mitiga el riesgo de "agregar un nuevo write user-facing sin wrapper y que pase CI silenciosamente".
 - Agregar entrada explicita al `docs/reference/patterns.md` con el contract de S1 — hoy esta implicito en codigo.
+- Mantener `list_delete` branch defensivo en `syncEngine` (S2.1) — mitiga riesgo de replay roto en queues persistentes pre-#323.
 
 ---
 
@@ -262,7 +364,7 @@ Los hooks/componentes a modificar ya tienen patrones de cancelacion y try/catch 
 ### Checklist de observabilidad
 
 - [ ] Los 3 nuevos types deben emitir `EVT_OFFLINE_ACTION_QUEUED` con el `action_type` correcto (lo hace `withOfflineSupport` automaticamente — confirmar)
-- [ ] Agregar `EVT_OFFLINE_GATE_BLOCKED` o reusar uno existente para trackear cuando un boton se deshabilita por offline (instrumenta cuanto la gente intenta usar la app sin red)
+- [ ] **NO se agrega `EVT_OFFLINE_GATE_BLOCKED`** (decision Sofia Ciclo 1): sin valor analitico claro vs el costo de mantenerlo. Si en el futuro producto necesita medir intentos offline, evaluar como follow-up
 - [ ] No se agregan services con queries Firestore nuevas — no aplica `measureAsync`
 
 ### Checklist offline
@@ -361,69 +463,88 @@ El feature **mejora** el % monolitico al consolidar el patron offline en un cont
 
 ### Checklist de copy
 
-- [ ] Mensajes en espanol con tildes correctas: "Necesitas conexion para [X]", "Sin conexion — [accion] requiere internet"
-- [ ] Voseo: "Calificá", "Editá", "Necesitás conexion" — mantener tono existente
-- [ ] Terminologia: "comercios" no "negocios", "reseñas" no "reviews"
-- [ ] Centralizar mensajes nuevos en `src/constants/messages/offline.ts` o reusar `MSG_OFFLINE` existente
-- [ ] Mensajes accionables: "Volve cuando tengas conexion" en vez de "Error"
+- [ ] Mensajes en espanol con tildes correctas y **voseo coherente** en todo el body del PRD y en strings finales: "Necesitás conexión para [X]", "No podés eliminar listas sin conexión, intentá de nuevo cuando vuelvas online", "Volvé cuando tengas conexión".
+- [ ] Voseo consistente: "Calificá", "Editá", "Necesitás", "Volvé", "Intentá", "Esperá" — NO usar "Necesitas", "Vuelve", "Intenta" (resolucion observacion Sofia Ciclo 1).
+- [ ] Terminologia: "comercios" no "negocios", "reseñas" no "reviews".
+- [ ] Centralizar mensajes nuevos en `src/constants/messages/offline.ts` o reusar `MSG_OFFLINE` existente.
+- [ ] Mensajes accionables: "Volvé cuando tengas conexión" en vez de "Error".
 
 ---
 
 ## Success Criteria
 
-1. **Cero writes user-facing fuera del contract en CI**: el `pre-staging-check.sh` corre los 3 `grep` patterns del guard de #304 y falla el push si aparece un hit nuevo no whitelisted. Verificable: ejecutar el script post-merge sobre el HEAD y confirmar 0 violaciones; ejecutar sobre un branch artificial con un write nuevo sin wrap y confirmar que falla.
-2. **Cobertura concreta verificable**: las 7 superficies HIGH (S2) y 6 MEDIUM (S3) tienen al menos 1 test que verifica el comportamiento offline (gated o encolado). Verificable: cobertura de los 3 nuevos branches de syncEngine >= 80%; tests de componentes de los 13 callers ejecutan en CI.
-3. **3 nuevos `OfflineActionType` operativos**: `comment_edit`, `comment_delete`, `rating_criteria_upsert` definidos en `types/offline.ts`, mapeados en `syncEngine.executeAction`, con tests de replay (online path) y enqueue (offline path).
-4. **No regresion en operaciones existentes**: `useCheckIn`, `useFollow`, `useBusinessRating.handleRate`, `FavoriteButton`, `RecommendDialog`, `BusinessComments.handleSubmit`, `useCommentListBase.handleSubmitReply`, `useCommentListBase.handleToggleLike`, `BusinessQuestions`, `ReceivedRecommendations.markAsRead`, `BusinessTags`, `BusinessPriceLevel` siguen funcionando offline igual que antes (re-correr tests existentes; no se modifican).
-5. **Indicador offline visible globalmente**: el `OfflineIndicator` aparece en cualquier ruta/dialog donde el usuario pueda intentar un write gated (verificable manualmente en BusinessDetailScreen, ListDetailScreen, MenuPhotoViewer, DeleteAccountDialog).
-6. **Documentacion actualizada**: `patterns.md` (seccion Offline), `features.md` (cobertura offline), `guards/304-offline.md` (lista de archivos cubiertos y nuevos types) reflejan el estado post-merge.
+1. **SC1 — Cero writes user-facing fuera del contract en CI** (cubre S1 + S6): `pre-staging-check.sh` corre los 3 `grep` patterns del guard de #304 **mas** los nuevos greps de callers (S6.1) y falla el push si aparece un hit nuevo no whitelisted. Verificable:
+   - Ejecutar el script post-merge sobre el HEAD y confirmar 0 violaciones.
+   - **Branch artificial con un write nuevo en componente sin wrap falla `pre-staging-check.sh`** con exit code 1 mencionando el archivo y la linea (test de regresion del propio script).
+
+2. **SC2.1 — HIGH (S2) cubierto por tests** (7 callers): cada uno de los 7 callsites HIGH tiene al menos 1 test que verifica:
+   - Online → ejecuta directo (no encola).
+   - Offline → encola con `OfflineActionType` correcto **o** UI gated con `disabled` + toast.
+   - Para `editComment`/`deleteComment`: verificar gated por presencia de pending `comment_create` del mismo comment (boton disabled + tooltip).
+
+3. **SC2.2 — MEDIUM (S3) cubierto por tests** (6 callers): cada uno de los 6 callsites MEDIUM tiene al menos 1 test del comportamiento offline (gated o flush-on-reconnect). **Test especifico requerido**: "settings flush al reconectar" — verifica que pending settings escritos offline se aplican al volver online via flush effect (no via replay de toggles individuales).
+
+4. **SC2.3 — LOW (S4) verificable**: `OfflineIndicator` visible en routes ajenas a `TabShell`. Verificable con render test en `ListDetailScreen` (que no envuelve a TabShell directamente) que confirma el chip CloudOff montado en el viewport cuando `isOffline=true`. Tambien verificable manualmente en `BusinessDetailScreen`, `MenuPhotoViewer`, `DeleteAccountDialog`.
+
+5. **SC2.4 — `pre-staging-check.sh` actualizado y verificable**: el script tiene los nuevos greps de callers (S6.1), whitelist documentada, y un test de regresion que crea un branch artificial con `await editComment(...)` directo en componente nuevo y verifica que el script falla con exit code 1.
+
+6. **SC3 — 3 nuevos `OfflineActionType` operativos**: `comment_edit`, `comment_delete`, `rating_criteria_upsert` definidos en `types/offline.ts`, mapeados en `syncEngine.executeAction`, con tests de replay (online path) y enqueue (offline path), cobertura >= 80% sobre los 3 branches nuevos.
+
+7. **SC4 — No regresion en operaciones existentes**: `useCheckIn`, `useFollow`, `useBusinessRating.handleRate`, `FavoriteButton`, `RecommendDialog`, `BusinessComments.handleSubmit`, `useCommentListBase.handleSubmitReply`, `useCommentListBase.handleToggleLike`, `BusinessQuestions`, `ReceivedRecommendations.markAsRead`, `BusinessTags`, `BusinessPriceLevel` siguen funcionando offline igual que antes (re-correr tests existentes; no se modifican). `list_delete` de queues persistentes pre-#323 sigue replayando correctamente (test del branch defensivo en syncEngine).
+
+8. **SC5 — Documentacion actualizada**: `patterns.md` (seccion Offline + contract S1), `features.md` (cobertura offline), `guards/304-offline.md` (lista de archivos cubiertos, nuevos types, decision sobre `list_delete`) reflejan el estado post-merge.
 
 ---
 
 ## Validacion Funcional
 
 **Auditor**: Sofia (analisis funcional)
-**Fecha**: 2026-04-25
-**Ciclo**: 1 de 2
-**Veredicto**: NO VALIDADO
+**Fecha Ciclo 1**: 2026-04-25 — NO VALIDADO (3 BLOQUEANTE + 3 IMPORTANTE + 4 OBSERVACION)
+**Fecha Ciclo 2**: 2026-04-25 — **VALIDADO CON OBSERVACIONES**
+**Estado actual**: Listo para `specs-plan-writer`. Hay una observacion menor abierta (voseo inconsistente dentro del propio PRD) que NO bloquea el avance — puede limpiarse en una pasada posterior de copy/cami.
 
-### Bloqueantes abiertos
+### Veredicto Sofia — Ciclo 2
 
-1. **`list_delete` contradice infra existente** (S2 + S5) — el PRD declara `deleteList` como gated (no encolable), pero `OfflineActionType` ya incluye `'list_delete'` (`src/types/offline.ts:24`), `OfflineActionPayload` ya tiene `ListDeletePayload` (linea 144), `syncEngine.executeAction` ya tiene branch `case 'list_delete'` (`src/services/syncEngine.ts:149-155`), y el guard #304 lo declara: "list_delete (bloqueada offline, pero tipo definido para replay)". Decidir: (a) borrar tipo + branch + payload (breaking change para queues persistentes pre-#323); (b) conservar todo y solo gatear el caller (consistente con guard #304); (c) reescribir como "deleteList se enquea pero requiere confirmacion al volver online". Sofia recomienda (b).
-2. **Grep #304 no detecta violaciones del contrato reframed** — el PRD reframea: "los services siguen sin saber de offline; los **callers** son los que cumplen el contrato". Pero el guard #304 corre `grep "addDoc|setDoc|updateDoc" src/services/`. Las violaciones que #323 viene a prevenir (e.g. `editComment(...)` directo en un nuevo componente sin wrapper) viven en `src/components/` y `src/hooks/`, fuera del scope del grep actual. Success Criteria #1 promete "branch artificial con write nuevo sin wrap falla pre-staging" — hoy NO falla si esta en componente. Definir greps adicionales en `pre-staging-check.sh` que cubran callers (no las definiciones de servicios, sino las invocaciones).
-3. **Replay ordering cross-tipo del mismo recurso** (S5) — el PRD trata "edit luego delete" del mismo comment, pero deja sin tratar:
-   - `comment_create + comment_edit` offline del mismo comment: el comment recien creado offline no tiene `commentId` server-side. `comment_edit` necesita un id real para replayar. ¿De donde sale? Resolucion al replay (el ack del create incluye id local→server)? UI deshabilita edit hasta que sincronice? Sin spec, el implementador inventa.
-   - `rating_upsert + rating_criteria_upsert` del mismo rating: el orden por createdAt garantiza global-primero, pero el merge semantics de `upsertCriteriaRating` debe respetar el global. Confirmar con test explicito.
-   - Multi-device del mismo usuario: queue de mobile con edit, queue de desktop con delete. Reconectar primero desktop = delete pasa; mobile = edit falla con doc-no-existe. ¿Aceptable (toast.error) o requiere coordinacion (out-of-scope)?
+**Estado**: VALIDADO CON OBSERVACIONES
 
-### Importantes abiertos
+#### Cerrado en esta iteracion
 
-1. **Re-moderacion en `comment_edit` replay** (open item del propio PRD) — `onCommentUpdated` (`functions/src/triggers/comments.ts:113-142`) re-moderiza si `afterData.text !== beforeData.text`. Si el comment estaba `flagged: true` y el edit lo deja con texto limpio, el trigger pone `flagged: false`, reabriendo un comment moderado. Comportamiento existe online. Sofia recomienda: declarar "el replay de `comment_edit` produce el mismo resultado que un edit online — la re-moderacion es responsabilidad del trigger; este PRD no la modifica" + cerrar open item, o escalar como follow-up (out-of-scope #323).
-2. **Scope size** — agregar criteria testeables propios para: (a) settings flush al reconectar (S3) — diferente de "boton disabled"; (b) OfflineIndicator placement subido al root (S4) — visibilidad global; (c) `pre-staging-check.sh` actualizado con greps de callers (BLQ #2). Sofia no exige split del PRD; exige scope granular en criterios.
-3. **`comment_delete` offline + `useUndoDelete`** — el caller actual (`src/hooks/useCommentListBase.ts:52`) hace optimistic remove + setTimeout(4s) + opcion "Deshacer" en snackbar. Si reemplazamos con `withOfflineSupport('comment_delete', ...)`:
-   - Online: el wrapper ejecuta directo (no encola, ver `offlineInterceptor.ts:22-24`). Timer de undo desaparece.
-   - Offline: encola. Undo en snackbar no cancela la entrada en queue → al reconectar, delete se ejecuta igual.
-   Decision: ¿el undo cancela tambien la queue (`offlineQueue.remove(actionId)`, requiere que `withOfflineSupport` devuelva el `actionId`)? ¿o offline el undo no aplica (snackbar sin "Deshacer")? Idem `comment_edit`: optimistic UI vs conservador. Decision afecta firma de `withOfflineSupport` (riesgo de scope creep si no se decide ahora).
+- **BLOQUEANTE #1** "`list_delete` contradice infra existente" → resuelto en PRD (S2.1). La sub-seccion explicita la decision (conservar tipo + branch + payload, gatear el caller), justifica por que no se borra el branch (queues persistentes pre-#323), por que no se encolan nuevos (cascade unsafe en replay) y como queda alineado con guard #304. Tabla S2 fila `deleteList` actualizada con el toast en voseo. Sin ambiguedades para el implementador.
+- **BLOQUEANTE #2** "Grep #304 no cubre callers" → resuelto en PRD (S6.1). Path del script (`scripts/pre-staging-check.sh`) confirmado existente. Lista de mutadores cerrada (~30 nombres), heuristica de cumplimiento (3 condiciones), whitelist documentada (servicios, admin, syncEngine, interceptor, tests), definicion clara de "violacion" (exit code 1 con archivo + linea), y test de regresion del propio script (SC2.4). El implementador no necesita inventar criterios.
+- **BLOQUEANTE #3** "Replay ordering: `comment_create + comment_edit` offline" → resuelto en PRD (S5 sub-bullet "comment_create + comment_edit / comment_delete del mismo comment offline" + Out of Scope). UI deshabilita botones Edit/Delete con tooltip "Esperando sincronización" mientras hay un `comment_create` pendiente; hook sugerido `usePendingActions(commentId)` agregado a Scope. Tabla S2 fila comments refleja la dependencia. Cero ambiguedad sobre el comportamiento.
+- **IMPORTANTE #1** "Re-moderacion en `comment_edit` replay" → resuelto en PRD (S5 parrafo final + Out of Scope). El replay produce el mismo resultado que un edit online; sticky moderation queda como follow-up de producto, no de #323.
+- **IMPORTANTE #2** "Scope size — criterios granulares" → resuelto en PRD. Success Criteria refactorizado en SC1, SC2.1, SC2.2, SC2.3, SC2.4, SC3, SC4, SC5. Cada uno tiene un metodo de verificacion concreto (test, render test, branch artificial CI, re-correr suite existente). Si el feature termina mergeandose en varias entregas, cada entrega tiene un criterio propio.
+- **IMPORTANTE #3** "`comment_delete` offline + `useUndoDelete` (firma de `withOfflineSupport`)" → resuelto en PRD (S3.1). La firma del wrapper no cambia; el caller diferencia online (snackbar con "Deshacer") vs offline (snackbar sin "Deshacer", copy "Eliminado offline (se sincronizara cuando vuelvas online)"). Mismo patron para `comment_edit` (badge "Sincronizando..."). Undo de acciones encoladas → follow-up.
+- **IMPORTANTE #4** "`EVT_OFFLINE_GATE_BLOCKED` analytics" → justificado: NO agregar. Decision tomada por producto, anclada en checklist de observabilidad y en Out of Scope. Si en el futuro hay necesidad analitica, se evalua aparte.
+- **OBSERVACION #1** "voseo coherente en el body" → parcialmente cerrado: checklist de copy ahora prescribe voseo y lista las formas correctas. Sin embargo el cuerpo del PRD aun tiene dos strings en tuteo (ver hallazgo nuevo abajo).
+- **OBSERVACION #2** "S5 multi-tab settings flush" → cerrado: nota explicita "el flush escribe el state local de la tab, no merge con server".
+- **OBSERVACION #3** "cross-deps con #322 y #324" → cerrado: filas agregadas en tabla "Issues relacionados" con accion sugerida (coordinar orden de merge).
+- **OBSERVACION #4** "archivos cerca de 400 LOC" → cerrado: nota mantenida en checklist de modularizacion; con la decision I3 (firma del wrapper sin cambios) el riesgo de superar 400 LOC baja.
 
-### Observaciones
+#### Hallazgos nuevos del Ciclo 2 (regresion check del propio PRD)
 
-1. Decidir SI/NO `EVT_OFFLINE_GATE_BLOCKED` en el PRD (no dejar al implementador).
-2. En S5 multi-tab, notar que el flush escribe state local de la tab, no merge con server.
-3. Voseo en copy del PRD: el body usa "Necesitas conexion" pero el checklist marca "Necesitás" como correcto. Coherenciar.
-4. `ListDetailScreen.tsx` y `useCommentListBase.ts` cerca del limite 400 LOC — si IMP #3 obliga a integrar undo + queue, planear extraer sub-hook desde el inicio.
+- **OBSERVACION #5 (nueva)** "Voseo inconsistente dentro del propio PRD".
+  - **Seccion afectada**: Tabla S2, fila `deleteAccount` (cuerpo "Si offline, toast.error con mensaje claro de seguridad...") y Checklist offline (item "Toast de error al intentar accion gated muestra mensaje claro").
+  - **Hueco concreto**: el checklist de copy del PRD lista explicitamente "NO usar 'Necesitas'" como regla. Sin embargo dos strings ejemplo del propio PRD usan tuteo:
+    - Tabla S2 propone como toast: `"Necesitas conexion estable para eliminar tu cuenta — esta accion es irreversible"`.
+    - Checklist offline propone: `"Necesitas conexion para [accion]"`.
+  - **Escenario real**: el implementador toma la frase literal del PRD para el toast y comitea con tuteo, contradiciendo el checklist del propio documento. Despues cami marca el lint y se rehace el copy.
+  - **Por que es OBSERVACION y no IMPORTANTE**: el implementador tiene el checklist de copy enfrente y cualquier reviewer (cami, manu) lo va a corregir antes del merge. No bloquea specs/plan ni la implementacion. Es solo deuda dentro del documento.
+  - **Que necesitamos**: en una proxima pasada (o cuando prd-writer toque el doc por otro motivo), reemplazar las dos ocurrencias por voseo: `"Necesitás conexión estable..."` y `"Necesitás conexión para..."`.
+
+#### Abierto (informativo, no bloquea)
+
+- Ninguno bloqueante. La OBSERVACION #5 queda asentada como deuda menor de copy.
+
+#### Observaciones para el implementador
+
+- Cuando wrappees los snackbars online/offline en S3.1, verifica que el `timeout` real del hook `useUndoDelete` (`src/hooks/useUndoDelete.ts:29`) es 5000ms por default — el PRD menciona "4s" en S3.1 a titulo descriptivo, el valor real lo toma el hook. No fuerces un literal en el caller.
+- El hook sugerido `usePendingActions(commentId)` puede materializarse como un selector encima del `useOfflineQueue` existente (no requiere nueva infra, solo lectura filtrada). Definirlo en specs/plan.
+- Cuando ejecutes el flush de `useUserSettings` al reconectar, asegurate del `let cancelled = false; return () => { cancelled = true; }` (esta en checklist de robustez, pero es facil olvidarlo en `useEffect` con dependencia `[isOffline, user?.uid]`).
+- El test de regresion de `pre-staging-check.sh` (SC2.4) deberia correr en el job de CI, no solo localmente — `specs-plan-writer` define el job; sugerir reutilizar el step existente que corre el script.
 
 ### Listo para specs-plan-writer?
 
-**No.** Resolver los 3 bloqueantes y los 3 importantes. Tras eso, segunda pasada de Sofia.
+**Si, con observacion** — la OBSERVACION #5 (voseo inconsistente dentro del PRD) no bloquea ni la planificacion ni la implementacion. Si `prd-writer` toca el doc por otro motivo, aprovechar para corregir las dos lineas.
 
-### Confirmaciones positivas (cerrado en este Ciclo 1)
-
-- 23 OfflineActionType actuales (correcto, `src/types/offline.ts`).
-- 23 case branches en syncEngine (correcto, `src/services/syncEngine.ts`).
-- `MapErrorBoundary` envuelve `APIProvider` en `SearchScreen.tsx:144-151` (correcto, falsos positivos del audit original confirmados).
-- `<img onError>` ya implementado en `MenuPhotoSection.tsx:86` y `MenuPhotoViewer.tsx:82` (correcto).
-- `EVT_OFFLINE_ACTION_QUEUED` ya emitido por `withOfflineSupport`.
-- Replay sort por createdAt (`offlineQueue.ts:96`).
-- `MenuPhotoViewer.tsx:60` ya tiene patron gated `disabled={... || isOffline}` + `title="Requiere conexion"`.
-
-— Sofia, 2026-04-25
+— Sofia, 2026-04-25 (Ciclo 1: NO VALIDADO / Ciclo 2: VALIDADO CON OBSERVACIONES)
