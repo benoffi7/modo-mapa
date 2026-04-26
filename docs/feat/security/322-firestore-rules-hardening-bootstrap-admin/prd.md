@@ -336,3 +336,39 @@ N/A — este issue no introduce UI nueva. Las superficies afectadas son server-s
 3. El bootstrap admin path queda gateado tras el primer admin asignado: `config/bootstrap.adminAssigned === true` bloquea la rama bootstrap. El procedimiento de recovery esta documentado en `docs/reference/security.md`.
 4. Coverage de `claims.ts`, `inviteListEditor.ts`, `removeListEditor.ts`, `cleanAnonymousData.ts`, y `triggers/checkins.ts` >= 80% (cierra deuda pre-existente listada en `tests.md`).
 5. Auditor de seguridad (proximo health-check) NO encuentra ninguno de los 12 patrones de deteccion documentados en `docs/reference/guards/300-security.md` R12/R13/R14. La regla R12 se actualiza con un comment "verified in #322" y la lista de archivos afectados queda registrada en el guard como referencia historica.
+
+---
+
+## Validacion Funcional
+
+**Auditor**: Sofia (analisis funcional)
+**Fecha**: 2026-04-25
+**Ciclo**: 1 de 2
+**Veredicto**: NO VALIDADO
+
+### Bloqueantes abiertos
+
+1. **Tests de rules via Firestore emulator no son aplicables** — la infra (`@firebase/rules-unit-testing`) no existe en el repo. El PRD afirma "patron de #289/#251" pero esos PRDs no implementaron rules tests. Decidir si #322 monta la infra (effort sube de M a L/XL: instalar dep, configurar `firebase.json` para emuladores en CI, fixture de test environment) o excluye con cobertura indirecta via tests de Cloud Functions.
+2. **Estado de tests existentes mal afirmado** — `claims.ts` (`functions/src/__tests__/admin/claims.test.ts:96-109`), `inviteListEditor.ts`, `removeListEditor.ts`, `triggers/checkins.ts` YA tienen tests en `functions/src/__tests__/`. El PRD propone paths erroneos (`functions/src/admin/__tests__/`) y afirma que `claims.ts` no tiene tests. Reescribir tabla con paths correctos y diferenciar "amplio existente" vs "creo de cero". `cleanAnonymousData.test.ts` es el unico que requiere creacion.
+3. **UX consequence del uniform response (S2) no esta resuelta** — `MSG_LIST.editorInvited(email)` actual dice "Invitaste a {email}" sin importar si existe. La mitigacion del PRD ("la lista actualizada despues") no se materializa: `InviteEditorDialog` cierra y muestra toast, no abre `EditorsDialog`. Decidir cambio de copy y/o refresh visible del panel.
+4. **Equality `displayNameLower == displayName.lower()` (S3) puede romper updates legitimos** — datos legacy donde `displayNameLower` es `?` o desincronizado vs `displayName.toLowerCase()`. Decidir: (a) requiere `displayNameLower` obligatorio en create? (b) requiere co-update obligatorio en update parcial? (c) plan de migracion para datos legacy con encoding diferente?
+
+### Importantes abiertos
+
+1. **Regex de `displayName` (S3)** — `^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$` rechaza `"L."`, `"Mr."`, posiblemente 1-char. Confirmar que es deliberado e idealmente contar usuarios actuales que romperian.
+2. **Bootstrap admin recovery (S5)** — definir si el procedimiento se documenta en `docs/procedures/reset-bootstrap-admin.md` como deliverable de #322 o tracked en separado. Aclarar rule de Firestore para `config/bootstrap` (matchall actual o explicita).
+3. **`getFeaturedLists` usa `ENFORCE_APP_CHECK_ADMIN` siendo callable publico** — corregir aprovechando que se toca el archivo, o declarar out-of-scope con tracking.
+4. **`onCheckInDeleted` enforcement (S3)** — especificar que doc lee `checkRateLimit({ collection: 'checkins', windowType: 'daily' }, userId)` para que el flag escrito sea efectivo. Alternativa: separar en flag de suspension distinto al rate limit normal.
+5. **`tokensRevoked` en audit log (S4)** — validar que la rule de `deletionAuditLogs` acepta el campo nuevo y que el dashboard admin lo refleja.
+
+### Observaciones
+
+1. Eliminar la sugerencia de "1-2 PRs separados" del PRD — el plan de merge lo decide tech-lead. Memoria `feedback_unified_merge.md` prefiere unified merge.
+2. Validar que el cap de 20/dia en `getFeaturedLists` no afecta el uso real de SpecialsSection.
+3. Agregar a checklist de docs: actualizar `docs/reference/guards/300-security.md → Affected files`.
+
+### Listo para specs-plan-writer?
+
+**No.** Resolver los 4 bloqueantes y los 5 importantes. Tras eso, segunda pasada de Sofia.
+
+— Sofia, 2026-04-25

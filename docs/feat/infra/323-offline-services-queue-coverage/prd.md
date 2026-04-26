@@ -382,20 +382,48 @@ El feature **mejora** el % monolitico al consolidar el patron offline en un cont
 
 ## Validacion Funcional
 
-**Estado**: PENDIENTE — Sofia debe ejecutar Ciclo 1 antes de pasar a specs/plan.
+**Auditor**: Sofia (analisis funcional)
+**Fecha**: 2026-04-25
+**Ciclo**: 1 de 2
+**Veredicto**: NO VALIDADO
 
-El prd-writer realizo una auto-revision aplicando el checklist de Sofia y resolvio in-line los siguientes hallazgos antes de cerrar el PRD:
+### Bloqueantes abiertos
 
-- Replay order y conflictos en queue cuando un mismo recurso tiene multiples actions encoladas (S5).
-- Definicion de "gated" UX feedback con requisitos funcionales testeables (no implementacion concreta) (S1.2).
-- Flush de userSettings al volver online: que pasa si usuario cierra la app antes de reconectar (S3).
-- Upload de menu photo: gating temprano (al abrir el dialog, no al submit) (S3).
-- OfflineIndicator placement: decision tomada (subir al root) en lugar de dejar opcion abierta (S4).
-- Success Criteria reforzados con condiciones de verificacion concretas.
+1. **`list_delete` contradice infra existente** (S2 + S5) — el PRD declara `deleteList` como gated (no encolable), pero `OfflineActionType` ya incluye `'list_delete'` (`src/types/offline.ts:24`), `OfflineActionPayload` ya tiene `ListDeletePayload` (linea 144), `syncEngine.executeAction` ya tiene branch `case 'list_delete'` (`src/services/syncEngine.ts:149-155`), y el guard #304 lo declara: "list_delete (bloqueada offline, pero tipo definido para replay)". Decidir: (a) borrar tipo + branch + payload (breaking change para queues persistentes pre-#323); (b) conservar todo y solo gatear el caller (consistente con guard #304); (c) reescribir como "deleteList se enquea pero requiere confirmacion al volver online". Sofia recomienda (b).
+2. **Grep #304 no detecta violaciones del contrato reframed** — el PRD reframea: "los services siguen sin saber de offline; los **callers** son los que cumplen el contrato". Pero el guard #304 corre `grep "addDoc|setDoc|updateDoc" src/services/`. Las violaciones que #323 viene a prevenir (e.g. `editComment(...)` directo en un nuevo componente sin wrapper) viven en `src/components/` y `src/hooks/`, fuera del scope del grep actual. Success Criteria #1 promete "branch artificial con write nuevo sin wrap falla pre-staging" — hoy NO falla si esta en componente. Definir greps adicionales en `pre-staging-check.sh` que cubran callers (no las definiciones de servicios, sino las invocaciones).
+3. **Replay ordering cross-tipo del mismo recurso** (S5) — el PRD trata "edit luego delete" del mismo comment, pero deja sin tratar:
+   - `comment_create + comment_edit` offline del mismo comment: el comment recien creado offline no tiene `commentId` server-side. `comment_edit` necesita un id real para replayar. ¿De donde sale? Resolucion al replay (el ack del create incluye id local→server)? UI deshabilita edit hasta que sincronice? Sin spec, el implementador inventa.
+   - `rating_upsert + rating_criteria_upsert` del mismo rating: el orden por createdAt garantiza global-primero, pero el merge semantics de `upsertCriteriaRating` debe respetar el global. Confirmar con test explicito.
+   - Multi-device del mismo usuario: queue de mobile con edit, queue de desktop con delete. Reconectar primero desktop = delete pasa; mobile = edit falla con doc-no-existe. ¿Aceptable (toast.error) o requiere coordinacion (out-of-scope)?
 
-**Posibles hallazgos abiertos para Sofia**:
+### Importantes abiertos
 
-- Scope size: 13 callsites HIGH/MEDIUM + types nuevos + tests + script de CI. Esfuerzo estimado L. Sofia puede sugerir partir en dos PRDs (HIGH first; MEDIUM/LOW como follow-up). Si lo hace, el implementador (o tech-lead `manu`) decide.
-- "auditar onError" en `MenuPhotoSection`/`MenuPhotoViewer` (S3) puede ser ambiguo — lo refine como "agregar test de regresion que verifique que `<img onError>` se dispara y la UI muestra fallback".
-- Para `comment_edit`/`comment_delete` no se discutio si la UI debe mostrar visualmente que un comment esta pending (texto tachado, banner "Sincronizando"). Decision producto pendiente.
-- No se valido si el replay de `comment_edit` deberia respetar un timestamp de moderacion (si el comment fue flaggeado mientras la queue esperaba, el edit lo reabre en re-moderacion via `onCommentUpdated`).
+1. **Re-moderacion en `comment_edit` replay** (open item del propio PRD) — `onCommentUpdated` (`functions/src/triggers/comments.ts:113-142`) re-moderiza si `afterData.text !== beforeData.text`. Si el comment estaba `flagged: true` y el edit lo deja con texto limpio, el trigger pone `flagged: false`, reabriendo un comment moderado. Comportamiento existe online. Sofia recomienda: declarar "el replay de `comment_edit` produce el mismo resultado que un edit online — la re-moderacion es responsabilidad del trigger; este PRD no la modifica" + cerrar open item, o escalar como follow-up (out-of-scope #323).
+2. **Scope size** — agregar criteria testeables propios para: (a) settings flush al reconectar (S3) — diferente de "boton disabled"; (b) OfflineIndicator placement subido al root (S4) — visibilidad global; (c) `pre-staging-check.sh` actualizado con greps de callers (BLQ #2). Sofia no exige split del PRD; exige scope granular en criterios.
+3. **`comment_delete` offline + `useUndoDelete`** — el caller actual (`src/hooks/useCommentListBase.ts:52`) hace optimistic remove + setTimeout(4s) + opcion "Deshacer" en snackbar. Si reemplazamos con `withOfflineSupport('comment_delete', ...)`:
+   - Online: el wrapper ejecuta directo (no encola, ver `offlineInterceptor.ts:22-24`). Timer de undo desaparece.
+   - Offline: encola. Undo en snackbar no cancela la entrada en queue → al reconectar, delete se ejecuta igual.
+   Decision: ¿el undo cancela tambien la queue (`offlineQueue.remove(actionId)`, requiere que `withOfflineSupport` devuelva el `actionId`)? ¿o offline el undo no aplica (snackbar sin "Deshacer")? Idem `comment_edit`: optimistic UI vs conservador. Decision afecta firma de `withOfflineSupport` (riesgo de scope creep si no se decide ahora).
+
+### Observaciones
+
+1. Decidir SI/NO `EVT_OFFLINE_GATE_BLOCKED` en el PRD (no dejar al implementador).
+2. En S5 multi-tab, notar que el flush escribe state local de la tab, no merge con server.
+3. Voseo en copy del PRD: el body usa "Necesitas conexion" pero el checklist marca "Necesitás" como correcto. Coherenciar.
+4. `ListDetailScreen.tsx` y `useCommentListBase.ts` cerca del limite 400 LOC — si IMP #3 obliga a integrar undo + queue, planear extraer sub-hook desde el inicio.
+
+### Listo para specs-plan-writer?
+
+**No.** Resolver los 3 bloqueantes y los 3 importantes. Tras eso, segunda pasada de Sofia.
+
+### Confirmaciones positivas (cerrado en este Ciclo 1)
+
+- 23 OfflineActionType actuales (correcto, `src/types/offline.ts`).
+- 23 case branches en syncEngine (correcto, `src/services/syncEngine.ts`).
+- `MapErrorBoundary` envuelve `APIProvider` en `SearchScreen.tsx:144-151` (correcto, falsos positivos del audit original confirmados).
+- `<img onError>` ya implementado en `MenuPhotoSection.tsx:86` y `MenuPhotoViewer.tsx:82` (correcto).
+- `EVT_OFFLINE_ACTION_QUEUED` ya emitido por `withOfflineSupport`.
+- Replay sort por createdAt (`offlineQueue.ts:96`).
+- `MenuPhotoViewer.tsx:60` ya tiene patron gated `disabled={... || isOffline}` + `title="Requiere conexion"`.
+
+— Sofia, 2026-04-25

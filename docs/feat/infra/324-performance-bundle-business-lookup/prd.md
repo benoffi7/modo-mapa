@@ -340,3 +340,114 @@ Este feature **reduce** acoplamiento al consolidar 13 callsites al singleton `ge
 4. **Las 2 `<img>` de MenuPhotoSection y MenuPhotoViewer tienen `loading="lazy"` + `decoding="async"`** (verificar via DOM inspection en tests + grep en codigo: `grep -rn "<img" src/components/ --include="*.tsx" | grep -v "loading=\"lazy\""` deberia retornar 0 matches).
 5. **Tests existentes siguen pasando + nuevos tests cubren los hooks tocados** (cobertura >= 80% en archivos modificados).
 6. **`docs/reference/guards/302-performance.md` Check 2 sigue verde** post-merge (ningun nuevo `allBusinesses.find` introducido).
+
+---
+
+## Validacion Funcional
+
+**Auditor:** Sofia (analisis funcional)
+**Fecha:** 2026-04-25
+**Ciclos:** 1 (sin segundo ciclo — el agente auditor no tiene tool para spawnear prd-writer en esta sesion)
+**Veredicto:** **NO VALIDADO** — hay 4 BLOQUEANTES y 5 IMPORTANTES abiertos que requieren reescritura por prd-writer antes de pasar a specs/plan.
+
+### BLOQUEANTES abiertos
+
+#### BLOQUEANTE #1 — Faltan callsites del rule `R-newMap-allBusinesses`
+
+El rule `R-newMap-allBusinesses` del guard runner (`scripts/guards/checks.mjs`) detecta dos hits que el PRD no lista en S1:
+
+- `src/hooks/useLocalTrending.ts:40` — `new Map(allBusinesses.map((b) => [b.id, { lat: b.lat, lng: b.lng }]))`. Subset lat/lng cacheado. Definir si se reemplaza por iteracion sobre `getBusinessMap().values()` o se justifica exencion.
+- `src/components/social/RankingsView.tsx:38` — `new Map(allBusinesses.map((b) => [b.id, b]))`. Mismo shape que el singleton, drop-in trivial: `getBusinessMap()`. Ademas hoy se reconstruye en cada render (esta fuera de `useMemo`).
+
+Sin tocar estos dos, `npm run guards --guard 302` queda rojo post-merge.
+
+#### BLOQUEANTE #2 — Tercer `<img>` no listado: `MenuPhotoUpload.tsx:129`
+
+El grep de `<img` en `src/components/` con `--include="*.tsx"` devuelve 3 hits, no 2. El tercero (`MenuPhotoUpload.tsx:129`) es preview de upload local pero el guard `R6-img-without-lazy` no distingue origen. Decidir: agregar a S2 con su patron objetivo, o documentar excepcion explicita en el guard y en este PRD.
+
+#### BLOQUEANTE #3 — Premisa falsa sobre `firebase/storage` lazy en consumers
+
+El PRD afirma en S3 que "MenuPhotoUpload, AvatarPicker y otros consumers ya usan `await import('firebase/storage')`". Verificacion en codigo demuestra lo contrario — todos los consumers son **eager**:
+
+- `src/config/firebase.ts:12` — `import { getStorage, connectStorageEmulator } from 'firebase/storage'` + `export const storage = getStorage(app)`.
+- `src/services/feedback.ts:5` — eager `ref, uploadBytes, getDownloadURL`.
+- `src/services/menuPhotos.ts:5` — eager `ref, uploadBytesResumable, getDownloadURL` + import de `UploadTask`.
+- `src/components/admin/PhotoReviewCard.tsx:4` — eager (admin esta lazy a nivel ruta, pero el grafo de imports ata storage al chunk principal).
+
+Sacar `firebase/storage` del manualChunk **no** lo va a sacar del bundle inicial mientras estos imports sean eager — Rollup lo va a colapsar igualmente. La promesa "1.6 MB → <= 1 MB raw" depende de esto.
+
+Decision a tomar:
+- Opcion A: ampliar S3 para migrar los 4 consumers a dynamic import dentro de este feature (esfuerzo M en vez de S).
+- Opcion B: dejar S3 como esta, abrir issue separado bloqueante (#324b), bajar la promesa de bundle del Success Criteria mientras tanto.
+
+#### BLOQUEANTE #4 — Success Criteria sin baseline numerico
+
+El criterio #2 dice "<= 1 MB raw / <= 700 KB gzipped" pero el PRD no documenta el numero **actual** por chunk. Sin baseline (mui actual KB raw+gzipped, firebase actual, index actual, index-BuuweED0, recharts, google-maps), no es auditable la diferencia entre cumplir el target y rozarlo.
+
+Agregar una tabla "Baseline (medido 2026-04-25)" con tamanos por chunk antes del cambio + total raw + total gzipped + comando de reproduccion.
+
+### IMPORTANTES abiertos
+
+#### IMPORTANTE #5 — Sin criterio de exito post-deploy
+
+Los 6 criterios actuales son todos de build-time. La promesa "−300/−500ms TTI en 3G" del bloque "UX considerations" no esta como criterio. Para una feature 100% perf, vale agregar al menos un threshold observable post-deploy (LCP p75 o web vital reportado por GA4) — o justificar explicitamente "post-deploy no se mide" si no hay infra de RUM.
+
+#### IMPORTANTE #6 — Riesgo de race / orden de hidratacion no abordado
+
+`getBusinessMap()` construye el Map en el primer call. En tests con `__resetBusinessMap()` global, dos `renderHook` paralelos pueden disparar dos builds (no destructivo, pero ruidoso en coverage). En produccion, no hay impacto. Vale 1 parrafo en "Robustez" o "Tests" especificando:
+
+- `beforeEach(() => __resetBusinessMap())` para tests deterministas.
+- El Map es modulo-level — no requiere Provider, no afecta orden de mount.
+- Costo amortizado: primer call construye, resto O(1).
+
+#### IMPORTANTE #7 — Cuenta de queries inconsistente entre secciones
+
+3 cuentas distintas para el trabajo de S4:
+- "Problema" (medium bullet): 9 nombres de funciones.
+- "S4" (tabla): 10 filas (incluye `deleteList` con "mantener sin limit" y `fetchFollowersCount` con "N/A").
+- "Scope" (tabla): "limit() en 7 queries sin paginar".
+- Consigna del usuario: "7 queries getDocs sin limit".
+
+Alinear las 4 referencias a un numero canonico unico, idealmente derivado de la tabla S4 (que es la detallada). Aclarar si `deleteList` y `fetchFollowersCount` cuentan o no.
+
+#### IMPORTANTE #8 — PRD no referencia el guard runner automatizado
+
+`npm run guards --guard 302` ya automatiza R4, R-newMap-allBusinesses, R6, R7, R8. Cambiar Success Criteria #1, #6 y "Mitigacion incorporada" para referenciarlo en lugar de greps manuales. Listar explicitamente que rules deben quedar verdes:
+
+- `302/R4-allBusinesses-find`
+- `302/R-newMap-allBusinesses`
+- `302/R6-img-without-lazy`
+- `302/R7-mui-icons-not-split`
+- `302/R8-firebase-storage-in-critical`
+
+#### IMPORTANTE #9 — Falta seccion de staging por workstream
+
+El contexto pide "risk staging por workstream S1-S5" y el PRD no dice nada sobre dependencias entre Sx ni nivel de riesgo de cada uno. No es plan de merge (eso es manu/tech-lead); es input necesario para cualquier plan de merge. Agregar una seccion "Staging / dependencias entre workstreams" indicando:
+
+- Independencias: S1 ⊥ S2 ⊥ S3 ⊥ S4 (asumiendo BLOQUEANTE #3 resuelto).
+- Dependencias: S5 (investigar 296KB) depende de baseline post-S2+S3 para no medir ruido.
+- Riesgo por workstream:
+  - S1 → bajo (refactor mecanico, mismo shape de retorno).
+  - S2 → bajo (atributos HTML, fallback `onError` preservado).
+  - S3 → medio si BLOQUEANTE #3 entra en scope (toca config + 4 consumers); bajo si se difiere.
+  - S4 → bajo (defensivo, no cambia comportamiento happy path).
+  - S5 → bajo (investigacion sin cambios obligatorios).
+
+### OBSERVACIONES (no bloquean)
+
+- **#10**: `useSuggestions.ts:66` (`allBusinesses.map` para iterar) no viola ningun rule — vale 1 linea en S1 aclarando que iteraciones puras no se tocan, solo lookups por id.
+- **#11**: La tabla de Tests dice "vite.config.ts: verificacion manual" — `npm run guards` ya automatiza R7/R8. Reemplazar "manual" por referencia al guard runner.
+- **#12**: Success Criteria #1 tiene una frase rota: "Solo permitido en `src/utils/businessMap.ts` no aplica — alli se construye el Map con `.map()`, no `.find()`." Reformular a: "El grep `allBusinesses\.find` en `src/` debe devolver 0 matches. (`businessMap.ts` construye el Map con `.map()`; no aparece en el grep de `\.find`, no es excepcion.)"
+
+### Listo para specs-plan-writer?
+
+**No.** Antes de specs/plan se necesita un segundo ciclo con prd-writer que:
+
+1. Cierre los 4 BLOQUEANTES (decision sobre BLOQUEANTE #3 sobre todo — define si el feature crece a M-grande o se parte).
+2. Resuelva los 5 IMPORTANTES (al menos #7 y #8 son triviales; #5 requiere decision; #6 y #9 son redaccion).
+3. Las observaciones pueden ir o no — bajo riesgo si quedan abiertas.
+
+Una vez actualizado el PRD, re-correr esta validacion (Ciclo 2) confirmando que cada hallazgo se cerro o quedo justificado por escrito en el PRD.
+
+---
+
