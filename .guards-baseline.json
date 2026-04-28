@@ -3,9 +3,9 @@
     "R1": 0,
     "R6-users-read": 13,
     "R12-feedback-message": 0,
-    "R12-notifications-read": 1,
-    "R12-locality-range": 6,
-    "R12-displayNameLower": 1,
+    "R12-notifications-read": 0,
+    "R12-locality-range": 2,
+    "R12-displayNameLower": 0,
     "R14-bootstrap-admin": 1
   },
   "301": {
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 260
+  "_total": 254
 }
