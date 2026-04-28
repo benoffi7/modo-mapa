@@ -135,6 +135,11 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     }
   }, [list.id]);
 
+  const handleEditorInvited = useCallback(async () => {
+    await handleEditorsChanged();
+    setEditorsOpen(true);
+  }, [handleEditorsChanged]);
+
   const handleIconChange = async (icon: ListIconOption) => {
     const prev = currentIcon;
     setCurrentIcon(icon.id);
@@ -273,7 +278,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         <InviteEditorDialog
           listId={inviteOpen ? list.id : null}
           onClose={() => setInviteOpen(false)}
-          onInvited={handleEditorsChanged}
+          onInvited={handleEditorInvited}
         />
       </Suspense>
 
