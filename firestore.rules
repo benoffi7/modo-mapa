@@ -47,10 +47,26 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
-        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
+        // #300 R-7 + #322 S3: charset conservador + anclaje no-whitespace.
+        // Aplica tambien en update (no solo create) para que no se pueda mutar a
+        // un valor invalido post-creacion.
+        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
         && (!('displayNameLower' in request.resource.data) || request.resource.data.displayNameLower is string)
-        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string);
+        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
+        // #322 S3 R12: equality bidireccional. Si CUALQUIERA de displayName o
+        // displayNameLower esta en affectedKeys(), AMBOS deben matchear
+        // (lower == name.lower()). La rama 1 (ninguno cambia) cubre updates de
+        // solo `avatarId` sin tocar displayName/Lower.
+        // Tabla de verdad (specs L240-247):
+        //   name no | lower no  → ALLOW (rama 1)
+        //   name si | lower no  → DENY si stale
+        //   name no | lower si  → DENY (cierra hijack B5)
+        //   name si | lower si  → ALLOW/DENY segun match
+        && (
+          (!('displayName' in request.resource.data.diff(resource.data).affectedKeys())
+            && !('displayNameLower' in request.resource.data.diff(resource.data).affectedKeys()))
+          || (request.resource.data.displayNameLower == request.resource.data.displayName.lower())
+        );
     }
 
     // Favoritos — cualquier usuario autenticado puede leer.
