@@ -47,10 +47,15 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
-        // #300 R-7 + #322 S3: charset conservador + anclaje no-whitespace.
-        // Aplica tambien en update (no solo create) para que no se pueda mutar a
-        // un valor invalido post-creacion.
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
+        // #300 R-7 + #322 S3 + #322 FIX-1: charset conservador + anclaje no-whitespace.
+        // Gateado por affectedKeys() para no bloquear updates legitimos a otros campos
+        // (ej: solo `avatarId`) cuando el doc tiene un displayName invalido pre-existente
+        // (legacy users con "Mr.", "L.", " Pedro"). El check solo aplica cuando el cliente
+        // INTENTA modificar `displayName`. Cierra WARNING #1 thanos Fase 2.
+        && (
+          !('displayName' in request.resource.data.diff(resource.data).affectedKeys())
+          || request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
+        )
         && (!('displayNameLower' in request.resource.data) || request.resource.data.displayNameLower is string)
         && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
         // #322 S3 R12: equality bidireccional. Si CUALQUIERA de displayName o
