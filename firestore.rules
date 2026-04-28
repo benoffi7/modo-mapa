@@ -452,19 +452,27 @@ service cloud.firestore {
         && (!('notifyRankings' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyRankings is bool)
         && (!('notifyFeedback' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyFeedback is bool)
         && (!('notifyReplies' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyReplies is bool)
-        && (!('notifyFollowers' in request.resource.data) || request.resource.data.notifyFollowers is bool)
-        && (!('notifyRecommendations' in request.resource.data) || request.resource.data.notifyRecommendations is bool)
-        && (!('notificationDigest' in request.resource.data) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
+        // #322 S1: consistency sweep — todos los guards leen via affectedKeys(),
+        // NO via request.resource.data directo. Esto evita bloquear updates legitimos
+        // a otros campos cuando el doc tiene un valor invalido pre-existente en
+        // alguno de estos fields (ver specs L138-156).
+        && (!('notifyFollowers' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyFollowers is bool)
+        && (!('notifyRecommendations' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyRecommendations is bool)
+        && (!('notificationDigest' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
         && (!('analyticsEnabled' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.analyticsEnabled is bool)
-        && (!('followedTags' in request.resource.data) || isValidFollowedTags(request.resource.data.followedTags))
-        && (!('followedTagsUpdatedAt' in request.resource.data) || request.resource.data.followedTagsUpdatedAt is timestamp)
-        && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
+        && (!('followedTags' in request.resource.data.diff(resource.data).affectedKeys()) || isValidFollowedTags(request.resource.data.followedTags))
+        && (!('followedTagsUpdatedAt' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.followedTagsUpdatedAt is timestamp)
+        && (!('followedTagsLastSeenAt' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.followedTagsLastSeenAt is timestamp)
         // #264c: locality size limit
-        && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
+        && (!('locality' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
         // #322 S1: range check para lat/lng (mirror del patron de checkins.location).
         // NaN/Infinity son rechazados como side-effect.
-        && (!('localityLat' in request.resource.data) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
-        && (!('localityLng' in request.resource.data) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
+        && (!('localityLat' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
+        && (!('localityLng' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
+        // #322 S1 excepcion explicita: updatedAt mantiene equality dura `== request.time`.
+        // NO se mueve al patron affectedKeys(). Razon: invariante de freshness — el
+        // cliente esta obligado a escribir updatedAt: serverTimestamp() en CADA update
+        // sin excepcion (ver specs L155).
         && request.resource.data.updatedAt == request.time;
       // No delete — userSettings es permanente
     }
