@@ -177,6 +177,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType', 'businessId', 'businessName'])
         && request.resource.data.userId == request.auth.uid
+        // #322 R12: type guard explicito antes de operaciones .size()
+        && request.resource.data.message is string
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
         && request.resource.data.category in ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro']
@@ -184,9 +186,10 @@ service cloud.firestore {
         && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{1,6}$')))
         && (!('businessName' in request.resource.data) || (request.resource.data.businessName is string && request.resource.data.businessName.size() > 0 && request.resource.data.businessName.size() <= 100))
         && (!('rating' in request.resource.data) || (request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5))
-        // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/ — sin prefijo el owner
-        // podria substituir por cualquier archivo de Storage.
-        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')))
+        // #300 R-8 + #322 S3: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/{feedbackId}/ —
+        // el feedbackId segment cierra el vector de substitucion cross-feedback (un owner
+        // sustituyendo media de feedback A por la de feedback B propio).
+        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F' + docId + '%2F.*')))
         && (!('mediaType' in request.resource.data) || request.resource.data.mediaType in ['image', 'pdf']);
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
@@ -205,8 +208,8 @@ service cloud.firestore {
           && resource.data.userId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mediaUrl', 'mediaType'])
           && request.resource.data.mediaUrl is string
-          // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/
-          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')
+          // #300 R-8 + #322 S3: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/{feedbackId}/
+          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F' + docId + '%2F.*')
           && request.resource.data.mediaType in ['image', 'pdf']
         );
       allow delete: if request.auth != null
