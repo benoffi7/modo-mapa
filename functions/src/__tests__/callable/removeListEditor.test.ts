@@ -26,6 +26,15 @@ vi.mock('firebase-admin/firestore', () => ({
   },
 }));
 
+const mockLoggerWarn = vi.fn();
+vi.mock('firebase-functions', () => ({
+  logger: {
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    info: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 const mockCheckCallableRateLimit = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
@@ -54,15 +63,61 @@ describe('removeListEditor', () => {
       .rejects.toThrow('Solo el creador puede remover editores');
   });
 
-  it('succeeds when owner removes editor', async () => {
-    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1' }) });
+  it('succeeds when owner removes existing editor', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
     const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
     expect(result).toEqual({ success: true });
     expect(mockUpdate).toHaveBeenCalled();
   });
 
-  it('calls checkCallableRateLimit with correct key and limit', async () => {
+  // R13 mirror — uniform response anti-enumeration
+
+  it('returns uniform success when targetUid not in editorIds (idempotent)', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['someoneElse'] }) });
+    const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'ghost' } });
+    expect(result).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns uniform success when editorIds is undefined (no editors yet)', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1' }) });
+    const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
+    expect(result).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('logs hashed uid (not plain) when target not in editors', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'plainUidShouldNotLeak' } });
+    expect(mockLoggerWarn).toHaveBeenCalled();
+    const call = mockLoggerWarn.mock.calls.find((c) =>
+      typeof c[0] === 'string' && c[0].includes('not in editors'),
+    );
+    expect(call).toBeDefined();
+    const payload = call![1] as { targetUidHash: string; listId: string; ownerUid: string };
+    expect(payload.targetUidHash).toMatch(/^[a-f0-9]{12}$/);
+    expect(payload.listId).toBe('l1');
+    expect(payload.ownerUid).toBe('u1');
+    expect(JSON.stringify(payload)).not.toContain('plainUidShouldNotLeak');
+  });
+
+  it('uniform shape: removing existing vs non-existing editor returns identical responses', async () => {
+    // Existing
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
+    const existing = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
+
+    // Non-existing
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
+    const ghost = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'ghost' } });
+
+    expect(existing).toEqual({ success: true });
+    expect(ghost).toEqual({ success: true });
+    expect(Object.keys(existing as object).sort()).toEqual(['success']);
+    expect(Object.keys(ghost as object).sort()).toEqual(['success']);
+  });
+
+  it('calls checkCallableRateLimit with correct key and limit', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
     await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
     expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(mockDb, 'editors_remove_u1', 10, 'u1');
   });
