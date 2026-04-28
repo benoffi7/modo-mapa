@@ -49,7 +49,7 @@ export const NEW_DISPLAYNAME_REGEX = /^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[
 export const BATCH_SIZE = 500;
 
 /** Cantidad maxima de samples por categoria que se imprimen en audit. */
-export const SAMPLE_LIMIT = 5;
+export const SAMPLE_LIMIT = 20;
 
 /**
  * Parsea argv buscando `--audit` o `--apply`. Default: `audit`.
@@ -221,7 +221,15 @@ export async function applyMigration(db, toFix, opts = {}) {
     inBatch++;
 
     if (inBatch >= BATCH_SIZE) {
-      await batch.commit();
+      try {
+        await batch.commit();
+      } catch (error) {
+        logger.error?.(
+          `Batch failed at ${committed} updates committed, ${toFix.length - committed} pending`,
+          error,
+        );
+        throw error;
+      }
       committed += inBatch;
       logger.log?.(`Committed batch of ${inBatch} updates (total: ${committed})`);
       batch = db.batch();
@@ -230,7 +238,15 @@ export async function applyMigration(db, toFix, opts = {}) {
   }
 
   if (inBatch > 0) {
-    await batch.commit();
+    try {
+      await batch.commit();
+    } catch (error) {
+      logger.error?.(
+        `Batch failed at ${committed} updates committed, ${toFix.length - committed} pending`,
+        error,
+      );
+      throw error;
+    }
     committed += inBatch;
     logger.log?.(`Committed final batch of ${inBatch} updates (total: ${committed})`);
   }

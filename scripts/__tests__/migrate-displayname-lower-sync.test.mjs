@@ -315,6 +315,44 @@ describe('applyMigration (happy path)', () => {
     expect(updated).toBe(0);
     expect(batchFactory).not.toHaveBeenCalled();
   });
+
+  it('si commit() falla en la 2da invocacion, loguea progreso parcial y re-lanza', async () => {
+    // Forzamos 2 batches: BATCH_SIZE + 1 updates → commit #1 OK, commit #2 throw.
+    const total = BATCH_SIZE + 1;
+    const toFix = [];
+    for (let i = 0; i < total; i++) {
+      toFix.push({ id: `u${i}`, expectedLower: `name${i}` });
+    }
+
+    let commitCalls = 0;
+    const failure = new Error('firestore boom');
+    const { db, commitSpy } = makeMockDb([], {
+      batchCommit: async () => {
+        commitCalls++;
+        if (commitCalls === 2) throw failure;
+      },
+    });
+
+    const errorSpy = vi.fn();
+    const logSpy = vi.fn();
+
+    await expect(
+      applyMigration(db, toFix, { logger: { log: logSpy, error: errorSpy } }),
+    ).rejects.toBe(failure);
+
+    // Se llamaron 2 commits (el primero exito, el segundo falla).
+    expect(commitSpy).toHaveBeenCalledTimes(2);
+    // El primer commit logueo progreso normal antes del fallo.
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`Committed batch of ${BATCH_SIZE} updates (total: ${BATCH_SIZE})`),
+    );
+    // El error logueo progreso parcial: BATCH_SIZE committed, 1 pending.
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    const errorArgs = errorSpy.mock.calls[0];
+    expect(errorArgs[0]).toContain(`${BATCH_SIZE} updates committed`);
+    expect(errorArgs[0]).toContain(`${total - BATCH_SIZE} pending`);
+    expect(errorArgs[1]).toBe(failure);
+  });
 });
 
 describe('run (orchestrator)', () => {
