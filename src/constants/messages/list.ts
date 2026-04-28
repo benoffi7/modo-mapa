@@ -18,7 +18,7 @@ export const MSG_LIST = {
   emptyLists: 'No tenés listas todavía',
   emptyCollaborative: 'No participás en listas colaborativas todavía',
   emptyNoLists: 'No tenés listas. Creá una para empezar.',
-  editorInvited: (email: string) => `Editor invitado: ${email}` as const,
+  invitationProcessed: 'Invitación procesada — revisá la lista de editores',
   editorRemoved: 'Editor removido',
   editorInviteError: 'No se pudo invitar',
   editorRemoveError: 'No se pudo remover',
