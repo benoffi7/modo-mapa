@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
@@ -51,6 +52,23 @@ export const cleanAnonymousData = onCall(
 
     const uidHash = createHash('sha256').update(uid).digest('hex').slice(0, 12);
 
+    // S4 — Revocar refresh tokens server-side. Cierra ventana de
+    // re-uso del access token previo a la limpieza. Best-effort:
+    // si falla, el flow continua (defense-in-depth — el cliente
+    // hace signOut() tras el callable de todos modos), pero
+    // logueamos para observabilidad.
+    let tokensRevoked = false;
+    let tokensRevokedError: string | null = null;
+    try {
+      await getAuth().revokeRefreshTokens(uid);
+      tokensRevoked = true;
+    } catch (err) {
+      tokensRevokedError = String(err);
+      // Per task instructions Phase 3.4: usar logger.warn (no .error) —
+      // best-effort, no bloquea delete si revoke falla.
+      logger.warn('Failed to revoke refresh tokens', { uidHash, error: tokensRevokedError });
+    }
+
     // Determine status from result
     const status: DeletionStatus =
       result.collectionsFailed.length === 0 && result.aggregatesCorrected
@@ -72,6 +90,8 @@ export const cleanAnonymousData = onCall(
         aggregatesCorrected: result.aggregatesCorrected,
         durationMs: result.durationMs,
         triggeredBy: 'user',
+        tokensRevoked,
+        ...(tokensRevokedError ? { tokensRevokedError } : {}),
         timestamp: FieldValue.serverTimestamp(),
       });
     } catch (err) {
