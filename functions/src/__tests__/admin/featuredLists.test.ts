@@ -6,23 +6,40 @@ const {
   mockGet,
   mockGetDb,
   mockAssertAdmin,
+  capturedConfigs,
+  SENTINEL_PUBLIC,
+  SENTINEL_ADMIN,
 } = vi.hoisted(() => ({
   mockIsEmulator: { value: true },
   mockUpdate: vi.fn().mockResolvedValue(undefined),
   mockGet: vi.fn(),
   mockGetDb: vi.fn(),
   mockAssertAdmin: vi.fn(),
+  // Captura el primer arg (config) de cada `onCall(...)` en orden de declaracion
+  // del modulo `featuredLists.ts`. Orden actual:
+  //   index 0 → toggleFeaturedList
+  //   index 1 → getPublicLists
+  //   index 2 → getFeaturedLists
+  capturedConfigs: [] as Array<{ enforceAppCheck?: unknown }>,
+  // Sentinels distintos para assertear WHICH constant se uso en cada onCall
+  // (ENFORCE_APP_CHECK vs ENFORCE_APP_CHECK_ADMIN). Valores cualesquiera
+  // siempre que sean distinguibles.
+  SENTINEL_PUBLIC: 'SENTINEL_ENFORCE_APP_CHECK',
+  SENTINEL_ADMIN: 'SENTINEL_ENFORCE_APP_CHECK_ADMIN',
 }));
 
 vi.mock('../../helpers/env', () => ({
   get IS_EMULATOR() { return mockIsEmulator.value; },
-  ENFORCE_APP_CHECK: false,
-  ENFORCE_APP_CHECK_ADMIN: false,
+  ENFORCE_APP_CHECK: SENTINEL_PUBLIC,
+  ENFORCE_APP_CHECK_ADMIN: SENTINEL_ADMIN,
   getDb: (...args: unknown[]) => mockGetDb(...args),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
-  onCall: (_opts: unknown, handler: (...args: unknown[]) => unknown) => handler,
+  onCall: (cfg: { enforceAppCheck?: unknown }, handler: (...args: unknown[]) => unknown) => {
+    capturedConfigs.push(cfg);
+    return handler;
+  },
   HttpsError: class HttpsError extends Error {
     code: string;
     constructor(code: string, message: string) {
@@ -258,5 +275,47 @@ describe('getFeaturedLists', () => {
     const { chain } = setupCollectionDb([]);
     await featuredHandler({ auth: { uid: 'u1' }, data: { pageSize: -5 } });
     expect(chain.limit).toHaveBeenCalledWith(100);
+  });
+
+  it('clamps pageSize > 100 to local cap (FEATURED_LISTS_MAX_PAGE_SIZE)', async () => {
+    const { chain } = setupCollectionDb([]);
+    await featuredHandler({ auth: { uid: 'u1' }, data: { pageSize: 500 } });
+    // getPublicLists clampa a 500; getFeaturedLists clampa a 100 (cap local)
+    expect(chain.limit).toHaveBeenCalledWith(100);
+  });
+
+  it('clamps pageSize way above MAX_PAGE_SIZE to local cap (not 500)', async () => {
+    const { chain } = setupCollectionDb([]);
+    await featuredHandler({ auth: { uid: 'u1' }, data: { pageSize: 10_000 } });
+    expect(chain.limit).toHaveBeenCalledWith(100);
+    // Counter-assert: NO usar 500 (el cap global)
+    expect(chain.limit).not.toHaveBeenCalledWith(500);
+  });
+
+  it('honors valid pageSize below local cap', async () => {
+    const { chain } = setupCollectionDb([]);
+    await featuredHandler({ auth: { uid: 'u1' }, data: { pageSize: 25 } });
+    expect(chain.limit).toHaveBeenCalledWith(25);
+  });
+});
+
+describe('getFeaturedLists onCall config', () => {
+  it('is configured with ENFORCE_APP_CHECK (not ENFORCE_APP_CHECK_ADMIN)', () => {
+    // Orden de exports en functions/src/admin/featuredLists.ts:
+    //   0 → toggleFeaturedList   (admin)
+    //   1 → getPublicLists       (admin)
+    //   2 → getFeaturedLists     (publico — fix de inconsistencia)
+    const GET_FEATURED_LISTS_CONFIG_INDEX = 2;
+    const cfg = capturedConfigs[GET_FEATURED_LISTS_CONFIG_INDEX];
+
+    expect(cfg).toBeDefined();
+    expect(cfg.enforceAppCheck).toBe(SENTINEL_PUBLIC);
+    // Counter-assert: NO debe ser el sentinel admin
+    expect(cfg.enforceAppCheck).not.toBe(SENTINEL_ADMIN);
+  });
+
+  it('toggleFeaturedList and getPublicLists keep ENFORCE_APP_CHECK_ADMIN', () => {
+    expect(capturedConfigs[0].enforceAppCheck).toBe(SENTINEL_ADMIN); // toggleFeaturedList
+    expect(capturedConfigs[1].enforceAppCheck).toBe(SENTINEL_ADMIN); // getPublicLists
   });
 });

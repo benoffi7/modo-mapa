@@ -1,10 +1,17 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { assertAdmin } from '../helpers/assertAdmin';
-import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
+import { ENFORCE_APP_CHECK, ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 import { checkCallableRateLimit } from '../utils/callableRateLimit';
 
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 500;
+/**
+ * Page size cap LOCAL para `getFeaturedLists`. Es callable publica (todos
+ * los usuarios autenticados), por eso usa un cap mas estricto que el global
+ * `MAX_PAGE_SIZE = 500` de los callables admin (`getPublicLists`,
+ * `toggleFeaturedList`). Defensa contra scraping de listas destacadas.
+ */
+const FEATURED_LISTS_MAX_PAGE_SIZE = 100;
 
 /** Extract optional databaseId from callable request data. */
 function extractDbId(data: unknown): string | undefined {
@@ -15,15 +22,23 @@ function extractDbId(data: unknown): string | undefined {
   return undefined;
 }
 
-/** Parse & clamp page size from the request payload. */
-function extractPageSize(data: unknown): number {
+/**
+ * Parse & clamp page size from the request payload.
+ *
+ * @param maxOverride opcional. Cap mas estricto que `MAX_PAGE_SIZE` para
+ *   callables publicas (e.g. `getFeaturedLists` usa 100). El default
+ *   sigue clampado contra el cap efectivo para proteger regresiones
+ *   futuras si alguien sube `DEFAULT_PAGE_SIZE` por encima del override.
+ */
+function extractPageSize(data: unknown, maxOverride?: number): number {
+  const cap = maxOverride ?? MAX_PAGE_SIZE;
   if (data && typeof data === 'object' && 'pageSize' in data) {
     const raw = (data as { pageSize?: unknown }).pageSize;
     if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
-      return Math.min(Math.floor(raw), MAX_PAGE_SIZE);
+      return Math.min(Math.floor(raw), cap);
     }
   }
-  return DEFAULT_PAGE_SIZE;
+  return Math.min(DEFAULT_PAGE_SIZE, cap);
 }
 
 function extractStartAfter(data: unknown): string | undefined {
@@ -126,7 +141,7 @@ export const getPublicLists = onCall(
 
 /** Public callable — returns featured lists for any authenticated user. */
 export const getFeaturedLists = onCall(
-  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
+  { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request): Promise<ListPage> => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
@@ -134,7 +149,7 @@ export const getFeaturedLists = onCall(
 
     const db = getDb(extractDbId(request.data));
     await checkCallableRateLimit(db, `featured_lists_${request.auth.uid}`, 60, request.auth.uid);
-    const pageSize = extractPageSize(request.data);
+    const pageSize = extractPageSize(request.data, FEATURED_LISTS_MAX_PAGE_SIZE);
     const startAfterId = extractStartAfter(request.data);
 
     let q = db
