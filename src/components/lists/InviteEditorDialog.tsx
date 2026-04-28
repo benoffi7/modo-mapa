@@ -34,7 +34,7 @@ export default function InviteEditorDialog({ listId, onClose, onInvited }: Props
       await withBusyFlag('list_editor_invite', async () => {
         await inviteEditor(listId, email.trim());
       });
-      toast.success(MSG_LIST.editorInvited(email.trim()));
+      toast.success(MSG_LIST.invitationProcessed);
       setEmail('');
       onClose();
       onInvited();
