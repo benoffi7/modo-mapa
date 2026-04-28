@@ -407,8 +407,10 @@ service cloud.firestore {
         && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
         // #264c: locality size limit
         && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
-        && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
-        && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
+        // #322 S1: range check para lat/lng (mirror del patron de checkins.location).
+        // NaN/Infinity son rechazados como side-effect (`NaN >= -90` evalua false en CEL).
+        && (!('localityLat' in request.resource.data) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
+        && (!('localityLng' in request.resource.data) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
         && request.resource.data.updatedAt == request.time;
 
       // #265a: use affectedKeys for update (not keys().hasOnly which would require all fields)
@@ -436,8 +438,10 @@ service cloud.firestore {
         && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
         // #264c: locality size limit
         && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
-        && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
-        && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
+        // #322 S1: range check para lat/lng (mirror del patron de checkins.location).
+        // NaN/Infinity son rechazados como side-effect.
+        && (!('localityLat' in request.resource.data) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
+        && (!('localityLng' in request.resource.data) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
         && request.resource.data.updatedAt == request.time;
       // No delete — userSettings es permanente
     }
