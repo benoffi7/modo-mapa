@@ -30,9 +30,16 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
-        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
+        // #300 R-7 + #322 S3: charset conservador (bloquea RTL/ZWJ/control chars) +
+        // anclaje no-whitespace en primer/ultimo char (rechaza " Pedro", "Pedro ",
+        // "  ", "L." con punto al final). Acepta single char (ej "J"), `_`/`-` en
+        // bordes, espacios solo en interior.
+        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
         && request.resource.data.displayNameLower is string
+        // #322 S3 R12: equality bidireccional. displayNameLower obligatorio en create
+        // (ya esta en keys().hasOnly) y debe ser exactamente displayName.lower().
+        // Cierra el vector de mutacion unilateral (B5) y stale-lower (B4).
+        && request.resource.data.displayNameLower == request.resource.data.displayName.lower()
         && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null && request.auth.uid == userId
