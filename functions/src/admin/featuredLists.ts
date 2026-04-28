@@ -148,7 +148,12 @@ export const getFeaturedLists = onCall(
     }
 
     const db = getDb(extractDbId(request.data));
-    await checkCallableRateLimit(db, `featured_lists_${request.auth.uid}`, 60, request.auth.uid);
+    // #322 S3 FIX-2: rate limit 20/dia (anti-scraping). Anterior 60 era el default
+    // del repo pero era demasiado permisivo para una callable publica que devuelve
+    // metadatos de listas destacadas — un atacante podria scrapear todo el catalogo
+    // en pocos minutos. 20/dia es suficiente para uso legitimo (paginar el catalogo
+    // hasta 100 * 20 = 2000 listas) y limita scraping mas alla de eso.
+    await checkCallableRateLimit(db, `featured_lists_${request.auth.uid}`, 20, request.auth.uid);
     const pageSize = extractPageSize(request.data, FEATURED_LISTS_MAX_PAGE_SIZE);
     const startAfterId = extractStartAfter(request.data);
 

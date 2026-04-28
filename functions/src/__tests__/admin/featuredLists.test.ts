@@ -6,6 +6,7 @@ const {
   mockGet,
   mockGetDb,
   mockAssertAdmin,
+  mockCheckCallableRateLimit,
   capturedConfigs,
   SENTINEL_PUBLIC,
   SENTINEL_ADMIN,
@@ -15,6 +16,7 @@ const {
   mockGet: vi.fn(),
   mockGetDb: vi.fn(),
   mockAssertAdmin: vi.fn(),
+  mockCheckCallableRateLimit: vi.fn().mockResolvedValue(undefined),
   // Captura el primer arg (config) de cada `onCall(...)` en orden de declaracion
   // del modulo `featuredLists.ts`. Orden actual:
   //   index 0 → toggleFeaturedList
@@ -54,7 +56,7 @@ vi.mock('../../helpers/assertAdmin', () => ({
 }));
 
 vi.mock('../../utils/callableRateLimit', () => ({
-  checkCallableRateLimit: vi.fn().mockResolvedValue(undefined),
+  checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
 }));
 
 import { toggleFeaturedList, getPublicLists, getFeaturedLists } from '../../admin/featuredLists';
@@ -296,6 +298,26 @@ describe('getFeaturedLists', () => {
     const { chain } = setupCollectionDb([]);
     await featuredHandler({ auth: { uid: 'u1' }, data: { pageSize: 25 } });
     expect(chain.limit).toHaveBeenCalledWith(25);
+  });
+
+  it('enforces rate limit of 20/dia (anti-scraping, FIX-2)', async () => {
+    setupCollectionDb([]);
+    await featuredHandler({ auth: { uid: 'user1' }, data: {} });
+
+    // checkCallableRateLimit(db, key, limit, uid) — limit es el 3er arg
+    expect(mockCheckCallableRateLimit).toHaveBeenCalledWith(
+      expect.anything(),
+      'featured_lists_user1',
+      20,
+      'user1',
+    );
+    // Counter-assert: NO debe ser 60 (el valor anterior)
+    expect(mockCheckCallableRateLimit).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(String),
+      60,
+      expect.any(String),
+    );
   });
 });
 
