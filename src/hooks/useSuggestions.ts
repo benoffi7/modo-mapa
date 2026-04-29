@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSortLocation } from './useSortLocation';
 import { allBusinesses } from './useBusinesses';
+import { getBusinessById } from '../utils/businessMap';
 import { fetchUserSuggestionData } from '../services/suggestions';
 import {
   SUGGESTION_WEIGHTS,
@@ -9,7 +10,7 @@ import {
   NEARBY_RADIUS_KM,
 } from '../constants/suggestions';
 import { distanceKm } from '../utils/distance';
-import type { Business, Favorite, Rating, UserTag, BusinessCategory, SuggestedBusiness, SuggestionReason } from '../types';
+import type { Favorite, Rating, UserTag, BusinessCategory, SuggestedBusiness, SuggestionReason } from '../types';
 import { logger } from '../utils/logger';
 
 export function useSuggestions(): {
@@ -81,7 +82,7 @@ export function useSuggestions(): {
     const ratedBusinessIds = new Set(ratings.map((r) => r.businessId));
 
     for (const fav of favorites) {
-      const biz = allBusinesses.find((b: Business) => b.id === fav.businessId);
+      const biz = getBusinessById(fav.businessId);
       if (biz) {
         categoryCount.set(biz.category, (categoryCount.get(biz.category) ?? 0) + 1);
       }

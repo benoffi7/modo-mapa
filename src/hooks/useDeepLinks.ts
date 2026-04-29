@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelection } from '../context/SelectionContext';
 import { useTab } from '../context/TabContext';
-import { allBusinesses } from './useBusinesses';
+import { getBusinessById } from '../utils/businessMap';
 import { ALL_TAB_IDS } from '../types';
 import type { TabId } from '../types';
 import { BUSINESS_ID_REGEX } from '../constants/validation';
@@ -23,7 +23,7 @@ export function useDeepLinks() {
 
     const bizId = searchParams.get('business');
     if (bizId && BUSINESS_ID_REGEX.test(bizId)) {
-      const biz = allBusinesses.find((b) => b.id === bizId);
+      const biz = getBusinessById(bizId);
       if (biz) {
         setActiveTab('buscar');
         setSelectedBusiness(biz);
@@ -48,7 +48,7 @@ export function useDeepLinks() {
 
     const lastBusinessId = sessionStorage.getItem(STORAGE_KEY_LAST_BUSINESS_SHEET);
     if (lastBusinessId && BUSINESS_ID_REGEX.test(lastBusinessId)) {
-      const lastBusiness = allBusinesses.find((b) => b.id === lastBusinessId);
+      const lastBusiness = getBusinessById(lastBusinessId);
       if (lastBusiness) {
         setActiveTab('buscar');
         setSelectedBusiness(lastBusiness);
