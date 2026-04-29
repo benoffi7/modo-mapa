@@ -20,7 +20,9 @@ const EditorsDialog = lazy(() => import('./EditorsDialog'));
 const InviteEditorDialog = lazy(() => import('./InviteEditorDialog'));
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { fetchListItems, fetchSharedList, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { logger } from '../../utils/logger';
 import { getListIconById } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
@@ -30,7 +32,7 @@ import { allBusinesses } from '../../hooks/useBusinesses';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { cardSx } from '../../theme/cards';
-import { MSG_LIST } from '../../constants/messages';
+import { MSG_LIST, MSG_OFFLINE } from '../../constants/messages';
 import type { SharedList, ListItem, BusinessCategory } from '../../types';
 
 interface Props {
@@ -43,6 +45,7 @@ interface Props {
 export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const isOwner = user?.uid === list.ownerId;
   const canEditConfig = isOwner && !readOnly;
   const [editorIds, setEditorIds] = useState(list.editorIds ?? []);
@@ -72,21 +75,41 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   useEffect(() => { load(); }, [load]);
 
   const handleColorChange = async (hex: string) => {
+    if (!user) return;
     setCurrentColor(hex);
     try {
-      await updateList(list.id, list.name, list.description, hex);
+      // #323: wrap update con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_update',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { name: list.name, description: list.description, color: hex },
+        () => updateList(list.id, list.name, list.description, hex),
+        toast,
+      );
     } catch {
       toast.error(MSG_LIST.colorError);
     }
   };
 
   const handleTogglePublic = async () => {
+    if (!user) return;
     const prev = isPublic;
     const newValue = !prev;
     setIsPublic(newValue);
     try {
-      await toggleListPublic(list.id, newValue);
-      toast.success(newValue ? MSG_LIST.visibilityPublic : MSG_LIST.visibilityPrivate);
+      // #323: wrap toggle con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_toggle_public',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { isPublic: newValue },
+        () => toggleListPublic(list.id, newValue),
+        toast,
+      );
+      if (!isOffline) {
+        toast.success(newValue ? MSG_LIST.visibilityPublic : MSG_LIST.visibilityPrivate);
+      }
     } catch {
       setIsPublic(prev);
       toast.error(MSG_LIST.visibilityError);
@@ -104,6 +127,12 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleDelete = async () => {
+    // #323 S2.1: deleteList esta gated offline (no encolable — cascade unsafe en replay).
+    if (isOffline) {
+      toast.warning(MSG_OFFLINE.deleteListBlocked);
+      setConfirmDeleteOpen(false);
+      return;
+    }
     try {
       await deleteList(list.id, list.ownerId);
       toast.success(MSG_LIST.deleteSuccess);
@@ -115,11 +144,20 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleRemoveItem = async (item: ListItem) => {
+    if (!user) return;
     const prev = items;
     setItems((current) => current.filter((i) => i.id !== item.id));
     try {
-      await removeBusinessFromList(list.id, item.businessId);
-      toast.success(MSG_LIST.itemRemoved);
+      // #323: wrap remove con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_item_remove',
+        { userId: user.uid, businessId: item.businessId, listId: list.id },
+        {},
+        () => removeBusinessFromList(list.id, item.businessId),
+        toast,
+      );
+      if (!isOffline) toast.success(MSG_LIST.itemRemoved);
     } catch {
       setItems(prev);
       toast.error(MSG_LIST.itemRemoveError);
@@ -141,10 +179,19 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   }, [handleEditorsChanged]);
 
   const handleIconChange = async (icon: ListIconOption) => {
+    if (!user) return;
     const prev = currentIcon;
     setCurrentIcon(icon.id);
     try {
-      await updateList(list.id, list.name, list.description, undefined, icon.id);
+      // #323: wrap update con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_update',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { name: list.name, description: list.description, icon: icon.id },
+        () => updateList(list.id, list.name, list.description, undefined, icon.id),
+        toast,
+      );
       trackEvent(EVT_LIST_ICON_CHANGED, { list_id: list.id, icon_id: icon.id });
     } catch {
       setCurrentIcon(prev);
@@ -183,7 +230,14 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
             <IconButton size="small" aria-label="Invitar editor" onClick={() => setInviteOpen(true)}>
               <PersonAddIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" color="error" aria-label="Eliminar lista" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              aria-label="Eliminar lista"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isOffline}
+              title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+            ><DeleteOutlineIcon fontSize="small" /></IconButton>
           </>
         )}
       </Toolbar>
@@ -286,7 +340,13 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         <DialogTitle>&iquest;Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Eliminar</Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={isOffline}
+            title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+          >Eliminar</Button>
         </DialogActions>
       </Dialog>
     </Box>
