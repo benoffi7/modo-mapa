@@ -4,11 +4,21 @@ const mockIncrementCounter = vi.fn().mockResolvedValue(undefined);
 const mockTrackWrite = vi.fn().mockResolvedValue(undefined);
 const mockCheckRateLimit = vi.fn().mockResolvedValue(false);
 const mockLogAbuse = vi.fn().mockResolvedValue(undefined);
-const mockGetFirestore = vi.fn().mockReturnValue({});
 const mockDelete = vi.fn().mockResolvedValue(undefined);
 
+// Mock de Firestore con `doc()` configurable por test. Por defecto, cualquier
+// doc() retorna un ref con `.get()` resolviendo a `{ exists: false }` y `.set()`
+// resolviendo a undefined — equivalente a "no flag presente".
+const mockDocGet = vi.fn().mockResolvedValue({ exists: false, data: () => undefined });
+const mockDocSet = vi.fn().mockResolvedValue(undefined);
+const mockDoc = vi.fn(() => ({ get: mockDocGet, set: mockDocSet }));
+const mockFirestore = { doc: mockDoc };
+
 vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: () => mockGetFirestore(),
+  getFirestore: () => mockFirestore,
+  FieldValue: {
+    serverTimestamp: () => 'SERVER_TS',
+  },
 }));
 
 const mockTrackDelete = vi.fn().mockResolvedValue(undefined);
