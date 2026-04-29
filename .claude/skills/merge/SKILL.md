@@ -41,6 +41,7 @@ This compares current guard violations vs `.guards-baseline.json`. Behavior:
 - **Exit 0 (no drift or all guards reduced)**: continue.
 - **Exit 1 (any rule increased)**: **ABORT MERGE**. Report which rules regressed (e.g. `302/R4-allBusinesses-find: 13 -> 14`). Author must fix the regressions or — if intentional and unavoidable — discuss with team and update the baseline (`npm run guards:baseline`). Do NOT update the baseline unilaterally to bypass.
 - **Exit 0 with reductions**: success, but the report will suggest running `npm run guards:baseline` to ratchet the ceiling down. Do this in the same commit if the reductions came from this branch.
+- **Detector improvement (counts went UP because the rule got smarter, not because code regressed)**: this is the only legitimate case for raising baseline numbers. Indicators: the detector logic itself was edited in the same diff (e.g., `scripts/guards/check.mjs`, AWK→Node migration, multi-line awareness added) AND the new findings are pre-existing code that the old detector missed. Procedure: re-run with `npm run guards:baseline -- --force` and include explicit justification in the commit message (e.g., `chore(guards): ratchet baseline after R7 detector multi-line upgrade — newly surfaced counts are pre-existing tech debt`). Always commit baseline changes alongside the detector change, never separately.
 
 If the script fails to find baseline (`.guards-baseline.json` missing), abort merge — the baseline is the contract.
 
@@ -659,6 +660,16 @@ Determine branch type from the branch name prefix:
 - **`feat/`** — Full audit (all 8 core agents below + conditional agents 9-11 based on changed files)
 - **`fix/`** — Reduced audit: security + architecture + performance only (3 agents) + conditional agents if triggered
 - **`chore/` or `docs/`** — Minimal audit: security + architecture only (2 agents). These branches refactor existing code or update docs — UI, dark mode, offline, and privacy audits add no value since user-visible behavior doesn't change
+- **`feat/` backend-only** (changes only under `functions/`, `firestore.rules`, `firestore.indexes.json`, `storage.rules`, or related config — ZERO `.tsx` files changed) — Reduced audit: security + architecture + privacy + copy (4 agents) + conditional agents 9 and 11 if triggered. Skip dark-mode-auditor, ui-reviewer, performance (bundle/render), and offline-auditor — they operate on UI code that did not change. Detect with:
+  ```bash
+  CHANGED=$(git diff --name-only origin/new-home)
+  if ! echo "$CHANGED" | grep -qE '\.tsx$'; then
+    if echo "$CHANGED" | grep -qE '^(functions/|firestore\.(rules|indexes\.json)$|storage\.rules$)'; then
+      BACKEND_ONLY=true
+    fi
+  fi
+  ```
+  Document the choice explicitly in the merge report ("backend-only branch — UI/perf/offline audits skipped because 0 .tsx files changed").
 
 ### Full audit agents
 
