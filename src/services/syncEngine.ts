@@ -16,6 +16,9 @@ import type {
   ListTogglePublicPayload,
   ListDeletePayload,
   ListItemAddPayload,
+  CommentEditPayload,
+  CommentDeletePayload,
+  RatingCriteriaUpsertPayload,
 } from '../types/offline';
 
 let syncing = false;
@@ -164,6 +167,24 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       const { removeBusinessFromList } = await import('./sharedLists');
       if (!action.listId) throw new Error('list_item_remove requires listId');
       await removeBusinessFromList(action.listId, businessId);
+      break;
+    }
+    case 'comment_edit': {
+      const { commentId, text } = p as CommentEditPayload;
+      const { editComment } = await import('./comments');
+      await editComment(commentId, userId, text);
+      break;
+    }
+    case 'comment_delete': {
+      const { commentId } = p as CommentDeletePayload;
+      const { deleteComment } = await import('./comments');
+      await deleteComment(commentId, userId);
+      break;
+    }
+    case 'rating_criteria_upsert': {
+      const { criterionId, value } = p as RatingCriteriaUpsertPayload;
+      const { upsertCriteriaRating } = await import('./ratings');
+      await upsertCriteriaRating(userId, businessId, { [criterionId]: value });
       break;
     }
   }

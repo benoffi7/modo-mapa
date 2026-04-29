@@ -173,7 +173,7 @@ export interface CommentDeletePayload {
  * Replay → upsertCriteriaRating(userId, businessId, { [criterionId]: value }).
  * El service hace merge no-destructivo con criterios existentes. (#323) */
 export interface RatingCriteriaUpsertPayload {
-  criterionId: string;
+  criterionId: import('./business').RatingCriterionId;
   value: number;
 }
 
