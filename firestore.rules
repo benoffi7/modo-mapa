@@ -30,9 +30,16 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
-        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
+        // #300 R-7 + #322 S3: charset conservador (bloquea RTL/ZWJ/control chars) +
+        // anclaje no-whitespace en primer/ultimo char (rechaza " Pedro", "Pedro ",
+        // "  ", "L." con punto al final). Acepta single char (ej "J"), `_`/`-` en
+        // bordes, espacios solo en interior.
+        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
         && request.resource.data.displayNameLower is string
+        // #322 S3 R12: equality bidireccional. displayNameLower obligatorio en create
+        // (ya esta en keys().hasOnly) y debe ser exactamente displayName.lower().
+        // Cierra el vector de mutacion unilateral (B5) y stale-lower (B4).
+        && request.resource.data.displayNameLower == request.resource.data.displayName.lower()
         && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null && request.auth.uid == userId
@@ -40,10 +47,31 @@ service cloud.firestore {
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 30
-        // #300 R-7: charset conservador (bloquea RTL/ZWJ/control chars)
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ ._-]+$')
+        // #300 R-7 + #322 S3 + #322 FIX-1: charset conservador + anclaje no-whitespace.
+        // Gateado por affectedKeys() para no bloquear updates legitimos a otros campos
+        // (ej: solo `avatarId`) cuando el doc tiene un displayName invalido pre-existente
+        // (legacy users con "Mr.", "L.", " Pedro"). El check solo aplica cuando el cliente
+        // INTENTA modificar `displayName`. Cierra WARNING #1 thanos Fase 2.
+        && (
+          !('displayName' in request.resource.data.diff(resource.data).affectedKeys())
+          || request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
+        )
         && (!('displayNameLower' in request.resource.data) || request.resource.data.displayNameLower is string)
-        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string);
+        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
+        // #322 S3 R12: equality bidireccional. Si CUALQUIERA de displayName o
+        // displayNameLower esta en affectedKeys(), AMBOS deben matchear
+        // (lower == name.lower()). La rama 1 (ninguno cambia) cubre updates de
+        // solo `avatarId` sin tocar displayName/Lower.
+        // Tabla de verdad (specs L240-247):
+        //   name no | lower no  → ALLOW (rama 1)
+        //   name si | lower no  → DENY si stale
+        //   name no | lower si  → DENY (cierra hijack B5)
+        //   name si | lower si  → ALLOW/DENY segun match
+        && (
+          (!('displayName' in request.resource.data.diff(resource.data).affectedKeys())
+            && !('displayNameLower' in request.resource.data.diff(resource.data).affectedKeys()))
+          || (request.resource.data.displayNameLower == request.resource.data.displayName.lower())
+        );
     }
 
     // Favoritos — cualquier usuario autenticado puede leer.
@@ -177,6 +205,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['userId', 'message', 'category', 'createdAt', 'rating', 'mediaUrl', 'mediaType', 'businessId', 'businessName'])
         && request.resource.data.userId == request.auth.uid
+        // #322 R12: type guard explicito antes de operaciones .size()
+        && request.resource.data.message is string
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 1000
         && request.resource.data.category in ['bug', 'sugerencia', 'datos_usuario', 'datos_comercio', 'otro']
@@ -184,9 +214,10 @@ service cloud.firestore {
         && (!('businessId' in request.resource.data) || (request.resource.data.businessId is string && request.resource.data.businessId.matches('^biz_[0-9]{1,6}$')))
         && (!('businessName' in request.resource.data) || (request.resource.data.businessName is string && request.resource.data.businessName.size() > 0 && request.resource.data.businessName.size() <= 100))
         && (!('rating' in request.resource.data) || (request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5))
-        // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/ — sin prefijo el owner
-        // podria substituir por cualquier archivo de Storage.
-        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')))
+        // #300 R-8 + #322 S3: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/{feedbackId}/ —
+        // el feedbackId segment cierra el vector de substitucion cross-feedback (un owner
+        // sustituyendo media de feedback A por la de feedback B propio).
+        && (!('mediaUrl' in request.resource.data) || (request.resource.data.mediaUrl is string && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F' + docId + '%2F.*')))
         && (!('mediaType' in request.resource.data) || request.resource.data.mediaType in ['image', 'pdf']);
       allow read: if (request.auth != null && resource.data.userId == request.auth.uid)
                   || isAdmin();
@@ -205,8 +236,8 @@ service cloud.firestore {
           && resource.data.userId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mediaUrl', 'mediaType'])
           && request.resource.data.mediaUrl is string
-          // #300 R-8: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/
-          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F.*')
+          // #300 R-8 + #322 S3: mediaUrl DEBE apuntar a feedback-media/{owner.uid}/{feedbackId}/
+          && request.resource.data.mediaUrl.matches('^https://firebasestorage\\.googleapis\\.com/.*/feedback-media%2F' + request.auth.uid + '%2F' + docId + '%2F.*')
           && request.resource.data.mediaType in ['image', 'pdf']
         );
       allow delete: if request.auth != null
@@ -334,8 +365,14 @@ service cloud.firestore {
     match /notifications/{notifId} {
       allow read: if request.auth != null
         && (resource.data.userId == request.auth.uid || isAdmin());
+      // #322 R12: type guard explicito sobre `read`. Evaluado incondicionalmente
+      // porque el campo SIEMPRE existe en docs de notifications (Cloud Functions
+      // los crea via admin SDK con `read: false`). Si en el futuro se agregan
+      // otros campos a affectedKeys().hasOnly([...]) (ej: archived, pinned),
+      // reformular como (!('read' in affectedKeys) || request.resource.data.read is bool).
       allow update: if request.auth != null && resource.data.userId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
       allow create, delete: if false;
     }
 
@@ -398,8 +435,10 @@ service cloud.firestore {
         && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
         // #264c: locality size limit
         && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
-        && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
-        && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
+        // #322 S1: range check para lat/lng (mirror del patron de checkins.location).
+        // NaN/Infinity son rechazados como side-effect (`NaN >= -90` evalua false en CEL).
+        && (!('localityLat' in request.resource.data) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
+        && (!('localityLng' in request.resource.data) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
         && request.resource.data.updatedAt == request.time;
 
       // #265a: use affectedKeys for update (not keys().hasOnly which would require all fields)
@@ -418,17 +457,27 @@ service cloud.firestore {
         && (!('notifyRankings' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyRankings is bool)
         && (!('notifyFeedback' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyFeedback is bool)
         && (!('notifyReplies' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyReplies is bool)
-        && (!('notifyFollowers' in request.resource.data) || request.resource.data.notifyFollowers is bool)
-        && (!('notifyRecommendations' in request.resource.data) || request.resource.data.notifyRecommendations is bool)
-        && (!('notificationDigest' in request.resource.data) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
+        // #322 S1: consistency sweep — todos los guards leen via affectedKeys(),
+        // NO via request.resource.data directo. Esto evita bloquear updates legitimos
+        // a otros campos cuando el doc tiene un valor invalido pre-existente en
+        // alguno de estos fields (ver specs L138-156).
+        && (!('notifyFollowers' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyFollowers is bool)
+        && (!('notifyRecommendations' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.notifyRecommendations is bool)
+        && (!('notificationDigest' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.notificationDigest is string && request.resource.data.notificationDigest.size() <= 10))
         && (!('analyticsEnabled' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.analyticsEnabled is bool)
-        && (!('followedTags' in request.resource.data) || isValidFollowedTags(request.resource.data.followedTags))
-        && (!('followedTagsUpdatedAt' in request.resource.data) || request.resource.data.followedTagsUpdatedAt is timestamp)
-        && (!('followedTagsLastSeenAt' in request.resource.data) || request.resource.data.followedTagsLastSeenAt is timestamp)
+        && (!('followedTags' in request.resource.data.diff(resource.data).affectedKeys()) || isValidFollowedTags(request.resource.data.followedTags))
+        && (!('followedTagsUpdatedAt' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.followedTagsUpdatedAt is timestamp)
+        && (!('followedTagsLastSeenAt' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.followedTagsLastSeenAt is timestamp)
         // #264c: locality size limit
-        && (!('locality' in request.resource.data) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
-        && (!('localityLat' in request.resource.data) || request.resource.data.localityLat is number)
-        && (!('localityLng' in request.resource.data) || request.resource.data.localityLng is number)
+        && (!('locality' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.locality is string && request.resource.data.locality.size() <= 100))
+        // #322 S1: range check para lat/lng (mirror del patron de checkins.location).
+        // NaN/Infinity son rechazados como side-effect.
+        && (!('localityLat' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.localityLat is number && request.resource.data.localityLat >= -90 && request.resource.data.localityLat <= 90))
+        && (!('localityLng' in request.resource.data.diff(resource.data).affectedKeys()) || (request.resource.data.localityLng is number && request.resource.data.localityLng >= -180 && request.resource.data.localityLng <= 180))
+        // #322 S1 excepcion explicita: updatedAt mantiene equality dura `== request.time`.
+        // NO se mueve al patron affectedKeys(). Razon: invariante de freshness — el
+        // cliente esta obligado a escribir updatedAt: serverTimestamp() en CADA update
+        // sin excepcion (ver specs L155).
         && request.resource.data.updatedAt == request.time;
       // No delete — userSettings es permanente
     }

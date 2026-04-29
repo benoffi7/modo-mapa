@@ -31,6 +31,15 @@ vi.mock('firebase-admin/auth', () => ({
   getAuth: () => ({ getUserByEmail: mockGetUserByEmail }),
 }));
 
+const mockLoggerWarn = vi.fn();
+vi.mock('firebase-functions', () => ({
+  logger: {
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    info: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 const mockCheckCallableRateLimit = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
@@ -65,28 +74,52 @@ describe('inviteListEditor', () => {
       .rejects.toThrow('Solo el creador puede invitar editores');
   });
 
-  it('throws when target email not found', async () => {
+  // R13 — uniform response anti-enumeration: los siguientes 3 paths
+  // antes throws-eaban, ahora devuelven { success: true } con shape identico.
+
+  it('returns uniform success when target email not registered (no enumeration)', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
     mockGetUserByEmail.mockRejectedValueOnce(new Error('not found'));
-    await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'notfound@b.com' } }))
-      .rejects.toThrow('No se pudo enviar la invitacion');
+    const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'notfound@b.com' } });
+    expect(result).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it('throws when inviting self', async () => {
+  it('logs hashed email (not plain) when target not registered', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockRejectedValueOnce(new Error('not found'));
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'NotFound@b.com' } });
+    expect(mockLoggerWarn).toHaveBeenCalled();
+    const call = mockLoggerWarn.mock.calls.find((c) =>
+      typeof c[0] === 'string' && c[0].includes('not registered'),
+    );
+    expect(call).toBeDefined();
+    const payload = call![1] as { emailHash: string; listId: string; ownerUid: string };
+    expect(payload.emailHash).toMatch(/^[a-f0-9]{12}$/);
+    expect(payload.listId).toBe('l1');
+    expect(payload.ownerUid).toBe('u1');
+    // Email plano NUNCA debe aparecer en el payload de log
+    expect(JSON.stringify(payload)).not.toContain('NotFound@b.com');
+    expect(JSON.stringify(payload)).not.toContain('notfound@b.com');
+  });
+
+  it('returns uniform success when inviting self (no enumeration)', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
     mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u1' });
-    await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'me@b.com' } }))
-      .rejects.toThrow('No podés invitarte a vos mismo');
+    const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'me@b.com' } });
+    expect(result).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it('throws when user already editor', async () => {
+  it('returns uniform success when user already editor (idempotent)', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
     mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
-    await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'dup@b.com' } }))
-      .rejects.toThrow('Este usuario ya es editor');
+    const result = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'dup@b.com' } });
+    expect(result).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it('throws when 5 editors already', async () => {
+  it('throws when 5 editors already (cap is owner-visible info, not a leak)', async () => {
     mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['a', 'b', 'c', 'd', 'e'] }) });
     mockGetUserByEmail.mockResolvedValueOnce({ uid: 'newuser' });
     await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'new@b.com' } }))
@@ -100,6 +133,38 @@ describe('inviteListEditor', () => {
     expect(result).toEqual({ success: true });
     expect(result).not.toHaveProperty('targetUid');
     expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it('uniform shape: happy path and "not registered" return identical responses', async () => {
+    // Happy path
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
+    const happy = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } });
+
+    // Not-registered path
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockRejectedValueOnce(new Error('not found'));
+    const ghost = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'ghost@b.com' } });
+
+    // Self-invite path
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u1' });
+    const self = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'me@b.com' } });
+
+    // Already-editor path
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
+    mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
+    const dup = await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'dup@b.com' } });
+
+    expect(happy).toEqual({ success: true });
+    expect(ghost).toEqual({ success: true });
+    expect(self).toEqual({ success: true });
+    expect(dup).toEqual({ success: true });
+    // Shape strictly identical — no extra fields leak which path was taken
+    expect(Object.keys(happy as object).sort()).toEqual(['success']);
+    expect(Object.keys(ghost as object).sort()).toEqual(['success']);
+    expect(Object.keys(self as object).sort()).toEqual(['success']);
+    expect(Object.keys(dup as object).sort()).toEqual(['success']);
   });
 
   it('calls checkCallableRateLimit with correct key and limit', async () => {

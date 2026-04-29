@@ -114,6 +114,8 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 - **Type validation (#251)**: userSettings validates notifyFollowers/notifyRecommendations as bool, notificationDigest as string<=10, followedTags as list<=20 with timestamp fields. sharedLists validates color (string<=20) and icon (string<=50) on create and update. listItems rate limit now deletes the offending document.
 - **Per-item list validation (#289)**: followedTags validates each item is string<=50 via `isValidFollowedTags()` function (CEL index enumeration for up to 20 items). listItems.businessId uses `isValidBusinessId()`. follows.followedId and listItems.listId capped at 128 chars.
 - **sharedLists rate limit (#289)**: `onSharedListCreated` trigger enforces 10 lists/day per owner with `snap.ref.delete()` + abuse logging.
+- **Type guards explicitos (#322, R12)**: `feedback.message` y `notifications.read` chequean `is string`/`is bool` antes de `.size()` o equality (en CEL, `.size()` aplica a strings/listas/maps — sin guard, un atacante puede enviar listas o maps que pasan el size cap). `userSettings.localityLat/Lng` validan `is number` + range finito (NaN/Infinity rechazados). Ver [guard 300-security R12](guards/300-security.md).
+- **`displayNameLower` equality bidireccional (#322, R12)**: rules de `users` create y update validan `displayNameLower == displayName.lower()`. Cierra hijack de busqueda donde el cliente enviaba `displayNameLower` desincronizado del `displayName` real (la busqueda por prefijo usa `displayNameLower`). El script `scripts/migrate-displayname-lower-sync.mjs` sincroniza docs legacy pre-deploy.
 
 ---
 
@@ -207,6 +209,17 @@ Los callables de editores usan `checkCallableRateLimit()` de `functions/src/util
 
 - `inviteListEditor` response no incluye `targetUid` (solo `{ success: true }`)
 - `EditorsDialog` muestra "Editor" como secondary text en vez de UID parcial
+
+### Email enumeration prevention en callables (#322, R13)
+
+- `inviteListEditor` y `removeListEditor` devuelven respuesta uniforme (`{ success: true }`) sin importar si el `targetEmail` mapea a un usuario registrado, ya era editor, o no existe. La accion real (agregar editor, enviar invitacion) se ejecuta solo cuando el usuario existe; la API no leak la existencia.
+- Errores de validacion previos (input invalido, self-invite, rate limit excedido) si pueden distinguirse del cliente — pero "email no encontrado" / "ya es editor" / "exitoso" son indistinguibles. Ver [guard 300-security R13](guards/300-security.md).
+
+### Bootstrap admin gate (#322, R14)
+
+- `setAdminClaim` (`functions/src/admin/claims.ts`) tiene una rama de bootstrap (`isBootstrap` via `email_verified === true && email === ADMIN_EMAIL`) que permitia auto-asignacion del primer admin sin claim previo.
+- La rama esta gateada por el flag `config/bootstrap.adminAssigned`. Tras el primer admin asignado, el handler setea atomicamente `adminAssigned: true` y rechaza intentos posteriores con `permission-denied`. Cierra el vector donde un compromiso de la cuenta `ADMIN_EMAIL` (phishing, leak) permitia hijack del rol admin.
+- Para recovery operativo (rotacion de admin, migracion de cuenta, post-incidente), seguir [docs/procedures/reset-bootstrap-admin.md](../procedures/reset-bootstrap-admin.md). Ver [guard 300-security R14](guards/300-security.md).
 
 ### IP-based rate limiting
 

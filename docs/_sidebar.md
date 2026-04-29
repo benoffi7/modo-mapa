@@ -21,6 +21,7 @@
 - **[Procedures](/procedures/)**
   - [Worktree Workflow](/procedures/worktree-workflow.md)
   - [Cloud Functions Staging](/procedures/cloud-functions-staging.md)
+  - [Reset Bootstrap Admin](/procedures/reset-bootstrap-admin.md)
 
 - **Admin**
   - [#310 Admin Metrics Gaps — listItems / _rateLimits + event tracking](/feat/admin/310-admin-metrics-gaps/prd.md)
@@ -233,6 +234,8 @@
     - [Specs](/feat/security/308-privacy-policy-drift/specs.md)
     - [Plan](/feat/security/308-privacy-policy-drift/plan.md)
   - [#322 Firestore Rules Hardening + Bootstrap Admin](/feat/security/322-firestore-rules-hardening-bootstrap-admin/prd.md)
+    - [Specs](/feat/security/322-firestore-rules-hardening-bootstrap-admin/specs.md)
+    - [Plan](/feat/security/322-firestore-rules-hardening-bootstrap-admin/plan.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
