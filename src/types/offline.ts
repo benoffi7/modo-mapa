@@ -23,7 +23,11 @@ export type OfflineActionType =
   | 'list_toggle_public'
   | 'list_delete'
   | 'list_item_add'
-  | 'list_item_remove';
+  | 'list_item_remove'
+  // NEW (#323)
+  | 'comment_edit'
+  | 'comment_delete'
+  | 'rating_criteria_upsert';
 
 /** Status de una acción en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -65,6 +69,10 @@ export type OfflineActionPayload =
   | ListTogglePublicPayload
   | ListDeletePayload
   | ListItemAddPayload
+  // NEW (#323)
+  | CommentEditPayload
+  | CommentDeletePayload
+  | RatingCriteriaUpsertPayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -147,6 +155,26 @@ export interface ListDeletePayload {
 
 export interface ListItemAddPayload {
   addedBy?: string;
+}
+
+/** Edit de comment ya sincronizado. Replay → editComment(commentId, userId, text). (#323) */
+export interface CommentEditPayload {
+  commentId: string;
+  text: string;
+}
+
+/** Delete de comment ya sincronizado. Replay → deleteComment(commentId, userId).
+ * onCommentDeleted Cloud Function se encarga del cascade server-side. (#323) */
+export interface CommentDeletePayload {
+  commentId: string;
+}
+
+/** Upsert parcial de un criterio individual de rating.
+ * Replay → upsertCriteriaRating(userId, businessId, { [criterionId]: value }).
+ * El service hace merge no-destructivo con criterios existentes. (#323) */
+export interface RatingCriteriaUpsertPayload {
+  criterionId: string;
+  value: number;
 }
 
 /** For action types that need no extra data beyond userId/businessId on the action */

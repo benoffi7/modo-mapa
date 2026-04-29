@@ -51,6 +51,9 @@ const ACTION_LABELS: Record<OfflineActionType, string> = {
   list_delete: 'Eliminar lista',
   list_item_add: 'Agregar a lista',
   list_item_remove: 'Quitar de lista',
+  comment_edit: 'Editar comentario',
+  comment_delete: 'Eliminar comentario',
+  rating_criteria_upsert: 'Calificación por criterio',
 };
 
 const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
@@ -77,6 +80,9 @@ const ACTION_ICONS: Record<OfflineActionType, typeof StarOutlineIcon> = {
   list_delete: DeleteOutlineIcon,
   list_item_add: BookmarkIcon,
   list_item_remove: BookmarkRemoveIcon,
+  comment_edit: ChatBubbleOutlineIcon,
+  comment_delete: ChatBubbleOutlineIcon,
+  rating_criteria_upsert: StarOutlineIcon,
 };
 
 function timeAgo(timestamp: number): string {
