@@ -13,8 +13,10 @@ import {
 import InsertEmoticonOutlinedIcon from '@mui/icons-material/InsertEmoticonOutlined';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { MSG_LIST } from '../../constants/messages';
-import { createList } from '../../services/sharedLists';
+import { createList, generateListId } from '../../services/sharedLists';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { withBusyFlag } from '../../utils/busyFlag';
 import { getListIconById } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
@@ -29,6 +31,7 @@ interface Props {
 export default function CreateListDialog({ open, onClose, onCreated }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>();
@@ -41,18 +44,27 @@ export default function CreateListDialog({ open, onClose, onCreated }: Props) {
     if (!user || !name.trim()) return;
     setIsCreating(true);
     try {
-      const listId = await withBusyFlag('list_create', async () => {
-        return createList(user.uid, name, desc, selectedIcon);
+      // #323: client-side id permite optimistic UI offline-first
+      const generatedId = generateListId();
+      const trimmedName = name.trim();
+      const trimmedDesc = desc.trim();
+      const icon = selectedIcon;
+      await withBusyFlag('list_create', async () => {
+        await withOfflineSupport(
+          isOffline,
+          'list_create',
+          { userId: user.uid, businessId: '', listId: generatedId },
+          { name: trimmedName, description: trimmedDesc, ...(icon ? { icon } : {}) },
+          () => createList(user.uid, trimmedName, trimmedDesc, icon, generatedId),
+          toast,
+        );
       });
-      const createdName = name.trim();
-      const createdDesc = desc.trim();
-      const createdIcon = selectedIcon;
       setName('');
       setDesc('');
       setSelectedIcon(undefined);
-      toast.success(MSG_LIST.createSuccess);
+      if (!isOffline) toast.success(MSG_LIST.createSuccess);
       onClose();
-      onCreated(listId, createdName, createdDesc, createdIcon);
+      onCreated(generatedId, trimmedName, trimmedDesc, icon);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : MSG_LIST.createError);
     }
