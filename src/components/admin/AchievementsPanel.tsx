@@ -8,6 +8,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import type { Achievement } from '../../types';
 import { fetchAchievements, saveAllAchievements } from '../../services/achievements';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { MSG_OFFLINE } from '../../constants/messages';
 
 const METRIC_OPTIONS = [
   { value: 'checkins_unique', label: 'Check-ins únicos' },
@@ -36,6 +38,7 @@ const EMPTY_ACHIEVEMENT: Omit<Achievement, 'id' | 'order'> = {
 };
 
 export default function AchievementsPanel() {
+  const { isOffline } = useConnectivity();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +105,13 @@ export default function AchievementsPanel() {
           <Button startIcon={<AddIcon />} onClick={addAchievement} variant="outlined" size="small">
             Agregar
           </Button>
-          <Button onClick={saveAll} variant="contained" size="small" disabled={saving}>
+          <Button
+            onClick={saveAll}
+            variant="contained"
+            size="small"
+            disabled={saving || isOffline}
+            title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+          >
             {saving ? 'Guardando...' : 'Guardar todo'}
           </Button>
         </Box>
