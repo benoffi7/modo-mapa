@@ -26,7 +26,7 @@ import { getListIconById } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_LIST_ICON_CHANGED } from '../../constants/analyticsEvents';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { cardSx } from '../../theme/cards';
@@ -215,7 +215,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
             {items.map((item) => {
-              const biz = allBusinesses.find((b) => b.id === item.businessId);
+              const biz = getBusinessById(item.businessId);
               if (!biz) return null;
               return (
                 <ButtonBase
