@@ -1,5 +1,6 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useFollowedTags } from './useFollowedTags';
 import { allBusinesses } from './useBusinesses';
 import { updateUserSettings } from '../services/userSettings';
@@ -13,7 +14,10 @@ import type { InterestFeedGroup } from '../types';
  */
 export function useInterestsFeed() {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const { tags, loading } = useFollowedTags();
+  // #323 C2: snapshot pendiente cuando offline; flush al reconectar.
+  const pendingSeenRef = useRef<Date | null>(null);
 
   const groups = useMemo<InterestFeedGroup[]>(() => {
     if (tags.length === 0) return [];
@@ -43,12 +47,33 @@ export function useInterestsFeed() {
 
   const markSeen = useCallback(() => {
     if (!user) return;
+    const now = new Date();
+    if (isOffline) {
+      pendingSeenRef.current = now;
+      return;
+    }
     updateUserSettings(user.uid, {
-      followedTagsLastSeenAt: new Date(),
+      followedTagsLastSeenAt: now,
     }).catch((err) => {
       logger.error('[useInterestsFeed] markSeen failed:', err);
     });
-  }, [user]);
+  }, [user, isOffline]);
+
+  // #323 C2: flush al reconectar
+  useEffect(() => {
+    let cancelled = false;
+    if (!isOffline && user && pendingSeenRef.current) {
+      const snapshot = pendingSeenRef.current;
+      pendingSeenRef.current = null;
+      updateUserSettings(user.uid, {
+        followedTagsLastSeenAt: snapshot,
+      }).catch((err) => {
+        if (cancelled) return;
+        logger.error('[useInterestsFeed] flush markSeen failed:', err);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [isOffline, user]);
 
   return { groups, totalNew, markSeen, loading };
 }

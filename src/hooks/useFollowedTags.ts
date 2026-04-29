@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings } from '../services/userSettings';
 import { MAX_FOLLOWED_TAGS } from '../constants/interests';
@@ -44,6 +45,9 @@ function useOptimisticTags(settings: UserSettings | null) {
  */
 export function useFollowedTags() {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
+  // #323 C2: snapshot pendiente cuando offline; flush al reconectar.
+  const pendingTagsRef = useRef<string[] | null>(null);
 
   const fetcher = useCallback(async (): Promise<UserSettings | null> => {
     if (!user) return null;
@@ -72,6 +76,12 @@ export function useFollowedTags() {
 
       trackEvent(EVT_TAG_FOLLOWED, { tag, source });
 
+      // #323: offline → acumular snapshot, flush al reconectar.
+      if (isOffline) {
+        pendingTagsRef.current = next;
+        return;
+      }
+
       updateUserSettings(user.uid, {
         followedTags: next,
         followedTagsUpdatedAt: new Date(),
@@ -80,7 +90,7 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags, setOptimisticTags],
+    [user, isOffline, optimisticTags, serverTags, setOptimisticTags],
   );
 
   const unfollowTag = useCallback(
@@ -94,6 +104,11 @@ export function useFollowedTags() {
 
       trackEvent(EVT_TAG_UNFOLLOWED, { tag, source });
 
+      if (isOffline) {
+        pendingTagsRef.current = next;
+        return;
+      }
+
       updateUserSettings(user.uid, {
         followedTags: next,
         followedTagsUpdatedAt: new Date(),
@@ -102,8 +117,25 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags, setOptimisticTags],
+    [user, isOffline, optimisticTags, serverTags, setOptimisticTags],
   );
+
+  // #323 C2: flush snapshot al reconectar
+  useEffect(() => {
+    let cancelled = false;
+    if (!isOffline && user && pendingTagsRef.current) {
+      const snapshot = pendingTagsRef.current;
+      pendingTagsRef.current = null;
+      updateUserSettings(user.uid, {
+        followedTags: snapshot,
+        followedTagsUpdatedAt: new Date(),
+      }).catch((err) => {
+        if (cancelled) return;
+        logger.error('[useFollowedTags] flush failed:', err);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [isOffline, user]);
 
   const isFollowed = useCallback(
     (tag: string) => tags.includes(tag),
