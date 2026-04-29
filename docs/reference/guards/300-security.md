@@ -15,14 +15,14 @@ Regression-guard para los fixes del issue #300 (tech debt de seguridad — depen
 - **R9 — `listItems` trigger: rate limit ANTES del counter.** `onListItemCreated` (`functions/src/triggers/listItems.ts`) DEBE chequear rate limit y borrar el doc ANTES de `incrementCounter`. Mismo patron aplica a `onUserSettingsWritten` y `onSharedListCreated` (ya enforced por #289, no regresar).
 - **R10 — `beforeUserCreated` seed de `userSettings`.** El blocking function `beforeUserCreated` (`functions/src/triggers/authBlocking.ts`) DEBE crear `userSettings/{uid}` con al menos `{ profilePublic: false, updatedAt: serverTimestamp() }` de forma idempotente antes de permitir el alta. Garantiza que la rule de `follows` (que exige `exists(userSettings)`) nunca falle por race con `onUserCreated`.
 - **R11 — `ADMIN_EMAIL` y `APP_CHECK_ENFORCEMENT` en Secret Manager.** Ninguno de los dos valores puede vivir en `functions/.env`. `assertAdmin` lee `ADMIN_EMAIL` via `defineSecret('ADMIN_EMAIL').value()`, y `APP_CHECK_ENFORCEMENT` se inyecta via GitHub Secret en el workflow de deploy. `functions/.env` puede documentar con comentario que apunte a Secret Manager.
-- **R12 — Type guards explicitos en firestore.rules.** Toda regla `create`/`update` que valide tamaños o estructura DEBE chequear el tipo primitivo antes de operar:
+- **R12 — Type guards explicitos en firestore.rules.** _Verified in #322._ Toda regla `create`/`update` que valide tamaños o estructura DEBE chequear el tipo primitivo antes de operar:
   - Strings con `.size()` requieren `is string` (`.size()` aplica a strings, listas y maps).
   - Booleanos requieren `is bool`.
   - Numeros lat/lng requieren `is number` + range check (`>= -90 && <= 90` / `>= -180 && <= 180`).
-  - Numeros con semantica de ID (`displayNameLower == displayName.lower()`) requieren equality contra el campo source.
+  - `displayNameLower` requiere equality bidireccional contra `displayName.lower()` en create y update (cuando se modifica `displayName`). Cierra el vector de hijack de busqueda donde el cliente enviaba `displayNameLower` desincronizado del `displayName` real.
   Aplica especificamente a: `feedback.message`, `notifications.read`, `userSettings.localityLat/localityLng`, `users.displayNameLower`, y cualquier campo nuevo.
-- **R13 — Callables que aceptan email no deben enumerar usuarios.** `inviteListEditor`, `removeListEditor`, y cualquier callable que reciba `targetEmail` DEBE devolver respuesta uniforme (success generico) sin importar si el email mapea a un usuario registrado. La accion real (agregar editor, enviar invitacion) se ejecuta solo cuando el usuario existe; la API no leak la existencia.
-- **R14 — Bootstrap admin gateado tras primer admin.** `setAdminClaim` (`functions/src/admin/claims.ts`) tiene una rama de bootstrap (`isBootstrap` via `email_verified === true && email === ADMIN_EMAIL`). Esta rama DEBE quedar deshabilitada despues del primer admin asignado: gatear con un flag `config/bootstrap.adminAssigned == true` que el handler setea atomicamente al asignar el primer claim. Una vez asignado, la rama de bootstrap rechaza con `permission-denied`.
+- **R13 — Callables que aceptan email no deben enumerar usuarios.** _Verified in #322._ `inviteListEditor`, `removeListEditor`, y cualquier callable que reciba `targetEmail` DEBE devolver respuesta uniforme (success generico) sin importar si el email mapea a un usuario registrado. La accion real (agregar editor, enviar invitacion) se ejecuta solo cuando el usuario existe; la API no leak la existencia. Los errores de validacion previos (input invalido, self-invite, rate limit) si pueden distinguirse — pero "email no encontrado" / "ya es editor" / "exitoso" deben ser indistinguibles desde el cliente.
+- **R14 — Bootstrap admin gateado tras primer admin.** _Verified in #322._ `setAdminClaim` (`functions/src/admin/claims.ts`) tiene una rama de bootstrap (`isBootstrap` via `email_verified === true && email === ADMIN_EMAIL`). Esta rama DEBE quedar deshabilitada despues del primer admin asignado: gatear con un flag `config/bootstrap.adminAssigned == true` que el handler setea atomicamente al asignar el primer claim. Una vez asignado, la rama de bootstrap rechaza con `permission-denied`. Para recovery operativo (rotacion de admin, migracion de cuenta), seguir [docs/procedures/reset-bootstrap-admin.md](../../procedures/reset-bootstrap-admin.md).
 
 ## Detection patterns
 
@@ -258,6 +258,8 @@ export function assertAdmin(context: CallableRequest) {
 
 ### Affected files
 
+**From #300 (original):**
+
 - `functions/src/utils/fanOut.ts`
 - `functions/src/utils/ipRateLimiter.ts`
 - `functions/src/constants/fanOut.ts`
@@ -278,6 +280,23 @@ export function assertAdmin(context: CallableRequest) {
 - `src/services/admin.ts`
 - `src/components/admin/ListsPanel.tsx`
 
+**From #322 (R12/R13/R14 enforcement + follow-ups):**
+
+- `firestore.rules` — type guards `is string`/`is bool` en `feedback.message`, `notifications.read`; range check finito en `userSettings.localityLat/localityLng` (NaN/Infinity rechazados); equality bidireccional `displayNameLower == displayName.lower()` en create y update de `users`; whitespace-only displayName rechazado; segmento `feedbackId` requerido en `feedback.mediaUrl` (Fases 2.1-2.7).
+- `functions/src/callable/inviteListEditor.ts` — uniform success response: la respuesta es identica para "agregado", "ya era editor" y "email no existe". Solo errores de input (invalid email, self-invite, rate limit) pueden distinguirse (Fase 3.1).
+- `functions/src/callable/removeListEditor.ts` — uniform success response: respuesta identica si el email existe o no. Mantiene check de owner-only previo a la operacion (Fase 3.2).
+- `functions/src/admin/featuredLists.ts` — rate limit de `getFeaturedLists` ajustado (de 60/dia × 500 a un ceiling realista para discovery publica) (Fase 3.3).
+- `functions/src/callable/cleanAnonymousData.ts` — `revokeRefreshTokens(uid)` post-cleanup cierra la ventana de hasta 1h donde el cliente seguia con tokens validos (Fase 3.4).
+- `functions/src/triggers/checkins.ts` — `onCheckInDeleted` ahora suspende ventana de creates 24h al exceder limite de deletes (no log-only) (Fase 4.1).
+- `functions/src/admin/claims.ts` — bootstrap path gateado por `config/bootstrap.adminAssigned == true`. Tras asignar primer admin, set atomico del flag y rechazo de bootstrap path con `permission-denied` (Fase 5.1).
+- `scripts/migrate-displayname-lower-sync.mjs` — migracion idempotente para sincronizar `displayNameLower` con `displayName.lower()` en docs legacy (pre-#322). Debe correrse antes del deploy de las nuevas rules (Fase 1.1).
+- `docs/procedures/reset-bootstrap-admin.md` — procedure operativo para reset del flag `config/bootstrap.adminAssigned` (rotacion de admin, recovery post-incidente) (Fase 5.1).
+- Tests asociados:
+  - `firestore.rules` — verificacion manual via emulator (rules tests infra out of scope, tracked en #332).
+  - `functions/src/callable/inviteListEditor.test.ts`, `functions/src/callable/removeListEditor.test.ts` — uniform response coverage.
+  - `functions/src/admin/claims.test.ts` — bootstrap gate state machine (primer admin asigna, segundo intento rechaza).
+  - `functions/src/triggers/checkins.test.ts` — suspension de creates al exceder deletes.
+
 ### Related issues
 
 - #289 sharedLists rate limit (patron replicado en listItems)
@@ -286,3 +305,5 @@ export function assertAdmin(context: CallableRequest) {
 - #168 vite / eslint peer deps
 - #301 coverage branches
 - #303 perf instrumentation untracked reads
+- #322 firestore rules type guards + bootstrap admin gate (R12/R13/R14 enforcement)
+- #332 rules emulator test infra (out of scope para #322; gating manual hasta merge)
