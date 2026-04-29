@@ -53,6 +53,23 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Security — #322 firestore rules hardening + bootstrap admin
+
+- Type guards explicitos en `firestore.rules` (`feedback.message` `is string`, `notifications.read` `is bool`,
+  `userSettings.localityLat/Lng` range finito, `displayName` regex + reject whitespace-only,
+  `displayNameLower == displayName.lower()` equality bidireccional en create y update).
+- Uniform response (`{ success: true }`) en `inviteListEditor` / `removeListEditor` cierra vector
+  de email enumeration: respuesta indistinguible para "agregado", "ya era editor" y "email no existe".
+- Bootstrap admin path en `setAdminClaim` gateado por `config/bootstrap.adminAssigned` — cerrado
+  atomicamente tras asignar el primer admin. Mitiga hijack via compromiso de cuenta `ADMIN_EMAIL`.
+- `feedback.mediaUrl` ahora requiere segmento `feedbackId` en el path (previene reuso cross-feedback).
+- `getFeaturedLists` rate limit ajustado a un ceiling realista para discovery publica (cierra scraping).
+- `onCheckInDeleted` suspende ventana de creates 24h al exceder limite de deletes (no log-only).
+- `cleanAnonymousData` revoca refresh tokens post-cleanup (cierra ventana de hasta 1h con tokens validos).
+- Script `scripts/migrate-displayname-lower-sync.mjs` para sync idempotente de docs legacy pre-deploy.
+- Procedure `docs/procedures/reset-bootstrap-admin.md` para recovery (rotacion de admin, post-incidente).
+- Guard 300-security R12/R13/R14 marcadas como verified in #322.
+
 ### Added
 
 - Agente `copy-auditor` para auditoria de ortografia y tildes en archivos `.ts`/`.tsx`
