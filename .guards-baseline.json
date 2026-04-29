@@ -6,7 +6,7 @@
     "R12-notifications-read": 0,
     "R12-locality-range": 2,
     "R12-displayNameLower": 0,
-    "R14-bootstrap-admin": 1
+    "R14-bootstrap-admin": 0
   },
   "301": {
     "R2-services-without-test": 3,
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 254
+  "_total": 253
 }
