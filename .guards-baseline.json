@@ -12,17 +12,17 @@
     "R2-services-without-test": 3,
     "R3-triggers-without-test": 0,
     "R4-admin-callables-without-test": 11,
-    "R5-hooks-without-test": 24,
+    "R5-hooks-without-test": 22,
     "R6-validators-without-test": 1,
     "R-threshold-not-reduced": 0
   },
   "302": {
-    "R4-allBusinesses-find": 15,
+    "R4-allBusinesses-find": 1,
     "R-stats-barrel": 0,
     "R-fetchUserLikes-removed": 16,
     "R-newMap-allBusinesses": 2,
     "R6-img-without-lazy": 3,
-    "R7-mui-icons-not-split": 1,
+    "R7-mui-icons-not-split": 0,
     "R8-firebase-storage-in-critical": 0
   },
   "303": {
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 253
+  "_total": 236
 }

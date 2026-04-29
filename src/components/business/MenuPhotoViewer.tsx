@@ -78,6 +78,9 @@ export default function MenuPhotoViewer({ open, photoUrl, photoId, reviewedAt, o
             <img
               src={photoUrl}
               alt="Foto del menú"
+              loading="lazy"
+              decoding="async"
+              // No width/height: fullscreen viewer with objectFit: contain needs auto-fit
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
               onError={() => setImageError(true)}
             />

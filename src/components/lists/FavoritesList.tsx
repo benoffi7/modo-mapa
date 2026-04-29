@@ -23,7 +23,7 @@ import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
 import { trackEvent } from '../../utils/analytics';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
@@ -55,7 +55,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
   const favorites = useMemo(() => {
     const result: FavoriteItem[] = [];
     for (const data of rawItems) {
-      const business = allBusinesses.find((b) => b.id === data.businessId);
+      const business = getBusinessById(data.businessId);
       if (business) {
         result.push({ businessId: data.businessId, business, createdAt: data.createdAt });
       }
