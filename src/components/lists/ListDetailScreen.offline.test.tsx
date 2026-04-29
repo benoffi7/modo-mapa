@@ -62,6 +62,7 @@ const baseList: SharedList = {
   createdAt: new Date(),
   updatedAt: new Date(),
   editorIds: [],
+  featured: false,
 };
 
 describe('ListDetailScreen — list CRUD wraps + delete gate (#323)', () => {

@@ -18,6 +18,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShareIcon from '@mui/icons-material/Share';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -25,6 +27,7 @@ import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { allBusinesses } from '../../hooks/useBusinesses';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { trackEvent } from '../../utils/analytics';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import ListFilters from '../common/ListFilters';
@@ -45,6 +48,8 @@ interface Props {
 
 export default function FavoritesList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
+  const { isOffline } = useConnectivity();
   const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
@@ -97,8 +102,17 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
 
   const handleRemoveFavorite = async () => {
     if (!user || !menuTarget) return;
-    await removeFavorite(user.uid, menuTarget.businessId);
-    trackEvent('favorite_toggle', { action: 'remove', business_id: menuTarget.businessId });
+    const businessId = menuTarget.businessId;
+    // #323: wrap removeFavorite con withOfflineSupport (encolable)
+    await withOfflineSupport(
+      isOffline,
+      'favorite_remove',
+      { userId: user.uid, businessId },
+      { action: 'remove' },
+      () => removeFavorite(user.uid, businessId),
+      toast,
+    );
+    trackEvent('favorite_toggle', { action: 'remove', business_id: businessId });
     handleCloseMenu();
     reload();
   };
