@@ -14,6 +14,7 @@ import {
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { fetchUserFeedback, markFeedbackViewed } from '../../services/feedback';
 import { FEEDBACK_STATUSES } from '../../constants/feedback';
 import { MSG_FEEDBACK } from '../../constants/messages';
@@ -40,6 +41,7 @@ function statusLabel(status: FeedbackStatus) {
 
 export default function MyFeedbackList() {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const [items, setItems] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -58,7 +60,8 @@ export default function MyFeedbackList() {
     const isExpanding = expandedId !== fb.id;
     setExpandedId(isExpanding ? fb.id : null);
 
-    if (isExpanding && fb.adminResponse && !fb.viewedByUser) {
+    // #323 C4: gated offline (fire-and-forget no critico, badge se reconcilia al volver online)
+    if (isExpanding && fb.adminResponse && !fb.viewedByUser && !isOffline) {
       try {
         await markFeedbackViewed(fb.id);
         setItems((prev) => prev.map((f) => f.id === fb.id ? { ...f, viewedByUser: true } : f));
