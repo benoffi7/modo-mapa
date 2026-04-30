@@ -18,16 +18,19 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { useOptionalBusinessScope } from '../../context/BusinessScopeContext';
 import { MAX_LISTS } from '../../constants/lists';
 import {
   createList,
+  generateListId,
   addBusinessToList,
   removeBusinessFromList,
   fetchListItems,
   fetchAllAccessibleLists,
   fetchUserLists,
 } from '../../services/sharedLists';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import type { SharedList } from '../../types';
 import { MSG_LIST } from '../../constants/messages';
 import { logger } from '../../utils/logger';
@@ -43,6 +46,7 @@ interface Props {
 export default function AddToListDialog({ open, onClose, businessId: propBusinessId, businessName: propBusinessName }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const scope = useOptionalBusinessScope();
   const businessId = propBusinessId ?? scope?.businessId ?? '';
   const businessName = propBusinessName ?? scope?.businessName ?? '';
@@ -88,16 +92,34 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
   }, [user, open, businessId]);
 
   const handleToggle = async (listId: string) => {
+    if (!user) return;
     setActionInProgress(listId);
     const isChecked = checkedIds.has(listId);
     try {
       if (isChecked) {
-        await removeBusinessFromList(listId, businessId);
+        // #323: wrap remove con withOfflineSupport (encolable)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_remove',
+          { userId: user.uid, businessId, listId },
+          {},
+          () => removeBusinessFromList(listId, businessId),
+          toast,
+        );
         setCheckedIds((prev) => { const next = new Set(prev); next.delete(listId); return next; });
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l));
       } else {
         const list = lists.find((l) => l.id === listId);
-        await addBusinessToList(listId, businessId, list && user && list.ownerId !== user.uid ? user.uid : undefined);
+        const addedBy = list && list.ownerId !== user.uid ? user.uid : undefined;
+        // #323: wrap add con withOfflineSupport (encolable)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_add',
+          { userId: user.uid, businessId, listId },
+          { ...(addedBy ? { addedBy } : {}) },
+          () => addBusinessToList(listId, businessId, addedBy),
+          toast,
+        );
         setCheckedIds((prev) => new Set(prev).add(listId));
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: l.itemCount + 1 } : l));
       }
@@ -112,17 +134,36 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
     if (!user || !newName.trim()) return;
     setIsCreating(true);
     try {
+      // #323: client-side id permite optimistic UI offline-first
+      const generatedId = generateListId();
+      const trimmedName = newName.trim();
       await withBusyFlag('list_create', async () => {
-        const listId = await createList(user.uid, newName);
-        // Add business to the new list immediately
-        await addBusinessToList(listId, businessId);
+        await withOfflineSupport(
+          isOffline,
+          'list_create',
+          { userId: user.uid, businessId: '', listId: generatedId },
+          { name: trimmedName, description: '' },
+          () => createList(user.uid, trimmedName, '', undefined, generatedId),
+          toast,
+        );
+        // Add business to the new list (encolable separadamente)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_add',
+          { userId: user.uid, businessId, listId: generatedId },
+          {},
+          () => addBusinessToList(generatedId, businessId),
+          toast,
+        );
         setNewName('');
         setShowCreate(false);
-        toast.success(MSG_LIST.createAndAddSuccess);
-        // Reload lists
-        const refreshed = await fetchUserLists(user.uid);
-        setLists(refreshed);
-        setCheckedIds((prev) => new Set(prev).add(listId));
+        if (!isOffline) toast.success(MSG_LIST.createAndAddSuccess);
+        // Reload lists (online only — offline keeps optimistic state)
+        if (!isOffline) {
+          const refreshed = await fetchUserLists(user.uid);
+          setLists(refreshed);
+        }
+        setCheckedIds((prev) => new Set(prev).add(generatedId));
       });
     } catch (err) {
       logger.error('[AddToListDialog] create failed:', err);

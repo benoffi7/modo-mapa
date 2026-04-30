@@ -13,6 +13,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { cleanAnonymousData } from '../../services/emailAuth';
+import { MSG_OFFLINE } from '../../constants/messages';
 
 export type SettingsSection = 'notifications' | 'pendientes' | 'privacy' | 'config' | 'help';
 
@@ -55,6 +56,11 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
 
   const handleConfirm = async () => {
     if (isAnonymous) {
+      // #323 S2 (HIGH): defensa adicional al gate del boton trigger.
+      if (isOffline) {
+        setError(MSG_OFFLINE.cleanAnonOffline);
+        return;
+      }
       // Clean server-side data before signing out
       setLoading(true);
       setError(null);

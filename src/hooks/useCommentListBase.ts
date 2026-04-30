@@ -41,13 +41,20 @@ export function useCommentListBase({
   const commentUserIds = useMemo(() => comments.map((c) => c.userId), [comments]);
   const profileVisibility = useProfileVisibility(commentUserIds);
 
-  // Undo delete
+  // Undo delete (#323: wrappeado para encolar offline)
   const onConfirmDeleteComment = useCallback(
     async (comment: Comment) => {
       if (!user) return;
-      await deleteComment(comment.id, user.uid);
+      await withOfflineSupport(
+        isOffline,
+        'comment_delete',
+        { userId: user.uid, businessId, businessName },
+        { commentId: comment.id },
+        () => deleteComment(comment.id, user.uid),
+        toast,
+      );
     },
-    [user],
+    [user, isOffline, businessId, businessName, toast],
   );
   const { isPendingDelete, markForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete: onConfirmDeleteComment,

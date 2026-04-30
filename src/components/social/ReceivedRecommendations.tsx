@@ -51,12 +51,13 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
 
   useEffect(() => {
     trackEvent(EVT_RECOMMENDATION_LIST_VIEWED);
-    if (userId) {
+    // #323 C5: gated offline (batch write no encolable; badge se reconcilia al volver online).
+    if (userId && !isOffline) {
       markAllRecommendationsAsRead(userId).catch((err) => {
         logger.error('markAllRead failed:', err);
       });
     }
-  }, [userId]);
+  }, [userId, isOffline]);
 
   // Reload when social > recomendaciones becomes active
   useSocialSubTabRefresh('recomendaciones', reload);

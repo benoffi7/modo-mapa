@@ -1,11 +1,36 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useFollowedTags } from './useFollowedTags';
 import { allBusinesses } from './useBusinesses';
 import { updateUserSettings } from '../services/userSettings';
+import { auth } from '../config/firebase';
 import { INTERESTS_MAX_BUSINESSES_PER_TAG } from '../constants/interests';
 import { logger } from '../utils/logger';
 import type { InterestFeedGroup } from '../types';
+
+// #323: pendingState a nivel módulo — sobrevive al unmount del consumer.
+// Per-uid: solo guardamos el último timestamp (last-write-wins).
+const pendingSeenByUser = new Map<string, Date>();
+
+// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
+// Sin esto, un markSeen stale de A se aplicaría cuando A vuelva a loguearse online,
+// adelantando incorrectamente su followedTagsLastSeenAt.
+let _previousUid: string | null = null;
+onAuthStateChanged(auth, (firebaseUser) => {
+  const newUid = firebaseUser?.uid ?? null;
+  if (_previousUid && _previousUid !== newUid) {
+    pendingSeenByUser.delete(_previousUid);
+  }
+  _previousUid = newUid;
+});
+
+/** Test-only: limpia el estado modular entre tests. No exportar a producción. */
+export function __resetPendingSeenForTests() {
+  pendingSeenByUser.clear();
+  _previousUid = null;
+}
 
 /**
  * Builds an interest feed grouped by followed tag.
@@ -13,6 +38,7 @@ import type { InterestFeedGroup } from '../types';
  */
 export function useInterestsFeed() {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
   const { tags, loading } = useFollowedTags();
 
   const groups = useMemo<InterestFeedGroup[]>(() => {
@@ -43,12 +69,35 @@ export function useInterestsFeed() {
 
   const markSeen = useCallback(() => {
     if (!user) return;
+    const now = new Date();
+    if (isOffline) {
+      pendingSeenByUser.set(user.uid, now);
+      return;
+    }
     updateUserSettings(user.uid, {
-      followedTagsLastSeenAt: new Date(),
+      followedTagsLastSeenAt: now,
     }).catch((err) => {
       logger.error('[useInterestsFeed] markSeen failed:', err);
     });
-  }, [user]);
+  }, [user, isOffline]);
+
+  // #323: flush al reconectar — sobrevive al unmount del consumer
+  // gracias a que pendingSeenByUser vive a nivel módulo.
+  useEffect(() => {
+    let cancelled = false;
+    if (!isOffline && user) {
+      const snapshot = pendingSeenByUser.get(user.uid);
+      if (!snapshot) return;
+      pendingSeenByUser.delete(user.uid);
+      updateUserSettings(user.uid, {
+        followedTagsLastSeenAt: snapshot,
+      }).catch((err) => {
+        if (cancelled) return;
+        logger.error('[useInterestsFeed] flush markSeen failed:', err);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [isOffline, user]);
 
   return { groups, totalNew, markSeen, loading };
 }

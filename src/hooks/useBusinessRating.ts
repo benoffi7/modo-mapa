@@ -144,7 +144,14 @@ export function useBusinessRating({
     setPendingCriteria((prev) => ({ ...(prev ?? {}), [criterionId]: value }));
     try {
       await withBusyFlag('rating_submit', async () => {
-        await upsertCriteriaRating(user.uid, businessId, { [criterionId]: value });
+        await withOfflineSupport(
+          isOffline,
+          'rating_criteria_upsert',
+          { userId: user.uid, businessId, businessName },
+          { criterionId, value },
+          () => upsertCriteriaRating(user.uid, businessId, { [criterionId]: value }),
+          toast,
+        );
       });
       onRatingChange();
     } catch {
@@ -156,7 +163,7 @@ export function useBusinessRating({
       });
       toast.error(MSG_BUSINESS.criteriaError);
     }
-  }, [user, businessId, onRatingChange, toast]);
+  }, [user, businessId, businessName, isOffline, onRatingChange, toast]);
 
   const hasCriteriaData = Object.values(criteriaAverages).some((c) => c.count > 0);
 

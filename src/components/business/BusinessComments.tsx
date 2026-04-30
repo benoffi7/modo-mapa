@@ -160,11 +160,19 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
     if (!editingId || !user || !editText.trim()) return;
     setIsSavingEdit(true);
     try {
-      await editComment(editingId, user.uid, editText.trim());
+      const trimmed = editText.trim();
+      await withOfflineSupport(
+        isOffline,
+        'comment_edit',
+        { userId: user.uid, businessId, businessName },
+        { commentId: editingId, text: trimmed },
+        () => editComment(editingId, user.uid, trimmed),
+        toast,
+      );
       setEditingId(null);
       setEditText('');
       onCommentsChange();
-      toast.success(MSG_COMMENT.editSuccess);
+      if (!isOffline) toast.success(MSG_COMMENT.editSuccess);
     } catch (error) {
       logger.error('Error editing comment:', error);
       toast.error(MSG_COMMENT.publishError);
@@ -327,7 +335,7 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
         )}
       </List>
 
-      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} />
+      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} isOffline={isOffline} />
     </Box>
   );
 });

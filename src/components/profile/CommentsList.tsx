@@ -8,14 +8,16 @@ import {
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import { useUndoDelete } from '../../hooks/useUndoDelete';
 import { useSwipeActions } from '../../hooks/useSwipeActions';
 import { useCommentEdit } from '../../hooks/useCommentEdit';
 import { deleteComment, editComment, getCommentsCollection } from '../../services/comments';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useToast } from '../../context/ToastContext';
-import { MSG_COMMON, MSG_COMMENT } from '../../constants/messages';
+import { MSG_COMMON, MSG_COMMENT, MSG_OFFLINE } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { PaginatedListShell } from '../common/PaginatedListShell';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -35,6 +37,7 @@ interface Props {
 export default function CommentsList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const { notifications, markRead } = useNotifications();
 
   // Data loading
@@ -44,18 +47,25 @@ export default function CommentsList({ onSelectBusiness }: Props) {
 
   const handleRefresh = useCallback(async () => { reload(); }, [reload]);
 
-  // Undo delete
+  // Undo delete (#323: wrap con withOfflineSupport para encolar offline)
   const onConfirmDelete = useCallback(
     async (comment: Comment) => {
       if (!user) return;
       try {
-        await deleteComment(comment.id, user.uid);
+        await withOfflineSupport(
+          isOffline,
+          'comment_delete',
+          { userId: user.uid, businessId: comment.businessId },
+          { commentId: comment.id },
+          () => deleteComment(comment.id, user.uid),
+          toast,
+        );
       } catch (err) {
         logger.error('[CommentsList] deleteComment failed:', err);
         toast.error(MSG_COMMON.deleteError);
       }
     },
-    [user, toast],
+    [user, isOffline, toast],
   );
   const { isPendingDelete, markForDelete, snackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete,
@@ -63,16 +73,27 @@ export default function CommentsList({ onSelectBusiness }: Props) {
     message: MSG_COMMENT.deleteSuccess,
   });
 
-  // Edit (extracted hook)
+  // Edit (extracted hook) — #323 wrap con withOfflineSupport
   const handleEditSave = useCallback(async (commentId: string, newText: string) => {
     if (!user) return;
+    // CommentsList no tiene businessId fijo (lista paginada multi-business);
+    // buscamos el businessId del comentario para metadata de la queue.
+    const target = rawItems.find((c) => c.id === commentId);
+    const businessId = target?.businessId ?? '';
     try {
-      await editComment(commentId, user.uid, newText);
+      await withOfflineSupport(
+        isOffline,
+        'comment_edit',
+        { userId: user.uid, businessId },
+        { commentId, text: newText },
+        () => editComment(commentId, user.uid, newText),
+        toast,
+      );
     } catch (err) {
       logger.error('[CommentsList] editComment failed:', err);
       toast.error(MSG_COMMON.editError);
     }
-  }, [user, toast]);
+  }, [user, isOffline, toast, rawItems]);
 
   const { editingId, editText, isSavingEdit, setEditText, startEdit, cancelEdit, saveEdit } = useCommentEdit({
     onSave: handleEditSave,
@@ -225,13 +246,15 @@ export default function CommentsList({ onSelectBusiness }: Props) {
 
       <Snackbar
         open={snackbarProps.open}
-        message={snackbarProps.message}
+        message={isOffline ? MSG_OFFLINE.commentDeletedOffline : snackbarProps.message}
         autoHideDuration={snackbarProps.autoHideDuration}
         onClose={snackbarProps.onClose}
         action={
-          <Button color="primary" size="small" onClick={snackbarProps.onUndo}>
-            Deshacer
-          </Button>
+          isOffline ? undefined : (
+            <Button color="primary" size="small" onClick={snackbarProps.onUndo}>
+              Deshacer
+            </Button>
+          )
         }
       />
     </PaginatedListShell>

@@ -48,4 +48,16 @@ describe('OfflineIndicator', () => {
     render(<OfflineIndicator />);
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });
+
+  it('renders above MUI Snackbar (zIndex > theme.zIndex.snackbar)', () => {
+    // #323 Cycle 3: BLOCKER — Snackbar default = 1400; el indicator debe quedar arriba
+    // para no ser tapado por toasts ("Sincronizando...", "Acción aplicada") durante
+    // el flush al reconectar. Modal (1300) queda automáticamente por debajo.
+    mockConnectivity({ isOffline: true });
+    render(<OfflineIndicator />);
+    const chip = screen.getByRole('status');
+    const zIndex = parseInt(window.getComputedStyle(chip).zIndex, 10);
+    // theme.zIndex.snackbar = 1400 (MUI default). Esperamos >= 1401.
+    expect(zIndex).toBeGreaterThanOrEqual(1401);
+  });
 });
