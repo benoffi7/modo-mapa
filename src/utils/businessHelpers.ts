@@ -1,8 +1,8 @@
-import { allBusinesses } from '../hooks/useBusinesses';
+import { getBusinessById } from './businessMap';
 import { PREDEFINED_TAGS } from '../constants/tags';
 
 export function getBusinessName(id: string): string {
-  return allBusinesses.find((b) => b.id === id)?.name ?? id;
+  return getBusinessById(id)?.name ?? id;
 }
 
 export function getTagLabel(tagId: string): string {

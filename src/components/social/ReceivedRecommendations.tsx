@@ -18,7 +18,7 @@ import { MSG_SOCIAL } from '../../constants/messages';
 
 import { trackEvent } from '../../utils/analytics';
 import { EVT_RECOMMENDATION_OPENED, EVT_RECOMMENDATION_LIST_VIEWED } from '../../constants/analyticsEvents';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -63,7 +63,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
   useSocialSubTabRefresh('recomendaciones', reload);
 
   const handleClick = useCallback((rec: Recommendation) => {
-    const business = allBusinesses.find((b) => b.id === rec.businessId);
+    const business = getBusinessById(rec.businessId);
     if (business) {
       if (!rec.read && userId) {
         withOfflineSupport(
@@ -98,7 +98,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {items.map((rec) => {
-              const biz = allBusinesses.find((b) => b.id === rec.businessId);
+              const biz = getBusinessById(rec.businessId);
               const dist = biz ? formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, biz.lat, biz.lng)) : '';
               const cat = biz ? (CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category) : '';
               return (

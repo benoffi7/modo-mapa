@@ -82,6 +82,10 @@ export default function MenuPhotoSection({ menuPhoto, isLoading, onPhotoChange }
             <img
               src={photoUrl}
               alt="Menú"
+              loading="lazy"
+              decoding="async"
+              width={400}
+              height={200}
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
               onError={() => setPhotoUrl(null)}
             />

@@ -116,7 +116,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          mui: ['@mui/material', '@mui/icons-material'],
+          'mui-core': ['@mui/material', '@mui/system'],
+          'mui-icons': ['@mui/icons-material'],
           recharts: ['recharts'],
           'google-maps': ['@vis.gl/react-google-maps'],
         },
