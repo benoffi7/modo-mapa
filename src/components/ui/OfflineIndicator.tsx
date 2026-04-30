@@ -28,10 +28,12 @@ export function OfflineIndicator() {
         top: 8,
         left: '50%',
         transform: 'translateX(-50%)',
-        // #323: por encima de Modal (theme.zIndex.modal = 1300) — sin esto
-        // el Backdrop de Dialog tapa el indicator en flujos críticos offline
-        // (AddToListDialog, MenuPhotoUpload, ConfirmDelete, etc.).
-        zIndex: (theme) => theme.zIndex.modal + 1,
+        // #323 Cycle 3: por encima de Snackbar (theme.zIndex.snackbar = 1400).
+        // Snackbar es el caso real de tapado durante el flush (visible 5s+ con toasts
+        // de "Sincronizando..." / "Acción aplicada"). Modal (1300) y Backdrop quedan
+        // automáticamente por debajo. Tooltip (1500) puede taparlo, pero es hover-only
+        // y efímero — aceptable trade-off.
+        zIndex: (theme) => theme.zIndex.snackbar + 1,
         maxWidth: 'calc(100vw - 32px)',
       }}
     />
