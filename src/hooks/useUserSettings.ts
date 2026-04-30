@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -12,6 +12,17 @@ import { logger } from '../utils/logger';
 
 type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'notifyFollowers' | 'notifyRecommendations' | 'analyticsEnabled';
 
+// #323: pendingState a nivel módulo — sobrevive al unmount del consumer.
+// Per-uid map: distintos usuarios autenticados no comparten snapshot.
+// Cualquier instancia del hook que esté montada al reconectar dispara el flush
+// (NotificationsProvider, GreetingHeader, MapView mantienen al menos una viva).
+const pendingByUser = new Map<string, Partial<UserSettings>>();
+
+/** Test-only: limpia el estado modular entre tests. No exportar a producción. */
+export function __resetPendingSettingsForTests() {
+  pendingByUser.clear();
+}
+
 export function useUserSettings() {
   const { user } = useAuth();
   const toast = useToast();
@@ -19,8 +30,6 @@ export function useUserSettings() {
   const [optimistic, setOptimistic] = useState<Partial<Record<BooleanSettingKey, boolean>>>({});
   const [digestOverride, setDigestOverride] = useState<DigestFrequency | null>(null);
   const [localityOverride, setLocalityOverride] = useState<{ locality: string; localityLat: number; localityLng: number } | null>(null);
-  // #323 C1: pending settings acumulados offline; flushean en bulk al reconectar.
-  const pendingSettingsRef = useRef<Partial<UserSettings> | null>(null);
 
   const fetcher = useCallback(async (): Promise<UserSettings> => {
     if (!user) return { ...DEFAULT_SETTINGS };
@@ -48,29 +57,16 @@ export function useUserSettings() {
     }
   }, [user, settings.analyticsEnabled]);
 
-  // #323 C1: aplicar el snapshot pendiente al server. Expuesto para coordinacion.
-  const flushPendingSettings = useCallback(async () => {
-    if (!user) return;
-    const snapshot = pendingSettingsRef.current;
-    if (!snapshot) return;
-    pendingSettingsRef.current = null;
-    try {
-      await updateUserSettings(user.uid, snapshot);
-    } catch (err) {
-      logger.error('[useUserSettings] flushPendingSettings failed:', err);
-      toast.warning(MSG_COMMON.settingUpdateError);
-    }
-  }, [user, toast]);
-
   const updateSetting = useCallback(
     (key: BooleanSettingKey, value: boolean) => {
       if (!user) return;
 
       setOptimistic((prev) => ({ ...prev, [key]: value }));
 
-      // #323: offline → acumular en pendingRef, flush al reconectar.
+      // #323: offline → acumular en pendingByUser (module-level), flush al reconectar.
       if (isOffline) {
-        pendingSettingsRef.current = { ...(pendingSettingsRef.current ?? {}), [key]: value };
+        const prev = pendingByUser.get(user.uid) ?? {};
+        pendingByUser.set(user.uid, { ...prev, [key]: value });
         return;
       }
 
@@ -94,7 +90,8 @@ export function useUserSettings() {
 
       const partial = { locality, localityLat: lat, localityLng: lng };
       if (isOffline) {
-        pendingSettingsRef.current = { ...(pendingSettingsRef.current ?? {}), ...partial };
+        const prev = pendingByUser.get(user.uid) ?? {};
+        pendingByUser.set(user.uid, { ...prev, ...partial });
         return;
       }
 
@@ -114,7 +111,8 @@ export function useUserSettings() {
 
       const partial = { locality: '', localityLat: 0, localityLng: 0 };
       if (isOffline) {
-        pendingSettingsRef.current = { ...(pendingSettingsRef.current ?? {}), ...partial };
+        const prev = pendingByUser.get(user.uid) ?? {};
+        pendingByUser.set(user.uid, { ...prev, ...partial });
         return;
       }
 
@@ -133,7 +131,8 @@ export function useUserSettings() {
       setDigestOverride(value);
 
       if (isOffline) {
-        pendingSettingsRef.current = { ...(pendingSettingsRef.current ?? {}), notificationDigest: value };
+        const prev = pendingByUser.get(user.uid) ?? {};
+        pendingByUser.set(user.uid, { ...prev, notificationDigest: value });
         return;
       }
 
@@ -146,12 +145,15 @@ export function useUserSettings() {
     [user, isOffline, toast],
   );
 
-  // #323 C1: flush effect — cuando vuelve online y hay pending, aplicar el snapshot.
+  // #323: flush effect — cuando vuelve online y hay pending, aplicar el snapshot.
+  // El estado vive en pendingByUser (módulo-level) → cualquier instancia montada lo flushea,
+  // incluso si la instancia que originó la escritura ya se desmontó.
   useEffect(() => {
     let cancelled = false;
-    if (!isOffline && user && pendingSettingsRef.current) {
-      const snapshot = pendingSettingsRef.current;
-      pendingSettingsRef.current = null;
+    if (!isOffline && user) {
+      const snapshot = pendingByUser.get(user.uid);
+      if (!snapshot) return;
+      pendingByUser.delete(user.uid);
       updateUserSettings(user.uid, snapshot).catch((err) => {
         if (cancelled) return;
         logger.error('[useUserSettings] flush failed:', err);
@@ -161,5 +163,5 @@ export function useUserSettings() {
     return () => { cancelled = true; };
   }, [isOffline, user, toast]);
 
-  return { settings, loading, updateSetting, updateDigestFrequency, updateLocality, clearLocality, flushPendingSettings };
+  return { settings, loading, updateSetting, updateDigestFrequency, updateLocality, clearLocality };
 }

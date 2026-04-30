@@ -71,13 +71,14 @@ vi.mock('../../context/ConnectivityContext', () => ({
   useConnectivity: () => ({ isOffline: mockIsOffline }),
 }));
 
-import { useUserSettings } from '../useUserSettings';
+import { useUserSettings, __resetPendingSettingsForTests } from '../useUserSettings';
 
-describe('useUserSettings — pendingRef + flush effect (#323 C1)', () => {
+describe('useUserSettings — pending state module-level + flush effect (#323 C1)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsOffline = false;
     mockUpdateUserSettings.mockResolvedValue(undefined);
+    __resetPendingSettingsForTests();
   });
 
   it('online: updateSetting llama service inmediato', async () => {
@@ -95,7 +96,7 @@ describe('useUserSettings — pendingRef + flush effect (#323 C1)', () => {
     });
   });
 
-  it('offline: updateSetting acumula en pendingRef sin llamar service', async () => {
+  it('offline: updateSetting acumula en module-level state sin llamar service', async () => {
     mockIsOffline = true;
     const { result } = renderHook(() => useUserSettings());
 
@@ -137,30 +138,33 @@ describe('useUserSettings — pendingRef + flush effect (#323 C1)', () => {
     });
   });
 
-  it('flushPendingSettings expuesto: invocacion manual aplica snapshot', async () => {
+  it('pending sobrevive a unmount/remount: instancia A escribe offline, B (online) flushea', async () => {
+    // Instancia A monta offline, acumula pending y desmonta antes de reconnect
     mockIsOffline = true;
-    const { result } = renderHook(() => useUserSettings());
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    const a = renderHook(() => useUserSettings());
+    await waitFor(() => expect(a.result.current.loading).toBe(false));
 
     act(() => {
-      result.current.updateSetting('analyticsEnabled', false);
+      a.result.current.updateSetting('profilePublic', true);
+      a.result.current.updateSetting('notifyLikes', false);
     });
-
-    // Llamar flush manualmente (sin await act — el await sale del wrap)
-    await result.current.flushPendingSettings();
-
-    expect(mockUpdateUserSettings).toHaveBeenCalledWith('user1', {
-      analyticsEnabled: false,
-    });
-  });
-
-  it('flushPendingSettings sin pending: no-op', async () => {
-    const { result } = renderHook(() => useUserSettings());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    await result.current.flushPendingSettings();
-
     expect(mockUpdateUserSettings).not.toHaveBeenCalled();
+
+    // Unmount A — el pendingRef per-instance se perdería; module-level sobrevive.
+    a.unmount();
+
+    // Instancia B monta online (otro componente: NotificationsProvider, GreetingHeader…)
+    mockIsOffline = false;
+    const b = renderHook(() => useUserSettings());
+    await waitFor(() => expect(b.result.current.loading).toBe(false));
+
+    // Flush effect de B aplica el snapshot que A acumuló
+    await waitFor(() => {
+      expect(mockUpdateUserSettings).toHaveBeenCalledTimes(1);
+      expect(mockUpdateUserSettings).toHaveBeenCalledWith('user1', {
+        profilePublic: true,
+        notifyLikes: false,
+      });
+    });
   });
 });

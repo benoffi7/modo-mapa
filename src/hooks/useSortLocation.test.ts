@@ -39,7 +39,6 @@ const mockReturn = (overrides: Partial<UserSettings> = {}) => ({
   updateDigestFrequency: vi.fn(),
   updateLocality: vi.fn(),
   clearLocality: vi.fn(),
-  flushPendingSettings: vi.fn().mockResolvedValue(undefined),
 });
 
 describe('useSortLocation', () => {

@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useFollowedTags } from './useFollowedTags';
@@ -8,6 +8,15 @@ import { INTERESTS_MAX_BUSINESSES_PER_TAG } from '../constants/interests';
 import { logger } from '../utils/logger';
 import type { InterestFeedGroup } from '../types';
 
+// #323: pendingState a nivel módulo — sobrevive al unmount del consumer.
+// Per-uid: solo guardamos el último timestamp (last-write-wins).
+const pendingSeenByUser = new Map<string, Date>();
+
+/** Test-only: limpia el estado modular entre tests. No exportar a producción. */
+export function __resetPendingSeenForTests() {
+  pendingSeenByUser.clear();
+}
+
 /**
  * Builds an interest feed grouped by followed tag.
  * Filters allBusinesses client-side (O(n*m) with n businesses, m tags).
@@ -16,8 +25,6 @@ export function useInterestsFeed() {
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
   const { tags, loading } = useFollowedTags();
-  // #323 C2: snapshot pendiente cuando offline; flush al reconectar.
-  const pendingSeenRef = useRef<Date | null>(null);
 
   const groups = useMemo<InterestFeedGroup[]>(() => {
     if (tags.length === 0) return [];
@@ -49,7 +56,7 @@ export function useInterestsFeed() {
     if (!user) return;
     const now = new Date();
     if (isOffline) {
-      pendingSeenRef.current = now;
+      pendingSeenByUser.set(user.uid, now);
       return;
     }
     updateUserSettings(user.uid, {
@@ -59,12 +66,14 @@ export function useInterestsFeed() {
     });
   }, [user, isOffline]);
 
-  // #323 C2: flush al reconectar
+  // #323: flush al reconectar — sobrevive al unmount del consumer
+  // gracias a que pendingSeenByUser vive a nivel módulo.
   useEffect(() => {
     let cancelled = false;
-    if (!isOffline && user && pendingSeenRef.current) {
-      const snapshot = pendingSeenRef.current;
-      pendingSeenRef.current = null;
+    if (!isOffline && user) {
+      const snapshot = pendingSeenByUser.get(user.uid);
+      if (!snapshot) return;
+      pendingSeenByUser.delete(user.uid);
       updateUserSettings(user.uid, {
         followedTagsLastSeenAt: snapshot,
       }).catch((err) => {
