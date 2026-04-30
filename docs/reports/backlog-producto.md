@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-04-29 (post merge: #324 performance businessMap + MUI split + lazy img, v2.43.0)*
+*Actualizado: 2026-04-30 (post merge: #323 offline services + queue coverage, v2.44.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -11,11 +11,9 @@
 
 ## Issues abiertos
 
-### Tanda A — convergencia critica (en curso)
+### Tanda A — completada ✓
 
-| Issue | Titulo | Estado |
-|-------|--------|--------|
-| [#323](https://github.com/benoffi7/modo-mapa/issues/323) | Tech debt: offline — services not using offlineQueue / withOfflineSupport | PRD/specs/plan listo, en implementacion |
+Tanda A (#322 + #323 + #324) cerrada en sesion paralela 2026-04-29/30.
 
 ### Tanda B — alta prioridad
 
@@ -52,6 +50,6 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 9 (#168 bloqueado, #323/#325–#332 pendientes) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#322 + #324 (124) |
-| Versiones publicadas | v2.10.0 – v2.43.0 |
+| Issues abiertos | 10 (#168 bloqueado, #325–#334 pendientes; #333/#334 follow-ups de #324, otros sin PRD) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#324 (125) |
+| Versiones publicadas | v2.10.0 – v2.44.0 |
