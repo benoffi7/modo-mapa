@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-04-29 (post merge: #322 firestore rules hardening + bootstrap admin gate, v2.42.0)*
+*Actualizado: 2026-04-29 (post merge: #324 performance businessMap + MUI split + lazy img, v2.43.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -15,8 +15,7 @@
 
 | Issue | Titulo | Estado |
 |-------|--------|--------|
-| [#323](https://github.com/benoffi7/modo-mapa/issues/323) | Tech debt: offline — services not using offlineQueue / withOfflineSupport | PRD/specs/plan listo, pendiente implementacion |
-| [#324](https://github.com/benoffi7/modo-mapa/issues/324) | Tech debt: performance — allBusinesses.find() x13, lazy `<img>`, MUI chunk split | PRD/specs/plan listo, pendiente implementacion |
+| [#323](https://github.com/benoffi7/modo-mapa/issues/323) | Tech debt: offline — services not using offlineQueue / withOfflineSupport | PRD/specs/plan listo, en implementacion |
 
 ### Tanda B — alta prioridad
 
@@ -53,6 +52,6 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 10 (#168 bloqueado, #323–#332 pendientes) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#322 (123) |
-| Versiones publicadas | v2.10.0 – v2.42.0 |
+| Issues abiertos | 9 (#168 bloqueado, #323/#325–#332 pendientes) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#322 + #324 (124) |
+| Versiones publicadas | v2.10.0 – v2.43.0 |
