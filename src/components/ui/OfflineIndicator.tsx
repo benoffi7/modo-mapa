@@ -28,7 +28,10 @@ export function OfflineIndicator() {
         top: 8,
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 1200,
+        // #323: por encima de Modal (theme.zIndex.modal = 1300) — sin esto
+        // el Backdrop de Dialog tapa el indicator en flujos críticos offline
+        // (AddToListDialog, MenuPhotoUpload, ConfirmDelete, etc.).
+        zIndex: (theme) => theme.zIndex.modal + 1,
         maxWidth: 'calc(100vw - 32px)',
       }}
     />

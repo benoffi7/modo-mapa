@@ -48,4 +48,15 @@ describe('OfflineIndicator', () => {
     render(<OfflineIndicator />);
     expect(screen.getByText('Sincronizando...')).toBeInTheDocument();
   });
+
+  it('renders above MUI Modal (zIndex > theme.zIndex.modal)', () => {
+    // #323: BLOCKER — Dialog/Backdrop default = 1300; el indicator debe quedar arriba
+    // para que el feedback offline sea visible en AddToListDialog, MenuPhotoUpload, etc.
+    mockConnectivity({ isOffline: true });
+    render(<OfflineIndicator />);
+    const chip = screen.getByRole('status');
+    const zIndex = parseInt(window.getComputedStyle(chip).zIndex, 10);
+    // theme.zIndex.modal = 1300 (MUI default). Esperamos >= 1301.
+    expect(zIndex).toBeGreaterThan(1300);
+  });
 });
