@@ -54,7 +54,7 @@ describe('MSG_OFFLINE messages', () => {
   describe('#323 keys', () => {
     it('deleteListBlocked uses voseo + tildes', () => {
       expect(MSG_OFFLINE.deleteListBlocked).toBe(
-        'No podés eliminar listas sin conexión, intentá de nuevo cuando vuelvas online',
+        'No podés eliminar listas sin conexión. Intentá de nuevo cuando vuelvas a estar online.',
       );
     });
 

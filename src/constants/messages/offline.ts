@@ -11,7 +11,7 @@ export const MSG_OFFLINE = {
   emptyPending: 'No hay acciones pendientes',
   // #323
   deleteListBlocked:
-    'No podés eliminar listas sin conexión, intentá de nuevo cuando vuelvas online',
+    'No podés eliminar listas sin conexión. Intentá de nuevo cuando vuelvas a estar online.',
   commentDeletedOffline: 'Eliminado offline (se sincronizará cuando vuelvas online)',
   commentEditingSync: 'Sincronizando...',
   deleteAccountOffline:
