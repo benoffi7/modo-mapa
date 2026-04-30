@@ -49,6 +49,10 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
+vi.mock('../../context/ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: false }),
+}));
+
 import { act } from '@testing-library/react';
 import { useUserSettings } from '../useUserSettings';
 

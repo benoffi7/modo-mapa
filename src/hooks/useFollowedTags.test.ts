@@ -21,6 +21,10 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
+vi.mock('../context/ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: false }),
+}));
+
 import { useFollowedTags } from './useFollowedTags';
 import { MAX_FOLLOWED_TAGS } from '../constants/interests';
 import { EVT_TAG_FOLLOWED, EVT_TAG_UNFOLLOWED } from '../constants/analyticsEvents';

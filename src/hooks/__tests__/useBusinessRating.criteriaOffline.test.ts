@@ -49,6 +49,7 @@ const params = {
       score: 4,
       criteria: {},
       createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ],
   isLoading: false,

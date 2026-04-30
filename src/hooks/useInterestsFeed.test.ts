@@ -22,6 +22,10 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
+vi.mock('../context/ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: false }),
+}));
+
 const fakeBusiness = (id: string, tags: string[]): Business => ({
   id,
   name: `Business ${id}`,

@@ -10,8 +10,17 @@ vi.mock('../../utils/busyFlag', () => ({
 }));
 
 const mockCreateList = vi.hoisted(() => vi.fn());
+const mockGenerateListId = vi.hoisted(() => vi.fn(() => 'generated-list-id'));
 vi.mock('../../services/sharedLists', () => ({
   createList: mockCreateList,
+  generateListId: mockGenerateListId,
+}));
+
+const mockWithOfflineSupport = vi.hoisted(() =>
+  vi.fn((_o: boolean, _t: string, _meta: object, _payload: object, fn: () => Promise<unknown>) => fn()),
+);
+vi.mock('../../services/offlineInterceptor', () => ({
+  withOfflineSupport: mockWithOfflineSupport,
 }));
 
 vi.mock('../../context/AuthContext', () => ({
@@ -20,6 +29,10 @@ vi.mock('../../context/AuthContext', () => ({
 
 vi.mock('../../context/ToastContext', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
+}));
+
+vi.mock('../../context/ConnectivityContext', () => ({
+  useConnectivity: () => ({ isOffline: false }),
 }));
 
 // Mock IconPicker to avoid MUI portal complexity
@@ -35,6 +48,9 @@ vi.mock('../../constants/messages', () => ({
   MSG_LIST: {
     createSuccess: 'Lista creada',
     createError: 'Error al crear lista',
+  },
+  MSG_OFFLINE: {
+    requiresConnection: 'Requiere conexión',
   },
 }));
 
@@ -73,7 +89,7 @@ describe('CreateListDialog – withBusyFlag integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Crear' }));
 
     await waitFor(() => {
-      expect(mockCreateList).toHaveBeenCalledWith('user1', 'Lista test', '', undefined);
+      expect(mockCreateList).toHaveBeenCalledWith('user1', 'Lista test', '', undefined, 'generated-list-id');
     });
   });
 
