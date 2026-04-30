@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
+import { auth } from '../config/firebase';
 import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
 import type { UserSettings, DigestFrequency } from '../types';
@@ -18,9 +20,22 @@ type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes
 // (NotificationsProvider, GreetingHeader, MapView mantienen al menos una viva).
 const pendingByUser = new Map<string, Partial<UserSettings>>();
 
+// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
+// Sin esto, en multi-cuenta same-browser un snapshot stale de A pisa lo que A
+// configuró desde otro device cuando A vuelve a loguearse y reconecta.
+let _previousUid: string | null = null;
+onAuthStateChanged(auth, (firebaseUser) => {
+  const newUid = firebaseUser?.uid ?? null;
+  if (_previousUid && _previousUid !== newUid) {
+    pendingByUser.delete(_previousUid);
+  }
+  _previousUid = newUid;
+});
+
 /** Test-only: limpia el estado modular entre tests. No exportar a producción. */
 export function __resetPendingSettingsForTests() {
   pendingByUser.clear();
+  _previousUid = null;
 }
 
 export function useUserSettings() {

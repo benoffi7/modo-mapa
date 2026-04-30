@@ -1,9 +1,11 @@
 import { useMemo, useCallback, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useFollowedTags } from './useFollowedTags';
 import { allBusinesses } from './useBusinesses';
 import { updateUserSettings } from '../services/userSettings';
+import { auth } from '../config/firebase';
 import { INTERESTS_MAX_BUSINESSES_PER_TAG } from '../constants/interests';
 import { logger } from '../utils/logger';
 import type { InterestFeedGroup } from '../types';
@@ -12,9 +14,22 @@ import type { InterestFeedGroup } from '../types';
 // Per-uid: solo guardamos el último timestamp (last-write-wins).
 const pendingSeenByUser = new Map<string, Date>();
 
+// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
+// Sin esto, un markSeen stale de A se aplicaría cuando A vuelva a loguearse online,
+// adelantando incorrectamente su followedTagsLastSeenAt.
+let _previousUid: string | null = null;
+onAuthStateChanged(auth, (firebaseUser) => {
+  const newUid = firebaseUser?.uid ?? null;
+  if (_previousUid && _previousUid !== newUid) {
+    pendingSeenByUser.delete(_previousUid);
+  }
+  _previousUid = newUid;
+});
+
 /** Test-only: limpia el estado modular entre tests. No exportar a producción. */
 export function __resetPendingSeenForTests() {
   pendingSeenByUser.clear();
+  _previousUid = null;
 }
 
 /**

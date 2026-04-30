@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings } from '../services/userSettings';
+import { auth } from '../config/firebase';
 import { MAX_FOLLOWED_TAGS } from '../constants/interests';
 import { VALID_TAG_IDS } from '../constants/tags';
 import { trackEvent } from '../utils/analytics';
@@ -16,9 +18,22 @@ import type { UserSettings } from '../types';
 // (HomeScreen mantiene el feed permanente vivo).
 const pendingTagsByUser = new Map<string, string[]>();
 
+// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
+// Sin esto, en multi-cuenta same-browser, un snapshot stale de A puede pisar al
+// reconectar lo que A configuró desde otro device.
+let _previousUid: string | null = null;
+onAuthStateChanged(auth, (firebaseUser) => {
+  const newUid = firebaseUser?.uid ?? null;
+  if (_previousUid && _previousUid !== newUid) {
+    pendingTagsByUser.delete(_previousUid);
+  }
+  _previousUid = newUid;
+});
+
 /** Test-only: limpia el estado modular entre tests. No exportar a producción. */
 export function __resetPendingTagsForTests() {
   pendingTagsByUser.clear();
+  _previousUid = null;
 }
 
 /**

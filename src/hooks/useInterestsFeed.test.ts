@@ -2,6 +2,13 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Business } from '../types';
 
+// #323 Cycle 3: el hook ahora registra onAuthStateChanged a module-level para
+// limpiar pendingSeenByUser en logout. Necesitamos mockear firebase/auth + config.
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: () => () => {},
+}));
+vi.mock('../config/firebase', () => ({ auth: {} }));
+
 const mockUpdateUserSettings = vi.fn();
 
 let mockTags: string[] = [];

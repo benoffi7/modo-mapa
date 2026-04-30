@@ -3,6 +3,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mocks (#323 C1) ---
 
+// #323 Cycle 3: capturamos el callback de onAuthStateChanged para simular
+// logout/switch de cuenta y verificar que el snapshot del UID anterior se limpia.
+type AuthCallback = (user: { uid: string } | null) => void;
+const authCallbacks = vi.hoisted(() => ({ list: [] as AuthCallback[] }));
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: (_auth: unknown, cb: AuthCallback) => {
+    authCallbacks.list.push(cb);
+    return () => {};
+  },
+}));
+vi.mock('../../config/firebase', () => ({ auth: {} }));
+
 const mockUpdateUserSettings = vi.hoisted(() => vi.fn());
 const mockFetchUserSettings = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
@@ -78,6 +90,9 @@ describe('useUserSettings — pending state module-level + flush effect (#323 C1
     vi.clearAllMocks();
     mockIsOffline = false;
     mockUpdateUserSettings.mockResolvedValue(undefined);
+    // NB: no limpiamos authCallbacks.list — el callback se registró en
+    // module-load y necesitamos invocarlo en el test de logout. __resetPendingSettingsForTests
+    // resetea _previousUid en el módulo del hook.
     __resetPendingSettingsForTests();
   });
 
@@ -136,6 +151,37 @@ describe('useUserSettings — pending state module-level + flush effect (#323 C1
         notifyLikes: false,
       });
     });
+  });
+
+  it('logout: snapshot del UID anterior se limpia al cambiar de cuenta (#323 C3 BLOCKER)', async () => {
+    // 1. Usuario A offline acumula pending settings
+    mockIsOffline = true;
+    const a = renderHook(() => useUserSettings());
+    await waitFor(() => expect(a.result.current.loading).toBe(false));
+
+    act(() => {
+      a.result.current.updateSetting('profilePublic', true);
+    });
+
+    // Simulamos auth(A) inicial — debería tomar A como _previousUid
+    act(() => {
+      authCallbacks.list.forEach((cb) => cb({ uid: 'user1' }));
+    });
+
+    // 2. Logout: auth() emite null → snapshot de A debe limpiarse
+    act(() => {
+      authCallbacks.list.forEach((cb) => cb(null));
+    });
+
+    a.unmount();
+
+    // 3. A vuelve online; si quedaba snapshot stale, B lo flushearía
+    mockIsOffline = false;
+    const b = renderHook(() => useUserSettings());
+    await waitFor(() => expect(b.result.current.loading).toBe(false));
+
+    // No flush porque el snapshot fue limpiado en logout
+    expect(mockUpdateUserSettings).not.toHaveBeenCalled();
   });
 
   it('pending sobrevive a unmount/remount: instancia A escribe offline, B (online) flushea', async () => {

@@ -3,6 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mocks (#323 C2) ---
 
+// #323 Cycle 3: capturamos el callback de onAuthStateChanged.
+type AuthCallback = (user: { uid: string } | null) => void;
+const authCallbacks = vi.hoisted(() => ({ list: [] as AuthCallback[] }));
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: (_auth: unknown, cb: AuthCallback) => {
+    authCallbacks.list.push(cb);
+    return () => {};
+  },
+}));
+vi.mock('../config/firebase', () => ({ auth: {} }));
+
 const mockUpdateUserSettings = vi.hoisted(() => vi.fn());
 const mockFetchUserSettings = vi.hoisted(() => vi.fn());
 
@@ -92,6 +103,35 @@ describe('useFollowedTags — pending state module-level + flush effect (#323 C2
         followedTags: ['barato', 'delivery'],
       }));
     });
+  });
+
+  it('logout: snapshot del UID anterior se limpia al cambiar de cuenta (#323 C3 BLOCKER)', async () => {
+    mockIsOffline = true;
+    const a = renderHook(() => useFollowedTags());
+    await waitFor(() => expect(a.result.current.loading).toBe(false));
+
+    act(() => {
+      a.result.current.followTag('delivery', 'home');
+    });
+
+    // auth(A) inicial
+    act(() => {
+      authCallbacks.list.forEach((cb) => cb({ uid: 'user1' }));
+    });
+
+    // Logout
+    act(() => {
+      authCallbacks.list.forEach((cb) => cb(null));
+    });
+
+    a.unmount();
+
+    // A vuelve online; snapshot debe estar limpio
+    mockIsOffline = false;
+    const b = renderHook(() => useFollowedTags());
+    await waitFor(() => expect(b.result.current.loading).toBe(false));
+
+    expect(mockUpdateUserSettings).not.toHaveBeenCalled();
   });
 
   it('offline: unfollowTag también persiste a module-level y sobrevive unmount', async () => {
