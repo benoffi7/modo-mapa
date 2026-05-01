@@ -32,7 +32,7 @@ export default function SearchBar() {
         transition: 'box-shadow 0.2s',
       }}
     >
-      <IconButton size="small" aria-label="Buscar" sx={{ p: 1, color: 'text.secondary' }}>
+      <IconButton size="small" aria-label="Buscar" sx={{ minWidth: 44, minHeight: 44, color: 'text.secondary' }}>
         <SearchIcon />
       </IconButton>
       <InputBase
@@ -55,7 +55,7 @@ export default function SearchBar() {
         }}
       />
       {searchQuery && (
-        <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ p: 1, color: 'text.secondary' }}>
+        <IconButton size="small" aria-label="Limpiar búsqueda" onClick={handleClear} sx={{ minWidth: 44, minHeight: 44, color: 'text.secondary' }}>
           <ClearIcon />
         </IconButton>
       )}

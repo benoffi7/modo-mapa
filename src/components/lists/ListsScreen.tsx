@@ -42,7 +42,6 @@ export default function ListsScreen() {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pt: 2, pb: 0.5 }}>
         <Typography variant="h6" fontWeight={700}>Mis Listas</Typography>
         <IconButton
-          size="small"
           aria-label="Crear nueva lista"
           onClick={() => setCreateOpen(true)}
           sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
