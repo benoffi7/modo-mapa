@@ -20,6 +20,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
+import { useTab } from '../../context/TabContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -50,6 +51,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
   const toast = useToast();
   const { isOffline } = useConnectivity();
+  const { setActiveTab } = useTab();
   const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
@@ -170,9 +172,12 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <FavoriteBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           No tenés favoritos todavía
         </Typography>
+        <Button size="small" variant="text" onClick={() => setActiveTab('buscar')}>
+          Buscá comercios
+        </Button>
       </Box>
     );
   }

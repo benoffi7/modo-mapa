@@ -87,6 +87,14 @@ vi.mock('../../utils/analytics', () => ({
   trackEvent: vi.fn(),
 }));
 
+const tabMocks = vi.hoisted(() => ({
+  setActiveTab: vi.fn(),
+}));
+
+vi.mock('../../context/TabContext', () => ({
+  useTab: () => ({ setActiveTab: tabMocks.setActiveTab }),
+}));
+
 vi.mock('../common/PullToRefreshWrapper', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
@@ -170,10 +178,18 @@ describe('FavoritesList', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('Empty state: cuando no hay favoritos muestra el placeholder', () => {
+  it('Empty state: cuando no hay favoritos muestra el placeholder + CTA', () => {
     mocks.rawItems = [];
     render(<FavoritesList onSelectBusiness={vi.fn()} />);
     expect(screen.getByText(/no tenés favoritos todavía/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /buscá comercios/i })).toBeInTheDocument();
+  });
+
+  it('Empty state CTA "Buscá comercios" cambia activeTab a "buscar"', () => {
+    mocks.rawItems = [];
+    render(<FavoritesList onSelectBusiness={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /buscá comercios/i }));
+    expect(tabMocks.setActiveTab).toHaveBeenCalledWith('buscar');
   });
 
   it('Loading state', () => {
