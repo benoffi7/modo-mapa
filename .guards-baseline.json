@@ -26,9 +26,9 @@
     "R8-firebase-storage-in-critical": 0
   },
   "303": {
-    "R1-services-raw-getDocs": 44,
-    "R5-scheduled-without-timing": 7,
-    "R6-callable-without-timing": 4
+    "R1-services-raw-getDocs": 4,
+    "R5-scheduled-without-timing": 0,
+    "R6-callable-without-timing": 0
   },
   "304": {
     "R1-mutations-without-offline": 48,
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 221
+  "_total": 170
 }
