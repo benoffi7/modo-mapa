@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-05-01 (post merge: #328 help-docs sync, v2.45.0)*
+*Actualizado: 2026-05-01 (post merge: #326 ui-ux touch targets + a11y, v2.46.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -20,7 +20,6 @@ Tanda A (#322 + #323 + #324) cerrada en sesion paralela 2026-04-29/30.
 | Issue | Titulo | Estado |
 |-------|--------|--------|
 | [#325](https://github.com/benoffi7/modo-mapa/issues/325) | Tech debt: perf-instrumentation — un-wrapped Firestore queries + scheduled/callable timing | PRD/specs/plan listo, en implementacion |
-| [#326](https://github.com/benoffi7/modo-mapa/issues/326) | Tech debt: ui-ux — touch targets, keyboard a11y, chip heights, TabBar internals | PRD/specs/plan listo, implementado pendiente merge |
 
 ### Tanda C — prioridad media
 
@@ -49,6 +48,6 @@ Tanda A (#322 + #323 + #324) cerrada en sesion paralela 2026-04-29/30.
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 9 (#168 bloqueado, #325/#326 en pipeline Tanda B, #327/#329/#330 Tanda C, #331/#332/#333/#334 follow-ups) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#324 + #328 (126) |
-| Versiones publicadas | v2.10.0 – v2.45.0 |
+| Issues abiertos | 8 (#168 bloqueado, #325 en implementacion, #327/#329/#330 Tanda C, #331/#332/#333/#334 follow-ups) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#324 + #326 + #328 (127) |
+| Versiones publicadas | v2.10.0 – v2.46.0 |
