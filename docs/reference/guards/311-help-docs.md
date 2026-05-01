@@ -46,13 +46,22 @@ Por cada `id` en el registry `helpGroups.tsx`, esperar un header
 correspondiente en `docs/reference/features.md`. Pseudocodigo:
 
 ```bash
-# Extraer ids del registry
-ids=$(grep -oP "id:\s*'\K[a-z-]+" src/components/profile/helpGroups.tsx)
+# Extraer ids del registry (snake_case con underscore admitido)
+# Ejemplos de ids esperados (post #328): comercio, buscar, sorprendeme,
+#   tus_intereses_home, tus_intereses_perfil, estadisticas, confirmacion_salir,
+#   inicio, primeros_pasos, social, listas, perfil_publico, recomendaciones,
+#   colaborativas, perfil, logros, notificaciones, cuenta, configuracion,
+#   modooscuro, feedback, offline, rankings, checkin, onboarding.
+ids=$(grep -oP "id:\s*'\K[a-z_-]+" src/components/profile/helpGroups.tsx)
 
-# Verificar que cada id tenga un header en features.md
+# Verificar que cada id tenga mencion en features.md.
+# El script real (`scripts/guards/checks.mjs` R1-helpgroups-coverage) acepta:
+#  - el slug literal (`tus_intereses_home`), o
+#  - su version humana con `_` reemplazado por espacio (`tus intereses home`).
 for id in $ids; do
-  if ! grep -qiE "^#+\s.*$id" docs/reference/features.md; then
-    echo "MISSING in features.md: $id"
+  human=$(echo "$id" | tr '_' ' ')
+  if ! grep -qiE "\b($id|$human)\b" docs/reference/features.md; then
+    echo "MISSING in features.md: $id (looked for '$id' and '$human')"
   fi
 done
 ```
