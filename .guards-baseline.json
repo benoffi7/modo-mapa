@@ -59,7 +59,7 @@
     "R-maps-mention": 0
   },
   "309": {
-    "R2-tildes-prohibidas": 5,
+    "R2-tildes-prohibidas": 1,
     "R-cerrar-hardcoded": 0
   },
   "310": {
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 225
+  "_total": 221
 }
