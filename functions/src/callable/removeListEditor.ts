@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { checkCallableRateLimit } from '../utils/callableRateLimit';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 const DAILY_REMOVE_LIMIT = 10;
 
@@ -18,6 +19,8 @@ function hashUid(uid: string): string {
 export const removeListEditor = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
+    const startMs = performance.now();
+    try {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
 
     const { listId, targetUid, databaseId } = request.data as { listId: string; targetUid: string; databaseId?: string };
@@ -52,6 +55,7 @@ export const removeListEditor = onCall(
         ownerUid: request.auth.uid,
         targetUidHash: hashUid(targetUid),
       });
+      await trackFunctionTiming('removeListEditor', startMs);
       return { success: true };
     }
 
@@ -60,6 +64,11 @@ export const removeListEditor = onCall(
       updatedAt: FieldValue.serverTimestamp(),
     });
 
+    await trackFunctionTiming('removeListEditor', startMs);
     return { success: true };
+    } catch (err) {
+      void trackFunctionTiming('removeListEditor', startMs);
+      throw err;
+    }
   },
 );
