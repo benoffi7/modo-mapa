@@ -129,6 +129,8 @@ while IFS=: read -r file line content; do
   RAW_HITS="$RAW_HITS$file:$line:$content"$'\n'
 done < <(grep -rn -E '\b(getDoc|getDocs)\(' "$REPO_ROOT/src/services/" --include='*.ts' 2>/dev/null \
   | grep -v '/admin/' \
+  | grep -v '__tests__' \
+  | grep -v '\.test\.' \
   || true)
 
 if [ -z "$RAW_HITS" ]; then
