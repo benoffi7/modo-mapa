@@ -16,6 +16,7 @@ import BadgesList from './BadgesList';
 import ScoreSparkline from './ScoreSparkline';
 import type { UserRankingEntry } from '../../types';
 import { logger } from '../../utils/logger';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 
 /** Theme-aware bar colors: [light, dark] */
 const BAR_COLOR_PAIRS: Record<keyof UserRankingEntry['breakdown'], [string, string]> = {
@@ -136,7 +137,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
               </Typography>
             )}
             {position != null && (
-              <Chip label={`#${position}`} size="small" color="primary" variant="outlined" sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' } }} />
+              <Chip label={`#${position}`} size="small" color="primary" variant="outlined" sx={CHIP_SMALL_SX} />
             )}
           </Box>
 

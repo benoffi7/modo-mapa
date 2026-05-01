@@ -35,6 +35,7 @@
   - [#311 Help Section Update](/feat/content/311-help-section-update/prd.md)
     - [Specs](/feat/content/311-help-section-update/specs.md)
     - [Plan](/feat/content/311-help-section-update/plan.md)
+  - [#328 Help-docs — BusinessDetailScreen tabs + missing items](/feat/content/328-help-docs-tabs-missing-items/prd.md)
 
 - **Infra**
   - [Descomponer CommentsList](/feat/infra/descomponer-comments-list/prd.md)
@@ -164,6 +165,9 @@
     - [Plan](/feat/infra/321-useforceupdate-separate-last-check-refs/plan.md)
   - [#324 Performance — allBusinesses.find x13, lazy img, MUI chunk split](/feat/infra/324-performance-bundle-business-lookup/prd.md)
   - [#323 Offline — Services Queue Coverage](/feat/infra/323-offline-services-queue-coverage/prd.md)
+  - [#325 Perf-instrumentation — un-wrapped queries + scheduled/callable timing](/feat/infra/325-perf-instrumentation-coverage/prd.md)
+    - [Specs](/feat/infra/325-perf-instrumentation-coverage/specs.md)
+    - [Plan](/feat/infra/325-perf-instrumentation-coverage/plan.md)
   - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
 
 - **Security**
@@ -285,6 +289,7 @@
   - [#305 MUI 7 slotProps + Touch Targets + 360px Overflow](/feat/ux/305-mui7-slotprops-touch-targets/prd.md)
     - [Specs](/feat/ux/305-mui7-slotprops-touch-targets/specs.md)
     - [Plan](/feat/ux/305-mui7-slotprops-touch-targets/plan.md)
+  - [#326 Tech Debt UI/UX — Touch Targets, Keyboard A11y, Chip Heights, TabBar Internals](/feat/ux/326-techdebt-ui-ux-touch-targets-a11y/prd.md)
 
 - **Fixes**
   - [Coding Standard Violations](/fix/coding-standard-violations/prd.md)

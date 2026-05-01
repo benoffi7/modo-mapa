@@ -6,6 +6,8 @@ Regresiones bloqueadas tras el fix del tech debt UI/UX auditado en el `/health-c
 **Specs:** [docs/feat/ux/305-mui7-slotprops-touch-targets/specs.md](../../feat/ux/305-mui7-slotprops-touch-targets/specs.md)
 **Issue:** #305
 
+**Estado tras #326:** R2/R3/R4/R5/R7/R8 cumplidos en el scope cubierto. R2 acotado a los 6 callsites flagged en el `/health-check` del 2026-04-25 (StaleBanner, RatingPromptBanner, SearchBar, ListsScreen, CommentRow, BusinessRating). El cleanup amplio de los ~24 IconButtons restantes con `size="small"` queda en PRD posterior dedicado.
+
 ---
 
 ## Reglas

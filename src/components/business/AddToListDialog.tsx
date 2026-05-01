@@ -35,6 +35,7 @@ import type { SharedList } from '../../types';
 import { MSG_LIST } from '../../constants/messages';
 import { logger } from '../../utils/logger';
 import { withBusyFlag } from '../../utils/busyFlag';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 
 interface Props {
   open: boolean;
@@ -213,7 +214,7 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         {list.name}
                         {user && list.ownerId !== user.uid && (
-                          <Chip label="Colaborativa" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
+                          <Chip label="Colaborativa" size="small" variant="outlined" sx={CHIP_SMALL_SX} />
                         )}
                       </Box>
                     }
