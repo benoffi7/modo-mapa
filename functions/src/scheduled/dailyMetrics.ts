@@ -1,7 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
-import { calculatePercentile } from '../utils/perfTracker';
+import { calculatePercentile, trackFunctionTiming } from '../utils/perfTracker';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
 
 function getStartOfDay(): Date {
@@ -257,6 +257,11 @@ export const dailyMetrics = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    await withCronHeartbeat('dailyMetrics', run);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('dailyMetrics', run);
+    } finally {
+      await trackFunctionTiming('dailyMetrics', startMs);
+    }
   },
 );

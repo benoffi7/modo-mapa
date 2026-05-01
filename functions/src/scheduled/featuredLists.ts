@@ -2,6 +2,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 const SYSTEM_OWNER = 'system';
 const MIN_RATINGS_FOR_TOP = 3;
@@ -87,6 +88,11 @@ async function run(): Promise<string> {
 export const generateFeaturedLists = onSchedule(
   { schedule: '0 5 * * 1', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    await withCronHeartbeat('generateFeaturedLists', run);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('generateFeaturedLists', run);
+    } finally {
+      await trackFunctionTiming('generateFeaturedLists', startMs);
+    }
   },
 );
