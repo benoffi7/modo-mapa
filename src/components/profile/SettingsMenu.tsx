@@ -1,5 +1,20 @@
 import { useState } from 'react';
-import { Badge, Button, Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Alert } from '@mui/material';
+import {
+  Badge,
+  Button,
+  Box,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+  Alert,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
 import { cardSx } from '../../theme/cards';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
@@ -26,16 +41,22 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, badge, onClick }: MenuItemProps) {
   return (
-    <Box
+    <ListItemButton
       onClick={onClick}
       sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
     >
-      {badge ? (
-        <Badge badgeContent={badge} color="primary" max={99}>{icon}</Badge>
-      ) : icon}
-      <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>{label}</Typography>
+      <ListItemIcon sx={{ minWidth: 'auto' }}>
+        {badge ? (
+          <Badge badgeContent={badge} color="primary" max={99}>{icon}</Badge>
+        ) : icon}
+      </ListItemIcon>
+      <ListItemText
+        primary={label}
+        slotProps={{ primary: { fontWeight: 500, fontSize: '0.875rem' } }}
+        sx={{ flex: 1, m: 0 }}
+      />
       <ChevronRightIcon color="action" sx={{ fontSize: 20 }} />
-    </Box>
+    </ListItemButton>
   );
 }
 
@@ -91,38 +112,40 @@ export default function SettingsMenu({ onNavigate, hasPendingActions }: Props) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, pb: 2 }}>
-      <MenuItem
-        icon={<NotificationsOutlinedIcon />}
-        label="Notificaciones"
-        badge={unreadCount}
-        onClick={() => onNavigate('notifications')}
-      />
-
-      {hasPendingActions && (
+      <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <MenuItem
-          icon={<SyncProblemIcon color="warning" />}
-          label="Pendientes"
-          onClick={() => onNavigate('pendientes')}
+          icon={<NotificationsOutlinedIcon />}
+          label="Notificaciones"
+          badge={unreadCount}
+          onClick={() => onNavigate('notifications')}
         />
-      )}
 
-      <MenuItem
-        icon={<ShieldOutlinedIcon />}
-        label="Privacidad"
-        onClick={() => onNavigate('privacy')}
-      />
+        {hasPendingActions && (
+          <MenuItem
+            icon={<SyncProblemIcon color="warning" />}
+            label="Pendientes"
+            onClick={() => onNavigate('pendientes')}
+          />
+        )}
 
-      <MenuItem
-        icon={<SettingsOutlinedIcon />}
-        label="Configuración"
-        onClick={() => onNavigate('config')}
-      />
+        <MenuItem
+          icon={<ShieldOutlinedIcon />}
+          label="Privacidad"
+          onClick={() => onNavigate('privacy')}
+        />
 
-      <MenuItem
-        icon={<HelpOutlineIcon />}
-        label="Ayuda y soporte"
-        onClick={() => onNavigate('help')}
-      />
+        <MenuItem
+          icon={<SettingsOutlinedIcon />}
+          label="Configuración"
+          onClick={() => onNavigate('config')}
+        />
+
+        <MenuItem
+          icon={<HelpOutlineIcon />}
+          label="Ayuda y soporte"
+          onClick={() => onNavigate('help')}
+        />
+      </List>
 
       {isAnonymous ? (
         <Button

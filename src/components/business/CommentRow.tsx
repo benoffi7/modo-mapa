@@ -148,10 +148,11 @@ const CommentRow = memo(function CommentRow({
                 onClick={() => onSaveEdit?.()}
                 disabled={isSavingEdit || !editText.trim()}
                 aria-label="Guardar edición"
+                sx={{ minWidth: 44, minHeight: 44 }}
               >
                 <CheckIcon fontSize="small" />
               </IconButton>
-              <IconButton size="small" onClick={() => onCancelEdit?.()} disabled={isSavingEdit} aria-label="Cancelar edición">
+              <IconButton size="small" onClick={() => onCancelEdit?.()} disabled={isSavingEdit} aria-label="Cancelar edición" sx={{ minWidth: 44, minHeight: 44 }}>
                 <CloseIcon fontSize="small" />
               </IconButton>
             </Box>
