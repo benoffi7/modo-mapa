@@ -54,7 +54,8 @@ describe('HELP_GROUPS', () => {
   it('item "modooscuro" menciona Configuracion > Apariencia (no menu lateral)', () => {
     const darkItem = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'modooscuro');
     expect(darkItem).toBeDefined();
-    expect(darkItem?.description).toMatch(/Configuracion\s*>\s*Apariencia/i);
+    // Tolera tanto "Configuracion" como "Configuración" tras el copy pass de #328.
+    expect(darkItem?.description).toMatch(/Configuraci[oó]n\s*>\s*Apariencia/i);
     expect(darkItem?.description.toLowerCase()).not.toContain('menu lateral');
   });
 
@@ -62,5 +63,66 @@ describe('HELP_GROUPS', () => {
     const comercioItem = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'comercio');
     expect(comercioItem).toBeDefined();
     expect(comercioItem?.description.toLowerCase()).toContain('compartido');
+  });
+
+  // ============================================================
+  // Casos nuevos #328 — BusinessDetailScreen + missing items
+  // ============================================================
+
+  it('item "comercio" describe las 5 secciones (chip tabs) y el deep link', () => {
+    const item = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'comercio');
+    expect(item).toBeDefined();
+    // Acepta "5 chip tabs", "5 secciones", "cinco secciones", etc.
+    expect(item?.description).toMatch(/(5|cinco)\s+(chip\s+tabs?|secciones)/i);
+    // Deep link a la pantalla full
+    expect(item?.description).toMatch(/(\/comercio\/|pantalla\s+full|Ver\s+detalles)/i);
+  });
+
+  it('item "comercio" distingue chip tabs de sub-pestañas', () => {
+    const item = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'comercio');
+    expect(item?.description).toMatch(/sub-?pestañas?/i);
+  });
+
+  it('item "buscar" menciona el auto-fallback a vista de lista', () => {
+    const item = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'buscar');
+    // Tolera "automaticamente" / "automáticamente" (con o sin tilde) y "auto-fallback".
+    expect(item?.description).toMatch(/autom[áa]ticamente|auto-?fallback/i);
+    expect(item?.description.toLowerCase()).toContain('lista');
+  });
+
+  it('contiene los 5 items nuevos de #328', () => {
+    const ids = HELP_GROUPS.flatMap((g) => g.items.map((i) => i.id));
+    expect(ids).toContain('sorprendeme');
+    expect(ids).toContain('tus_intereses_home');
+    expect(ids).toContain('tus_intereses_perfil');
+    expect(ids).toContain('estadisticas');
+    expect(ids).toContain('confirmacion_salir');
+  });
+
+  it('items nuevos estan en el grupo correcto', () => {
+    const findGroup = (id: string) =>
+      HELP_GROUPS.find((g) => g.items.some((i) => i.id === id))?.label;
+    expect(findGroup('sorprendeme')).toBe('Inicio');
+    expect(findGroup('tus_intereses_home')).toBe('Inicio');
+    expect(findGroup('tus_intereses_perfil')).toBe('Perfil');
+    expect(findGroup('estadisticas')).toBe('Perfil');
+    expect(findGroup('confirmacion_salir')).toBe('Buscar');
+  });
+
+  it('item "listas" describe Recientes como historial unificado', () => {
+    const item = HELP_GROUPS.flatMap((g) => g.items).find((i) => i.id === 'listas');
+    expect(item?.description.toLowerCase()).toContain('unificado');
+    // Debe mencionar ambos origenes
+    expect(item?.description).toMatch(/check-?in/i);
+    expect(item?.description).toMatch(/visitad/i);
+  });
+
+  it('al menos 3 de inicio/social/listas/notificaciones mencionan pull-to-refresh', () => {
+    const targets = ['inicio', 'social', 'listas', 'notificaciones'];
+    const items = HELP_GROUPS.flatMap((g) => g.items).filter((i) => targets.includes(i.id));
+    const withPtr = items.filter((i) =>
+      /tir[áa]\s+hacia\s+abajo|tirar\s+hacia\s+abajo|refrescar/i.test(i.description),
+    );
+    expect(withPtr.length).toBeGreaterThanOrEqual(3);
   });
 });
