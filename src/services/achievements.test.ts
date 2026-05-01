@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetDocs = vi.fn();
-const mockSetDoc = vi.fn().mockResolvedValue(undefined);
-const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
+const { mockGetDocs, mockSetDoc, mockDeleteDoc, mockMeasuredGetDocs } = vi.hoisted(() => {
+  const getDocs = vi.fn();
+  return {
+    mockGetDocs: getDocs,
+    mockSetDoc: vi.fn().mockResolvedValue(undefined),
+    mockDeleteDoc: vi.fn().mockResolvedValue(undefined),
+    mockMeasuredGetDocs: vi.fn((_name: string, q: unknown) => getDocs(q)),
+  };
+});
 
 vi.mock('../config/firebase', () => ({ db: {} }));
 vi.mock('../config/collections', () => ({
@@ -17,6 +23,12 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
   orderBy: vi.fn(),
   query: vi.fn(() => 'query-ref'),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDocs(ref),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 import { fetchAchievements, saveAllAchievements } from './achievements';
@@ -86,5 +98,14 @@ describe('saveAllAchievements', () => {
     await saveAllAchievements([{ id: 'ach1', title: 'Hero', order: 1 } as unknown as Parameters<typeof saveAllAchievements>[0][0]]);
 
     expect(mockDeleteDoc).not.toHaveBeenCalled();
+  });
+
+  it('instruments fetch and save with achievements_all/existingForSave labels', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchAchievements();
+    await saveAllAchievements([]);
+    const labels = mockMeasuredGetDocs.mock.calls.map((c) => c[0]);
+    expect(labels).toContain('achievements_all');
+    expect(labels).toContain('achievements_existingForSave');
   });
 });

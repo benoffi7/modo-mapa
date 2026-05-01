@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockAddDoc = vi.fn();
-const mockGetDocs = vi.fn();
-const mockUpdateDoc = vi.fn();
-const mockUploadBytes = vi.fn();
-const mockGetDownloadURL = vi.fn();
-const mockTrackEvent = vi.fn();
+const { mockAddDoc, mockGetDocs, mockUpdateDoc, mockUploadBytes, mockGetDownloadURL, mockTrackEvent, mockMeasuredGetDocs } = vi.hoisted(() => {
+  const getDocs = vi.fn();
+  return {
+    mockAddDoc: vi.fn(),
+    mockGetDocs: getDocs,
+    mockUpdateDoc: vi.fn(),
+    mockUploadBytes: vi.fn(),
+    mockGetDownloadURL: vi.fn(),
+    mockTrackEvent: vi.fn(),
+    mockMeasuredGetDocs: vi.fn((_name: string, q: unknown) => getDocs(q)),
+  };
+});
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(() => ({ withConverter: vi.fn(() => 'converted-ref') })),
@@ -19,6 +25,12 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: () => 'server-ts',
   getFirestore: vi.fn(),
   connectFirestoreEmulator: vi.fn(),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDocs(ref),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 vi.mock('firebase/storage', () => ({
@@ -200,6 +212,15 @@ describe('fetchUserFeedback', () => {
 
     const result = await fetchUserFeedback('user1');
     expect(result).toEqual([]);
+  });
+
+  it('instruments fetch with feedback_byUser label', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+
+    await fetchUserFeedback('user1');
+
+    const labels = mockMeasuredGetDocs.mock.calls.map((call) => call[0]);
+    expect(labels).toContain('feedback_byUser');
   });
 });
 
