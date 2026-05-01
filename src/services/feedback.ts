@@ -1,12 +1,13 @@
 /**
  * Firestore + Storage service for the `feedback` collection.
  */
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { feedbackConverter } from '../config/converters';
 import { trackEvent } from '../utils/analytics';
+import { measuredGetDocs } from '../utils/perfMetrics';
 import { VALID_CATEGORIES, MAX_FEEDBACK_MEDIA_SIZE } from '../constants/feedback';
 import { MAX_FEEDBACK_LENGTH } from '../constants/validation';
 import type { FeedbackCategory, Feedback } from '../types';
@@ -64,7 +65,7 @@ export async function sendFeedback(
 export async function fetchUserFeedback(userId: string): Promise<Feedback[]> {
   const ref = collection(db, COLLECTIONS.FEEDBACK).withConverter(feedbackConverter);
   const q = query(ref, where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
+  const snap = await measuredGetDocs('feedback_byUser', q);
   return snap.docs.map((d) => d.data());
 }
 
