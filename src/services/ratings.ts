@@ -131,6 +131,7 @@ export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<
   const batches: Promise<QuerySnapshot<Rating>>[] = [];
   for (let i = 0; i < businessIds.length; i += BATCH_SIZE) {
     const batch = businessIds.slice(i, i + BATCH_SIZE);
+    // perf-instrument-ok — measured in aggregate via Promise.all wrapper below
     batches.push(getDocs(query(getRatingsCollection(), where('businessId', 'in', batch))));
   }
   const snapshots = await measureAsync('ratings_byBusinessIds', () => Promise.all(batches));

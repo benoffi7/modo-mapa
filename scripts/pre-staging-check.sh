@@ -86,6 +86,58 @@ else
   fail "avoid 'as never' in production code"
 fi
 
+# ---------- 6. Service-layer Firestore reads instrumented (#325 S5) ----------
+# Every getDoc(/getDocs( in src/services/ should be wrapped via
+# measuredGetDoc / measuredGetDocs / measureAsync. Calls intentionally
+# left raw (e.g. inside an already-measured Promise.all) MUST carry
+# the marker comment `// perf-instrument-ok` on the same or previous line.
+#
+# src/services/admin/ is excluded — admin-only queries are infrequent,
+# behind isAdmin() rules, and out of scope for the user-facing perf
+# instrumentation effort tracked in #325.
+check
+echo "6) Service-layer Firestore reads instrumented (#325)"
+RAW_HITS=""
+while IFS=: read -r file line content; do
+  # Skip if same line uses the wrapper.
+  if echo "$content" | grep -qE 'measured(GetDoc|GetDocs)\(|measureAsync\('; then
+    continue
+  fi
+  # Skip if marker on same line or up to 2 previous lines (allow Promise.all/arrow wrapping)
+  if echo "$content" | grep -q 'perf-instrument-ok'; then
+    continue
+  fi
+  marker_found=0
+  for back in 1 2; do
+    prev_line=$((line - back))
+    if [ "$prev_line" -ge 1 ] && sed -n "${prev_line}p" "$file" 2>/dev/null | grep -q 'perf-instrument-ok'; then
+      marker_found=1
+      break
+    fi
+  done
+  if [ "$marker_found" -eq 1 ]; then
+    continue
+  fi
+  # Skip import lines (these declare getDoc/getDocs from firestore SDK)
+  if echo "$content" | grep -qE "^import .* from 'firebase/firestore'"; then
+    continue
+  fi
+  if echo "$content" | grep -qE '^\s*(getDoc|getDocs),?\s*$'; then
+    # Multi-line import member
+    continue
+  fi
+  RAW_HITS="$RAW_HITS$file:$line:$content"$'\n'
+done < <(grep -rn -E '\b(getDoc|getDocs)\(' "$REPO_ROOT/src/services/" --include='*.ts' 2>/dev/null \
+  | grep -v '/admin/' \
+  || true)
+
+if [ -z "$RAW_HITS" ]; then
+  pass "all src/services/ Firestore reads are wrapped (or carry perf-instrument-ok marker)"
+else
+  echo "$RAW_HITS"
+  fail "raw getDoc()/getDocs() in src/services/ — wrap with measuredGetDoc/measuredGetDocs/measureAsync, or add '// perf-instrument-ok' marker"
+fi
+
 # ---------- Summary ----------
 echo ""
 echo "=== Summary: $CHECKS_PASSED/$CHECKS_RUN checks passed ==="

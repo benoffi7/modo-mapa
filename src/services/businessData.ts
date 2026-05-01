@@ -31,6 +31,7 @@ export async function fetchUserLikes(uid: string, commentIds: string[]): Promise
     batches.push(docIds.slice(i, i + BATCH_SIZE));
   }
   const snaps = await measureAsync('businessData_userLikes', () =>
+    // perf-instrument-ok — measured in aggregate via measureAsync wrapper above
     Promise.all(batches.map((batch) =>
       getDocs(query(
         collection(db, COLLECTIONS.COMMENT_LIKES),

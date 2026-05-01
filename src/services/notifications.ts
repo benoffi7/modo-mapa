@@ -4,7 +4,6 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
-  getDocs,
   doc,
   updateDoc,
   writeBatch,
@@ -12,7 +11,7 @@ import {
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { notificationConverter } from '../config/converters';
-import { measureAsync } from '../utils/perfMetrics';
+import { measureAsync, measuredGetDocs } from '../utils/perfMetrics';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
 import type { AppNotification } from '../types';
 
@@ -20,14 +19,13 @@ export async function fetchUserNotifications(
   userId: string,
   maxResults = 50,
 ): Promise<AppNotification[]> {
-  const snap = await measureAsync('notifications', () =>
-    getDocs(
-      query(
-        collection(db, COLLECTIONS.NOTIFICATIONS).withConverter(notificationConverter),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        firestoreLimit(maxResults),
-      ),
+  const snap = await measuredGetDocs(
+    'notifications',
+    query(
+      collection(db, COLLECTIONS.NOTIFICATIONS).withConverter(notificationConverter),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      firestoreLimit(maxResults),
     ),
   );
   return snap.docs.map((d) => d.data());
@@ -38,7 +36,8 @@ export async function markNotificationRead(notificationId: string): Promise<void
 }
 
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'notifications_unreadList',
     query(
       collection(db, COLLECTIONS.NOTIFICATIONS),
       where('userId', '==', userId),

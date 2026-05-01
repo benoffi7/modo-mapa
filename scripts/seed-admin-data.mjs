@@ -948,6 +948,8 @@ async function seed() {
         recommendations_unreadCount: { p50: 60, p95: 150, count: 220 },
         recommendations_sentTodayCount: { p50: 80, p95: 200, count: 40 },
         recommendations_unreadList: { p50: 130, p95: 320, count: 18 },
+        notifications_unreadList: { p50: 110, p95: 270, count: 22 },
+        userSettings_updateExists: { p50: 55, p95: 130, count: 28 },
       },
       functions: {
         onCommentCreated: { p50: 175, p95: 280, count: 8 },

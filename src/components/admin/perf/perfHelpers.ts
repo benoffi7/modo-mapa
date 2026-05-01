@@ -117,6 +117,10 @@ export const QUERY_LABELS: Record<string, string> = {
   recommendations_unreadCount: 'Recomendaciones: count no leídas',
   recommendations_sentTodayCount: 'Recomendaciones: enviadas hoy',
   recommendations_unreadList: 'Recomendaciones: listado no leídas',
+
+  // Misc (S5 follow-up wraps)
+  notifications_unreadList: 'Notificaciones: listado no leídas',
+  userSettings_updateExists: 'Settings: existe en update',
 };
 
 export function getSemaphoreColor(key: VitalKey, value: number): 'success' | 'warning' | 'error' {
