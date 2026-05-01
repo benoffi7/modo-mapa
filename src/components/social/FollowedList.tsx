@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
-  Avatar, Typography, Box, CircularProgress,
+  Avatar, Typography, Box, CircularProgress, List, ListItemButton,
 } from '@mui/material';
 import { cardSx } from '../../theme/cards';
 import PeopleIcon from '@mui/icons-material/People';
@@ -96,9 +96,9 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
           onRetry={handleRefresh}
           onLoadMore={() => loadPage(lastDoc)}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {items.map((item) => (
-              <Box
+              <ListItemButton
                 key={item.userId}
                 onClick={() => onUserClick(item.userId)}
                 sx={{ ...cardSx, display: 'flex', alignItems: 'center', gap: 1.5 }}
@@ -124,9 +124,9 @@ export function FollowedList({ onUserClick }: FollowedListProps) {
                 >
                   Siguiendo
                 </Box>
-              </Box>
+              </ListItemButton>
             ))}
-          </Box>
+          </List>
         </PaginatedListShell>
       </PullToRefreshWrapper>
     </Box>

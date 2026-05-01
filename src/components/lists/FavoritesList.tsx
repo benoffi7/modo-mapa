@@ -196,7 +196,16 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
           return (
             <Box
               key={fav.businessId}
+              role="button"
+              tabIndex={0}
+              aria-label={`Abrir comercio: ${fav.business.name}`}
               onClick={() => handleSelectBusiness(fav.business)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectBusiness(fav.business);
+                }
+              }}
               sx={cardSx}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
