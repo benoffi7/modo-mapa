@@ -1,12 +1,10 @@
 import {
   collection,
   doc,
-  getDoc,
   setDoc,
   addDoc,
   updateDoc,
   deleteDoc,
-  getDocs,
   query,
   where,
   orderBy,
@@ -20,6 +18,7 @@ import { COLLECTIONS } from '../config/collections';
 import { sharedListConverter, listItemConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import { measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import { getListIconById } from '../constants/listIcons';
 import type { SharedList, ListItem } from '../types';
 
@@ -84,7 +83,8 @@ export async function updateList(listId: string, name: string, description: stri
 }
 
 export async function deleteList(listId: string, ownerId: string): Promise<void> {
-  const itemsSnap = await getDocs(
+  const itemsSnap = await measuredGetDocs(
+    'sharedLists_itemsForDelete',
     query(collection(db, COLLECTIONS.LIST_ITEMS), where('listId', '==', listId)),
   );
 
@@ -128,7 +128,8 @@ export async function removeBusinessFromList(listId: string, businessId: string)
 }
 
 export async function fetchListItems(listId: string): Promise<ListItem[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'sharedLists_itemsByList',
     query(
       collection(db, COLLECTIONS.LIST_ITEMS).withConverter(listItemConverter),
       where('listId', '==', listId),
@@ -168,14 +169,16 @@ export async function removeEditor(listId: string, targetUid: string): Promise<v
 }
 
 export async function fetchSharedList(listId: string): Promise<SharedList | null> {
-  const snap = await getDoc(
+  const snap = await measuredGetDoc(
+    'sharedLists_byId',
     doc(db, COLLECTIONS.SHARED_LISTS, listId).withConverter(sharedListConverter),
   );
   return snap.exists() ? snap.data() : null;
 }
 
 export async function fetchUserLists(userId: string): Promise<SharedList[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'sharedLists_ownedByUser',
     query(getSharedListsCollection(), where('ownerId', '==', userId), orderBy('updatedAt', 'desc')),
   );
   return snap.docs.map((d) => d.data());
@@ -183,7 +186,7 @@ export async function fetchUserLists(userId: string): Promise<SharedList[]> {
 
 export async function fetchEditorName(uid: string): Promise<string> {
   try {
-    const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+    const snap = await measuredGetDoc('sharedLists_editorName', doc(db, COLLECTIONS.USERS, uid));
     const data = snap.data() as { displayName?: string } | undefined;
     return data?.displayName ?? 'Usuario';
   } catch {
@@ -201,7 +204,8 @@ export async function fetchAllAccessibleLists(userId: string): Promise<SharedLis
 }
 
 export async function fetchSharedWithMe(userId: string): Promise<SharedList[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'sharedLists_sharedWithMe',
     query(
       getSharedListsCollection(),
       where('editorIds', 'array-contains', userId),

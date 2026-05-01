@@ -5,6 +5,7 @@ import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { checkCallableRateLimit } from '../utils/callableRateLimit';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 const MAX_EDITORS = 5;
 const DAILY_INVITE_LIMIT = 10;
@@ -20,6 +21,8 @@ function hashEmail(email: string): string {
 export const inviteListEditor = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK },
   async (request) => {
+    const startMs = performance.now();
+    try {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
 
     const { listId, targetEmail, databaseId } = request.data as { listId: string; targetEmail: string; databaseId?: string };
@@ -57,6 +60,7 @@ export const inviteListEditor = onCall(
         ownerUid: request.auth.uid,
         emailHash: hashEmail(targetEmail),
       });
+      await trackFunctionTiming('inviteListEditor', startMs);
       return { success: true };
     }
 
@@ -67,6 +71,7 @@ export const inviteListEditor = onCall(
         ownerUid: request.auth.uid,
         emailHash: hashEmail(targetEmail),
       });
+      await trackFunctionTiming('inviteListEditor', startMs);
       return { success: true };
     }
 
@@ -79,6 +84,7 @@ export const inviteListEditor = onCall(
         ownerUid: request.auth.uid,
         emailHash: hashEmail(targetEmail),
       });
+      await trackFunctionTiming('inviteListEditor', startMs);
       return { success: true };
     }
 
@@ -92,6 +98,11 @@ export const inviteListEditor = onCall(
       updatedAt: FieldValue.serverTimestamp(),
     });
 
+    await trackFunctionTiming('inviteListEditor', startMs);
     return { success: true };
+    } catch (err) {
+      void trackFunctionTiming('inviteListEditor', startMs);
+      throw err;
+    }
   },
 );

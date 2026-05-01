@@ -181,7 +181,7 @@
 | `callableRateLimit.ts` | `callableRateLimit.test.ts` | 4 | 100% |
 | `aggregates.ts` | `aggregates.test.ts` | 6 | 100% |
 | `abuseLogger.ts` | `abuseLogger.test.ts` | 5 | 100% stmts, 50% branches |
-| `perfTracker.ts` | `perfTracker.test.ts` | 15 | 100% |
+| `perfTracker.ts` | `perfTracker.test.ts` | 16 | 100% (cap=2000, truncate-in-handler) |
 
 ### Cloud Functions — Helpers (`functions/src/helpers/`)
 

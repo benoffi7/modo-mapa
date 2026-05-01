@@ -78,6 +78,11 @@ vi.mock('../../utils/abuseLogger', () => ({
   logAbuse: vi.fn().mockResolvedValue(undefined),
 }));
 
+const mockTrackFunctionTiming = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
+}));
+
 import { deleteUserAccount } from '../../callable/deleteUserAccount';
 
 const handler = deleteUserAccount as unknown as (req: unknown) => Promise<unknown>;
@@ -269,5 +274,23 @@ describe('deleteUserAccount', () => {
       expect.anything(),
       expect.objectContaining({ type: 'deletion_failure' }),
     );
+  });
+
+  it('tracks function timing with deleteUserAccount label on happy path', async () => {
+    mockDocGet.mockResolvedValue({ exists: false });
+    mockCollectionGet.mockResolvedValue({ empty: true, docs: [] });
+    mockTrackFunctionTiming.mockClear();
+
+    await handler(makeAuthRequest('uid1'));
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('deleteUserAccount', expect.any(Number));
+  });
+
+  it('tracks function timing on error path (anonymous account rejection)', async () => {
+    mockTrackFunctionTiming.mockClear();
+    // Anonymous account → permission-denied early
+    await expect(handler(makeAuthRequest('uid1', null))).rejects.toThrow();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('deleteUserAccount', expect.any(Number));
   });
 });

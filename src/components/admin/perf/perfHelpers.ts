@@ -44,10 +44,83 @@ export const VITAL_DESCRIPTIONS: Record<VitalKey, string> = {
 };
 
 export const QUERY_LABELS: Record<string, string> = {
+  // Legacy / generic
   notifications: 'Notificaciones',
   unreadCount: 'Contador no leídos',
   userSettings: 'Settings de usuario',
   paginatedQuery: 'Query paginada',
+
+  // Business detail
+  businessData_ratings: 'Detalle: ratings',
+  businessData_comments: 'Detalle: comentarios',
+  businessData_userTags: 'Detalle: tags de usuario',
+  businessData_menuPhotos: 'Detalle: fotos de menú',
+
+  // User profile
+  userProfile_comments: 'Perfil: comentarios',
+  userProfile_ratings: 'Perfil: ratings',
+
+  // Ratings
+  ratings_byUser: 'Ratings por usuario',
+  ratings_countByUser: 'Ratings: count por usuario',
+  ratings_hasUser: 'Rating existe (user/business)',
+  ratings_upsertExists: 'Rating: existe en upsert',
+  ratings_criteriaExists: 'Rating: existe (criteria)',
+  ratings_byBusinessIds: 'Ratings por businessIds',
+
+  // Follows / users (S1)
+  follows_followersCount: 'Seguidores: count',
+  follows_isFollowing: '¿Estoy siguiendo?',
+  follows_fetchFollowing: 'Lista de seguidos',
+  users_search: 'Búsqueda de usuarios',
+  users_profileVisibility: 'Visibilidad de perfil',
+  users_displayNames: 'Nombres por UID',
+  trending_fetchCurrent: 'Trending actual',
+
+  // Rankings (S2)
+  rankings_byPeriod: 'Ranking por período',
+  rankings_latestByType: 'Ranking más reciente por tipo',
+  rankings_userScoreHistory: 'Ranking: historial de score',
+  rankings_userLiveScore: 'Ranking: score en vivo',
+
+  // Shared lists (S2)
+  sharedLists_itemsForDelete: 'Listas: ítems para borrar',
+  sharedLists_itemsByList: 'Listas: ítems por lista',
+  sharedLists_byId: 'Lista por ID',
+  sharedLists_ownedByUser: 'Listas propias',
+  sharedLists_editorName: 'Nombre del editor',
+  sharedLists_sharedWithMe: 'Compartidas conmigo',
+
+  // Suggestions (S2)
+  suggestions_favorites: 'Sugerencias: favoritos',
+  suggestions_ratings: 'Sugerencias: ratings',
+  suggestions_userTags: 'Sugerencias: tags',
+
+  // Feedback (S2)
+  feedback_byUser: 'Feedback por usuario',
+
+  // Price levels (S2)
+  priceLevels_all: 'Niveles de precio: todos',
+  priceLevels_upsertExists: 'Nivel de precio: existe',
+
+  // Specials & achievements (S2)
+  specials_all: 'Specials: todos',
+  specials_active: 'Specials: activos',
+  specials_existingForSave: 'Specials: existentes (save)',
+  achievements_all: 'Logros: todos',
+  achievements_existingForSave: 'Logros: existentes (save)',
+
+  // Metrics (S2)
+  metrics_dailyByDate: 'Métricas diarias por fecha',
+
+  // Recommendations (S2)
+  recommendations_unreadCount: 'Recomendaciones: count no leídas',
+  recommendations_sentTodayCount: 'Recomendaciones: enviadas hoy',
+  recommendations_unreadList: 'Recomendaciones: listado no leídas',
+
+  // Misc (S5 follow-up wraps)
+  notifications_unreadList: 'Notificaciones: listado no leídas',
+  userSettings_updateExists: 'Settings: existe en update',
 };
 
 export function getSemaphoreColor(key: VitalKey, value: number): 'success' | 'warning' | 'error' {

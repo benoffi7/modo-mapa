@@ -1,12 +1,13 @@
 /**
  * Firestore service for the `priceLevels` collection.
  */
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, limit, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, deleteDoc, query, limit, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { priceLevelConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import { measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import type { PriceLevel } from '../types';
 
 /** Safety bound: max docs to fetch (covers ~500 users × 40 businesses) */
@@ -19,10 +20,13 @@ const MAX_PRICE_LEVELS = 20_000;
 export async function fetchPriceLevelMap(
   maxDocs = MAX_PRICE_LEVELS,
 ): Promise<Map<string, number>> {
-  const snap = await getDocs(query(
-    collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
-    limit(maxDocs),
-  ));
+  const snap = await measuredGetDocs(
+    'priceLevels_all',
+    query(
+      collection(db, COLLECTIONS.PRICE_LEVELS).withConverter(priceLevelConverter),
+      limit(maxDocs),
+    ),
+  );
   const byBusiness = new Map<string, number[]>();
   for (const docSnap of snap.docs) {
     const pl: PriceLevel = docSnap.data();
@@ -50,7 +54,7 @@ export async function upsertPriceLevel(
 
   const docId = `${userId}__${businessId}`;
   const plRef = doc(db, COLLECTIONS.PRICE_LEVELS, docId);
-  const existing = await getDoc(plRef);
+  const existing = await measuredGetDoc('priceLevels_upsertExists', plRef);
 
   if (existing.exists()) {
     await updateDoc(plRef, {

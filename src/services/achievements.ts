@@ -4,14 +4,18 @@
  * All Firestore reads/writes for achievements go through this module so
  * components never import Firestore SDK directly.
  */
-import { collection, getDocs, doc, setDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { measuredGetDocs } from '../utils/perfMetrics';
 import type { Achievement } from '../types';
 
 /** Fetch all achievements ordered by `order` field. */
 export async function fetchAchievements(): Promise<Achievement[]> {
-  const snap = await getDocs(query(collection(db, COLLECTIONS.ACHIEVEMENTS), orderBy('order')));
+  const snap = await measuredGetDocs(
+    'achievements_all',
+    query(collection(db, COLLECTIONS.ACHIEVEMENTS), orderBy('order')),
+  );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Achievement));
 }
 
@@ -20,7 +24,10 @@ export async function fetchAchievements(): Promise<Achievement[]> {
  * Each doc gets an `updatedAt` timestamp.
  */
 export async function saveAllAchievements(achievements: Achievement[]): Promise<void> {
-  const existingSnap = await getDocs(collection(db, COLLECTIONS.ACHIEVEMENTS));
+  const existingSnap = await measuredGetDocs(
+    'achievements_existingForSave',
+    collection(db, COLLECTIONS.ACHIEVEMENTS),
+  );
   const currentIds = new Set(achievements.map((a) => a.id));
 
   for (const d of existingSnap.docs) {

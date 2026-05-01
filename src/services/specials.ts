@@ -4,20 +4,25 @@
  * All Firestore reads/writes for specials go through this module so
  * components never import Firestore SDK directly.
  */
-import { collection, getDocs, doc, setDoc, deleteDoc, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
+import { measuredGetDocs } from '../utils/perfMetrics';
 import type { Special } from '../types';
 
 /** Fetch all specials ordered by `order` field (admin use). */
 export async function fetchSpecials(): Promise<Special[]> {
-  const snap = await getDocs(query(collection(db, COLLECTIONS.SPECIALS), orderBy('order')));
+  const snap = await measuredGetDocs(
+    'specials_all',
+    query(collection(db, COLLECTIONS.SPECIALS), orderBy('order')),
+  );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special));
 }
 
 /** Fetch only active specials ordered by `order` field (user-facing use). */
 export async function fetchActiveSpecials(): Promise<Special[]> {
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'specials_active',
     query(collection(db, COLLECTIONS.SPECIALS), where('active', '==', true), orderBy('order')),
   );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Special));
@@ -28,7 +33,10 @@ export async function fetchActiveSpecials(): Promise<Special[]> {
  * Each doc gets an `updatedAt` timestamp.
  */
 export async function saveAllSpecials(specials: Special[]): Promise<void> {
-  const existingSnap = await getDocs(collection(db, COLLECTIONS.SPECIALS));
+  const existingSnap = await measuredGetDocs(
+    'specials_existingForSave',
+    collection(db, COLLECTIONS.SPECIALS),
+  );
   const currentIds = new Set(specials.map((s) => s.id));
 
   for (const d of existingSnap.docs) {

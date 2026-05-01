@@ -6,6 +6,7 @@ import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { deleteAllUserData } from '../utils/deleteUserData';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
 import type { DeletionStatus } from '../utils/deleteUserData';
 
@@ -20,6 +21,8 @@ const RATE_LIMIT_SECONDS = 60;
 export const cleanAnonymousData = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120 },
   async (request) => {
+    const startMs = performance.now();
+    try {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
@@ -113,6 +116,12 @@ export const cleanAnonymousData = onCall(
 
     logger.info('anonymous_data_cleaned', { uidHash, status, timestamp: new Date().toISOString() });
 
+    await trackFunctionTiming('cleanAnonymousData', startMs);
     return { success: true };
+    } catch (err) {
+      // Fire-and-forget on error path so we still capture timings.
+      void trackFunctionTiming('cleanAnonymousData', startMs);
+      throw err;
+    }
   },
 );

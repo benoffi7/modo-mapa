@@ -3,6 +3,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 import { TRENDING_SCORING, TRENDING_MAX_BUSINESSES, TRENDING_WINDOW_DAYS } from '../constants/trending';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 export interface BusinessAccumulator {
   ratings: number;
@@ -138,6 +139,11 @@ export const computeTrendingBusinesses = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    await withCronHeartbeat('computeTrendingBusinesses', runTrending);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('computeTrendingBusinesses', runTrending);
+    } finally {
+      await trackFunctionTiming('computeTrendingBusinesses', startMs);
+    }
   },
 );

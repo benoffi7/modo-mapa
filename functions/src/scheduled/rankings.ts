@@ -2,6 +2,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getDb } from '../helpers/env';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 const SCORING = {
   comments: 3,
@@ -183,7 +184,12 @@ export const computeWeeklyRanking = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    await withCronHeartbeat('computeWeeklyRanking', runWeeklyRanking);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('computeWeeklyRanking', runWeeklyRanking);
+    } finally {
+      await trackFunctionTiming('computeWeeklyRanking', startMs);
+    }
   },
 );
 
@@ -217,7 +223,12 @@ export const computeMonthlyRanking = onSchedule(
     timeZone: 'America/Argentina/Buenos_Aires',
   },
   async () => {
-    await withCronHeartbeat('computeMonthlyRanking', runMonthlyRanking);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('computeMonthlyRanking', runMonthlyRanking);
+    } finally {
+      await trackFunctionTiming('computeMonthlyRanking', startMs);
+    }
   },
 );
 
@@ -248,6 +259,11 @@ export const computeAlltimeRanking = onSchedule(
     timeoutSeconds: 540,
   },
   async () => {
-    await withCronHeartbeat('computeAlltimeRanking', runAlltimeRanking);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('computeAlltimeRanking', runAlltimeRanking);
+    } finally {
+      await trackFunctionTiming('computeAlltimeRanking', startMs);
+    }
   },
 );

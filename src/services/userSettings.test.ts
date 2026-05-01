@@ -3,10 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../config/firebase', () => ({ db: {} }));
 vi.mock('../config/collections', () => ({ COLLECTIONS: { USER_SETTINGS: 'userSettings' } }));
 vi.mock('../config/converters', () => ({ userSettingsConverter: {} }));
-vi.mock('../utils/perfMetrics', () => ({ measureAsync: (_: string, fn: () => unknown) => fn() }));
 
-const mockGetDoc = vi.fn();
-const mockSetDoc = vi.fn().mockResolvedValue(undefined);
+const { mockGetDoc, mockSetDoc } = vi.hoisted(() => ({
+  mockGetDoc: vi.fn(),
+  mockSetDoc: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measureAsync: (_: string, fn: () => unknown) => fn(),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDoc(ref),
+  measuredGetDocs: (_name: string, q: unknown) => mockGetDoc(q),
+}));
 
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnThis() }),

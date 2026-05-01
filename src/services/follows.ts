@@ -5,7 +5,7 @@
  * components never import Firestore SDK directly.
  */
 import {
-  collection, doc, setDoc, deleteDoc, getDoc, getDocs,
+  collection, doc, setDoc, deleteDoc,
   query, where, orderBy, limit, startAfter, serverTimestamp,
 } from 'firebase/firestore';
 import type { CollectionReference, QueryDocumentSnapshot, QueryConstraint } from 'firebase/firestore';
@@ -17,6 +17,7 @@ import { invalidateQueryCache } from './queryCache';
 /** Opaque cursor type for pagination — components should import this instead of QueryDocumentSnapshot */
 export type FollowCursor = QueryDocumentSnapshot<Follow>;
 import { getCountOfflineSafe } from './getCountOfflineSafe';
+import { measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';
@@ -62,7 +63,10 @@ export async function unfollowUser(followerId: string, followedId: string): Prom
 
 export async function isFollowing(followerId: string, followedId: string): Promise<boolean> {
   if (!followerId || !followedId) return false;
-  const snap = await getDoc(doc(db, COLLECTIONS.FOLLOWS, docId(followerId, followedId)));
+  const snap = await measuredGetDoc(
+    'follows_isFollowing',
+    doc(db, COLLECTIONS.FOLLOWS, docId(followerId, followedId)),
+  );
   return snap.exists();
 }
 
@@ -78,7 +82,10 @@ export async function fetchFollowing(
   if (afterDoc) constraints.push(startAfter(afterDoc));
   constraints.push(limit(pageSize + 1));
 
-  const snap = await getDocs(query(getFollowsCollection(), ...constraints));
+  const snap = await measuredGetDocs(
+    'follows_fetchFollowing',
+    query(getFollowsCollection(), ...constraints),
+  );
   const hasMore = snap.docs.length > pageSize;
   const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
   return { docs, hasMore, cursor: docs[docs.length - 1] ?? null };

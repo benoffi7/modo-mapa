@@ -1,13 +1,15 @@
-import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userRankingConverter } from '../config/converters';
 import { SCORING } from '../constants/rankings';
+import { measureAsync, measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import type { UserRanking, UserRankingEntry } from '../types';
 
 export async function fetchRanking(period: string): Promise<UserRanking | null> {
-  const snap = await getDoc(
+  const snap = await measuredGetDoc(
+    'rankings_byPeriod',
     doc(db, COLLECTIONS.USER_RANKINGS, period).withConverter(userRankingConverter),
   );
   return snap.exists() ? snap.data() : null;
@@ -16,7 +18,8 @@ export async function fetchRanking(period: string): Promise<UserRanking | null> 
 export async function fetchLatestRanking(type: 'weekly' | 'monthly' | 'yearly'): Promise<UserRanking | null> {
   const prefix = type === 'weekly' ? 'weekly_' : type === 'monthly' ? 'monthly_' : 'yearly_';
 
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'rankings_latestByType',
     query(
       collection(db, COLLECTIONS.USER_RANKINGS).withConverter(userRankingConverter),
       where('period', '>=', prefix),
@@ -158,7 +161,10 @@ export async function fetchUserScoreHistory(
   // Deduplicate keys (can happen at year boundaries)
   const uniqueKeys = [...new Set(keys)];
 
-  const rankings = await Promise.all(uniqueKeys.map((k) => fetchRanking(k)));
+  const rankings = await measureAsync(
+    'rankings_userScoreHistory',
+    () => Promise.all(uniqueKeys.map((k) => fetchRanking(k))),
+  );
 
   return rankings.map((r) => {
     if (!r) return 0;
@@ -174,22 +180,25 @@ export async function fetchUserLiveScore(
 ): Promise<UserRankingEntry> {
   const { start, end } = getPeriodRange(periodType);
 
-  const [comments, ratings, likes, tags, favorites, photos] = await Promise.all([
-    countUserDocs(COLLECTIONS.COMMENTS, userId, start, end),
-    countUserDocs(COLLECTIONS.RATINGS, userId, start, end),
-    countUserDocs(COLLECTIONS.COMMENT_LIKES, userId, start, end),
-    countUserDocs(COLLECTIONS.CUSTOM_TAGS, userId, start, end),
-    countUserDocs(COLLECTIONS.FAVORITES, userId, start, end),
-    getCountOfflineSafe(
-      query(
-        collection(db, COLLECTIONS.MENU_PHOTOS),
-        where('userId', '==', userId),
-        where('status', '==', 'approved'),
-        where('createdAt', '>=', Timestamp.fromDate(start)),
-        where('createdAt', '<', Timestamp.fromDate(end)),
+  const [comments, ratings, likes, tags, favorites, photos] = await measureAsync(
+    'rankings_userLiveScore',
+    () => Promise.all([
+      countUserDocs(COLLECTIONS.COMMENTS, userId, start, end),
+      countUserDocs(COLLECTIONS.RATINGS, userId, start, end),
+      countUserDocs(COLLECTIONS.COMMENT_LIKES, userId, start, end),
+      countUserDocs(COLLECTIONS.CUSTOM_TAGS, userId, start, end),
+      countUserDocs(COLLECTIONS.FAVORITES, userId, start, end),
+      getCountOfflineSafe(
+        query(
+          collection(db, COLLECTIONS.MENU_PHOTOS),
+          where('userId', '==', userId),
+          where('status', '==', 'approved'),
+          where('createdAt', '>=', Timestamp.fromDate(start)),
+          where('createdAt', '<', Timestamp.fromDate(end)),
+        ),
       ),
-    ),
-  ]);
+    ]),
+  );
 
   const breakdown = { comments, ratings, likes, tags, favorites, photos };
   const score =

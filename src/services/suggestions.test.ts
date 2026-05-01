@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetDocs = vi.fn();
+const { mockGetDocs, mockMeasuredGetDocs } = vi.hoisted(() => {
+  const getDocs = vi.fn();
+  const measured = vi.fn((_name: string, q: unknown) => getDocs(q));
+  return { mockGetDocs: getDocs, mockMeasuredGetDocs: measured };
+});
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(() => ({
@@ -12,6 +16,12 @@ vi.mock('firebase/firestore', () => ({
   limit: vi.fn(),
   getFirestore: vi.fn(),
   connectFirestoreEmulator: vi.fn(),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDocs(ref),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 vi.mock('../config/firebase', () => ({
@@ -89,5 +99,16 @@ describe('fetchUserSuggestionData', () => {
     mockGetDocs.mockRejectedValue(new Error('Query failed'));
 
     await expect(fetchUserSuggestionData('user1')).rejects.toThrow('Query failed');
+  });
+
+  it('instruments reads with suggestions_favorites/ratings/userTags labels', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+
+    await fetchUserSuggestionData('user1');
+
+    const labels = mockMeasuredGetDocs.mock.calls.map((call) => call[0]);
+    expect(labels).toContain('suggestions_favorites');
+    expect(labels).toContain('suggestions_ratings');
+    expect(labels).toContain('suggestions_userTags');
   });
 });
