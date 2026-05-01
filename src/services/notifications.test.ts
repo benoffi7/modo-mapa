@@ -1,15 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetDocs = vi.fn();
-const mockUpdateDoc = vi.fn();
-
-const mockMeasureAsync = vi.fn();
-const mockGetCountOfflineSafe = vi.fn();
-
-const mockBatch = {
-  update: vi.fn(),
-  commit: vi.fn(),
-};
+const {
+  mockGetDocs,
+  mockUpdateDoc,
+  mockMeasureAsync,
+  mockGetCountOfflineSafe,
+  mockBatch,
+  mockMeasuredGetDocs,
+} = vi.hoisted(() => {
+  const getDocs = vi.fn();
+  return {
+    mockGetDocs: getDocs,
+    mockUpdateDoc: vi.fn(),
+    mockMeasureAsync: vi.fn(),
+    mockGetCountOfflineSafe: vi.fn(),
+    mockBatch: {
+      update: vi.fn(),
+      commit: vi.fn(),
+    },
+    mockMeasuredGetDocs: vi.fn((_name: string, q: unknown) => getDocs(q)),
+  };
+});
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(() => ({
@@ -41,6 +52,8 @@ vi.mock('../config/converters', () => ({
 
 vi.mock('../utils/perfMetrics', () => ({
   measureAsync: (...args: unknown[]) => mockMeasureAsync(...args),
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDocs(ref),
 }));
 
 vi.mock('./getCountOfflineSafe', () => ({
@@ -65,17 +78,15 @@ describe('fetchUserNotifications', () => {
       { id: 'n-2', message: 'World' },
     ];
     const snap = { docs: notifs.map((n) => ({ data: () => n })) };
-    mockMeasureAsync.mockImplementation((_label: string, fn: () => Promise<unknown>) => fn());
     mockGetDocs.mockResolvedValue(snap);
 
     const result = await fetchUserNotifications('user1');
 
     expect(result).toEqual(notifs);
-    expect(mockMeasureAsync).toHaveBeenCalledWith('notifications', expect.any(Function));
+    expect(mockMeasuredGetDocs).toHaveBeenCalledWith('notifications', expect.anything());
   });
 
   it('returns empty array when no notifications', async () => {
-    mockMeasureAsync.mockImplementation((_label: string, fn: () => Promise<unknown>) => fn());
     mockGetDocs.mockResolvedValue({ docs: [] });
 
     const result = await fetchUserNotifications('user1');
@@ -83,20 +94,17 @@ describe('fetchUserNotifications', () => {
   });
 
   it('uses default maxResults of 50', async () => {
-    mockMeasureAsync.mockImplementation((_label: string, fn: () => Promise<unknown>) => fn());
     mockGetDocs.mockResolvedValue({ docs: [] });
 
     await fetchUserNotifications('user1');
-    // The limit is applied internally -- we verify by successful call
-    expect(mockMeasureAsync).toHaveBeenCalled();
+    expect(mockMeasuredGetDocs).toHaveBeenCalled();
   });
 
   it('accepts custom maxResults', async () => {
-    mockMeasureAsync.mockImplementation((_label: string, fn: () => Promise<unknown>) => fn());
     mockGetDocs.mockResolvedValue({ docs: [] });
 
     await fetchUserNotifications('user1', 10);
-    expect(mockMeasureAsync).toHaveBeenCalled();
+    expect(mockMeasuredGetDocs).toHaveBeenCalled();
   });
 });
 
