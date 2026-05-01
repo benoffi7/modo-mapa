@@ -13,6 +13,7 @@ const {
   mockLoggerWarn,
   mockLoggerError,
   mockLoggerInfo,
+  mockTrackFunctionTiming,
 } = vi.hoisted(() => ({
   mockRateLimitGet: vi.fn(),
   mockRateLimitSet: vi.fn().mockResolvedValue(undefined),
@@ -24,6 +25,7 @@ const {
   mockLoggerWarn: vi.fn(),
   mockLoggerError: vi.fn(),
   mockLoggerInfo: vi.fn(),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 // db: rate limit doc + deletionAuditLogs collection.
@@ -77,6 +79,10 @@ vi.mock('../../utils/deleteUserData', () => ({
 
 vi.mock('../../utils/abuseLogger', () => ({
   logAbuse: (...args: unknown[]) => mockLogAbuse(...args),
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 vi.mock('../../shared/userOwnedCollections', () => ({
@@ -293,5 +299,20 @@ describe('cleanAnonymousData', () => {
     const audit = getAuditLogPayload();
     expect(audit!.status).toBe('failure');
     expect(mockLogAbuse).toHaveBeenCalled();
+  });
+
+  it('tracks function timing with cleanAnonymousData label on happy path', async () => {
+    mockDeleteAllUserData.mockResolvedValueOnce(happyDeleteResult());
+
+    await handler(makeAnonRequest());
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('cleanAnonymousData', expect.any(Number));
+  });
+
+  it('tracks function timing on error path (fire-and-forget)', async () => {
+    // Email account → throws permission-denied early, before deleteAllUserData
+    await expect(handler(makeEmailRequest())).rejects.toThrow();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('cleanAnonymousData', expect.any(Number));
   });
 });

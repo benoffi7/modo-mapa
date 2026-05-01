@@ -1,4 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+const {
+  handlerHolder,
+  mockGetDb,
+  mockTrackFunctionTiming,
+} = vi.hoisted(() => ({
+  handlerHolder: { fn: null as (() => Promise<void>) | null },
+  mockGetDb: vi.fn(),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('firebase-functions/v2/scheduler', () => ({
+  onSchedule: (_opts: unknown, handler: () => Promise<void>) => {
+    handlerHolder.fn = handler;
+    return handler;
+  },
+}));
+
+vi.mock('../../helpers/env', () => ({
+  get getDb() { return mockGetDb; },
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
+}));
+
 import { buildFeaturedLists } from '../../scheduled/featuredLists';
 
 describe('buildFeaturedLists', () => {
@@ -56,5 +82,42 @@ describe('buildFeaturedLists', () => {
     const lists = buildFeaturedLists(agg);
     const topFav = lists.find((l) => l.key === 'featured_most_favorited')!;
     expect(topFav.items).toEqual(['biz2', 'biz3', 'biz1']);
+  });
+});
+
+describe('generateFeaturedLists handler', () => {
+  it('tracks function timing with generateFeaturedLists label', async () => {
+    // Build minimal db mock: config/aggregates returns empty data,
+    // sharedLists set + listItems collection + batch all chain.
+    const aggGet = vi.fn().mockResolvedValue({ data: () => ({}) });
+    const setMerge = vi.fn().mockResolvedValue(undefined);
+    const itemsGet = vi.fn().mockResolvedValue({ docs: [] });
+    const batchSet = vi.fn();
+    const batchDelete = vi.fn();
+    const batchCommit = vi.fn().mockResolvedValue(undefined);
+    const batch = vi.fn().mockReturnValue({
+      delete: batchDelete,
+      set: batchSet,
+      commit: batchCommit,
+    });
+    // doc() returns helpers depending on path; we keep it generic
+    const docFn = vi.fn().mockReturnValue({
+      get: aggGet,
+      set: setMerge,
+    });
+    const collectionFn = vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({ get: itemsGet }),
+    });
+    const dbMock = {
+      doc: docFn,
+      collection: collectionFn,
+      batch,
+    };
+    mockGetDb.mockReturnValue(dbMock);
+    mockTrackFunctionTiming.mockClear();
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('generateFeaturedLists', expect.any(Number));
   });
 });

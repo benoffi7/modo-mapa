@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   handlerHolder,
   mockGetDb,
+  mockTrackFunctionTiming,
 } = vi.hoisted(() => ({
   handlerHolder: { fn: null as (() => Promise<void>) | null },
   mockGetDb: vi.fn(),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-functions/v2/scheduler', () => ({
@@ -17,6 +19,10 @@ vi.mock('firebase-functions/v2/scheduler', () => ({
 
 vi.mock('../../helpers/env', () => ({
   get getDb() { return mockGetDb; },
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 function createMockSetup(docCount: number) {
@@ -93,5 +99,13 @@ describe('cleanupExpiredNotifications', () => {
 
     expect(mockBatchDelete).toHaveBeenCalledWith({ id: 'notif_0' });
     expect(mockBatchDelete).toHaveBeenCalledWith({ id: 'notif_1' });
+  });
+
+  it('tracks function timing with cleanupExpiredNotifications label', async () => {
+    createMockSetup(0);
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('cleanupExpiredNotifications', expect.any(Number));
   });
 });

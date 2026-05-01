@@ -4,10 +4,12 @@ const {
   handlerHolder,
   mockGetDb,
   mockGetStorage,
+  mockTrackFunctionTiming,
 } = vi.hoisted(() => ({
   handlerHolder: { fn: null as (() => Promise<void>) | null },
   mockGetDb: vi.fn(),
   mockGetStorage: vi.fn(),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-functions/v2/scheduler', () => ({
@@ -23,6 +25,10 @@ vi.mock('../../helpers/env', () => ({
 
 vi.mock('firebase-admin/storage', () => ({
   getStorage: mockGetStorage,
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 function createMockSetup(docs: Array<{ storagePath: string; thumbnailPath?: string }>) {
@@ -124,5 +130,13 @@ describe('cleanupRejectedPhotos', () => {
     await handlerHolder.fn!();
 
     expect(mockCollection).toHaveBeenCalledWith('menuPhotos');
+  });
+
+  it('tracks function timing with cleanupRejectedPhotos label', async () => {
+    createMockSetup([]);
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('cleanupRejectedPhotos', expect.any(Number));
   });
 });

@@ -40,6 +40,11 @@ vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
 }));
 
+const mockTrackFunctionTiming = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
+}));
+
 import { removeListEditor } from '../../callable/removeListEditor';
 
 const handler = removeListEditor as unknown as (req: unknown) => Promise<unknown>;
@@ -128,5 +133,20 @@ describe('removeListEditor', () => {
     );
     await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } }))
       .rejects.toThrow('Limite diario alcanzado');
+  });
+
+  it('tracks function timing with removeListEditor label on happy path', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: ['u2'] }) });
+    mockTrackFunctionTiming.mockClear();
+
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetUid: 'u2' } });
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('removeListEditor', expect.any(Number));
+  });
+
+  it('tracks function timing on error path (unauthenticated)', async () => {
+    mockTrackFunctionTiming.mockClear();
+    await expect(handler({ data: { listId: 'l1', targetUid: 'u2' } })).rejects.toThrow();
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('removeListEditor', expect.any(Number));
   });
 });

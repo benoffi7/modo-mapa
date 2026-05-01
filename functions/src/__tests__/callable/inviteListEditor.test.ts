@@ -45,6 +45,11 @@ vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: unknown[]) => mockCheckCallableRateLimit(...args),
 }));
 
+const mockTrackFunctionTiming = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
+}));
+
 import { inviteListEditor } from '../../callable/inviteListEditor';
 
 const handler = inviteListEditor as unknown as (req: unknown) => Promise<unknown>;
@@ -180,5 +185,21 @@ describe('inviteListEditor', () => {
     );
     await expect(handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } }))
       .rejects.toThrow('Limite diario alcanzado');
+  });
+
+  it('tracks function timing with inviteListEditor label on happy path', async () => {
+    mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ ownerId: 'u1', editorIds: [] }) });
+    mockGetUserByEmail.mockResolvedValueOnce({ uid: 'u2' });
+    mockTrackFunctionTiming.mockClear();
+
+    await handler({ auth: { uid: 'u1' }, data: { listId: 'l1', targetEmail: 'friend@b.com' } });
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('inviteListEditor', expect.any(Number));
+  });
+
+  it('tracks function timing on error path (unauthenticated)', async () => {
+    mockTrackFunctionTiming.mockClear();
+    await expect(handler({ data: { listId: 'l1', targetEmail: 'a@b.com' } })).rejects.toThrow();
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('inviteListEditor', expect.any(Number));
   });
 });
