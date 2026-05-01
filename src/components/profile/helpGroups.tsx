@@ -125,7 +125,7 @@ export const HELP_GROUPS: HelpGroup[] = [
         icon: <ExitToAppOutlinedIcon color="primary" />,
         title: 'Confirmación al salir',
         description:
-          'Si estás escribiendo un comentario, una pregunta o un feedback y querés cerrar la pantalla con texto sin guardar, la app te avisa con el diálogo "Descartar cambios?" para que no pierdas lo que escribiste. El mismo flujo aplica al editar tu calificación o al cerrar el sheet del comercio con cambios pendientes (hook `useUnsavedChanges` + `DiscardDialog`).',
+          'Si estás escribiendo un comentario, una pregunta o un feedback y querés cerrar la pantalla con texto sin guardar, la app te avisa con el diálogo "¿Descartar cambios?" para que no pierdas lo que escribiste. El mismo flujo aplica al editar tu calificación o al cerrar el sheet del comercio con cambios pendientes (hook `useUnsavedChanges` + `DiscardDialog`).',
       },
       {
         id: 'offline',
