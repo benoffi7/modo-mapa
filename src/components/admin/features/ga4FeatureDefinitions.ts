@@ -17,6 +17,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
@@ -174,6 +175,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
       { key: 'force_update', name: 'Force update', icon: icon(SettingsOutlinedIcon), eventNames: ['force_update_triggered', 'force_update_limit_reached', 'app_version_active'], color: '#607D8B' },
       { key: 'account_deleted', name: 'Cuenta eliminada', icon: icon(SettingsOutlinedIcon), eventNames: ['account_deleted'], color: '#78909C' },
       { key: 'perf_page_screen', name: 'Perf / Paginas', icon: icon(SettingsOutlinedIcon), eventNames: ['perf_vitals_captured', 'page_view', 'screen_view'], color: '#90A4AE' },
+      { key: 'map_errors', name: 'Errores de mapa', icon: icon(MapOutlinedIcon), eventNames: ['map_load_failed'], color: '#F44336' },
     ],
   },
   {
@@ -189,7 +191,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     label: 'Admin Tools',
     features: [
       { key: 'admin_config', name: 'Config tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_config_viewed', 'admin_moderation_updated', 'admin_activity_feed_diag'], color: '#455A64' },
-      { key: 'admin_metrics', name: 'Metrics tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_list_items_inspected', 'admin_rate_limit_reset', 'admin_list_item_deleted'], color: '#546E7A' },
+      { key: 'admin_metrics', name: 'Metrics tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_list_items_inspected', 'admin_rate_limit_reset', 'admin_list_item_deleted', 'admin_rate_limit_viewed'], color: '#546E7A' },
     ],
   },
   {

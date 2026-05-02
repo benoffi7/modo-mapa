@@ -202,6 +202,9 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `deleteUserAccount` | 1/min por usuario | `delete_{userId}` |
 | `cleanAnonymousData` | 1/min por usuario | `clean_{userId}` |
 | `writePerfMetrics` | 5/día por usuario | `perf_{userId}` |
+| `adminListRateLimits` (#310/#327) | 30/día por admin | `admin_rate_limits_{uid}` |
+| `adminResetRateLimit` (#310/#327) | 20/día por admin | `admin_rate_limit_reset_{uid}` |
+| `adminDeleteListItem` (#310/#327) | 50/día por admin | `admin_delete_list_item_{uid}` |
 
 Los callables de editores usan `checkCallableRateLimit()` de `functions/src/utils/callableRateLimit.ts` con transacción atómica y ventana diaria.
 
