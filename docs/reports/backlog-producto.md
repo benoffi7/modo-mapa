@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-05-01 (post merge: Tanda B completa #325/#326/#328, v2.47.0)*
+*Actualizado: 2026-05-02 (post merge: #329 privacy disclosure, v2.47.1)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -46,6 +46,6 @@ Tanda B (#325 + #326 + #328) cerrada en sesion paralela 2026-05-01.
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 8 (#168 bloqueado, #327/#329/#330 Tanda C, #331/#332/#333/#334/#336 follow-ups) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#326 + #328 (128) |
-| Versiones publicadas | v2.10.0 – v2.47.0 |
+| Issues abiertos | 7 (#168 bloqueado, #327/#330 Tanda C en pipeline, #331/#332/#333/#334/#336 follow-ups) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#326 + #328 + #329 (129) |
+| Versiones publicadas | v2.10.0 – v2.47.1 |
