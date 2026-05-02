@@ -12,8 +12,8 @@
     "R2-services-without-test": 3,
     "R3-triggers-without-test": 0,
     "R4-admin-callables-without-test": 11,
-    "R5-hooks-without-test": 22,
-    "R6-validators-without-test": 1,
+    "R5-hooks-without-test": 17,
+    "R6-validators-without-test": 0,
     "R-threshold-not-reduced": 0
   },
   "302": {
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 170
+  "_total": 164
 }
