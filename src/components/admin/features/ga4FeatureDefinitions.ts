@@ -189,7 +189,7 @@ export const GA4_FEATURE_CATEGORIES: GA4FeatureCategory[] = [
     label: 'Admin Tools',
     features: [
       { key: 'admin_config', name: 'Config tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_config_viewed', 'admin_moderation_updated', 'admin_activity_feed_diag'], color: '#455A64' },
-      { key: 'admin_metrics', name: 'Metrics tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_list_items_inspected', 'admin_rate_limit_reset', 'admin_list_item_deleted'], color: '#546E7A' },
+      { key: 'admin_metrics', name: 'Metrics tools', icon: icon(SettingsOutlinedIcon), eventNames: ['admin_list_items_inspected', 'admin_rate_limit_reset', 'admin_list_item_deleted', 'admin_rate_limit_viewed'], color: '#546E7A' },
     ],
   },
   {

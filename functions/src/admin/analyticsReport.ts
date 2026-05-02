@@ -133,6 +133,7 @@ const GA4_EVENT_NAMES = [
   'app_version_active',
   'account_deleted',
   'perf_vitals_captured',
+  'map_load_failed',
   // GA4 auto-events (for volume context)
   'page_view',
   'screen_view',
@@ -140,13 +141,14 @@ const GA4_EVENT_NAMES = [
   'tab_switched',
   'sub_tab_switched',
   'business_sheet_tab_changed',
-  // Admin tools (#310)
+  // Admin tools (#310 / #327)
   'admin_config_viewed',
   'admin_moderation_updated',
   'admin_activity_feed_diag',
   'admin_list_items_inspected',
   'admin_rate_limit_reset',
   'admin_list_item_deleted',
+  'admin_rate_limit_viewed',
 ] as const;
 
 const CACHE_TTL_MS = 3_600_000; // 1 hour

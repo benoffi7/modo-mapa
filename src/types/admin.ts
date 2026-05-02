@@ -208,3 +208,19 @@ export interface ModerationLog {
   snapshot: Record<string, unknown>;
   timestamp: Date;
 }
+
+/**
+ * Frontend mirror of the backend `AdminRateLimitItem` payload returned by the
+ * `adminListRateLimits` callable (`functions/src/admin/rateLimits.ts`).
+ * Shape MUST stay in sync with the server-side interface.
+ */
+export interface AdminRateLimitItem {
+  docId: string;
+  category: string;
+  userId: string;
+  count: number;
+  /** ms epoch */
+  resetAt: number;
+  /** `true` when `Date.now() < resetAt` at the moment the callable resolved */
+  windowActive: boolean;
+}
