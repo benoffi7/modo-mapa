@@ -1,6 +1,6 @@
 # Backlog de Producto — Modo Mapa
 
-*Actualizado: 2026-05-02 (post merge: #330 tests coverage hooks, v2.48.0)*
+*Actualizado: 2026-05-02 (post merge: Tanda C completa #327/#329/#330, v2.49.0)*
 *Fuente de verdad para priorización, estado de issues y roadmap. Actualizado automáticamente post-merge.*
 
 ---
@@ -19,13 +19,9 @@ Tanda A (#322 + #323 + #324) cerrada en sesion paralela 2026-04-29/30.
 
 Tanda B (#325 + #326 + #328) cerrada en sesion paralela 2026-05-01.
 
-### Tanda C — prioridad media
+### Tanda C — completada ✓
 
-| Issue | Titulo | Estado |
-|-------|--------|--------|
-| [#327](https://github.com/benoffi7/modo-mapa/issues/327) | Tech debt: admin-metrics — orphaned events, _rateLimits/listItems moderation gaps | Pendiente PRD |
-| [#329](https://github.com/benoffi7/modo-mapa/issues/329) | Tech debt: privacy — feedback PDF support + contact categories wording | Pendiente PRD |
-| [#330](https://github.com/benoffi7/modo-mapa/issues/330) | Tech debt: tests — coverage gaps for hooks + utils/media | Pendiente PRD |
+Tanda C (#327 + #329 + #330) cerrada en sesion paralela 2026-05-01/02.
 
 ### Mejora continua del sistema de guardas
 
@@ -46,6 +42,6 @@ Tanda B (#325 + #326 + #328) cerrada en sesion paralela 2026-05-01.
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 6 (#168 bloqueado, #327 en implementacion, #331/#332/#333/#334/#336/#337 follow-ups) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#326 + #328 + #329 + #330 (130) |
-| Versiones publicadas | v2.10.0 – v2.48.0 |
+| Issues abiertos | 7 (#168 bloqueado, #331/#332/#333/#334/#336/#337/#338 follow-ups) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#330 (131) |
+| Versiones publicadas | v2.10.0 – v2.49.0 |
