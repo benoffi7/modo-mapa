@@ -61,10 +61,20 @@ grep -in "bug\|sugerencia\|datos.*usuario\|datos.*comercio\|otro" src/components
 grep -oE "mediaType\?:[^;]+" src/types/feedback.ts
 # luego cruzar contra:
 grep -in "image\|pdf\|imagen\|video\|audio" src/components/profile/PrivacyPolicy.tsx
+
+# Chequeo fijo: PDF debe aparecer textualmente en la politica.
+# Mientras `feedback.ts` declare `'pdf'` en `mediaType`, este grep DEBE
+# devolver al menos un match. Si falla, la politica perdio la mencion
+# y hay que re-agregarla antes de mergear (regla 6).
+grep -i "pdf" src/components/profile/PrivacyPolicy.tsx
 ```
 
-Ambos greps deben devolver al menos un match. Si no hay match, la politica
-perdio la mencion y hay que re-agregarla antes de mergear.
+Todos los greps deben devolver al menos un match. Si alguno no devuelve
+match, la politica perdio la mencion y hay que re-agregarla antes de
+mergear. El chequeo fijo de `pdf` aplica mientras `mediaType` incluya el
+literal `'pdf'` en `src/types/feedback.ts`; si en el futuro se agrega un
+nuevo `mediaType` (video, audio, etc.), agregar un chequeo fijo analogo
+en este bloque para esa variante.
 
 ### Merge checklist
 
