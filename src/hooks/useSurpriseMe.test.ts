@@ -49,7 +49,8 @@ function makeBusiness(id: string, lat: number, lng: number, name = `Bar ${id}`):
     lat,
     lng,
     tags: [],
-  } as Business;
+    phone: null,
+  };
 }
 
 // Buenos Aires reference: -34.6, -58.4

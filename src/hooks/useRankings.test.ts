@@ -25,13 +25,23 @@ import { useRankings } from './useRankings';
 function makeRanking(entries: Array<{ userId: string; score: number; displayName?: string }>): UserRanking {
   return {
     period: 'weekly_2026-W01',
+    startDate: new Date('2026-01-01'),
+    endDate: new Date('2026-01-07'),
+    totalParticipants: entries.length,
     rankings: entries.map((e) => ({
       userId: e.userId,
       displayName: e.displayName ?? e.userId,
       score: e.score,
+      breakdown: {
+        comments: 0,
+        ratings: 0,
+        likes: 0,
+        tags: 0,
+        favorites: 0,
+        photos: 0,
+      },
     })),
-    updatedAt: new Date(),
-  } as UserRanking;
+  };
 }
 
 describe('useRankings', () => {
