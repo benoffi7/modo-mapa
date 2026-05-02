@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -19,10 +19,16 @@ import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
 import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
+import { fetchUserDisplayNames } from '../../services/users';
+import { trackEvent } from '../../utils/analytics';
+import { EVT_ADMIN_LIST_ITEMS_INSPECTED } from '../../constants/analyticsEvents/admin';
 import { getBusinessById } from '../../utils/businessMap';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { logger } from '../../utils/logger';
 import type { SharedList, ListItem as ListItemType } from '../../types';
+
+const ITEMS_TRUNCATE_LIMIT = 50;
 
 export default function FeaturedListsPanel() {
   const fetcher = useCallback(() => fetchPublicLists(), []);
@@ -31,7 +37,14 @@ export default function FeaturedListsPanel() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Map<string, ListItemType[]>>(new Map());
+  const [realItemCounts, setRealItemCounts] = useState<Map<string, number>>(new Map());
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
+  const [displayNames, setDisplayNames] = useState<Map<string, string>>(new Map());
+
+  // Dedup `admin_list_items_inspected`: emit once per listId per mount.
+  // When the panel unmounts (admin leaves "Featured Lists" tab) the ref
+  // resets — that's a deliberate trade-off for "new moderation session".
+  const inspectedListsRef = useRef<Set<string>>(new Set());
 
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
@@ -55,7 +68,36 @@ export default function FeaturedListsPanel() {
       setLoadingItems(listId);
       try {
         const items = await fetchListItems(listId);
-        setExpandedItems((prev) => new Map(prev).set(listId, items));
+        const realCount = items.length;
+        const truncated = items.slice(0, ITEMS_TRUNCATE_LIMIT);
+        setExpandedItems((prev) => new Map(prev).set(listId, truncated));
+        setRealItemCounts((prev) => new Map(prev).set(listId, realCount));
+
+        if (!inspectedListsRef.current.has(listId)) {
+          trackEvent(EVT_ADMIN_LIST_ITEMS_INSPECTED, { listId, itemCount: realCount });
+          inspectedListsRef.current.add(listId);
+        }
+
+        // Resolve `addedBy` -> displayName for items we don't have yet.
+        const uids = [
+          ...new Set(
+            truncated
+              .map((i) => i.addedBy)
+              .filter((uid): uid is string => Boolean(uid)),
+          ),
+        ].filter((uid) => !displayNames.has(uid));
+        if (uids.length > 0) {
+          try {
+            const newNames = await fetchUserDisplayNames(uids);
+            setDisplayNames((prev) => {
+              const next = new Map(prev);
+              for (const [uid, name] of newNames) next.set(uid, name);
+              return next;
+            });
+          } catch (err) {
+            logger.warn('FeaturedListsPanel fetchUserDisplayNames failed', err);
+          }
+        }
       } catch (err) {
         logger.warn('FeaturedListsPanel fetchListItems failed', err);
       }
@@ -122,25 +164,53 @@ export default function FeaturedListsPanel() {
                         Lista vacía.
                       </Typography>
                     ) : (
-                      <List disablePadding dense>
-                        {items.map((item) => {
-                          const business = getBusinessById(item.businessId);
-                          if (!business) return null;
-                          return (
-                            <ListItem key={item.id} disablePadding>
-                              <ListItemText
-                                primary={business.name}
-                                secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
-                                slotProps={{
-                                  primary: { sx: { fontSize: '0.85rem' } },
-                                  secondary: { sx: { fontSize: '0.75rem' } },
-                                }}
-                                sx={{ pl: 1, py: 0.5 }}
-                              />
-                            </ListItem>
-                          );
-                        })}
-                      </List>
+                      <>
+                        <List disablePadding dense>
+                          {items.map((item) => {
+                            const business = getBusinessById(item.businessId);
+                            if (!business) return null;
+                            const isOwner = item.addedBy === list.ownerId;
+                            const resolvedName =
+                              displayNames.get(item.addedBy) ?? `${item.addedBy.slice(0, 8)}…`;
+                            return (
+                              <ListItem key={item.id} disablePadding sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <ListItemText
+                                  primary={business.name}
+                                  secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
+                                  slotProps={{
+                                    primary: { sx: { fontSize: '0.85rem' } },
+                                    secondary: { sx: { fontSize: '0.75rem' } },
+                                  }}
+                                  sx={{ pl: 1, py: 0.5, width: '100%' }}
+                                />
+                                <Box sx={{ pl: 1, pb: 0.5 }}>
+                                  <Chip
+                                    size="small"
+                                    sx={CHIP_SMALL_SX}
+                                    label={`${resolvedName} ${isOwner ? '(Owner)' : '(Editor)'}`}
+                                  />
+                                </Box>
+                              </ListItem>
+                            );
+                          })}
+                        </List>
+                        {(() => {
+                          const realCount = realItemCounts.get(list.id) ?? items.length;
+                          if (realCount > ITEMS_TRUNCATE_LIMIT) {
+                            return (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                aria-live="polite"
+                                sx={{ display: 'block', pl: 1, pt: 0.5 }}
+                              >
+                                Mostrando {ITEMS_TRUNCATE_LIMIT} de {realCount} — usar Cloud Console para casos extremos.
+                              </Typography>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
                     )}
                   </Box>
                 </Collapse>
