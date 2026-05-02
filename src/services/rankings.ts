@@ -7,6 +7,8 @@ import { SCORING } from '../constants/rankings';
 import { measureAsync, measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import type { UserRanking, UserRankingEntry } from '../types';
 
+export type RankingPeriodType = 'weekly' | 'monthly' | 'yearly' | 'alltime';
+
 export async function fetchRanking(period: string): Promise<UserRanking | null> {
   const snap = await measuredGetDoc(
     'rankings_byPeriod',
@@ -32,7 +34,7 @@ export async function fetchLatestRanking(type: 'weekly' | 'monthly' | 'yearly'):
   return snap.empty ? null : snap.docs[0].data();
 }
 
-export function getPreviousPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): string | null {
+export function getPreviousPeriodKey(type: RankingPeriodType): string | null {
   if (type === 'alltime') return null;
 
   const now = new Date();
@@ -57,7 +59,7 @@ export function getPreviousPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'al
   return `weekly_${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
-export function getCurrentPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): string {
+export function getCurrentPeriodKey(type: RankingPeriodType): string {
   const now = new Date();
 
   if (type === 'alltime') {
@@ -82,7 +84,7 @@ export function getCurrentPeriodKey(type: 'weekly' | 'monthly' | 'yearly' | 'all
   return `weekly_${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
-function getPeriodRange(type: 'weekly' | 'monthly' | 'yearly' | 'alltime'): { start: Date; end: Date } {
+function getPeriodRange(type: RankingPeriodType): { start: Date; end: Date } {
   const now = new Date();
 
   if (type === 'alltime') {
@@ -129,7 +131,7 @@ async function countUserDocs(
  */
 export async function fetchUserScoreHistory(
   userId: string,
-  periodType: 'weekly' | 'monthly' | 'yearly' | 'alltime',
+  periodType: RankingPeriodType,
   count = 8,
 ): Promise<number[]> {
   if (periodType === 'alltime') return [];
@@ -176,7 +178,7 @@ export async function fetchUserScoreHistory(
 export async function fetchUserLiveScore(
   userId: string,
   displayName: string,
-  periodType: 'weekly' | 'monthly' | 'yearly' | 'alltime',
+  periodType: RankingPeriodType,
 ): Promise<UserRankingEntry> {
   const { start, end } = getPeriodRange(periodType);
 
