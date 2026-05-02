@@ -6,8 +6,8 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 108 (74 React + 34 Functions) |
-| **Total test cases** | ~1200+ (estimado post-#229/#230/#231/#232) |
+| **Total test files** | 117 (83 React + 34 Functions) |
+| **Total test cases** | ~1300+ (estimado post-#229/#230/#231/#232/#330) |
 | **Cobertura minima requerida** | 80% global (enforced en CI) |
 
 ### Cobertura actual (2026-03-27)
@@ -92,6 +92,7 @@
 | `businessHelpers.ts` | `businessHelpers.test.ts` | 5 | 100% |
 | `perfMetrics.ts` | `perfMetrics.test.ts` | 27 | 95% stmts, 81% branches |
 | `analytics.ts` | `analytics.test.ts` | 11 | 100% stmts/lines, 95% branches |
+| `media.ts` | `media.test.ts` | 11 | 100% (incl. prefix-bypass + scheme-confusion regression guards) |
 
 ### React App — Config (`src/config/`)
 
@@ -124,7 +125,8 @@
 | `feedback.ts` | — | — | ⏳ |
 | `notifications.ts` | — | — | ⏳ |
 | `admin.ts` | — | — | ⏳ |
-| `adminFeedback.ts` | — | — | ⏳ |
+| `adminClaims.ts` | `__tests__/adminClaims.test.ts` | 3 | 100% (smoke: callable name + payload + error propagation) |
+| `adminFeedback.ts` | `__tests__/adminFeedback.test.ts` | 5 | 100% (smoke: 3 callables + payloads + error propagation) |
 | `menuPhotos.ts` | `__tests__/menuPhotos.test.ts` | 4 | Parcial (reportMenuPhoto, getMenuPhotoUrl) |
 
 ### React App — Hooks (`src/hooks/`)
@@ -142,13 +144,18 @@
 | `useTrustedReviewerBadge.ts` | `useTrustedReviewerBadge.test.ts` | 7 | 100% (funcion async calcTrustedReviewer) |
 | `useVerificationBadges.ts` | `useVerificationBadges.test.ts` | 6 | 100% (orquestador con mocks de servicios) |
 | `useFollowedTags.ts` | `useFollowedTags.test.ts` | 10 | 100% |
+| `useFollow.ts` | `useFollow.test.ts` | 10 | 100% |
+| `useVisitHistory.ts` | `useVisitHistory.test.ts` | 7 | 100% (incl. cap MAX_VISIT_HISTORY + parse fallback) |
+| `useRankings.ts` | `useRankings.test.ts` | 9 | 100% (delta calc + alltime + refetch) |
+| `useUnsavedChanges.ts` | `useUnsavedChanges.test.ts` | 9 | 100% (dialog state machine + ref cleanup) |
+| `useUserLocation.ts` | `useUserLocation.test.ts` | 6 | 100% (geolocation unsupported / code=1 / generic) |
+| `useUserSearch.ts` | `useUserSearch.test.ts` | 8 | 100% (debounce 300ms + error path) |
+| `useSurpriseMe.ts` | `useSurpriseMe.test.ts` | 4 | 100% (nearby/candidates/all-visited fallback + trackEvent) |
 | `useUndoDelete.ts` | — | — | ⏳ Timer management, ref sync |
 | `useAsyncData.ts` | — | — | ⏳ Race conditions, cleanup |
-| `useUnsavedChanges.ts` | — | — | ⏳ Dialog state machine |
-| `useRankings.ts` | — | — | ⏳ Position delta calc |
 | `useUserSettings.ts` | — | — | ⏳ Optimistic updates |
 | `useColorMode.ts` | — | — | 🔻 Simple wrapper (covered via ColorModeContext tests) |
-| otros (13 hooks) | — | — | ⏳ |
+| otros (8 hooks) | — | — | ⏳ |
 
 ### React App — Contexts (`src/context/`)
 
@@ -346,12 +353,11 @@ const doc = converter.fromFirestore(mockSnapshot(data, 'id'));
 4. `useUndoDelete.ts` hook — timer safety
 
 ### Media (deuda tecnica)
-5. `rankings.ts` scheduled — ISO week math, score computation
+5. `rankings.ts` scheduled — ISO week math, score computation (Cloud Function side)
 6. `dailyMetrics.ts` — percentile calculation, counter reset
-7. `admin/feedback.ts` — GitHub API integration
-8. `admin/claims.ts` — auth claim management
+7. `admin/feedback.ts` — GitHub API integration (Cloud Function side; client wrapper smoke covered in #330)
+8. `admin/claims.ts` — auth claim management (Cloud Function side; client wrapper smoke covered in #330)
 9. `useAsyncData.ts` — race condition prevention
-10. `useUnsavedChanges.ts` — dialog state
 
 ### Baja (bajo riesgo)
 11. Componentes puramente visuales

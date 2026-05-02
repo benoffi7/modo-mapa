@@ -169,6 +169,9 @@
     - [Specs](/feat/infra/325-perf-instrumentation-coverage/specs.md)
     - [Plan](/feat/infra/325-perf-instrumentation-coverage/plan.md)
   - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
+  - [#330 Tests — Coverage gaps for hooks + utils/media](/feat/infra/330-tests-hooks-coverage-gaps/prd.md)
+    - [Specs](/feat/infra/330-tests-hooks-coverage-gaps/specs.md)
+    - [Plan](/feat/infra/330-tests-hooks-coverage-gaps/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
