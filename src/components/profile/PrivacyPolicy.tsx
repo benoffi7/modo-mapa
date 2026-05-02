@@ -296,6 +296,10 @@ export default function PrivacyPolicy() {
           podés enviarnos un mensaje desde <strong>Perfil &gt; Ayuda y soporte &gt; Feedback</strong> usando
           las categorías &quot;Datos de usuario&quot; o &quot;Datos de comercio&quot;.
         </P>
+        <P>
+          Otras categorías (&quot;Bug&quot;, &quot;Sugerencia&quot; y &quot;Otro&quot;) están
+          disponibles para feedback general sobre la app.
+        </P>
       </Section>
     </Box>
   );
