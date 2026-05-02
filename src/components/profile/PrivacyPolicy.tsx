@@ -69,7 +69,7 @@ export default function PrivacyPolicy() {
             comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
-            imágenes adjuntas opcionales), votos de nivel de gasto y recomendaciones de comercios
+            imagen o PDF adjunto opcional), votos de nivel de gasto y recomendaciones de comercios
             a otros usuarios (nombre del comercio, mensaje opcional, estado de lectura).
           </Li>
           <Li>
@@ -154,8 +154,8 @@ export default function PrivacyPolicy() {
             abusos o patrones anómalos.
           </Li>
           <Li>
-            <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
-            feedback subidas por los usuarios.
+            <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes o PDFs adjuntos
+            de feedback subidos por los usuarios.
           </Li>
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu
@@ -215,7 +215,7 @@ export default function PrivacyPolicy() {
 
       <Section title="Compartición con terceros">
         <P>
-          El contenido de tu feedback (mensaje, categoría e imagen adjunta si la hay)
+          El contenido de tu feedback (mensaje, categoría e imagen o PDF adjunto si lo hay)
           puede ser compartido con GitHub para la gestión interna de mejoras y
           corrección de errores. No se comparte tu identidad ni tu UID; solo el
           contenido del mensaje. Ningún otro dato personal se comparte con terceros.
