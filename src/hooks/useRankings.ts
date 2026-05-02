@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useAsyncData } from './useAsyncData';
 import { fetchRanking, getCurrentPeriodKey, getPreviousPeriodKey } from '../services/rankings';
+import type { RankingPeriodType } from '../services/rankings';
 import type { UserRanking } from '../types';
-
-type PeriodType = 'weekly' | 'monthly' | 'yearly' | 'alltime';
 
 /** Maps userId → position change vs previous period (positive = moved up) */
 export type PositionChangeMap = Map<string, number>;
@@ -12,14 +11,14 @@ interface UseRankingsReturn {
   ranking: UserRanking | null;
   loading: boolean;
   error: boolean;
-  periodType: PeriodType;
-  setPeriodType: (type: PeriodType) => void;
+  periodType: RankingPeriodType;
+  setPeriodType: (type: RankingPeriodType) => void;
   refetch: () => void;
   positionChanges: PositionChangeMap;
 }
 
 export function useRankings(): UseRankingsReturn {
-  const [periodType, setPeriodType] = useState<PeriodType>('weekly');
+  const [periodType, setPeriodType] = useState<RankingPeriodType>('weekly');
 
   const fetcher = useCallback(
     () => fetchRanking(getCurrentPeriodKey(periodType)),

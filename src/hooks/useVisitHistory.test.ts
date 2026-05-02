@@ -11,7 +11,7 @@ vi.mock('../utils/businessMap', () => ({
 }));
 
 import { useVisitHistory } from './useVisitHistory';
-import { STORAGE_KEY_VISITS } from '../constants';
+import { STORAGE_KEY_VISITS, MAX_VISIT_HISTORY } from '../constants';
 import { getBusinessById } from '../utils/businessMap';
 
 describe('useVisitHistory', () => {
@@ -67,5 +67,33 @@ describe('useVisitHistory', () => {
 
     expect(result.current.visits).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEY_VISITS)).toBeNull();
+  });
+
+  it('caps visits at MAX_VISIT_HISTORY when inserting a new business', () => {
+    // Pre-populate localStorage with MAX_VISIT_HISTORY entries
+    const seeded = Array.from({ length: MAX_VISIT_HISTORY }, (_, i) => ({
+      businessId: `seed_${i}`,
+      lastVisited: `2026-01-${String((i % 30) + 1).padStart(2, '0')}T00:00:00.000Z`,
+      visitCount: 1,
+    }));
+    localStorage.setItem(STORAGE_KEY_VISITS, JSON.stringify(seeded));
+
+    const { result } = renderHook(() => useVisitHistory());
+    expect(result.current.visits).toHaveLength(MAX_VISIT_HISTORY);
+
+    act(() => { result.current.recordVisit('biz_overflow'); });
+
+    expect(result.current.visits).toHaveLength(MAX_VISIT_HISTORY);
+    // New entry is at head
+    expect(result.current.visits[0].businessId).toBe('biz_overflow');
+    // Oldest seed (the last one in the prepended list) is dropped
+    const ids = result.current.visits.map((v) => v.businessId);
+    expect(ids).not.toContain(`seed_${MAX_VISIT_HISTORY - 1}`);
+  });
+
+  it('returns empty visits when localStorage payload is corrupt JSON (parse fallback)', () => {
+    localStorage.setItem(STORAGE_KEY_VISITS, '{not-json');
+    const { result } = renderHook(() => useVisitHistory());
+    expect(result.current.visits).toEqual([]);
   });
 });
