@@ -21,6 +21,7 @@ import { fetchListItems } from '../../services/sharedLists';
 import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
 import { getBusinessById } from '../../utils/businessMap';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { logger } from '../../utils/logger';
 import type { SharedList, ListItem as ListItemType } from '../../types';
 
 export default function FeaturedListsPanel() {
@@ -55,8 +56,8 @@ export default function FeaturedListsPanel() {
       try {
         const items = await fetchListItems(listId);
         setExpandedItems((prev) => new Map(prev).set(listId, items));
-      } catch {
-        /* ignore */
+      } catch (err) {
+        logger.warn('FeaturedListsPanel fetchListItems failed', err);
       }
       setLoadingItems(null);
     }
