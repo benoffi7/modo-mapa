@@ -15,6 +15,7 @@ import AdminPanelWrapper from './AdminPanelWrapper';
 import AlertsFilters from './alerts/AlertsFilters';
 import AlertsTable from './alerts/AlertsTable';
 import KpiCard from './alerts/KpiCard';
+import RateLimitsSection from './alerts/RateLimitsSection';
 import ReincidentesView from './alerts/ReincidentesView';
 import {
   computeKpis, getDateThreshold, exportToCsv, getSeverity,
@@ -28,7 +29,8 @@ interface AbuseAlertsProps {
 }
 
 export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
-  const { logs, loading, error, newCount } = useAbuseLogsRealtime(200);
+  const [innerTab, setInnerTab] = useState<'alerts' | 'reincidentes' | 'rateLimits'>('alerts');
+  const { logs, loading, error, newCount } = useAbuseLogsRealtime(200, innerTab !== 'rateLimits');
 
   const [typeFilter, setTypeFilter] = useState<AbuseType | 'all'>('all');
   const [collectionFilter, setCollectionFilter] = useState('');
@@ -41,7 +43,6 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
-  const [innerTab, setInnerTab] = useState<'alerts' | 'reincidentes'>('alerts');
 
   // Toast for new alerts (mantener en el orquestador para no romper al split).
   const toast = useToast();
@@ -153,9 +154,15 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
     exportToCsv(filtered, `alertas-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`);
   };
 
+  const isRateLimitsTab = innerTab === 'rateLimits';
+
   return (
-    <AdminPanelWrapper loading={loading} error={error} errorMessage="No se pudieron cargar las alertas.">
-      {kpis && (
+    <AdminPanelWrapper
+      loading={isRateLimitsTab ? false : loading}
+      error={isRateLimitsTab ? false : error}
+      errorMessage="No se pudieron cargar las alertas."
+    >
+      {!isRateLimitsTab && kpis && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
           <KpiCard label="Alertas hoy" value={kpis.alertsToday} secondary={trendIcon} />
           <KpiCard label="Tipo más frecuente" value={kpis.topType} />
@@ -164,13 +171,14 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
         </Box>
       )}
 
-      <Tabs value={innerTab} onChange={(_, v: 'alerts' | 'reincidentes') => setInnerTab(v)} sx={{ mb: 2 }}>
+      <Tabs value={innerTab} onChange={(_, v: 'alerts' | 'reincidentes' | 'rateLimits') => setInnerTab(v)} sx={{ mb: 2 }}>
         <Tab value="alerts" label="Alertas" />
         <Tab value="reincidentes" label={
           <Badge badgeContent={reincidentesCount} color="error" max={99}>
             Reincidentes
           </Badge>
         } />
+        <Tab value="rateLimits" label="Rate Limits" />
       </Tabs>
 
       {innerTab === 'alerts' && (
@@ -233,6 +241,10 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
 
       {innerTab === 'reincidentes' && (
         <ReincidentesView logs={logs ?? []} />
+      )}
+
+      {innerTab === 'rateLimits' && (
+        <RateLimitsSection />
       )}
     </AdminPanelWrapper>
   );
