@@ -230,3 +230,117 @@ describe('FeaturedListsPanel — analytics + truncado + displayNames', () => {
     expect(screen.queryByText(/Mostrando 50/)).toBeNull();
   });
 });
+
+describe('FeaturedListsPanel — delete inline', () => {
+  it('renders IconButton with descriptive aria-label per item', async () => {
+    mockFetchPublicLists.mockResolvedValueOnce([baseList]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    await screen.findByText('Business biz-1');
+    expect(
+      screen.getByRole('button', { name: 'Eliminar Business biz-1 de Test List' }),
+    ).toBeInTheDocument();
+  });
+
+  it('clicking delete opens alertdialog with confirmation copy', async () => {
+    mockFetchPublicLists.mockResolvedValueOnce([baseList]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Eliminar Business biz-1 de Test List' }),
+    );
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog).toBeInTheDocument();
+    expect(
+      screen.getByText('¿Eliminar Business biz-1 de Test List?'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Esta acción elimina el item de la lista/),
+    ).toBeInTheDocument();
+  });
+
+  it('confirm dispatches adminDeleteListItem + analytics + optimistic decrement', async () => {
+    mockFetchPublicLists.mockResolvedValueOnce([{ ...baseList, itemCount: 2 }]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    mockAdminDeleteListItem.mockResolvedValueOnce(undefined);
+
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Eliminar Business biz-1 de Test List' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => {
+      expect(mockAdminDeleteListItem).toHaveBeenCalledWith('item-1');
+    });
+    expect(mockTrackEvent).toHaveBeenCalledWith('admin_list_item_deleted', {
+      listId: 'list-1',
+      itemId: 'item-1',
+    });
+    expect(mockToast.success).toHaveBeenCalledWith('Eliminado correctamente');
+
+    // Optimistic count decrement: list secondary text shows "1 comercios"
+    await waitFor(() => {
+      expect(screen.getByText(/1 comercios/)).toBeInTheDocument();
+    });
+  });
+
+  it('maps not-found error to toast.info + refetch (no toast.error)', async () => {
+    mockFetchPublicLists.mockResolvedValue([baseList]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    const err = Object.assign(new Error('not-found'), { code: 'functions/not-found' });
+    mockAdminDeleteListItem.mockRejectedValueOnce(err);
+
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Eliminar Business biz-1 de Test List' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => {
+      expect(mockToast.info).toHaveBeenCalledWith(
+        'Item ya eliminado por otro admin. Refrescá la lista.',
+      );
+    });
+    expect(mockToast.error).not.toHaveBeenCalled();
+    // refetch invoked → fetchPublicLists called twice (initial mount + post-error)
+    await waitFor(() => {
+      expect(mockFetchPublicLists).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows toast.error on generic error', async () => {
+    mockFetchPublicLists.mockResolvedValueOnce([baseList]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    mockAdminDeleteListItem.mockRejectedValueOnce(new Error('unavailable'));
+
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Eliminar Business biz-1 de Test List' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'No se pudo eliminar el item. Verificá tu sesión admin.',
+      );
+    });
+  });
+
+  it('disables delete IconButton when offline', async () => {
+    isOfflineMock = true;
+    mockFetchPublicLists.mockResolvedValueOnce([baseList]);
+    mockFetchListItems.mockResolvedValueOnce([baseItem]);
+    render(<FeaturedListsPanel />);
+    fireEvent.click(await screen.findByText('Test List'));
+    const btn = await screen.findByRole('button', {
+      name: 'Eliminar Business biz-1 de Test List',
+    });
+    expect(btn).toBeDisabled();
+  });
+});

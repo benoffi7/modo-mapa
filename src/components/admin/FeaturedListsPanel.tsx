@@ -1,27 +1,41 @@
 import { useCallback, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Switch from '@mui/material/Switch';
 import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Collapse from '@mui/material/Collapse';
 import CircularProgress from '@mui/material/CircularProgress';
 import StarIcon from '@mui/icons-material/Star';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { useToast } from '../../context/ToastContext';
-import { MSG_ADMIN } from '../../constants/messages';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { MSG_ADMIN, MSG_OFFLINE } from '../../constants/messages';
 import AdminPanelWrapper from './AdminPanelWrapper';
 import ListStatsSection from './ListStatsSection';
 import { fetchListItems } from '../../services/sharedLists';
 import { fetchPublicLists, toggleFeaturedList } from '../../services/adminFeatured';
+import { adminDeleteListItem } from '../../services/admin';
 import { fetchUserDisplayNames } from '../../services/users';
 import { trackEvent } from '../../utils/analytics';
-import { EVT_ADMIN_LIST_ITEMS_INSPECTED } from '../../constants/analyticsEvents/admin';
+import {
+  EVT_ADMIN_LIST_ITEM_DELETED,
+  EVT_ADMIN_LIST_ITEMS_INSPECTED,
+} from '../../constants/analyticsEvents/admin';
 import { getBusinessById } from '../../utils/businessMap';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { CHIP_SMALL_SX } from '../../theme/cards';
@@ -30,21 +44,83 @@ import type { SharedList, ListItem as ListItemType } from '../../types';
 
 const ITEMS_TRUNCATE_LIMIT = 50;
 
+interface DeleteDialogState {
+  item: ListItemType;
+  list: SharedList;
+  businessName: string;
+}
+
+interface FirebaseFunctionsError extends Error {
+  code?: string;
+}
+
+function isAlreadyDeletedError(err: unknown): boolean {
+  const code = (err as FirebaseFunctionsError | undefined)?.code;
+  return code === 'functions/not-found' || code === 'not-found';
+}
+
 export default function FeaturedListsPanel() {
   const fetcher = useCallback(() => fetchPublicLists(), []);
   const { data, loading, error, refetch } = useAsyncData(fetcher);
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const [toggling, setToggling] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Map<string, ListItemType[]>>(new Map());
   const [realItemCounts, setRealItemCounts] = useState<Map<string, number>>(new Map());
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
   const [displayNames, setDisplayNames] = useState<Map<string, string>>(new Map());
+  // Optimistic local override of `itemCount` after a successful delete —
+  // avoids re-running fetchPublicLists which reorders rows and causes flicker.
+  const [localItemCounts, setLocalItemCounts] = useState<Map<string, number>>(new Map());
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Dedup `admin_list_items_inspected`: emit once per listId per mount.
   // When the panel unmounts (admin leaves "Featured Lists" tab) the ref
   // resets — that's a deliberate trade-off for "new moderation session".
   const inspectedListsRef = useRef<Set<string>>(new Set());
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteDialog) return;
+    const { item, list } = deleteDialog;
+    setDeleting(true);
+    try {
+      await adminDeleteListItem(item.id);
+      trackEvent(EVT_ADMIN_LIST_ITEM_DELETED, { listId: list.id, itemId: item.id });
+      toast.success(MSG_ADMIN.listItemDeleteSuccess);
+      // Drop the item from the expanded list locally so the row disappears
+      // immediately. itemCount is decremented optimistically.
+      setExpandedItems((prev) => {
+        const current = prev.get(list.id) ?? [];
+        return new Map(prev).set(
+          list.id,
+          current.filter((i) => i.id !== item.id),
+        );
+      });
+      setRealItemCounts((prev) => {
+        const current = prev.get(list.id);
+        if (current === undefined) return prev;
+        return new Map(prev).set(list.id, Math.max(0, current - 1));
+      });
+      setLocalItemCounts((prev) => {
+        const current = prev.get(list.id) ?? list.itemCount;
+        return new Map(prev).set(list.id, Math.max(0, current - 1));
+      });
+      setDeleteDialog(null);
+    } catch (err) {
+      if (isAlreadyDeletedError(err)) {
+        toast.info(MSG_ADMIN.listItemAlreadyDeleted);
+        setDeleteDialog(null);
+        refetch();
+      } else {
+        logger.error('adminDeleteListItem failed', err);
+        toast.error(MSG_ADMIN.listItemDeleteError);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteDialog, refetch, toast]);
 
   const handleToggle = async (list: SharedList) => {
     setToggling(list.id);
@@ -148,7 +224,7 @@ export default function FeaturedListsPanel() {
                           {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                         </Box>
                       }
-                      secondary={`${list.itemCount} comercios · Owner: ${list.ownerId.slice(0, 8)}…`}
+                      secondary={`${localItemCounts.get(list.id) ?? list.itemCount} comercios · Owner: ${list.ownerId.slice(0, 8)}…`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -173,7 +249,29 @@ export default function FeaturedListsPanel() {
                             const resolvedName =
                               displayNames.get(item.addedBy) ?? `${item.addedBy.slice(0, 8)}…`;
                             return (
-                              <ListItem key={item.id} disablePadding sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                              <ListItem
+                                key={item.id}
+                                disablePadding
+                                sx={{ flexDirection: 'column', alignItems: 'flex-start' }}
+                                secondaryAction={
+                                  <Tooltip title={isOffline ? MSG_OFFLINE.requiresConnection : ''}>
+                                    <span>
+                                      <IconButton
+                                        size="small"
+                                        edge="end"
+                                        disabled={isOffline}
+                                        aria-label={`Eliminar ${business.name} de ${list.name}`}
+                                        onClick={() =>
+                                          setDeleteDialog({ item, list, businessName: business.name })
+                                        }
+                                        sx={{ p: 1 }}
+                                      >
+                                        <DeleteOutlineIcon fontSize="small" />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                }
+                              >
                                 <ListItemText
                                   primary={business.name}
                                   secondary={`${CATEGORY_LABELS[business.category]} · ${business.address}`}
@@ -181,7 +279,7 @@ export default function FeaturedListsPanel() {
                                     primary: { sx: { fontSize: '0.85rem' } },
                                     secondary: { sx: { fontSize: '0.75rem' } },
                                   }}
-                                  sx={{ pl: 1, py: 0.5, width: '100%' }}
+                                  sx={{ pl: 1, py: 0.5, width: '100%', pr: 5 }}
                                 />
                                 <Box sx={{ pl: 1, pb: 0.5 }}>
                                   <Chip
@@ -220,6 +318,40 @@ export default function FeaturedListsPanel() {
         </List>
       )}
       </AdminPanelWrapper>
+
+      <Dialog
+        open={deleteDialog !== null}
+        onClose={() => {
+          if (!deleting) setDeleteDialog(null);
+        }}
+        role="alertdialog"
+        aria-labelledby="delete-list-item-title"
+        aria-describedby="delete-list-item-body"
+      >
+        <DialogTitle id="delete-list-item-title">
+          {deleteDialog
+            ? `¿Eliminar ${deleteDialog.businessName} de ${deleteDialog.list.name}?`
+            : ''}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-list-item-body">
+            Esta acción elimina el item de la lista y decrementa el contador. El abuseLog queda auditado.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog(null)} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting || isOffline}
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
