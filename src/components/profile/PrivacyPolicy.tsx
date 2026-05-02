@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 2 }}>
-        Última actualización: abril 2026 (actualizada el 20/04/2026)
+        Última actualización: mayo 2026
       </Typography>
 
       <Section title="Información general">
@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
             administradores en el panel de <em>Features</em> de la app. Estos
             eventos se asocian a tu UID (no a tu email) y no identifican a
             personas individuales. También se registra la propiedad de usuario{' '}
-            <code>auth_type</code> (anónima / email / google para administradores).
+            <code>auth_type</code> (anónima / email / google [para administradores]).
           </Li>
           <Li>
             <strong>Métricas de rendimiento (opcional):</strong> si activás &quot;Enviar
