@@ -73,6 +73,11 @@ describe('analyticsEvents barrel', () => {
     'ADMIN_CONFIG_VIEWED',
     'ADMIN_MODERATION_UPDATED',
     'ADMIN_ACTIVITY_FEED_DIAG',
+    // admin metrics tools (#327)
+    'EVT_ADMIN_RATE_LIMIT_VIEWED',
+    'EVT_ADMIN_RATE_LIMIT_RESET',
+    'EVT_ADMIN_LIST_ITEM_DELETED',
+    'EVT_ADMIN_LIST_ITEMS_INSPECTED',
   ] as const;
 
   it.each(expectedExports)('exports %s', (name) => {
