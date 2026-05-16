@@ -182,6 +182,9 @@
   - [#338 Tech debt — coverage global <80% (preexistente, descubierto en #330)](/feat/infra/338-coverage-global-80-preexistente/prd.md)
     - [Specs](/feat/infra/338-coverage-global-80-preexistente/specs.md)
     - [Plan](/feat/infra/338-coverage-global-80-preexistente/plan.md)
+  - [#337 Tech debt: #325 followups — TS errors functions + marker lookback + abuseLogs](/feat/infra/337-techdebt-325-followups-ts-errors-marker-abuselogs/prd.md)
+    - [Specs](/feat/infra/337-techdebt-325-followups-ts-errors-marker-abuselogs/specs.md)
+    - [Plan](/feat/infra/337-techdebt-325-followups-ts-errors-marker-abuselogs/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
