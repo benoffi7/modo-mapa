@@ -30,6 +30,7 @@ import { useSelection } from '../../context/SelectionContext';
 import { useFilters } from '../../context/FiltersContext';
 import { useBusinesses } from '../../hooks/useBusinesses';
 import { useUserSettings } from '../../hooks/useUserSettings';
+import { getBusinessById } from '../../utils/businessMap';
 import { BUENOS_AIRES_CENTER } from '../../constants/map';
 import BusinessMarker from './BusinessMarker';
 import OfficeMarker from './OfficeMarker';
@@ -55,12 +56,6 @@ export default function MapView() {
     return () => clearTimeout(timer);
   }, [mapReady]);
 
-  // Stable ref for businesses so handleMarkerClick doesn't invalidate memo'd markers
-  const businessesRef = useRef(businesses);
-  useEffect(() => {
-    businessesRef.current = businesses;
-  }, [businesses]);
-
   // Pan to user GPS location whenever it changes
   useEffect(() => {
     if (!map || !userLocation) return;
@@ -82,7 +77,7 @@ export default function MapView() {
 
   const handleMarkerClick = useCallback(
     (businessId: string) => {
-      const business = businessesRef.current.find((b) => b.id === businessId);
+      const business = getBusinessById(businessId);
       if (business) {
         setSelectedBusiness(business);
         map?.panTo({ lat: business.lat, lng: business.lng });
