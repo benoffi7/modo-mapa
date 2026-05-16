@@ -438,3 +438,14 @@ Sin regresiones detectadas. Numeracion 9.x consistente en todos los pasajes (tex
 **Si.** Plan VALIDADO CON OBSERVACIONES. Las observaciones abiertas (OBS #1 estimaciones, OBS #2 patterns.md) NO bloquean inicio de implementacion.
 
 **Firma**: Pablo, Delivery Lead — 2026-04-25 (Ciclo 2 cierre).
+
+---
+
+## Update (post #332 merge)
+
+Infra de Firestore rules unit testing disponible
+(`docs/feat/infra/332-firestore-rules-unit-testing-harness/`). Los
+invariantes R6/R7/R12 de este PRD ya tienen regression sentinel
+automatizado en `tests/rules/users.rules.test.ts` (16 tests). Followup
+tracked para migrar la tabla de verdad completa (5 casos R12) a tests
+parametrizados.

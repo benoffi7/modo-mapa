@@ -1517,3 +1517,13 @@ Verificaciones de hechos contra el codigo en disco (re-corridas para esta pasada
 - **Ciclo 1 (2026-04-25):** VALIDADO CON OBSERVACIONES. Cobertura PRD → specs completa. Sintaxis CEL bidireccional verificada caso por caso. 7 IMPORTANTE + 5 OBSERVACION para refinar el specs antes del plan; ningun BLOQUEANTE.
 - **Ciclo 2 (2026-04-25):** VALIDADO CON OBSERVACIONES. Los 7 IMPORTANTE y las 5 OBSERVACION del Ciclo 1 quedaron cerrados con anchors trazables. Verificaciones de codigo existente re-confirmadas (`userProfile.ts:145`, `feedback.ts:53`, `cleanAnonymousData.ts:3`, `featuredLists.ts:19`, `triggers/checkins.ts:39,79`, `firestore.rules` L25-46/L247/L705). Detectadas 2 OBSERVACION nuevas (#6 indice incorrecto en snippet del spy test, #7 wording invertido del guard 303) — ambas no-bloqueantes y resolubles en el plan sin reabrir el specs. Ningun BLOQUEANTE detectado.
 - **Ciclo 2 cierre (2026-04-25):** re-verificada la pasada de specs-plan-writer anchor por anchor + hechos sobre disco (orden de exports, guard 303, paths de Storage, line counts de tests). Cierre confirmado. **Specs firmado y listo para pasar al plan (Pablo). No requiere Ciclo 3.**
+
+---
+
+## Update (post #332 merge)
+
+Infra de Firestore rules unit testing disponible en `tests/rules/setup.ts`
+(ver `docs/feat/infra/332-firestore-rules-unit-testing-harness/`). R6, R7
+y R12 ya cubiertos por `tests/rules/users.rules.test.ts` (16 tests,
+regression sentinel automatizado). Followup tracked para migrar la tabla
+de verdad completa de R12 (5 casos) a tests parametrizados.

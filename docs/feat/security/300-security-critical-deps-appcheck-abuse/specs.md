@@ -265,3 +265,14 @@ match /_fanoutDedup/{docId} {
 | IPv6 /64 bucketing bloquea usuarios legitimos con NAT grande | IPv6 /64 es por hogar/celular individual — bajo riesgo. Monitorear `abuseLogs` por `anon_flood` post-deploy |
 | follows rule cambio bloquea seguir a users sin userSettings | Backfill + seed en `beforeUserCreated` asegura que nuevos users siempre tengan settings |
 | App Check verification deploy breaks el pipeline si GitHub Secret esta mal configurado | Probar en staging primero |
+
+---
+
+## Update (post #332 merge)
+
+Infra de Firestore rules unit testing disponible
+(`docs/feat/infra/332-firestore-rules-unit-testing-harness/`). R6
+(profilePublic gate via hasOnly) y R7 (displayName charset) cubiertos por
+`tests/rules/users.rules.test.ts` (16 tests). R14 (bootstrap admin) NO
+migra a rules tests — es Cloud Function (`setAdminClaim`), sigue cubierto
+por tests de Cloud Function (`functions/src/admin/claims.test.ts`).

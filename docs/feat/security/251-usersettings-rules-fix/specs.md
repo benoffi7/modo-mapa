@@ -286,3 +286,13 @@ No hay issues abiertos de security o tech debt relevantes a estos archivos.
 | Issue | Que se resuelve | Paso del plan |
 |-------|----------------|---------------|
 | #205 Seguir Tags | Feature roto en produccion por fields faltantes en rules | Fase 1, paso 1 |
+
+---
+
+## Update (post #332 merge)
+
+Infra de Firestore rules unit testing disponible
+(`docs/feat/infra/332-firestore-rules-unit-testing-harness/`). El followup
+`tests/rules/userSettings.rules.test.ts` queda como issue separado para
+cubrir hasOnly + type guards de userSettings (invariantes documentados
+en specs L144 y L204). No migrado en #332 por scope (decision D4 specs).
