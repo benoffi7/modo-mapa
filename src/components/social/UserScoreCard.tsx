@@ -254,7 +254,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
           {/* Share + total */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
             <Tooltip title="Compartir tu logro">
-              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(position, entry.score, periodLabel); }} aria-label="Compartir tu logro">
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(position, entry.score, periodLabel); }} aria-label="Compartir tu logro" sx={{ minWidth: 44, minHeight: 44 }}>
                 <ShareIcon fontSize="small" />
               </IconButton>
             </Tooltip>

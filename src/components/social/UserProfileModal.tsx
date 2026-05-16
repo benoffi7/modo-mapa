@@ -60,7 +60,7 @@ export default function UserProfileModal({ entry, position, onClose }: Props) {
             {position != null && ` · #${position}`}
           </Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} aria-label={MSG_COMMON.closeAriaLabel}>
+        <IconButton size="small" onClick={onClose} aria-label={MSG_COMMON.closeAriaLabel} sx={{ minWidth: 44, minHeight: 44 }}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>

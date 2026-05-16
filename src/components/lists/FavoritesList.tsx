@@ -228,6 +228,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
                   size="small"
                   onClick={(e) => handleOpenMenu(e, fav)}
                   aria-label="Opciones"
+                  sx={{ minWidth: 44, minHeight: 44 }}
                 >
                   <MoreVertIcon fontSize="small" />
                 </IconButton>

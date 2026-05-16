@@ -16,7 +16,7 @@ export default function AvatarPicker({ open, onClose, onSelect, selectedId }: Pr
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Elegir avatar
-        <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={onClose}>
+        <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={onClose} sx={{ minWidth: 44, minHeight: 44 }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>

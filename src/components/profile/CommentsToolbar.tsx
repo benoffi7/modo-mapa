@@ -58,7 +58,7 @@ export default function CommentsToolbar({
             input: {
               startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />,
               endAdornment: searchInput ? (
-                <IconButton size="small" onClick={() => onSearchChange('')} aria-label="Limpiar búsqueda">
+                <IconButton size="small" onClick={() => onSearchChange('')} aria-label="Limpiar búsqueda" sx={{ minWidth: 44, minHeight: 44 }}>
                   <CloseIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               ) : null,

@@ -48,7 +48,7 @@ function MapHint() {
         severity="info"
         variant="filled"
         action={
-          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss}>
+          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss} sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }

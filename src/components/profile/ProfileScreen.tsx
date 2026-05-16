@@ -123,7 +123,7 @@ export default function ProfileScreen() {
         </Avatar>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Typography variant="h6" fontWeight={700}>{userName}</Typography>
-          <IconButton size="small" aria-label="Editar nombre" onClick={() => setNameDialogOpen(true)}>
+          <IconButton size="small" aria-label="Editar nombre" onClick={() => setNameDialogOpen(true)} sx={{ minWidth: 44, minHeight: 44 }}>
             <EditIcon fontSize="small" />
           </IconButton>
         </Box>
