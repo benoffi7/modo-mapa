@@ -1,5 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { MSG_COMMON } from '../../constants/messages';
 
 export const LIST_COLORS = [
   { id: 'blue', hex: '#1e88e5' },
@@ -33,7 +34,7 @@ export default function ColorPicker({ open, onClose, onSelect, selectedHex }: Pr
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Elegir color
-        <IconButton size="small" onClick={onClose}><CloseIcon /></IconButton>
+        <IconButton size="small" onClick={onClose} aria-label={MSG_COMMON.closeAriaLabel} sx={{ minWidth: 44, minHeight: 44 }}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center' }}>

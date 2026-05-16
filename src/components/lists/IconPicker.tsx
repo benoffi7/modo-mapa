@@ -2,6 +2,7 @@ import { Dialog, DialogTitle, DialogContent, Box, Typography, IconButton } from 
 import CloseIcon from '@mui/icons-material/Close';
 import { LIST_ICON_OPTIONS } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
+import { MSG_COMMON } from '../../constants/messages';
 
 interface Props {
   open: boolean;
@@ -15,7 +16,7 @@ export default function IconPicker({ open, onClose, onSelect, selectedId }: Prop
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Elegir icono
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" onClick={onClose} aria-label={MSG_COMMON.closeAriaLabel} sx={{ minWidth: 44, minHeight: 44 }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>

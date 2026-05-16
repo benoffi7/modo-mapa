@@ -6,6 +6,13 @@ import { STORAGE_KEY_DRAG_HANDLE_SEEN } from '../../constants/storage';
 import BusinessSheetCompactContent from './BusinessSheetCompactContent';
 
 function DragHandle({ onClose, showTooltip }: { onClose: () => void; showTooltip: boolean }) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClose();
+    }
+  };
   return (
     <Tooltip
       title="Arrastrá hacia arriba para ver más"
@@ -15,8 +22,10 @@ function DragHandle({ onClose, showTooltip }: { onClose: () => void; showTooltip
     >
       <Box
         role="button"
+        tabIndex={0}
         aria-label="Cerrar detalles"
         onClick={onClose}
+        onKeyDown={handleKeyDown}
         sx={{
           display: 'flex',
           flexDirection: 'column',

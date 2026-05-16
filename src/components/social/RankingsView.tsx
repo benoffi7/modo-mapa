@@ -12,7 +12,7 @@ import { useRankings } from '../../hooks/useRankings';
 import { fetchUserLiveScore } from '../../services/rankings';
 import { useLocalTrending } from '../../hooks/useLocalTrending';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessMap } from '../../utils/businessMap';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_RANKINGS_ZONE_FILTER, EVT_TRENDING_NEAR_TAPPED } from '../../constants/analyticsEvents';
 import RankingItem from './RankingItem';
@@ -35,7 +35,7 @@ export default function RankingsView() {
   const { businesses: zoneTrending, source: zoneSource, loading: zoneLoading } = useLocalTrending();
   const { navigateToBusiness } = useNavigateToBusiness();
 
-  const businessMap = new Map(allBusinesses.map((b) => [b.id, b]));
+  const businessMap = getBusinessMap();
 
   const handleToggleZone = () => {
     const next = !zoneFilter;
@@ -115,7 +115,7 @@ export default function RankingsView() {
           sx={NAV_CHIP_SX}
         />
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.25 }}>
-          <IconButton size="small" onClick={refetch} disabled={loading} aria-label="Actualizar ranking">
+          <IconButton size="small" onClick={refetch} disabled={loading} aria-label="Actualizar ranking" sx={{ minWidth: 44, minHeight: 44 }}>
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Box>
