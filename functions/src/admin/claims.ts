@@ -2,8 +2,8 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { defineString } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { IS_EMULATOR, ENFORCE_APP_CHECK_ADMIN } from '../helpers/env';
+import { FieldValue } from 'firebase-admin/firestore';
+import { IS_EMULATOR, ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 import { assertAdmin } from '../helpers/assertAdmin';
 
 const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
@@ -39,7 +39,7 @@ export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: tr
       // de email: ver `docs/procedures/reset-bootstrap-admin.md`.
       let bootstrapAllowed = isBootstrap;
       if (isBootstrap) {
-        const db = getFirestore();
+        const db = getDb();
         const bootstrapSnap = await db.doc('config/bootstrap').get();
         const adminAssigned = bootstrapSnap.exists && bootstrapSnap.data()?.adminAssigned === true;
         if (adminAssigned) {
@@ -67,7 +67,7 @@ export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: tr
     // `docs/procedures/reset-bootstrap-admin.md`. Ver specs L614-651.
     if (via === 'bootstrap') {
       try {
-        const db = getFirestore();
+        const db = getDb();
         await db.doc('config/bootstrap').set(
           {
             adminAssigned: true,

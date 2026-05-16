@@ -223,7 +223,7 @@ describe('onMenuPhotoCreated', () => {
       expect(mockUpdate).toHaveBeenCalledWith({ status: 'rejected', rejectionReason: 'invalid_storage_path' });
       expect(mockLogAbuse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         userId: 'u1',
-        type: 'invalid_input',
+        type: 'flagged',
         collection: 'menuPhotos',
       }));
       expect(mockSharp).not.toHaveBeenCalled();
