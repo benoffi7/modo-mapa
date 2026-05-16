@@ -117,6 +117,16 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 - **Type guards explicitos (#322, R12)**: `feedback.message` y `notifications.read` chequean `is string`/`is bool` antes de `.size()` o equality (en CEL, `.size()` aplica a strings/listas/maps — sin guard, un atacante puede enviar listas o maps que pasan el size cap). `userSettings.localityLat/Lng` validan `is number` + range finito (NaN/Infinity rechazados). Ver [guard 300-security R12](guards/300-security.md).
 - **`displayNameLower` equality bidireccional (#322, R12)**: rules de `users` create y update validan `displayNameLower == displayName.lower()`. Cierra hijack de busqueda donde el cliente enviaba `displayNameLower` desincronizado del `displayName` real (la busqueda por prefijo usa `displayNameLower`). El script `scripts/migrate-displayname-lower-sync.mjs` sincroniza docs legacy pre-deploy.
 
+### Tests automatizados de `firestore.rules` (#332)
+
+Infra de unit testing montada con `@firebase/rules-unit-testing` v5 +
+emulador Firestore. Cobertura actual: `users` (R6/R7/R12 — 16 tests).
+Job `rules-test` corre en `deploy.yml` y `deploy-staging.yml` como
+gate del deploy de rules.
+
+Detalles, plantilla para agregar tests por coleccion e inventario de
+invariantes pendientes en [`docs/reference/tests.md`](tests.md#firestore-rules-tests).
+
 ---
 
 ## Consideraciones por tipo de funcionalidad

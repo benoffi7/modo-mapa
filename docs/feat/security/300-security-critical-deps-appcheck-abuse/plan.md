@@ -306,3 +306,10 @@ node scripts/backfill-profile-public.mjs --apply --database=staging
 # Validar, luego prod
 node scripts/backfill-profile-public.mjs --apply
 ```
+
+---
+
+## Update (post #332 merge)
+
+R6 + R7 cubiertos por `tests/rules/users.rules.test.ts` (16 tests). R14
+sigue cubierto por tests de Cloud Function — no migra a rules tests.

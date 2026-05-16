@@ -133,3 +133,10 @@ No aplica. No hay textos visibles al usuario.
 - [ ] Build de functions pasa sin errores TypeScript
 - [ ] No lint errors
 - [ ] Tests de functions pasan con >= 80% coverage en codigo nuevo
+
+---
+
+## Update (post #332 merge)
+
+Infra disponible. Followups `tests/rules/sharedLists.rules.test.ts` y
+`tests/rules/listItems.rules.test.ts` quedan como issues separados.

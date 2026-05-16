@@ -406,3 +406,14 @@ gh issue list --label security --state open --json number,title
 | #289 M-01 | listItems.businessId sin isValidBusinessId | Fase 3, paso 2 |
 | #289 M-02 | follows.followedId sin size limit | Fase 3, paso 3 |
 | #289 M-03 | listItems.listId sin size limit | Fase 3, paso 4 |
+
+---
+
+## Update (post #332 merge)
+
+Infra de Firestore rules unit testing disponible
+(`docs/feat/infra/332-firestore-rules-unit-testing-harness/`). Los
+followups `tests/rules/sharedLists.rules.test.ts` y
+`tests/rules/listItems.rules.test.ts` quedan como issues separados para
+cubrir per-item validation de `followedTags` (H-03) y `businessId`
+(M-01) + size limits (M-02/M-03). No migrados en #332 por scope.
