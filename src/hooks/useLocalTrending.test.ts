@@ -50,6 +50,7 @@ vi.mock('./useBusinesses', () => ({
 }));
 
 import { useLocalTrending } from './useLocalTrending';
+import { __resetBusinessMap } from '../utils/businessMap';
 
 function makeTrendingBusiness(businessId: string, score: number): TrendingBusiness {
   return {
@@ -65,6 +66,7 @@ function makeTrendingBusiness(businessId: string, score: number): TrendingBusine
 describe('useLocalTrending', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetBusinessMap();
     mockUserLocation = null;
     mockSettings = {};
     mockSortLocation = { lat: -34.6, lng: -58.4 };
@@ -160,6 +162,43 @@ describe('useLocalTrending', () => {
     const { result } = renderHook(() => useLocalTrending());
 
     expect(result.current.loading).toBe(true);
+  });
+
+  it('returns bit-identical output post-migration (regression fixture)', () => {
+    // Controlled fixture: 4 businesses, deterministic distances, deterministic scores.
+    // The expectation pins the exact output shape after the singleton migration so
+    // any drift in id ordering, scoring projection or filtering will fail loud.
+    mockAllBusinesses = [
+      fakeBusiness('reg_a', -34.601, -58.401),
+      fakeBusiness('reg_b', -34.602, -58.402),
+      fakeBusiness('reg_c', -34.603, -58.403),
+      fakeBusiness('reg_d', -34.604, -58.404),
+    ];
+    mockTrendingData = {
+      businesses: [
+        makeTrendingBusiness('reg_a', 90),
+        makeTrendingBusiness('reg_b', 70),
+        makeTrendingBusiness('reg_c', 95),
+        makeTrendingBusiness('reg_d', 50),
+      ],
+      computedAt: new Date(),
+      periodStart: new Date(),
+      periodEnd: new Date(),
+    };
+    // All within first radius (1km) so progressive expansion is short-circuited.
+    mockDistanceKm.mockReturnValue(0.5);
+
+    const { result } = renderHook(() => useLocalTrending());
+
+    // Sorted by score desc: reg_c (95), reg_a (90), reg_b (70), reg_d (50).
+    expect(result.current.businesses.map((b) => b.businessId)).toEqual([
+      'reg_c',
+      'reg_a',
+      'reg_b',
+      'reg_d',
+    ]);
+    expect(result.current.businesses.map((b) => b.score)).toEqual([95, 90, 70, 50]);
+    expect(result.current.radiusKm).toBe(5); // < MIN_RESULTS=5 so expansion reaches last radius
   });
 
   it('limits results to LOCAL_TRENDING_MAX_RESULTS', () => {

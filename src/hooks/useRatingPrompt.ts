@@ -3,8 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSelection } from '../context/SelectionContext';
 import { fetchMyCheckIns } from '../services/checkins';
 import { hasUserRatedBusiness } from '../services/ratings';
-import { allBusinesses } from './useBusinesses';
-import { getBusinessById } from '../utils/businessMap';
+import { getAllBusinessIdsSet, getBusinessById } from '../utils/businessMap';
 import { trackEvent } from '../utils/analytics';
 import {
   RATING_PROMPT_MIN_HOURS,
@@ -118,7 +117,7 @@ export function useRatingPrompt(): UseRatingPromptReturn {
       }
 
       const dismissedIds = getDismissedIds();
-      const allBizIds = new Set(allBusinesses.map((b) => b.id));
+      const allBizIds = getAllBusinessIdsSet();
 
       let checkIns;
       try {
