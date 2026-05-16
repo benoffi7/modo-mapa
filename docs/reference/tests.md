@@ -6,29 +6,50 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 117 (83 React + 34 Functions) |
-| **Total test cases** | ~1300+ (estimado post-#229/#230/#231/#232/#330) |
-| **Cobertura minima requerida** | 80% global (enforced en CI) |
+| **Total test files** | 252 (195 React + 57 Functions) |
+| **Total test cases** | 1829 frontend + 528 functions (post-#338 coverage backfill) |
+| **Cobertura minima requerida** | 80% global (enforced en CI via `deploy.yml`) |
 
-### Cobertura actual (2026-03-27)
+### Cobertura actual (2026-05-16, post-#338)
+
+#### Cobertura global (incluye archivos sin test) — threshold CI 80%
+
+Esta es la metrica que evalua `vitest --coverage` contra los thresholds de
+`vitest.config.ts`. Es la unica que dispara el blocker del workflow `deploy.yml`.
 
 **Frontend (src/):**
 
-| Metrica | % |
-|---------|---|
-| Statements | 96.1% |
-| Branches | 90.7% |
-| Functions | 90.1% |
-| Lines | 97.3% |
+| Metrica | % | Threshold |
+|---------|---|-----------|
+| Statements | 89.04% | 80% |
+| Branches | **81.86%** | 80% |
+| Functions | 80.87% | 77% |
+| Lines | 90.92% | 80% |
 
 **Cloud Functions (functions/):**
 
-| Metrica | % |
-|---------|---|
-| Statements | 98.5% |
-| Branches | 89.4% |
-| Functions | 100% |
-| Lines | 98.4% |
+| Metrica | % | Threshold |
+|---------|---|-----------|
+| Statements | 98.5% | 80% |
+| Branches | 89.4% | 80% |
+| Functions | 100% | 80% |
+| Lines | 98.4% | 80% |
+
+#### Cobertura promedio de archivos con test (informativo)
+
+Indicador de calidad de los tests existentes para los archivos que **si**
+tienen tests. No tiene threshold de CI; sirve solo como senal de la
+profundidad de los tests donde se escribieron. Es el numero historico que
+aparecia en versiones anteriores de este doc.
+
+| Origen | Branches promedio (archivos-con-test) |
+|--------|---------------------------------------|
+| Frontend (`src/`) | ~92% (calculado sobre filas individuales del coverage report) |
+| Functions (`functions/`) | ~91% (idem) |
+
+> Las dos metricas conviven: la "global" detecta huecos de archivos sin tests,
+> la "promedio archivos-con-test" detecta superficialidad. La global es la que
+> gatea CI; la otra es para evaluar calidad de testing por modulo.
 
 ---
 

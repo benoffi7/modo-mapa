@@ -172,6 +172,9 @@
   - [#330 Tests — Coverage gaps for hooks + utils/media](/feat/infra/330-tests-hooks-coverage-gaps/prd.md)
     - [Specs](/feat/infra/330-tests-hooks-coverage-gaps/specs.md)
     - [Plan](/feat/infra/330-tests-hooks-coverage-gaps/plan.md)
+  - [#338 Coverage Global 80 Branches (preexistente)](/feat/infra/338-coverage-global-80-preexistente/prd.md)
+    - [Specs](/feat/infra/338-coverage-global-80-preexistente/specs.md)
+    - [Plan](/feat/infra/338-coverage-global-80-preexistente/plan.md)
 
 - **Security**
   - [App Check Enforcement](/feat/security/app-check-enforcement/prd.md)
