@@ -6,8 +6,8 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 252 (195 React + 57 Functions) |
-| **Total test cases** | 1829 frontend + 528 functions (post-#338 coverage backfill) |
+| **Total test files** | 253 (195 React + 57 Functions + 1 Firestore rules) |
+| **Total test cases** | 1829 frontend + 528 functions + 16 rules (post-#332 harness) |
 | **Cobertura minima requerida** | 80% global (enforced en CI via `deploy.yml`) |
 
 ### Cobertura actual (2026-05-16, post-#338)
@@ -418,3 +418,137 @@ Toda nueva feature debe incluir en su **specs.md**:
 - Todos los paths condicionales cubiertos
 - Tests de validacion para todos los inputs del usuario
 ```
+
+---
+
+## Firestore Rules Tests
+
+Tests automatizados de `firestore.rules` usando `@firebase/rules-unit-testing`
+v5 contra el emulador Firestore. Viven fuera de `src/` (es un suite root-level
+que no testea TS, sino el archivo `firestore.rules` del repo).
+
+### Como correr (local)
+
+```bash
+npm run test:rules
+```
+
+Requiere Java disponible (`java -version` >= 11). El script levanta el
+emulador Firestore via `firebase emulators:exec --only firestore` y corre
+los tests contra `localhost:8080`. Al terminar, baja el emulador.
+
+> **Heads-up:** la primera corrida descarga el JAR del emulator
+> (~50MB) y el `beforeAll` puede tardar ~30s. Corridas posteriores
+> son mas rapidas (JAR cached en `~/.cache/firebase/emulators/`).
+
+### CI
+
+El job `rules-test` corre en `.github/workflows/deploy.yml` (prod) y en
+`.github/workflows/deploy-staging.yml` (staging) como `needs:` de
+`deploy-rules-and-functions`. Hard-fail sin retry — una falla bloquea
+el deploy de rules. Bypass de flakiness: re-trigger manual desde
+GitHub Actions UI (NO comentar `[skip rules-test]` — el gate es por diseno).
+
+### Como agregar un test nuevo
+
+1. Crear `tests/rules/<coleccion>.rules.test.ts` siguiendo el patron de
+   `tests/rules/users.rules.test.ts`.
+2. Importar helpers desde `tests/rules/setup.ts`:
+
+```ts
+import {
+  authedContext,
+  clearFirestore,
+  createRulesTestEnv,
+  expectAllow,
+  expectDeny,
+  withAdminContext,
+} from './setup';
+```
+
+3. Estructura tipica:
+
+```ts
+describe('firestore.rules — <coleccion>/{docId}', () => {
+  let env: RulesTestEnvironment;
+
+  beforeAll(async () => {
+    env = await createRulesTestEnv();
+  });
+
+  afterAll(async () => {
+    await env.cleanup();
+  });
+
+  beforeEach(async () => {
+    await clearFirestore(env);
+  });
+
+  it('caso happy — ALLOW', async () => {
+    const ctx = authedContext(env, 'user_alice');
+    await expectAllow(setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), payload));
+  });
+
+  it('caso adversarial — DENY', async () => {
+    const ctx = authedContext(env, 'user_alice');
+    await expectDeny(setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), badPayload));
+  });
+});
+```
+
+4. Para tests de update donde el doc inicial requiere bypass de rules:
+
+```ts
+await withAdminContext(env, async (ctx) => {
+  await setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), seedDoc);
+});
+```
+
+### Convencion de naming
+
+- Archivo: `tests/rules/<coleccion>.rules.test.ts` (ej. `users.rules.test.ts`,
+  `userSettings.rules.test.ts`).
+- Describe: `'firestore.rules — <coleccion>/{docId}'`.
+- Cada test cubre **al menos** 1 ALLOW + 1 DENY del invariante bajo prueba.
+
+### Politica de cobertura
+
+- Las rules tests NO contribuyen al threshold 80% de coverage TS — `firestore.rules`
+  no es TypeScript. La metrica es: "todos los invariantes documentados en specs
+  tienen al menos 1 test allow + 1 test deny".
+- El config `vitest.rules.config.ts` esta separado de `vitest.config.ts` principal
+  (env Node vs jsdom, sin coverage thresholds, `hookTimeout: 60_000`).
+
+### Aislamiento del projectId del harness
+
+`RULES_TEST_PROJECT_ID = 'modo-mapa-rules-test'` — constante exportada de
+`tests/rules/setup.ts`. NO matchea `modo-mapa-app` (projectId real de prod +
+staging segun `.firebaserc`). Defense-in-depth: aunque colisionara, el harness
+pinea `host: 'localhost'` y `port: 8080` — nunca alcanza Firestore real.
+
+### Inventario de cobertura de rules
+
+Estado al cierre de #332. Cada coleccion lista dos checkboxes (allow path test
++ deny path test). Conforme cada PRD futuro agregue tests para una coleccion,
+marcar `[x] [x]`.
+
+- [x] [x] `users` — cubierto en `tests/rules/users.rules.test.ts` (R6/R7/R12/hasOnly, ver #322 specs L240-247 y #300)
+- [ ] [ ] `userSettings` — pendiente. Invariante: hasOnly + type guards. Origen: #251 specs L144 y L204
+- [ ] [ ] `feedback` — pendiente. Invariante: `message.size() <= 500` + type guard. Origen: #289
+- [ ] [ ] `notifications` — pendiente. Invariante: solo update del campo `read`. Origen: #289
+- [ ] [ ] `favorites` — pendiente. Invariante: `isValidBusinessId` + owner. Origen: rules L79-88
+- [ ] [ ] `ratings` — pendiente. Invariante: score 1-5, criteria opcional, createdAt server-only.
+- [ ] [ ] `comments` — pendiente. Invariante: rate limit (server-side) + ownership.
+- [ ] [ ] `checkins` — pendiente. Invariante: rate limit + dedup + ownership.
+- [ ] [ ] `sharedLists` — pendiente. Invariante: per-item validation `followedTags`. Origen: #289 H-03
+- [ ] [ ] `listItems` — pendiente. Invariante: per-item `businessId` validation. Origen: #289 M-01
+- [ ] [ ] `follows` — pendiente. Invariante: `followedId.size() <= 128`. Origen: #289 M-02
+- [ ] [ ] `customTags` — pendiente.
+- [ ] [ ] `rateLimits` — pendiente. Invariante: server-only, ningun cliente puede tocarlo.
+- [ ] [ ] `users/{uid}/onboarding` — pendiente. Subcoleccion de onboarding state.
+- [ ] [ ] `featuredLists` — pendiente. Read public, write admin-only.
+
+> Tests parciales o pendientes en la tabla anterior NO son blockers de
+> #332 — la meta de #332 era abrir la puerta. Cada PRD futuro que toque
+> una de estas colecciones debe agregar su test allow+deny y marcar el
+> checkbox correspondiente.
