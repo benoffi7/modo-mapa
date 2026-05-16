@@ -27,6 +27,9 @@
   - [#310 Admin Metrics Gaps — listItems / _rateLimits + event tracking](/feat/admin/310-admin-metrics-gaps/prd.md)
     - [Specs](/feat/admin/310-admin-metrics-gaps/specs.md)
     - [Plan](/feat/admin/310-admin-metrics-gaps/plan.md)
+  - [#327 Admin Metrics — orphaned events + _rateLimits/listItems UI gaps](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/prd.md)
+    - [Specs](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/specs.md)
+    - [Plan](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/plan.md)
 
 - **Content**
   - [Conectar IconPicker Listas](/feat/content/conectar-iconpicker-listas/prd.md)
@@ -168,11 +171,15 @@
   - [#325 Perf-instrumentation — un-wrapped queries + scheduled/callable timing](/feat/infra/325-perf-instrumentation-coverage/prd.md)
     - [Specs](/feat/infra/325-perf-instrumentation-coverage/specs.md)
     - [Plan](/feat/infra/325-perf-instrumentation-coverage/plan.md)
+  - [#330 Tech debt: tests — hooks coverage gaps + utils/media + admin callables](/feat/infra/330-tests-hooks-coverage-gaps/prd.md)
   - [#168 Vite 8 y ESLint 10 — Desbloqueo por peer deps](/feat/infra/168-vite8-eslint10-peer-deps/prd.md)
   - [#330 Tests — Coverage gaps for hooks + utils/media](/feat/infra/330-tests-hooks-coverage-gaps/prd.md)
     - [Specs](/feat/infra/330-tests-hooks-coverage-gaps/specs.md)
     - [Plan](/feat/infra/330-tests-hooks-coverage-gaps/plan.md)
-  - [#338 Coverage Global 80 Branches (preexistente)](/feat/infra/338-coverage-global-80-preexistente/prd.md)
+  - [#333 Perf — RankingsView/MapView O(n) lookups + useRatingPrompt Set](/feat/infra/333-perf-rankings-mapview-ratingprompt/prd.md)
+    - [Specs](/feat/infra/333-perf-rankings-mapview-ratingprompt/specs.md)
+    - [Plan](/feat/infra/333-perf-rankings-mapview-ratingprompt/plan.md)
+  - [#338 Tech debt — coverage global <80% (preexistente, descubierto en #330)](/feat/infra/338-coverage-global-80-preexistente/prd.md)
     - [Specs](/feat/infra/338-coverage-global-80-preexistente/specs.md)
     - [Plan](/feat/infra/338-coverage-global-80-preexistente/plan.md)
 
@@ -246,6 +253,9 @@
   - [#322 Firestore Rules Hardening + Bootstrap Admin](/feat/security/322-firestore-rules-hardening-bootstrap-admin/prd.md)
     - [Specs](/feat/security/322-firestore-rules-hardening-bootstrap-admin/specs.md)
     - [Plan](/feat/security/322-firestore-rules-hardening-bootstrap-admin/plan.md)
+  - [#329 Privacy — Feedback PDF + Contact Categories](/feat/security/329-privacy-feedback-pdf-categories/prd.md)
+    - [Specs](/feat/security/329-privacy-feedback-pdf-categories/specs.md)
+    - [Plan](/feat/security/329-privacy-feedback-pdf-categories/plan.md)
 
 - **Social**
   - [Conectar Listas Colaborativas UI](/feat/social/conectar-listas-colaborativas-ui/prd.md)
@@ -296,6 +306,9 @@
     - [Specs](/feat/ux/305-mui7-slotprops-touch-targets/specs.md)
     - [Plan](/feat/ux/305-mui7-slotprops-touch-targets/plan.md)
   - [#326 Tech Debt UI/UX — Touch Targets, Keyboard A11y, Chip Heights, TabBar Internals](/feat/ux/326-techdebt-ui-ux-touch-targets-a11y/prd.md)
+  - [#336 Tech debt: #326 followups — FavoritesList kebab a11y + R7 guard refinement + touch targets restantes](/feat/ux/336-techdebt-326-followups-keyboard-r7-touch/prd.md)
+    - [Specs](/feat/ux/336-techdebt-326-followups-keyboard-r7-touch/specs.md)
+    - [Plan](/feat/ux/336-techdebt-326-followups-keyboard-r7-touch/plan.md)
 
 - **Fixes**
   - [Coding Standard Violations](/fix/coding-standard-violations/prd.md)
