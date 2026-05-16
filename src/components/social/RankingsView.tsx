@@ -115,7 +115,7 @@ export default function RankingsView() {
           sx={NAV_CHIP_SX}
         />
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.25 }}>
-          <IconButton size="small" onClick={refetch} disabled={loading} aria-label="Actualizar ranking">
+          <IconButton size="small" onClick={refetch} disabled={loading} aria-label="Actualizar ranking" sx={{ minWidth: 44, minHeight: 44 }}>
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Box>

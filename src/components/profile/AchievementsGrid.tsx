@@ -20,6 +20,7 @@ import { useUserSettings } from '../../hooks/useUserSettings';
 import { useVerificationBadges } from '../../hooks/useVerificationBadges';
 import { trackEvent } from '../../utils/analytics';
 import { ACHIEVEMENT_DEFINITIONS } from '../../constants/achievements';
+import { MSG_COMMON } from '../../constants/messages';
 import VerificationBadge from '../social/VerificationBadge';
 
 const ACHIEVEMENT_ICONS: Record<string, React.ComponentType<SvgIconProps>> = {
@@ -140,7 +141,7 @@ export default function AchievementsGrid() {
                 {selectedAchievement.icon}
                 {selectedAchievement.label}
               </Box>
-              <IconButton size="small" onClick={() => setSelectedAchievement(null)}>
+              <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={() => setSelectedAchievement(null)} sx={{ minWidth: 44, minHeight: 44 }}>
                 <CloseIcon />
               </IconButton>
             </DialogTitle>

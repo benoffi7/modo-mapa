@@ -205,7 +205,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
           <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
             {mediaFile.name}
           </Typography>
-          <IconButton size="small" onClick={clearMedia}>
+          <IconButton size="small" onClick={clearMedia} aria-label="Quitar archivo adjunto" sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -220,7 +220,8 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
           <IconButton
             size="small"
             onClick={clearMedia}
-            sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper' }}
+            aria-label="Quitar imagen adjunta"
+            sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', minWidth: 44, minHeight: 44 }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>

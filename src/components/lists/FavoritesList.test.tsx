@@ -178,6 +178,33 @@ describe('FavoritesList', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('Enter sobre el IconButton kebab NO dispara onSelectBusiness (target !== currentTarget)', () => {
+    mocks.rawItems = [{ businessId: 'biz1', createdAt: new Date() }];
+    const onSelect = vi.fn();
+    render(<FavoritesList onSelectBusiness={onSelect} />);
+    const kebab = screen.getByRole('button', { name: /opciones/i });
+    fireEvent.keyDown(kebab, { key: 'Enter', code: 'Enter' });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('Space sobre el IconButton kebab NO dispara onSelectBusiness (target !== currentTarget)', () => {
+    mocks.rawItems = [{ businessId: 'biz1', createdAt: new Date() }];
+    const onSelect = vi.fn();
+    render(<FavoritesList onSelectBusiness={onSelect} />);
+    const kebab = screen.getByRole('button', { name: /opciones/i });
+    fireEvent.keyDown(kebab, { key: ' ', code: 'Space' });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('Click sobre el IconButton kebab abre el Menu de opciones', () => {
+    mocks.rawItems = [{ businessId: 'biz1', createdAt: new Date() }];
+    render(<FavoritesList onSelectBusiness={vi.fn()} />);
+    const kebab = screen.getByRole('button', { name: /opciones/i });
+    fireEvent.click(kebab);
+    // El Menu de opciones se abre — verificamos que aparece algun item del menu.
+    expect(screen.getByRole('menuitem', { name: /compartir/i })).toBeInTheDocument();
+  });
+
   it('Empty state: cuando no hay favoritos muestra el placeholder + CTA', () => {
     mocks.rawItems = [];
     render(<FavoritesList onSelectBusiness={vi.fn()} />);

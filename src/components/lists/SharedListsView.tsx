@@ -55,6 +55,15 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
     return () => onRegisterBackHandler?.(null);
   }, [selectedList, onRegisterBackHandler]);
 
+  const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
+  const handleCreateKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setCreateOpen(true);
+    }
+  }, []);
+
   const loadLists = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
@@ -188,7 +197,11 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       {lists.length === 0 && (
         <Box sx={{ px: 2 }}>
           <Box
-            onClick={() => setCreateOpen(true)}
+            role="button"
+            tabIndex={0}
+            aria-label="Crear nueva lista"
+            onClick={handleOpenCreate}
+            onKeyDown={handleCreateKeyDown}
             sx={{
               border: 1,
               borderStyle: 'dashed',

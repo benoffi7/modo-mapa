@@ -41,7 +41,7 @@
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
     "R5-chip-height-adhoc": 4,
-    "R7-box-onclick-without-a11y": 14,
+    "R7-box-onclick-without-a11y": 11,
     "R8-chip-small-sx-exists": 0
   },
   "306": {
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 162
+  "_total": 159
 }

@@ -206,6 +206,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
               aria-label={`Abrir comercio: ${fav.business.name}`}
               onClick={() => handleSelectBusiness(fav.business)}
               onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.target !== e.currentTarget) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   handleSelectBusiness(fav.business);
@@ -227,6 +228,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
                   size="small"
                   onClick={(e) => handleOpenMenu(e, fav)}
                   aria-label="Opciones"
+                  sx={{ minWidth: 44, minHeight: 44 }}
                 >
                   <MoreVertIcon fontSize="small" />
                 </IconButton>
