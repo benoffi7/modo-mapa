@@ -102,7 +102,7 @@ describe('useBusinessData — guards + cache tiers + errors', () => {
   it('returns cached data from in-memory cache and skips Firestore', async () => {
     const cached = {
       isFavorite: true,
-      ratings: [{ id: 'r1' } as unknown as Rating],
+      ratings: [{ businessId: 'r1' } as unknown as Rating],
       comments: [],
       userTags: [],
       customTags: [],

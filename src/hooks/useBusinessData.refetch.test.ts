@@ -190,12 +190,14 @@ describe('useBusinessData — refetch + partial-load merge', () => {
       () => new Promise((res) => { resolveFull = res; }),
     );
 
-    // Patch sequence: ratings, userTags, customTags, priceLevels, menuPhoto
+    // Patch sequence: ratings, userTags, customTags, priceLevels, menuPhoto.
+    // Use marker fields to distinguish patched vs full-load values; cast through
+    // unknown because these types don't all have an `id` field.
     mockFetchSingleCollection
-      .mockResolvedValueOnce({ ratings: [{ id: 'pr' } as unknown as Rating] })
-      .mockResolvedValueOnce({ userTags: [{ id: 'put' } as unknown as UserTag] })
+      .mockResolvedValueOnce({ ratings: [{ businessId: 'pr' } as unknown as Rating] })
+      .mockResolvedValueOnce({ userTags: [{ businessId: 'put' } as unknown as UserTag] })
       .mockResolvedValueOnce({ customTags: [{ id: 'pct' } as unknown as CustomTag] })
-      .mockResolvedValueOnce({ priceLevels: [{ id: 'ppl' } as unknown as PriceLevel] })
+      .mockResolvedValueOnce({ priceLevels: [{ businessId: 'ppl' } as unknown as PriceLevel] })
       .mockResolvedValueOnce({ menuPhoto: { id: 'pmp' } as unknown as MenuPhoto });
 
     const { result } = renderHook(() => useBusinessData('b1'));
@@ -213,19 +215,19 @@ describe('useBusinessData — refetch + partial-load merge', () => {
     await act(async () => {
       resolveFull({
         ...emptyFetchResult(),
-        ratings: [{ id: 'full' } as unknown as Rating],
-        userTags: [{ id: 'full' } as unknown as UserTag],
+        ratings: [{ businessId: 'full' } as unknown as Rating],
+        userTags: [{ businessId: 'full' } as unknown as UserTag],
         customTags: [{ id: 'full' } as unknown as CustomTag],
-        priceLevels: [{ id: 'full' } as unknown as PriceLevel],
+        priceLevels: [{ businessId: 'full' } as unknown as PriceLevel],
         menuPhoto: { id: 'full' } as unknown as MenuPhoto,
       });
       await new Promise((r) => setTimeout(r, 10));
     });
 
-    expect(result.current.ratings[0].id).toBe('pr');
-    expect(result.current.userTags[0].id).toBe('put');
+    expect(result.current.ratings[0].businessId).toBe('pr');
+    expect(result.current.userTags[0].businessId).toBe('put');
     expect(result.current.customTags[0].id).toBe('pct');
-    expect(result.current.priceLevels[0].id).toBe('ppl');
+    expect(result.current.priceLevels[0].businessId).toBe('ppl');
     expect(result.current.menuPhoto?.id).toBe('pmp');
   });
 
@@ -233,7 +235,7 @@ describe('useBusinessData — refetch + partial-load merge', () => {
     mockFetchBusinessData.mockResolvedValue({
       ...emptyFetchResult(),
       isFavorite: true,
-      ratings: [{ id: 'r1' } as unknown as Rating],
+      ratings: [{ businessId: 'r1' } as unknown as Rating],
     });
 
     const { result } = renderHook(() => useBusinessData('b1'));
