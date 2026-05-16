@@ -39,10 +39,7 @@ function extractFieldUnion(typeSource: string, fieldName: string): string[] {
 // Known regressions tracked in open issues. When the issue lands, the test
 // passes and `it.fails` flips red — forcing the implementer to remove the entry.
 // This keeps the convergence-to-zero invariant alive without blocking unrelated PRs.
-const KNOWN_REGRESSIONS_TO_REMOVE: Record<string, string> = {
-  'feedback-category-bug': '#329',
-  'feedback-mediaType-pdf': '#329',
-};
+const KNOWN_REGRESSIONS_TO_REMOVE: Record<string, string> = {};
 
 describe('Privacy policy ↔ FeedbackCategory union', () => {
   const feedbackTypes = read('src/types/feedback.ts');
