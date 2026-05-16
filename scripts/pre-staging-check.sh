@@ -103,12 +103,12 @@ while IFS=: read -r file line content; do
   if echo "$content" | grep -qE 'measured(GetDoc|GetDocs)\(|measureAsync\('; then
     continue
   fi
-  # Skip if marker on same line or up to 2 previous lines (allow Promise.all/arrow wrapping)
+  # Skip if marker on same line or up to 5 previous lines (allow Promise.all/arrow wrapping)
   if echo "$content" | grep -q 'perf-instrument-ok'; then
     continue
   fi
   marker_found=0
-  for back in 1 2; do
+  for back in 1 2 3 4 5; do
     prev_line=$((line - back))
     if [ "$prev_line" -ge 1 ] && sed -n "${prev_line}p" "$file" 2>/dev/null | grep -q 'perf-instrument-ok'; then
       marker_found=1
