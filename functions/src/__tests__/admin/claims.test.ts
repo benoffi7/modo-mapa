@@ -10,17 +10,32 @@ const {
   mockBootstrapDocSet,
   mockLoggerInfo,
   mockLoggerError,
-} = vi.hoisted(() => ({
-  handlers: {} as Record<string, ((request: unknown) => Promise<unknown>) | null>,
-  mockAssertAdmin: vi.fn().mockReturnValue({ uid: 'admin1', token: { admin: true } }),
-  mockGetUser: vi.fn(),
-  mockSetCustomUserClaims: vi.fn().mockResolvedValue(undefined),
-  mockIsEmulator: { value: false },
-  mockBootstrapDocGet: vi.fn().mockResolvedValue({ exists: false, data: () => undefined }),
-  mockBootstrapDocSet: vi.fn().mockResolvedValue(undefined),
-  mockLoggerInfo: vi.fn(),
-  mockLoggerError: vi.fn(),
-}));
+  mockDb,
+} = vi.hoisted(() => {
+  const bootstrapDocGet = vi.fn().mockResolvedValue({ exists: false, data: () => undefined });
+  const bootstrapDocSet = vi.fn().mockResolvedValue(undefined);
+  return {
+    handlers: {} as Record<string, ((request: unknown) => Promise<unknown>) | null>,
+    mockAssertAdmin: vi.fn().mockReturnValue({ uid: 'admin1', token: { admin: true } }),
+    mockGetUser: vi.fn(),
+    mockSetCustomUserClaims: vi.fn().mockResolvedValue(undefined),
+    mockIsEmulator: { value: false },
+    mockBootstrapDocGet: bootstrapDocGet,
+    mockBootstrapDocSet: bootstrapDocSet,
+    mockLoggerInfo: vi.fn(),
+    mockLoggerError: vi.fn(),
+    mockDb: {
+      doc: (path: string) => {
+        // El handler solo escribe/lee `config/bootstrap`. Si llegan otros paths,
+        // mantener interfaz consistente (los tests no deberian gatillarlos).
+        if (path === 'config/bootstrap') {
+          return { get: bootstrapDocGet, set: bootstrapDocSet };
+        }
+        return { get: vi.fn().mockResolvedValue({ exists: false }), set: vi.fn() };
+      },
+    },
+  };
+});
 
 const callIndex = vi.hoisted(() => ({ value: 0 }));
 vi.mock('firebase-functions/v2/https', () => ({
@@ -58,16 +73,7 @@ vi.mock('firebase-admin/auth', () => ({
 }));
 
 vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: () => ({
-    doc: (path: string) => {
-      // El handler solo escribe/lee `config/bootstrap`. Si llegan otros paths,
-      // mantener interfaz consistente (los tests no deberian gatillarlos).
-      if (path === 'config/bootstrap') {
-        return { get: mockBootstrapDocGet, set: mockBootstrapDocSet };
-      }
-      return { get: vi.fn().mockResolvedValue({ exists: false }), set: vi.fn() };
-    },
-  }),
+  getFirestore: () => mockDb,
   FieldValue: {
     serverTimestamp: () => 'SERVER_TS',
   },
@@ -76,6 +82,7 @@ vi.mock('firebase-admin/firestore', () => ({
 vi.mock('../../helpers/env', () => ({
   get IS_EMULATOR() { return mockIsEmulator.value; },
   ENFORCE_APP_CHECK_ADMIN: false,
+  getDb: () => mockDb,
 }));
 
 vi.mock('../../helpers/assertAdmin', () => ({
