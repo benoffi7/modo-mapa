@@ -48,8 +48,26 @@ jobs:
           cache: npm
       - run: cd functions && npm ci && npm run test:run
 
+  rules-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Java requerido por el emulador Firestore (firebase-tools lo usa internamente).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci
+      - name: Run Firestore rules tests against emulator
+        # Gate antes de deploy a staging-DB. Hard-fail sin retry.
+        run: npx firebase-tools emulators:exec --only firestore "npm run test:rules:ci"
+
   deploy-rules-and-functions:
-    needs: [lint, test, functions-test]
+    needs: [lint, test, functions-test, rules-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
