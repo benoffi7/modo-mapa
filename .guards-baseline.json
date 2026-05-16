@@ -19,7 +19,7 @@
   "302": {
     "R4-allBusinesses-find": 1,
     "R-stats-barrel": 0,
-    "R-fetchUserLikes-removed": 16,
+    "R-fetchUserLikes-removed": 15,
     "R-newMap-allBusinesses": 0,
     "R6-img-without-lazy": 3,
     "R7-mui-icons-not-split": 0,
@@ -68,5 +68,5 @@
   "311": {
     "R1-helpgroups-coverage": 1
   },
-  "_total": 159
+  "_total": 158
 }
