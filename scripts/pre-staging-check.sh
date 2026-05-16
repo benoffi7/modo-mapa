@@ -23,8 +23,7 @@ if git diff origin/main -- functions/src/ functions/package.json 2>/dev/null | g
   if (cd "$REPO_ROOT/functions" && npm ci --ignore-scripts 2>/dev/null && npx tsc --noEmit 2>&1); then
     pass "functions compile cleanly"
   else
-    echo "  ⚠️  WARN: functions TypeScript errors (non-blocking — tested in functions-test job)"
-    CHECKS_PASSED=$((CHECKS_PASSED + 1))
+    fail "functions TypeScript errors"
   fi
 else
   pass "functions unchanged — skipped"
