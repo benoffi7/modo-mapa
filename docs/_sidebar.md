@@ -410,3 +410,6 @@
   - [7 - Silent Catch Lint](/feat/infra/tech-debt-new-home/7-silent-catch-lint.md)
     - [Specs](/feat/infra/tech-debt-new-home/7-silent-catch-lint-specs.md)
     - [Plan](/feat/infra/tech-debt-new-home/7-silent-catch-lint-plan.md)
+
+- **Charlas**
+  - [De programador a producto](/charlas/de-programador-a-producto.md)
