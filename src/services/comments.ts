@@ -7,6 +7,7 @@ import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { commentConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
+import { gateServiceWrite } from './offlineInterceptor';
 import { trackEvent } from '../utils/analytics';
 import { MAX_COMMENT_LENGTH, MAX_DISPLAY_NAME_LENGTH } from '../constants/validation';
 import { MAX_QUESTION_LENGTH } from '../constants/questions';
@@ -53,19 +54,39 @@ export async function editComment(commentId: string, userId: string, newText: st
   if (!trimmed || trimmed.length > MAX_COMMENT_LENGTH) {
     throw new Error('Comment text must be 1-500 characters');
   }
-  await updateDoc(doc(db, COLLECTIONS.COMMENTS, commentId), {
-    text: trimmed,
-    updatedAt: serverTimestamp(),
-  });
-  invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
-  trackEvent('comment_submit', { is_edit: true });
+  // #335: gate offline a nivel service (defense-in-depth). Si offline, encola.
+  // businessId no aplica al replay de comment_edit (el handler solo usa
+  // commentId/userId/text); se deja vacío para satisfacer el shape de la acción.
+  await gateServiceWrite(
+    'comment_edit',
+    { userId, businessId: '' },
+    { commentId, text: trimmed },
+    async () => {
+      await updateDoc(doc(db, COLLECTIONS.COMMENTS, commentId), {
+        text: trimmed,
+        updatedAt: serverTimestamp(),
+      });
+      invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+      trackEvent('comment_submit', { is_edit: true });
+    },
+  );
 }
 
 export async function deleteComment(commentId: string, userId: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
-  // replyCount decrement and cascade delete of orphaned replies
-  // are handled server-side by the onCommentDeleted Cloud Function.
-  invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+  // #335: gate offline a nivel service (defense-in-depth). Si offline, encola.
+  // businessId no aplica al replay de comment_delete (el handler solo usa
+  // commentId/userId); se deja vacío para satisfacer el shape de la acción.
+  await gateServiceWrite(
+    'comment_delete',
+    { userId, businessId: '' },
+    { commentId },
+    async () => {
+      await deleteDoc(doc(db, COLLECTIONS.COMMENTS, commentId));
+      // replyCount decrement and cascade delete of orphaned replies
+      // are handled server-side by the onCommentDeleted Cloud Function.
+      invalidateQueryCache(COLLECTIONS.COMMENTS, userId);
+    },
+  );
 }
 
 export async function likeComment(userId: string, commentId: string): Promise<void> {

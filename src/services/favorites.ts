@@ -11,6 +11,7 @@ import { COLLECTIONS } from '../config/collections';
 import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
+import { gateServiceWrite } from './offlineInterceptor';
 import { trackEvent } from '../utils/analytics';
 import type { Favorite } from '../types';
 
@@ -27,13 +28,21 @@ export async function addFavorite(userId: string, businessId: string): Promise<v
     throw new Error('userId and businessId are required');
   }
 
-  await setDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)), {
-    userId,
-    businessId,
-    createdAt: serverTimestamp(),
-  });
-  invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
-  trackEvent('favorite_toggle', { business_id: businessId, action: 'add' });
+  // #335: gate offline a nivel service (defense-in-depth). Si offline, encola.
+  await gateServiceWrite(
+    'favorite_add',
+    { userId, businessId },
+    { action: 'add' },
+    async () => {
+      await setDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)), {
+        userId,
+        businessId,
+        createdAt: serverTimestamp(),
+      });
+      invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
+      trackEvent('favorite_toggle', { business_id: businessId, action: 'add' });
+    },
+  );
 }
 
 /**
@@ -46,7 +55,15 @@ export async function fetchUserFavoritesCount(userId: string): Promise<number> {
 }
 
 export async function removeFavorite(userId: string, businessId: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)));
-  invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
-  trackEvent('favorite_toggle', { business_id: businessId, action: 'remove' });
+  // #335: gate offline a nivel service (defense-in-depth). Si offline, encola.
+  await gateServiceWrite(
+    'favorite_remove',
+    { userId, businessId },
+    { action: 'remove' },
+    async () => {
+      await deleteDoc(doc(db, COLLECTIONS.FAVORITES, docId(userId, businessId)));
+      invalidateQueryCache(COLLECTIONS.FAVORITES, userId);
+      trackEvent('favorite_toggle', { business_id: businessId, action: 'remove' });
+    },
+  );
 }

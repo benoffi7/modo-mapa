@@ -1,41 +1,28 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings, DEFAULT_SETTINGS } from '../services/userSettings';
-import { auth } from '../config/firebase';
 import { setAnalyticsEnabled } from '../utils/analytics';
 import { initPerfMetrics } from '../utils/perfMetrics';
+import { createPendingByUserStore } from '../utils/createPendingByUserStore';
 import type { UserSettings, DigestFrequency } from '../types';
 import { MSG_COMMON } from '../constants/messages';
 import { logger } from '../utils/logger';
 
 type BooleanSettingKey = 'profilePublic' | 'notificationsEnabled' | 'notifyLikes' | 'notifyPhotos' | 'notifyRankings' | 'notifyFeedback' | 'notifyReplies' | 'notifyFollowers' | 'notifyRecommendations' | 'analyticsEnabled';
 
-// #323: pendingState a nivel módulo — sobrevive al unmount del consumer.
-// Per-uid map: distintos usuarios autenticados no comparten snapshot.
+// #323 / #335: pendingState a nivel módulo via factory unificado — sobrevive al
+// unmount del consumer y limpia el snapshot del UID anterior en logout/switch
+// (un solo listener `onAuthStateChanged` compartido entre los 3 hooks).
 // Cualquier instancia del hook que esté montada al reconectar dispara el flush
 // (NotificationsProvider, GreetingHeader, MapView mantienen al menos una viva).
-const pendingByUser = new Map<string, Partial<UserSettings>>();
-
-// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
-// Sin esto, en multi-cuenta same-browser un snapshot stale de A pisa lo que A
-// configuró desde otro device cuando A vuelve a loguearse y reconecta.
-let _previousUid: string | null = null;
-onAuthStateChanged(auth, (firebaseUser) => {
-  const newUid = firebaseUser?.uid ?? null;
-  if (_previousUid && _previousUid !== newUid) {
-    pendingByUser.delete(_previousUid);
-  }
-  _previousUid = newUid;
-});
+const pendingByUser = createPendingByUserStore<Partial<UserSettings>>();
 
 /** Test-only: limpia el estado modular entre tests. No exportar a producción. */
 export function __resetPendingSettingsForTests() {
-  pendingByUser.clear();
-  _previousUid = null;
+  pendingByUser.__reset();
 }
 
 export function useUserSettings() {
@@ -166,9 +153,8 @@ export function useUserSettings() {
   useEffect(() => {
     let cancelled = false;
     if (!isOffline && user) {
-      const snapshot = pendingByUser.get(user.uid);
+      const snapshot = pendingByUser.take(user.uid);
       if (!snapshot) return;
-      pendingByUser.delete(user.uid);
       updateUserSettings(user.uid, snapshot).catch((err) => {
         if (cancelled) return;
         logger.error('[useUserSettings] flush failed:', err);
