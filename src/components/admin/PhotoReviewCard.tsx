@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardMedia, CardContent, CardActions, Typography, Button, TextField, Box, Chip } from '@mui/material';
 import ReportIcon from '@mui/icons-material/Report';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../config/firebase';
+import { getStorageInstance } from '../../config/firebase';
 import { approveMenuPhoto, rejectMenuPhoto, deleteMenuPhoto } from '../../services/adminPhotos';
 import { getBusinessById } from '../../utils/businessMap';
 import { formatDateShort } from '../../utils/formatDate';
@@ -28,7 +27,8 @@ export default function PhotoReviewCard({ photo, onAction }: Props) {
     const path = photo.thumbnailPath || photo.storagePath;
     if (!path) return;
     let cancelled = false;
-    getDownloadURL(ref(storage, path))
+    Promise.all([import('firebase/storage'), getStorageInstance()])
+      .then(([{ ref, getDownloadURL }, storage]) => getDownloadURL(ref(storage, path)))
       .then((url) => { if (!cancelled) setImageUrl(url); })
       .catch((err) => { logger.error('[PhotoReviewCard] getDownloadURL failed:', err); if (!cancelled) setImageUrl(null); });
     return () => { cancelled = true; };

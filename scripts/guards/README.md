@@ -18,6 +18,26 @@ npm run guards:check
 npm run guards:baseline
 ```
 
+## Bundle-size gate
+
+`bundle-size.mjs` is a separate gate (not part of the grep-based guard baseline). It runs **after a build** and compares the raw byte size of key chunks in `dist/assets/` against per-chunk budgets.
+
+```bash
+npm run build         # produces dist/
+npm run bundle:check  # warning-only: prints the table, always exits 0
+
+# Blocking mode (CI / pre-push) — exits 1 if any chunk is over budget:
+BUNDLE_SIZE_BLOCKING=true node scripts/guards/bundle-size.mjs
+```
+
+| Chunk | Threshold (raw) | Resolution |
+|---|---|---|
+| `mui-core` | ≤ 500 KB | manualChunk, matched by `mui-core-<hash>.js` |
+| `firebase` | ≤ 460 KB | manualChunk, matched by `firebase-<hash>.js` |
+| `index` | ≤ 320 KB | app entry, resolved from the `<script type="module">` in `dist/index.html` (Vite can emit more than one `index-*.js`) |
+
+Thresholds live in `scripts/guards/bundle-size.mjs` and are mirrored in `docs/reference/perf-baselines.md`. Default mode is **warning-only** so it never breaks a build by accident; flip `BUNDLE_SIZE_BLOCKING=true` to enforce once the budgets are trusted.
+
 ## Files
 
 | File | Purpose |

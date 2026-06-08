@@ -115,7 +115,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          // firebase/storage is intentionally NOT bundled here — it is lazy-loaded
+          // via getStorageInstance() (src/config/firebase.ts) so it stays out of
+          // the first load. See docs/reference/perf-baselines.md (#334 / F5).
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'mui-core': ['@mui/material', '@mui/system'],
           'mui-icons': ['@mui/icons-material'],
           recharts: ['recharts'],

@@ -21,6 +21,7 @@
     "guards:json": "node scripts/guards/run.mjs",
     "guards:check": "node scripts/guards/check-baseline.mjs",
     "guards:baseline": "node scripts/guards/check-baseline.mjs --update",
+    "bundle:check": "node scripts/guards/bundle-size.mjs",
     "prepare": "husky"
   },
   "lint-staged": {

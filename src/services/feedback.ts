@@ -2,8 +2,7 @@
  * Firestore + Storage service for the `feedback` collection.
  */
 import { collection, addDoc, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db, getStorageInstance } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { feedbackConverter } from '../config/converters';
 import { trackEvent } from '../utils/analytics';
@@ -52,6 +51,11 @@ export async function sendFeedback(
 
   if (mediaFile) {
     const storagePath = `feedback-media/${userId}/${docRef.id}/${mediaFile.name}`;
+    // Storage SDK lazy-loaded — only pulled in when an attachment is present.
+    const [{ ref, uploadBytes, getDownloadURL }, storage] = await Promise.all([
+      import('firebase/storage'),
+      getStorageInstance(),
+    ]);
     const storageRef = ref(storage, storagePath);
     await uploadBytes(storageRef, mediaFile, { contentType: mediaFile.type });
     const mediaUrl = await getDownloadURL(storageRef);
