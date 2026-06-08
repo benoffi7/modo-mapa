@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider,
   CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button, ButtonBase,
+  Menu, MenuItem, ListItemIcon, ListItemText, Badge,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -12,7 +13,7 @@ import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import InsertEmoticonOutlinedIcon from '@mui/icons-material/InsertEmoticonOutlined';
-import { Badge } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ColorPicker, { sanitizeListColor } from './ColorPicker';
 
 const IconPicker = lazy(() => import('./IconPicker'));
@@ -62,6 +63,9 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [currentIcon, setCurrentIcon] = useState(list.icon);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(menuAnchor);
+  const closeMenu = () => setMenuAnchor(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -202,46 +206,83 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <IconButton edge="start" aria-label="Volver a listas" onClick={() => onBack({
+        <IconButton edge="start" aria-label="Volver a listas" sx={{ minWidth: 44, minHeight: 44 }} onClick={() => onBack({
           id: list.id, color: currentColor, itemCount: items.length, isPublic, editorIds, icon: currentIcon,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEditConfig && (
           <>
-            <IconButton size="small" aria-label="Cambiar icono de lista" onClick={() => setIconPickerOpen(true)}>
-              {currentIcon && getListIconById(currentIcon)
-                ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
-                : <InsertEmoticonOutlinedIcon fontSize="small" />}
-            </IconButton>
-            <IconButton size="small" aria-label="Cambiar color de lista" onClick={() => setColorPickerOpen(true)}>
-              <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
-            </IconButton>
-            <IconButton size="small" aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'} onClick={handleTogglePublic}>
-              {isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
-            </IconButton>
-            {isPublic && (
-              <IconButton size="small" aria-label="Compartir lista" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
-            )}
-            <IconButton size="small" aria-label="Ver editores" onClick={() => setEditorsOpen(true)}>
-              <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
-                <GroupIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-            <IconButton size="small" aria-label="Invitar editor" onClick={() => setInviteOpen(true)}>
-              <PersonAddIcon fontSize="small" />
-            </IconButton>
             <IconButton
-              size="small"
               color="error"
               aria-label="Eliminar lista"
               onClick={() => setConfirmDeleteOpen(true)}
               disabled={isOffline}
               title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
-            ><DeleteOutlineIcon fontSize="small" /></IconButton>
+              sx={{ minWidth: 44, minHeight: 44 }}
+            ><DeleteOutlineIcon /></IconButton>
+            <IconButton
+              aria-label="Opciones"
+              aria-controls={menuOpen ? 'list-detail-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={menuOpen ? 'true' : undefined}
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            ><MoreVertIcon /></IconButton>
           </>
         )}
       </Toolbar>
       <Divider />
+
+      {canEditConfig && (
+        <Menu
+          id="list-detail-menu"
+          anchorEl={menuAnchor}
+          open={menuOpen}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem aria-label="Cambiar icono de lista" onClick={() => { closeMenu(); setIconPickerOpen(true); }}>
+            <ListItemIcon>
+              {currentIcon && getListIconById(currentIcon)
+                ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
+                : <InsertEmoticonOutlinedIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>Cambiar icono</ListItemText>
+          </MenuItem>
+          <MenuItem aria-label="Cambiar color de lista" onClick={() => { closeMenu(); setColorPickerOpen(true); }}>
+            <ListItemIcon><PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} /></ListItemIcon>
+            <ListItemText>Cambiar color</ListItemText>
+          </MenuItem>
+          <MenuItem
+            aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'}
+            onClick={() => { closeMenu(); handleTogglePublic(); }}
+          >
+            <ListItemIcon>
+              {isPublic ? <LockIcon fontSize="small" /> : <PublicIcon fontSize="small" color="success" />}
+            </ListItemIcon>
+            <ListItemText>{isPublic ? 'Hacer privada' : 'Hacer pública'}</ListItemText>
+          </MenuItem>
+          {isPublic && (
+            <MenuItem aria-label="Compartir lista" onClick={() => { closeMenu(); handleShare(); }}>
+              <ListItemIcon><ShareIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Compartir</ListItemText>
+            </MenuItem>
+          )}
+          <MenuItem aria-label="Ver editores" onClick={() => { closeMenu(); setEditorsOpen(true); }}>
+            <ListItemIcon>
+              <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
+                <GroupIcon fontSize="small" />
+              </Badge>
+            </ListItemIcon>
+            <ListItemText>Ver editores</ListItemText>
+          </MenuItem>
+          <MenuItem aria-label="Invitar editor" onClick={() => { closeMenu(); setInviteOpen(true); }}>
+            <ListItemIcon><PersonAddIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Invitar editor</ListItemText>
+          </MenuItem>
+        </Menu>
+      )}
 
       {list.description && list.description !== list.name && (
         <Box sx={{ px: 2, py: 1 }}>

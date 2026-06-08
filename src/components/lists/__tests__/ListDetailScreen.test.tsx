@@ -146,3 +146,79 @@ describe('ListDetailScreen – handleRemoveItem', () => {
     expect(screen.getByText('Comercio Dos')).toBeInTheDocument();
   });
 });
+
+describe('ListDetailScreen – kebab menu (#339)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchListItems.mockResolvedValue([...baseItems]);
+    mockToggleListPublic.mockResolvedValue(undefined);
+  });
+
+  const SECONDARY_ACTIONS = [
+    'Cambiar icono de lista',
+    'Cambiar color de lista',
+    'Ver editores',
+    'Invitar editor',
+  ];
+
+  it('renders a single primary header for the owner: back, delete, options (kebab)', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Comercio Uno')).toBeInTheDocument());
+
+    expect(screen.getByLabelText('Volver a listas')).toBeInTheDocument();
+    expect(screen.getByLabelText('Eliminar lista')).toBeInTheDocument();
+    expect(screen.getByLabelText('Opciones')).toBeInTheDocument();
+  });
+
+  it('keeps secondary actions out of the header until the kebab menu is opened', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Comercio Uno')).toBeInTheDocument());
+
+    // Closed menu: secondary actions are not mounted
+    for (const label of SECONDARY_ACTIONS) {
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    }
+
+    fireEvent.click(screen.getByLabelText('Opciones'));
+
+    // Opened menu: every secondary action is invocable
+    for (const label of SECONDARY_ACTIONS) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
+  });
+
+  it('exposes the toggle-visibility action in the menu and invokes the service', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Comercio Uno')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByLabelText('Opciones'));
+    // Private list → action makes it public
+    await act(async () => { fireEvent.click(screen.getByLabelText('Hacer lista pública')); });
+
+    await waitFor(() => expect(mockToggleListPublic).toHaveBeenCalledWith('list1', true));
+  });
+
+  it('shows the "Compartir lista" action only for public lists', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Comercio Uno')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByLabelText('Opciones'));
+    expect(screen.queryByLabelText('Compartir lista')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Opciones')); // close
+
+    renderScreen({ ...baseList, isPublic: true });
+    await waitFor(() => expect(screen.getAllByText('Comercio Uno').length).toBeGreaterThan(0));
+    fireEvent.click(screen.getAllByLabelText('Opciones')[1]);
+    expect(screen.getByLabelText('Compartir lista')).toBeInTheDocument();
+  });
+
+  it('does not render the kebab for read-only / non-owner viewers', async () => {
+    render(
+      <ListDetailScreen list={baseList} onBack={vi.fn()} onDeleted={vi.fn()} readOnly />,
+    );
+    await waitFor(() => expect(screen.getByText('Comercio Uno')).toBeInTheDocument());
+
+    expect(screen.queryByLabelText('Opciones')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Eliminar lista')).not.toBeInTheDocument();
+  });
+});
