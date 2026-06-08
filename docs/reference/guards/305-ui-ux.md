@@ -95,13 +95,17 @@ grep -rn "height: 1[8-9]" src/components/ --include="*.tsx" | grep -i chip
 
 Debe retornar **vacio**. Usar `CHIP_SMALL_SX` desde `src/theme/cards.ts`.
 
-### Regla 7 — `<Box onClick>` sin keyboard a11y
+### Regla 7 — `<Box onClick>` sin keyboard a11y (multi-line aware desde #331)
+
+El grep single-line original fallaba en JSX multi-line (el caso real más común) — generaba falsos positivos porque `[^>]` cortaba en arrow functions (`onClick={() => ...}`). Se reemplazó por el script Node `scripts/guards/lib/check-box-onclick.mjs`, que escanea cada apertura `<Box` balanceando `{}`/`[]`/`()` y respetando strings para hallar el cierre real del tag, y luego verifica el triplet a11y WCAG 2.1.1.
 
 ```bash
-grep -rn "<Box[^>]*onClick" src/components/ --include="*.tsx"
+node scripts/guards/lib/check-box-onclick.mjs
 ```
 
-Cada match: validar que tiene `role="button"` + `tabIndex={0}` + `onKeyDown` o que se puede migrar a `ListItemButton`/`CardActionArea`. Output esperado tras fix de #326: cero hits sin a11y triplet.
+Cada violación reporta `archivo:linea: missing [role="button" | tabIndex | onKeyDown] — <snippet>`. Para exceptuar un caso justificado, agregar `guard:exempt` dentro del tag. Cada match debe migrarse a `ListItemButton`/`CardActionArea` o completar el triplet `role="button"` + `tabIndex={0}` + `onKeyDown`.
+
+> **Nota (#331):** al adoptar el detector multi-line, el count bajó de 11 → 7 (los 4 eliminados eran falsos positivos del grep viejo — `MenuPhotoSection`, `MenuPhotoUpload`, `FavoritesList`, `CommentsStats` ya tenían el triplet completo). Baseline re-lockeado.
 
 ### Regla 8 — `CHIP_SMALL_SX` existe y se usa
 

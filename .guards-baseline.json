@@ -41,7 +41,7 @@
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
     "R5-chip-height-adhoc": 4,
-    "R7-box-onclick-without-a11y": 11,
+    "R7-box-onclick-without-a11y": 7,
     "R8-chip-small-sx-exists": 0
   },
   "306": {
@@ -59,14 +59,15 @@
     "R-maps-mention": 0
   },
   "309": {
-    "R2-tildes-prohibidas": 1,
+    "R2-tildes-prohibidas": 25,
+    "R3-tildes-heuristica": 4,
     "R-cerrar-hardcoded": 0
   },
   "310": {
     "R3-orphan-admin-services": 4
   },
   "311": {
-    "R1-helpgroups-coverage": 1
+    "R1-helpgroups-coverage": 0
   },
-  "_total": 158
+  "_total": 181
 }

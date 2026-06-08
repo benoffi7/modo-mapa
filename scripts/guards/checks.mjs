@@ -3,6 +3,91 @@
 // `path:line:match` from grep). The command's stdout line count = violation count.
 // Exit code is ignored — we count lines.
 
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ------------------------------------------------------------------
+// Guard 309 — diccionario de tildes (data-driven, no lista cerrada)
+// ------------------------------------------------------------------
+// `scripts/guards/data/spanish-tildes.json` es la fuente de verdad:
+//   - always_tilded: palabras castellanas en su forma CORRECTA (con tilde).
+//     Derivamos la forma SIN tilde para grepear el código: cualquier string
+//     user-facing con esa variante es una regresión de copy de #309.
+//   - whitelist: identificadores TS/JS o palabras inglesas que matchean el
+//     patrón sin acento pero NO son castellano (Function, useNavigation, ...).
+const tildesDict = JSON.parse(
+  readFileSync(resolve(__dirname, 'data/spanish-tildes.json'), 'utf8'),
+);
+
+// Quitar acentos: "acción" -> "accion", "más" -> "mas".
+function stripAccents(word) {
+  return word.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Formas SIN tilde a detectar como regresión, de-duplicadas. Excluimos las que
+// colisionan con la whitelist (case-insensitive) para no auto-flaggear FPs.
+const whitelistLower = new Set(
+  (tildesDict.whitelist ?? []).map((w) => w.toLowerCase()),
+);
+const untildedTargets = [
+  ...new Set(
+    (tildesDict.always_tilded ?? [])
+      .map((w) => stripAccents(w.toLowerCase()))
+      .filter((w) => w.length > 0 && !whitelistLower.has(w)),
+  ),
+].sort();
+
+// Alternación regex para grep -E, con word boundaries.
+const tildesAlternation = untildedTargets.join('|');
+
+// `grep -v` extra para descartar líneas cuyo match real es un token whitelisteado
+// (ej. `version`, `Action`, `mas` como identificador). Cada término se filtra
+// con su propio word-boundary, case-sensitive (los identifiers conservan su caso).
+const whitelistFilter = (tildesDict.whitelist ?? [])
+  .map((w) => `grep -vw "${w.replace(/"/g, '\\"')}"`)
+  .join(' | ');
+
+// Variantes prohibidas que NO son "falta de tilde" sino formas incorrectas
+// (sobre-tildado peninsular, naming legacy). Se conservan del R2 original de #309.
+const PROHIBITED_VARIANTS = ['Mas seguidos', 'Sorpresa', 'Sorpréndeme'];
+
+// Comando R2: tildes faltantes según el diccionario + variantes prohibidas.
+// Buscamos las formas sin tilde (case-insensitive, word boundary) en strings de
+// código, descartamos tests, la línea de onboarding exenta y los tokens whitelist.
+const R2_TILDES_CMD =
+  `grep -rEnwi "(${tildesAlternation}|${PROHIBITED_VARIANTS.join('|')})" src/ --include="*.tsx" --include="*.ts" ` +
+  `| grep -v test ` +
+  `| grep -v "Sorpresa\\!.*onboarding" ` +
+  (whitelistFilter ? `| ${whitelistFilter} ` : '') +
+  `|| true`;
+
+// ------------------------------------------------------------------
+// Guard 309 / R3 — heurística de tildes (WARNING, no blocker)
+// ------------------------------------------------------------------
+// Detecta palabras *cion (>=4 chars, sin tilde) dentro de strings JSX. Sugiere
+// promoverlas al diccionario. Filtramos:
+//   - whitelist (Function, useNavigation, ...),
+//   - palabras *cion ya cubiertas por el diccionario (las flaggea R2; acá solo
+//     mostramos NUEVOS candidatos para no duplicar ruido),
+//   - tests.
+const dictUntildedSet = new Set(untildedTargets);
+const dictCionCovered = [...dictUntildedSet].filter((w) => w.endsWith('cion'));
+const r3FilterTerms = [
+  ...new Set([...(tildesDict.whitelist ?? []), ...dictCionCovered]),
+];
+const r3Filter = r3FilterTerms
+  .map((w) => `grep -viw "${w.replace(/"/g, '\\"')}"`)
+  .join(' | ');
+
+const R3_TILDES_HEURISTICA_CMD =
+  `grep -rEn "['\\"\\\`][^'\\"\\\`]*\\b[a-zA-ZÀ-ÿ]{4,}cion\\b" src/ --include="*.tsx" --include="*.ts" ` +
+  `| grep -v test ` +
+  (r3Filter ? `| ${r3Filter} ` : '') +
+  `|| true`;
+
 export const guards = [
   // ============================================================
   // 300 — Security
@@ -325,8 +410,19 @@ export const guards = [
     rules: [
       {
         id: 'R2-tildes-prohibidas',
-        desc: 'tildes faltantes / variantes prohibidas (leidas, Mas seguidos, Distribucion, etc.)',
-        cmd: `grep -rEn "\\b(leidas|Mas seguidos|Distribucion|Auditorias|Sorpresa|Sorpréndeme)\\b" src/ --include="*.tsx" --include="*.ts" | grep -v test | grep -v "Sorpresa\\!.*onboarding" || true`,
+        desc: 'tildes faltantes / variantes prohibidas (diccionario data/spanish-tildes.json + variantes legacy)',
+        // Data-driven: carga scripts/guards/data/spanish-tildes.json (always_tilded +
+        // whitelist). Para agregar palabras, editar el JSON — no este archivo.
+        cmd: R2_TILDES_CMD,
+      },
+      {
+        id: 'R3-tildes-heuristica',
+        desc: 'WARNING (no blocker): palabras *cion (>=4 chars) en strings JSX que no están en whitelist — candidatas a promover al diccionario',
+        // Heurística del issue #331: detecta palabras terminadas en `cion` dentro
+        // de strings (comilla simple/doble/backtick) con >=4 chars. El resultado se
+        // filtra contra la whitelist y contra las formas ya cubiertas por el
+        // diccionario (que ya las flaggea R2), dejando solo NUEVOS candidatos.
+        cmd: R3_TILDES_HEURISTICA_CMD,
       },
       {
         id: 'R-cerrar-hardcoded',
