@@ -25,7 +25,7 @@ Tanda C (#327 + #329 + #330) cerrada en sesion paralela 2026-05-01/02.
 
 ### Sesion 2026-06-08 — completada ✓
 
-#339 + #335 + #334 + #331 resueltos y mergeados a `new-home` (v2.52.0).
+#339 + #335 + #334 + #331 resueltos y mergeados a `new-home` (v2.52.0); follow-up #340 (v2.52.1) y verificacion/cierre de #332.
 
 | Issue | Titulo | Estado |
 |-------|--------|--------|
@@ -33,13 +33,8 @@ Tanda C (#327 + #329 + #330) cerrada en sesion paralela 2026-05-01/02.
 | [#335](https://github.com/benoffi7/modo-mapa/issues/335) | #323 follow-ups — factory + registry + service gate | Cerrado ✓ |
 | [#334](https://github.com/benoffi7/modo-mapa/issues/334) | #324 deferrals — bundle gate + perf baselines + storage lazy | Cerrado ✓ |
 | [#331](https://github.com/benoffi7/modo-mapa/issues/331) | guards — diccionario tildes + R3 + Box onClick multi-line | Cerrado ✓ |
-
-### Follow-ups abiertos
-
-| Issue | Titulo | Estado |
-|-------|--------|--------|
-| [#340](https://github.com/benoffi7/modo-mapa/issues/340) | #335 follow-up — 6 UX warnings offline (thanos Cycle 2) | En progreso |
-| [#332](https://github.com/benoffi7/modo-mapa/issues/332) | Tech debt: infra — Firestore rules unit testing (montar @firebase/rules-unit-testing) | Pendiente PRD |
+| [#340](https://github.com/benoffi7/modo-mapa/issues/340) | #335 follow-up — 6 UX warnings offline (thanos Cycle 2) | Cerrado ✓ (v2.52.1) |
+| [#332](https://github.com/benoffi7/modo-mapa/issues/332) | infra — Firestore rules unit testing (harness + 16 tests) | Cerrado ✓ |
 
 ### Bloqueado upstream
 
@@ -53,6 +48,6 @@ Tanda C (#327 + #329 + #330) cerrada en sesion paralela 2026-05-01/02.
 
 | Metrica | Valor |
 |---------|-------|
-| Issues abiertos | 3 (#168 bloqueado, #332 pendiente PRD, #340 en progreso) |
-| Issues cerrados | #128–#311 + #312–#313 + #315–#330 + #333 + #336 + #338 + #331 + #334 + #335 + #339 (138) |
-| Versiones publicadas | v2.10.0 – v2.52.0 |
+| Issues abiertos | 1 (#168 bloqueado upstream) |
+| Issues cerrados | #128–#311 + #312–#313 + #315–#330 + #333 + #336 + #338 + #331 + #332 + #334 + #335 + #339 + #340 (140) |
+| Versiones publicadas | v2.10.0 – v2.52.1 |
