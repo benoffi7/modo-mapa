@@ -25,7 +25,7 @@ Tanda C (#327 + #329 + #330) cerrada en sesion paralela 2026-05-01/02.
 
 ### Sesion 2026-06-08 — completada ✓
 
-#339 + #335 + #334 + #331 resueltos y mergeados a `new-home` (v2.52.0); follow-up #340 (v2.52.1) y verificacion/cierre de #332.
+Issues #339 + #335 + #334 + #331 resueltos y mergeados a `new-home` (v2.52.0); follow-up #340 (v2.52.1) y verificacion/cierre de #332.
 
 | Issue | Titulo | Estado |
 |-------|--------|--------|
