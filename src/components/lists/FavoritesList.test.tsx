@@ -231,4 +231,40 @@ describe('FavoritesList', () => {
     expect(screen.getByText(/no se pudieron cargar los favoritos/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
   });
+
+  describe('#340 W3: quitar favorito offline', () => {
+    const removeFavoriteFlow = async (biz: string) => {
+      const kebab = screen.getByRole('button', { name: /opciones/i });
+      fireEvent.click(kebab);
+      const removeItem = screen.getByRole('menuitem', { name: /quitar de favoritos/i });
+      fireEvent.click(removeItem);
+      void biz;
+    };
+
+    it('online: quita el favorito y llama reload()', async () => {
+      mocks.isOffline = false;
+      mocks.rawItems = [{ businessId: 'biz1', createdAt: new Date() }];
+      render(<FavoritesList onSelectBusiness={vi.fn()} />);
+      await removeFavoriteFlow('biz1');
+      // Espera al microtask del handler async.
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(mocks.reload).toHaveBeenCalled();
+    });
+
+    it('offline: NO llama reload() y oculta el favorito de la lista (estado optimista)', async () => {
+      mocks.isOffline = true;
+      mocks.rawItems = [{ businessId: 'biz1', createdAt: new Date() }];
+      render(<FavoritesList onSelectBusiness={vi.fn()} />);
+      expect(screen.getByRole('button', { name: /abrir comercio: café luna/i })).toBeInTheDocument();
+
+      await removeFavoriteFlow('biz1');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mocks.reload).not.toHaveBeenCalled();
+      // El favorito quitado desaparece de la UI aunque rawItems siga teniéndolo.
+      expect(screen.queryByRole('button', { name: /abrir comercio: café luna/i })).toBeNull();
+    });
+  });
 });

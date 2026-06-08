@@ -49,9 +49,15 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
     userId,
   );
 
+  // #340 W5: el evento "viewed" se emite UNA vez por apertura (deps: solo userId),
+  // no en cada toggle de conectividad. Antes el effect dependia de [userId, isOffline]
+  // e inflaba el conteo en cada cambio de `isOffline`.
   useEffect(() => {
     trackEvent(EVT_RECOMMENDATION_LIST_VIEWED);
-    // #323 C5: gated offline (batch write no encolable; badge se reconcilia al volver online).
+  }, [userId]);
+
+  // #323 C5: gated offline (batch write no encolable; badge se reconcilia al volver online).
+  useEffect(() => {
     if (userId && !isOffline) {
       markAllRecommendationsAsRead(userId).catch((err) => {
         logger.error('markAllRead failed:', err);

@@ -59,16 +59,21 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
     usePaginatedQuery<Favorite>(collectionRef, user?.uid, 'createdAt');
 
+  // #340 W3: favoritos quitados offline siguen en Firestore hasta el replay.
+  // Los ocultamos optimistamente para que `reload()`/refetch no los reviva.
+  const [removedOffline, setRemovedOffline] = useState<Set<string>>(new Set());
+
   const favorites = useMemo(() => {
     const result: FavoriteItem[] = [];
     for (const data of rawItems) {
+      if (removedOffline.has(data.businessId)) continue;
       const business = getBusinessById(data.businessId);
       if (business) {
         result.push({ businessId: data.businessId, business, createdAt: data.createdAt });
       }
     }
     return result;
-  }, [rawItems]);
+  }, [rawItems, removedOffline]);
 
   const {
     filtered,
@@ -116,7 +121,13 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
     );
     trackEvent('favorite_toggle', { action: 'remove', business_id: businessId });
     handleCloseMenu();
-    reload();
+    // #340 W3: offline el doc sigue en Firestore hasta el replay; no recargamos
+    // (volveria a aparecer) y mantenemos el estado optimista de "quitado".
+    if (isOffline) {
+      setRemovedOffline((prev) => new Set(prev).add(businessId));
+    } else {
+      reload();
+    }
   };
 
   const handleShare = async () => {
