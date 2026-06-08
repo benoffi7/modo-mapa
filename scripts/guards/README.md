@@ -25,6 +25,8 @@ npm run guards:baseline
 | `checks.mjs` | Registry of guards and their rule commands. Edit this to add/refine rules. |
 | `run.mjs` | Runs all rules, emits report (JSON or pretty). |
 | `check-baseline.mjs` | Compares current vs baseline. Used by pre-push and CI. Also has `--update` mode. |
+| `data/spanish-tildes.json` | Diccionario de tildes castellanas (guard 309/R2 + R3). Ver abajo. |
+| `lib/check-box-onclick.mjs` | Detector multi-line de `<Box onClick>` sin a11y triplet (guard 305/R7). |
 | `../.guards-baseline.json` | Locked-in counts per rule. The ceiling — pushes can lower it, never raise it. |
 
 ## How the convergence model works
@@ -41,6 +43,48 @@ npm run guards:baseline
 3. Run `npm run guards` locally to verify the count.
 4. Run `npm run guards:baseline` to lock in the current count.
 5. Commit `checks.mjs` + `.guards-baseline.json` together with the docs change.
+
+## Diccionario de tildes (guard 309)
+
+El guard `309/R2-tildes-prohibidas` ya **no** es una lista cerrada de palabras hardcodeadas en `checks.mjs`. Es data-driven: lee `data/spanish-tildes.json`.
+
+```jsonc
+{
+  "always_tilded": ["acción", "sección", "ubicación", ...],  // forma CORRECTA (con tilde)
+  "whitelist":     ["Function", "useNavigation", "version", ...]  // FPs a ignorar
+}
+```
+
+**Cómo funciona:**
+
+1. `checks.mjs` lee el JSON al cargar el módulo.
+2. Por cada palabra de `always_tilded` deriva la forma **sin** tilde (`acción` → `accion`) — esa es la variante que grepea en `src/`. Cualquier string con la forma sin tilde es una regresión de copy.
+3. Las palabras de `whitelist` se filtran del resultado (identificadores TS/JS o términos en inglés que matchean el patrón pero no son castellano).
+
+**Para agregar una palabra:**
+
+1. Editá `data/spanish-tildes.json` → `always_tilded`. Agregá la forma **con tilde** (ej. `"recomendación"`).
+2. **Regla de oro:** solo agregá palabras cuya forma SIN tilde NO sea a su vez otra palabra castellana válida. Evitá ambiguas:
+   - `está` (verbo) vs `esta` (demostrativo) → **no agregar**.
+   - `más` (cantidad) vs `mas` (conjunción) → **no agregar**.
+   - `aún` (todavía) vs `aun` (incluso) → **no agregar**.
+   - plurales `-ciones` que pierden la tilde (`notificaciones`, `opciones`) → **no agregar** (solo el singular `-ción`).
+   - `icono`/`ícono`, `area`/`área` → ambas válidas en es-AR → **no agregar**.
+3. Si una palabra inglesa o identificador genera falso positivo, agregalo a `whitelist`.
+4. Corré `npm run guards -- --guard 309` y revisá los hits.
+5. Re-lockeá: `npm run guards:baseline` (o `--force` si el count sube — ver más abajo).
+
+**Heurística `R3-tildes-heuristica` (WARNING):** detecta palabras terminadas en `cion` (≥4 chars) dentro de strings JSX que **no** están ni en la whitelist ni ya cubiertas por el diccionario. Es una sugerencia: cada hit es un candidato a promover a `always_tilded` (en su forma con tilde, `-ción`). No bloquea — sirve para que el diccionario no se quede atrás del drift.
+
+## Detector de `<Box onClick>` (guard 305/R7)
+
+`lib/check-box-onclick.mjs` reemplaza el AWK single-line original (fallaba en JSX multi-line, el caso real más común). Lee todos los `.tsx` de `src/components/`, escanea cada apertura `<Box` con un parser que balancea `{}`/`[]`/`()` y respeta strings (para no cortar en `=>` ni en expresiones JSX), y por cada `<Box ... onClick=...>` verifica el triplet a11y WCAG 2.1.1:
+
+- `role="button"`
+- `tabIndex` con valor numérico
+- `onKeyDown`
+
+Reporta `archivo:linea: missing [...] — <snippet>`. Para exceptuar un caso justificado, agregá `guard:exempt` dentro del tag. Corré standalone con `node scripts/guards/lib/check-box-onclick.mjs`.
 
 ## Adding a cross-cutting test (when grep is too coarse)
 

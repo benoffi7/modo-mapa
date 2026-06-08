@@ -19,13 +19,31 @@ Regression guard derivado del audit de copy ejecutado el 2026-04-18 (issue #309)
 
 Ejecutar estos `grep` como smoke test post-merge. El output esperado es el documentado junto a cada comando.
 
-### Tildes y variantes prohibidas (debe retornar vacio)
+### Tildes y variantes prohibidas — `R2-tildes-prohibidas` (data-driven)
+
+Desde #331 esta regla ya **no** es una lista cerrada de 6 palabras. El comando se genera dinámicamente en `scripts/guards/checks.mjs` a partir del diccionario `scripts/guards/data/spanish-tildes.json`:
+
+- `always_tilded` (>= 50 palabras): forma CORRECTA con tilde (`acción`, `sección`, `ubicación`, `recomendación`, ...). `checks.mjs` deriva la forma SIN tilde y la grepea en `src/` — cualquier hit es drift de copy.
+- `whitelist` (>= 10): identificadores TS/JS o términos en inglés que matchean el patrón sin acento pero no son castellano (`Function`, `useNavigation`, `version`, ...). Se filtran del resultado.
+- Se conservan las variantes legacy prohibidas (`Mas seguidos`, `Sorpresa`, `Sorpréndeme`) que no son "falta de tilde" sino formas incorrectas.
+
+Para inspeccionar:
 
 ```bash
-grep -rEn "\b(leidas|Mas seguidos|Distribucion|Auditorias|rapidas|Seccion|Sorpresa|Sorpréndeme)\b" src/ --include="*.tsx" --include="*.ts"
+npm run guards -- --guard 309
 ```
 
-Cualquier hit es una regresion de #309. Verificar contexto antes de corregir — aplica solo a strings user-facing, no a nombres de variables.
+Cualquier hit es una regresion de copy. Verificar contexto antes de corregir — aplica solo a strings user-facing, no a nombres de variables. **Cómo agregar palabras al diccionario:** ver `scripts/guards/README.md` > "Diccionario de tildes (guard 309)" (incluye la regla de oro de no agregar palabras ambiguas como `esta/está`, `mas/más`, plurales `-ciones`).
+
+> **Nota de baseline (#331):** al pasar de lista cerrada a diccionario, el count de `R2` subió de 1 → 25 (drift acumulado pre-existente, ahora visible). El baseline se re-lockeó con `--force` documentando el motivo. La heurística `R3` agrega 4 candidatos a promover. Convergencia esperada: corregir el copy y ratchetear el baseline hacia 0.
+
+### Heurística de tildes — `R3-tildes-heuristica` (WARNING, no blocker)
+
+```bash
+grep -rEn "['\"\`][^'\"\`]*\b[a-zA-ZÀ-ÿ]{4,}cion\b" src/ --include="*.tsx" --include="*.ts"
+```
+
+Detecta palabras terminadas en `cion` (>= 4 chars) dentro de strings, filtrando whitelist y las ya cubiertas por el diccionario. Cada hit es un **candidato a promover** a `always_tilded` (en su forma `-ción`). No bloquea merge — sirve para que el diccionario no quede atrás del drift. Ej.: `Eliminacion` → promover `eliminación`.
 
 ### Strings `Cerrar` hardcodeados (inspeccion manual)
 
