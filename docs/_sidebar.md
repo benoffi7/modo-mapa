@@ -12,6 +12,7 @@
   - [Security](/reference/security.md)
   - [Tests](/reference/tests.md)
   - [DevOps](/reference/devops.md)
+  - [Perf Baselines](/reference/perf-baselines.md)
   - [Issues](/reference/issues.md)
   - [Workflow](/reference/workflow.md)
   - [Staging](/reference/staging.md)

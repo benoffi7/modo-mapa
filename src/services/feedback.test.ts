@@ -43,7 +43,7 @@ vi.mock('firebase/storage', () => ({
 
 vi.mock('../config/firebase', () => ({
   db: {},
-  storage: {},
+  getStorageInstance: () => Promise.resolve({}),
 }));
 
 vi.mock('../config/collections', () => ({

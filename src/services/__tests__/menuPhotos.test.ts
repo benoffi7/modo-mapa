@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../config/firebase', () => ({ db: {}, storage: {}, functions: {} }));
+vi.mock('../../config/firebase', () => ({ db: {}, functions: {}, getStorageInstance: () => Promise.resolve({}) }));
 vi.mock('../../config/collections', () => ({ COLLECTIONS: { MENU_PHOTOS: 'menuPhotos' } }));
 vi.mock('../../config/converters', () => ({ menuPhotoConverter: {} }));
 vi.mock('../businessDataCache', () => ({ invalidateBusinessCache: vi.fn() }));

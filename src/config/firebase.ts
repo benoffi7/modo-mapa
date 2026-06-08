@@ -9,8 +9,8 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import type { FirebaseStorage } from 'firebase/storage';
 
 const requiredEnvVars = [
   'VITE_FIREBASE_API_KEY',
@@ -37,7 +37,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const functions = getFunctions(app);
-export const storage = getStorage(app);
 
 // Named database support: VITE_FIRESTORE_DATABASE_ID overrides the default DB.
 // Used for staging environment (named DB "staging" in same Firebase project).
@@ -57,7 +56,6 @@ if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectFunctionsEmulator(functions, 'localhost', 5001);
-  connectStorageEmulator(storage, 'localhost', 9199);
 } else {
   // App Check obligatorio en producción — staging no lo necesita.
   // Requiere configurar reCAPTCHA Enterprise en Firebase Console (ver docs/SECURITY_GUIDELINES.md).
@@ -78,3 +76,23 @@ if (import.meta.env.DEV) {
 }
 
 initAnalytics(app);
+
+// Storage is lazy-loaded: `firebase/storage` (~40-60 KB) is only pulled in when
+// a user actually uploads/views media (menu photos, feedback attachments), not
+// on first paint. See docs/reference/perf-baselines.md (#334 / F5).
+let storagePromise: Promise<FirebaseStorage> | null = null;
+
+export function getStorageInstance(): Promise<FirebaseStorage> {
+  if (!storagePromise) {
+    storagePromise = import('firebase/storage').then(
+      ({ getStorage, connectStorageEmulator }) => {
+        const storage = getStorage(app);
+        if (import.meta.env.DEV) {
+          connectStorageEmulator(storage, 'localhost', 9199);
+        }
+        return storage;
+      },
+    );
+  }
+  return storagePromise;
+}
