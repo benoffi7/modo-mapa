@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -62,6 +62,11 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
+  // #340 W4: listas creadas offline aun no estan en Firestore. El re-fetch del
+  // useEffect las borraria de la UI hasta reconectar. Las guardamos aparte y las
+  // re-mergeamos tras cada fetch para preservar el estado optimista.
+  const optimisticListsRef = useRef<SharedList[]>([]);
+
   useEffect(() => {
     if (!user || !open) return;
     let ignore = false;
@@ -73,7 +78,10 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
       try {
         const allLists = await fetchAllAccessibleLists(user.uid);
         if (ignore) return;
-        setLists(allLists);
+        // Re-merge listas optimistas (creadas offline) que el fetch aun no devuelve.
+        const fetchedIds = new Set(allLists.map((l) => l.id));
+        const pendingOptimistic = optimisticListsRef.current.filter((l) => !fetchedIds.has(l.id));
+        setLists([...pendingOptimistic, ...allLists]);
 
         const checked = new Set<string>();
         for (const list of allLists) {
@@ -82,7 +90,11 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
             checked.add(list.id);
           }
         }
-        if (!ignore) setCheckedIds(checked);
+        if (!ignore) {
+          // Las listas optimistas ya tienen el comercio agregado (creadas con él).
+          for (const l of pendingOptimistic) checked.add(l.id);
+          setCheckedIds(checked);
+        }
       } catch (err) {
         logger.error('[AddToListDialog] load failed:', err);
       }
@@ -163,6 +175,28 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
         if (!isOffline) {
           const refreshed = await fetchUserLists(user.uid);
           setLists(refreshed);
+        } else {
+          // #340 W4: registramos la lista optimista para que sobreviva a re-fetches
+          // hasta que el replay la persista y el fetch la devuelva.
+          const optimisticList: SharedList = {
+            id: generatedId,
+            ownerId: user.uid,
+            name: trimmedName,
+            description: '',
+            isPublic: false,
+            featured: false,
+            editorIds: [],
+            itemCount: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          optimisticListsRef.current = [
+            optimisticList,
+            ...optimisticListsRef.current.filter((l) => l.id !== generatedId),
+          ];
+          setLists((prev) =>
+            prev.some((l) => l.id === generatedId) ? prev : [optimisticList, ...prev],
+          );
         }
         setCheckedIds((prev) => new Set(prev).add(generatedId));
       });

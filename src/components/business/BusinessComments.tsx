@@ -34,8 +34,23 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default memo(function BusinessComments({ comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
+export default memo(function BusinessComments({ comments: rawComments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
   const { businessId, businessName } = useBusinessScope();
+
+  // #340 W2: edits optimistas offline. El refetch (onCommentsChange) trae el texto
+  // viejo hasta sincronizar, asi que mantenemos el texto editado en un override local
+  // y lo aplicamos sobre `comments`. Un override deja de aplicarse automaticamente
+  // cuando el refetch ya refleja el texto editado (server == optimista): se calcula en
+  // render, sin effect ni setState, asi no acumula entradas obsoletas.
+  const [optimisticEdits, setOptimisticEdits] = useState<Map<string, string>>(new Map());
+
+  const comments = useMemo(() => {
+    if (optimisticEdits.size === 0) return rawComments;
+    return rawComments.map((c) => {
+      const edited = optimisticEdits.get(c.id);
+      return edited !== undefined && edited !== c.text ? { ...c, text: edited } : c;
+    });
+  }, [rawComments, optimisticEdits]);
 
   // Thread state (needed by useCommentListBase for expandThread)
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
@@ -161,14 +176,19 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
     setIsSavingEdit(true);
     try {
       const trimmed = editText.trim();
+      const editedId = editingId;
       await withOfflineSupport(
         isOffline,
         'comment_edit',
         { userId: user.uid, businessId, businessName },
-        { commentId: editingId, text: trimmed },
-        () => editComment(editingId, user.uid, trimmed),
+        { commentId: editedId, text: trimmed },
+        () => editComment(editedId, user.uid, trimmed),
         toast,
       );
+      // #340 W2: offline el refetch trae el texto viejo — guardamos el override optimista.
+      if (isOffline) {
+        setOptimisticEdits((prev) => new Map(prev).set(editedId, trimmed));
+      }
       setEditingId(null);
       setEditText('');
       onCommentsChange();
