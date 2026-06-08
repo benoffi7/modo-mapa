@@ -73,21 +73,62 @@ grep -rn "logEvent\|addDoc\|setDoc\|collection(" src/services/ --include="*.ts" 
 
 Report each grep result as a finding with severity. This is less thorough than agents but catches the most common issues.
 
-### Step 3: Consolidate findings
+### Step 3: Consolidate findings + cross-reference the guard baseline
 
-Report all results as a summary table with severity counts per agent.
+First, capture the current guard state so findings can be classified:
 
-### Step 4: Create tech debt issues
+```bash
+cat .guards-baseline.json        # locked ceiling per rule — non-zero = already-tracked debt
+npm run guards:check || true     # reports REGRESSIONS (counts above baseline = real new drift)
+```
 
-Group findings by domain and create GitHub issues:
+`.guards-baseline.json` is `{ "<guardId>": { "<ruleId>": <count> }, "_total": n }`.
+A rule with a non-zero baseline is debt the guard already tracks. `guards:check`
+exits non-zero and lists any rule whose CURRENT count exceeds the baseline — those
+are genuine new regressions.
+
+Many audit agents re-report debt that is **already tracked by a guard** (e.g.
+`performance` flags `fetchUserLikes`, which is `302/R-fetchUserLikes-removed`
+baselined at 15; `admin-metrics` flags `_ipRateLimits`, which is `310/R4`). Those
+are NOT new — creating issues for them produces duplicates and noise.
+
+Classify every finding before reporting:
+
+- **`[YA-GUARDADO #nnn]`** — a guard rule already covers it (the domain maps to a
+  guard id, and the rule's baseline count is ≥ 1). The ratchet already prevents it
+  from growing. Mention it in the report, but **do not create an issue**.
+- **`[NUEVO]`** — no guard rule covers it, OR a guarded rule's current count
+  exceeds its baseline (a real regression). These need attention.
+
+Domain → guard map: security→300, coverage→301, performance→302,
+perf-instrumentation→303, offline→304, ui-ux→305, architecture→306,
+dark-mode→307, privacy→308, copy→309, admin-metrics→310, help-docs→311,
+correctness→312. A finding is `[YA-GUARDADO]` when its matching rule exists in
+`checks.mjs` and is non-zero in the baseline.
+
+Report all results as a summary table with severity counts per agent, each
+finding tagged `[NUEVO]` or `[YA-GUARDADO #nnn]`.
+
+### Step 4: Create tech debt issues — only for `[NUEVO]` findings
+
+Group `[NUEVO]` findings by domain and create GitHub issues:
 
 ```bash
 gh issue create --title "Tech debt: <domain> — <summary>" --body "<findings>" --label "enhancement"
 ```
 
-Domains: security, performance, perf-instrumentation, offline, ui-ux, architecture, dark-mode, privacy, copy, admin-metrics, help-docs.
+Domains: security, performance, perf-instrumentation, offline, ui-ux, architecture, dark-mode, privacy, copy, admin-metrics, help-docs, correctness.
 
-Only create issues for domains with medium+ findings. Skip if an open issue already covers the same domain — check with `gh issue list --state open`.
+Rules:
+- Only create issues for **`[NUEVO]`** domains with medium+ findings. Never create
+  an issue for a `[YA-GUARDADO]` finding — it is already tracked by the guard +
+  baseline (and likely by its original GitHub issue).
+- Skip if an open issue already covers the same domain — check with `gh issue list --state open`.
+- **When you create an issue for a NEW class of problem, also add a guard rule**
+  for it in `scripts/guards/checks.mjs` (and a `lib/` detector if it needs
+  multi-line parsing), then `npm run guards:baseline --update --force` so the
+  current debt becomes the ceiling and the issue cannot reappear/grow. This closes
+  the audit→guard loop.
 
 ### Step 5: Report
 

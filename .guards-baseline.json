@@ -6,7 +6,10 @@
     "R12-notifications-read": 0,
     "R12-locality-range": 2,
     "R12-displayNameLower": 0,
-    "R14-bootstrap-admin": 0
+    "R14-bootstrap-admin": 0,
+    "R15-secrets-in-functions-env": 2,
+    "R16-react-router-vulnerable": 1,
+    "R17-isValidStorageUrl-prefix-only": 1
   },
   "301": {
     "R2-services-without-test": 3,
@@ -28,7 +31,8 @@
   "303": {
     "R1-services-raw-getDocs": 4,
     "R5-scheduled-without-timing": 0,
-    "R6-callable-without-timing": 0
+    "R6-callable-without-timing": 0,
+    "R7-getCount-without-measure": 3
   },
   "304": {
     "R1-mutations-without-offline": 48,
@@ -40,7 +44,8 @@
     "R1-typography-props": 0,
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
-    "R5-chip-height-adhoc": 4,
+    "R5-chip-height-adhoc": 6,
+    "R9-fab-safe-area": 4,
     "R7-box-onclick-without-a11y": 7,
     "R8-chip-small-sx-exists": 0
   },
@@ -59,15 +64,22 @@
     "R-maps-mention": 0
   },
   "309": {
-    "R2-tildes-prohibidas": 25,
+    "R2-tildes-prohibidas": 27,
     "R3-tildes-heuristica": 4,
     "R-cerrar-hardcoded": 0
   },
   "310": {
-    "R3-orphan-admin-services": 4
+    "R3-orphan-admin-services": 4,
+    "R4-ipRateLimits-no-admin-inspector": 1,
+    "R5-abuse-type-never-emitted": 1
   },
   "311": {
-    "R1-helpgroups-coverage": 0
+    "R1-helpgroups-coverage": 0,
+    "R2-features-sidemenu-drift": 1
   },
-  "_total": 181
+  "312": {
+    "R1-authcontext-loading-finally": 1,
+    "R2-updateUserAvatar-no-fallback": 1
+  },
+  "_total": 201
 }

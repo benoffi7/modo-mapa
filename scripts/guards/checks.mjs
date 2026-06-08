@@ -135,6 +135,21 @@ export const guards = [
         desc: 'setAdminClaim bootstrap path sin gate (config/bootstrap.adminAssigned)',
         cmd: `grep -n "isBootstrap\\|bootstrap" functions/src/admin/claims.ts | grep -q "adminAssigned" || echo "functions/src/admin/claims.ts: bootstrap path missing config/bootstrap.adminAssigned gate"`,
       },
+      {
+        id: 'R15-secrets-in-functions-env',
+        desc: 'secrets (ADMIN_EMAIL / APP_CHECK_ENFORCEMENT) commiteados en functions/.env — deben ir a Secret Manager (#342)',
+        cmd: `grep -nE "^(ADMIN_EMAIL|APP_CHECK_ENFORCEMENT)=" functions/.env 2>/dev/null || true`,
+      },
+      {
+        id: 'R16-react-router-vulnerable',
+        desc: 'react-router-dom < 7.14.2 (advisories RCE/XSS/open-redirect, #342)',
+        cmd: `node -e "try{const v=require('./node_modules/react-router-dom/package.json').version;const p=v.split('.').map(Number);if(p[0]<7||(p[0]===7&&(p[1]<14||(p[1]===14&&p[2]<2))))console.log('react-router-dom '+v+' < 7.14.2 (vulnerable)')}catch(e){}" 2>/dev/null || true`,
+      },
+      {
+        id: 'R17-isValidStorageUrl-prefix-only',
+        desc: 'isValidStorageUrl valida solo el host (startsWith) sin el segmento /v0/b/<bucket>/o/ (#342)',
+        cmd: `grep -q "firebasestorage.googleapis.com" src/utils/media.ts && ! grep -q "v0/b/" src/utils/media.ts && echo "src/utils/media.ts: isValidStorageUrl prefix-only, falta validar el path /v0/b/.../o/" || true`,
+      },
     ],
   },
 
@@ -248,6 +263,13 @@ export const guards = [
         desc: 'callable functions sin trackFunctionTiming',
         cmd: `for f in functions/src/callable/*.ts; do case "$f" in *.test.ts) continue ;; esac; grep -q "trackFunctionTiming" "$f" || echo "$f"; done`,
       },
+      {
+        id: 'R7-getCount-without-measure',
+        desc: 'getCountOfflineSafe en services/ sin measureAsync (latencia invisible al dashboard, #347)',
+        // El wrapper getCountOfflineSafe.ts es la definicion (exenta). Los call sites
+        // legitimamente envueltos a mayor nivel (rankings) llevan `// guard:exempt`.
+        cmd: `grep -rn "getCountOfflineSafe(" src/services/ --include="*.ts" | grep -v test | grep -v "getCountOfflineSafe.ts" | grep -v measureAsync | grep -v "// guard:exempt" || true`,
+      },
     ],
   },
 
@@ -309,8 +331,17 @@ export const guards = [
       },
       {
         id: 'R5-chip-height-adhoc',
-        desc: 'Chip con height ad-hoc (debe usar CHIP_SMALL_SX)',
-        cmd: `grep -rn "<Chip" src/components/ --include="*.tsx" -A 5 | grep "height:" | grep -v "test" || true`,
+        desc: 'Chip con height ad-hoc (debe usar CHIP_SMALL_SX) — multi-line aware',
+        // Multi-line aware Node script. Replaces the single-line `grep -A 5` heuristic
+        // which missed chips whose `<Chip` and `height:` were >5 lines apart
+        // (VerificationBadge) and false-positived on sibling `<Box height:>` inside
+        // the -A 5 window (MyFeedbackList). Opt-out per-tag with `guard:exempt`.
+        cmd: `node scripts/guards/lib/check-chip-height.mjs || true`,
+      },
+      {
+        id: 'R9-fab-safe-area',
+        desc: 'FAB con position absolute/fixed sin env(safe-area-inset-bottom) — puede quedar tapado por el home indicator',
+        cmd: `for f in $(grep -rln "Fab\\|FAB" src/components/ --include="*.tsx" | grep -iv test); do grep -lq "position: 'absolute'\\|position: 'fixed'\\|position:\\"absolute\\"\\|position:\\"fixed\\"" "$f" && grep -q "bottom:" "$f" && ! grep -q "safe-area-inset-bottom\\|guard:exempt" "$f" && echo "$f: FAB con bottom fijo sin safe-area-inset-bottom"; done || true`,
       },
       {
         id: 'R7-box-onclick-without-a11y',
@@ -448,6 +479,16 @@ export const guards = [
         // Heuristic: list named exports in src/services/admin/, check none match in components/admin/
         cmd: `for f in src/services/admin/*.ts; do case "$f" in *.test.ts|*/index.ts) continue ;; esac; grep -oE "^export (async )?(function|const) [a-zA-Z_][a-zA-Z0-9_]*" "$f" | awk '{print $NF}' | while read sym; do [ -z "$sym" ] && continue; grep -rln "\\b$sym\\b" src/components/admin/ >/dev/null || echo "$f::$sym"; done; done`,
       },
+      {
+        id: 'R4-ipRateLimits-no-admin-inspector',
+        desc: '_ipRateLimits escrito en functions pero sin inspector en src/components/admin (dato huerfano, #348)',
+        cmd: `grep -rq "_ipRateLimits" functions/src/ && ! grep -rq "ipRateLimits\\|_ipRateLimits" src/components/admin/ && echo "_ipRateLimits: coleccion de abuso por IP sin inspector admin" || true`,
+      },
+      {
+        id: 'R5-abuse-type-never-emitted',
+        desc: 'tipo de abuso ip_rate_limit definido pero nunca emitido por ningun call site (codigo muerto, #348)',
+        cmd: `grep -q "ip_rate_limit" functions/src/utils/abuseLogger.ts && [ -z "$(grep -rl "'ip_rate_limit'" functions/src/ | grep -v abuseLogger.ts)" ] && echo "ip_rate_limit: tipo definido en abuseLogger.ts pero nunca emitido (authBlocking usa anon_flood)" || true`,
+      },
     ],
   },
 
@@ -465,6 +506,32 @@ export const guards = [
         // For each id: try slug literal (inicio), or replace _ with space (primeros_pasos -> primeros pasos),
         // or strip prefixes/suffixes commonly used in slugs. Match anywhere in features.md (case-insensitive).
         cmd: `for id in $(grep -oP "id:\\s*'\\K[a-z_-]+" src/components/profile/helpGroups.tsx 2>/dev/null); do human=$(echo "$id" | tr '_' ' '); grep -qiE "\\b($id|$human)\\b" docs/reference/features.md || echo "MISSING in features.md: $id (looked for '$id' and '$human')"; done`,
+      },
+      {
+        id: 'R2-features-sidemenu-drift',
+        desc: 'features.md describe "SideMenu"/"Menu lateral" pero no existe SideMenu.tsx (la app usa TabBar) — drift de la fuente de verdad (#349)',
+        cmd: `grep -qiE "SideMenu|Menu lateral" docs/reference/features.md && [ ! -f src/components/layout/SideMenu.tsx ] && echo "docs/reference/features.md: describe SideMenu inexistente; la navegacion real es TabBar (BottomNavigation)" || true`,
+      },
+    ],
+  },
+
+  // ============================================================
+  // 312 — Correctness
+  // ============================================================
+  {
+    id: '312',
+    name: 'correctness',
+    docPath: 'docs/reference/guards/312-correctness.md',
+    rules: [
+      {
+        id: 'R1-authcontext-loading-finally',
+        desc: 'AuthContext: la carga de perfil en onAuthStateChanged debe resetear isLoading en un finally (evita loading infinito si el getDoc rechaza, #341)',
+        cmd: `grep -q "} finally {" src/context/AuthContext.tsx || echo "src/context/AuthContext.tsx: setIsLoading(false) no esta en un finally — riesgo de loading infinito si fetchUserProfileDoc rechaza"`,
+      },
+      {
+        id: 'R2-updateUserAvatar-no-fallback',
+        desc: 'updateUserAvatar usa updateDoc sin fallback de creacion de doc (lanza not-found si el user doc no existe, #341)',
+        cmd: `awk '/export async function updateUserAvatar/,/^}/' src/services/userProfile.ts | grep -q "merge: true\\|setDoc\\|getDoc" || echo "src/services/userProfile.ts: updateUserAvatar usa updateDoc sin fallback setDoc/merge (a diferencia de updateUserDisplayName)"`,
       },
     ],
   },

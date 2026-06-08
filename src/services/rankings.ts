@@ -115,7 +115,7 @@ async function countUserDocs(
   start: Date,
   end: Date,
 ): Promise<number> {
-  return getCountOfflineSafe(
+  return getCountOfflineSafe( // guard:exempt — countUserDocs corre dentro de measureAsync('rankings_userLiveScore')
     query(
       collection(db, collectionName),
       where('userId', '==', userId),
@@ -190,7 +190,7 @@ export async function fetchUserLiveScore(
       countUserDocs(COLLECTIONS.COMMENT_LIKES, userId, start, end),
       countUserDocs(COLLECTIONS.CUSTOM_TAGS, userId, start, end),
       countUserDocs(COLLECTIONS.FAVORITES, userId, start, end),
-      getCountOfflineSafe(
+      getCountOfflineSafe( // guard:exempt — corre dentro de measureAsync('rankings_userLiveScore')
         query(
           collection(db, COLLECTIONS.MENU_PHOTOS),
           where('userId', '==', userId),

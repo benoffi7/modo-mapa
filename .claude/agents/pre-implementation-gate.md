@@ -14,7 +14,7 @@ Before starting any feature or fix implementation. Can be invoked:
 
 - Manually by the user
 - Automatically by the `/start` skill
-- By the orchestrator before delegating implementation work
+- By `manu` before delegating implementation work
 
 ## Checks
 

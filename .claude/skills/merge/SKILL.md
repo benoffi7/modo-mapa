@@ -40,10 +40,27 @@ This compares current guard violations vs `.guards-baseline.json`. Behavior:
 
 - **Exit 0 (no drift or all guards reduced)**: continue.
 - **Exit 1 (any rule increased)**: **ABORT MERGE**. Report which rules regressed (e.g. `302/R4-allBusinesses-find: 13 -> 14`). Author must fix the regressions or — if intentional and unavoidable — discuss with team and update the baseline (`npm run guards:baseline`). Do NOT update the baseline unilaterally to bypass.
-- **Exit 0 with reductions**: success, but the report will suggest running `npm run guards:baseline` to ratchet the ceiling down. Do this in the same commit if the reductions came from this branch.
+- **Exit 0 with reductions**: success, and the report lists which rules shrank. Proceed to the auto-ratchet step below to lock in the lower ceiling.
 - **Detector improvement (counts went UP because the rule got smarter, not because code regressed)**: this is the only legitimate case for raising baseline numbers. Indicators: the detector logic itself was edited in the same diff (e.g., `scripts/guards/check.mjs`, AWK→Node migration, multi-line awareness added) AND the new findings are pre-existing code that the old detector missed. Procedure: re-run with `npm run guards:baseline -- --force` and include explicit justification in the commit message (e.g., `chore(guards): ratchet baseline after R7 detector multi-line upgrade — newly surfaced counts are pre-existing tech debt`). Always commit baseline changes alongside the detector change, never separately.
 
 If the script fails to find baseline (`.guards-baseline.json` missing), abort merge — the baseline is the contract.
+
+### Phase 0a-bis: Auto-ratchet the baseline (when reductions came from this branch)
+
+When Phase 0a exits 0 **and reports reductions**, lock in the lower ceiling automatically so the gains can never silently regress later. Run:
+
+```bash
+cd $WORKDIR && npm run guards:baseline
+git add .guards-baseline.json
+```
+
+Then verify the ratchet is now clean (`npm run guards:check` → "No drift") and **include `.guards-baseline.json` in the merge commit** alongside the code that produced the reductions. This closes the audit→fix→guard loop: every fix landed in a merge tightens the ceiling in the same commit, with no manual follow-up.
+
+Skip this step only when:
+- there were no reductions (nothing to ratchet), or
+- the reductions are NOT attributable to this branch (rare — e.g. a prior branch left the baseline un-ratcheted). In that case still ratchet, but note it in the commit body.
+
+The `--force` detector-improvement case above is the one exception that does **not** go through this auto-ratchet — it requires the explicit justification described in Phase 0a.
 
 For the full report (verbose, helpful when something fails):
 

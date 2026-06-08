@@ -47,6 +47,7 @@ Thresholds live in `scripts/guards/bundle-size.mjs` and are mirrored in `docs/re
 | `check-baseline.mjs` | Compares current vs baseline. Used by pre-push and CI. Also has `--update` mode. |
 | `data/spanish-tildes.json` | Diccionario de tildes castellanas (guard 309/R2 + R3). Ver abajo. |
 | `lib/check-box-onclick.mjs` | Detector multi-line de `<Box onClick>` sin a11y triplet (guard 305/R7). |
+| `lib/check-chip-height.mjs` | Detector multi-line de `<Chip>` con `height:` ad-hoc (debe usar `CHIP_SMALL_SX`) (guard 305/R5). |
 | `../.guards-baseline.json` | Locked-in counts per rule. The ceiling — pushes can lower it, never raise it. |
 
 ## How the convergence model works
@@ -105,6 +106,10 @@ El guard `309/R2-tildes-prohibidas` ya **no** es una lista cerrada de palabras h
 - `onKeyDown`
 
 Reporta `archivo:linea: missing [...] — <snippet>`. Para exceptuar un caso justificado, agregá `guard:exempt` dentro del tag. Corré standalone con `node scripts/guards/lib/check-box-onclick.mjs`.
+
+## Detector de `<Chip height>` (guard 305/R5)
+
+`lib/check-chip-height.mjs` reemplaza el `grep "<Chip" -A 5 | grep "height:"` original, que (a) perdía chips cuya apertura `<Chip` y su `height:` estaban a más de 5 líneas (ej. `VerificationBadge`) y (b) generaba falsos positivos al capturar un `<Box height:>` hermano dentro de la ventana `-A 5` (ej. `MyFeedbackList`). Usa el mismo parser balanceado que `check-box-onclick.mjs`. Cualquier `<Chip>` con `height:` literal en su tag de apertura debe migrar a `sx={CHIP_SMALL_SX}` (token compartido en `theme/cards.ts`). Excepción justificada: `guard:exempt` dentro del tag.
 
 ## Adding a cross-cutting test (when grep is too coarse)
 

@@ -33,7 +33,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        # Guards only need root deps (R16 reads node_modules/react-router-dom).
+        # Skip the functions/ install that root postinstall would otherwise trigger.
         run: npm ci --prefer-offline --no-audit
+        env:
+          SKIP_FUNCTIONS_INSTALL: '1'
 
       - name: Run guards (baseline check)
         run: npm run guards:check
