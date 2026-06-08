@@ -8,9 +8,10 @@ import { COLLECTIONS } from '../config/collections';
 import { ratingConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
+import { gateServiceWrite } from './offlineInterceptor';
 import { measureAsync, measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
-import type { Rating, RatingCriteria } from '../types';
+import type { Rating, RatingCriteria, RatingCriterionId } from '../types';
 
 export function getRatingsCollection(): CollectionReference<Rating> {
   return collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter) as CollectionReference<Rating>;
@@ -65,6 +66,35 @@ export async function upsertCriteriaRating(
     }
   }
 
+  // #335: gate offline a nivel service (defense-in-depth).
+  // El payload `rating_criteria_upsert` es por-criterio (single). Si offline,
+  // encolamos una accion por cada criterio presente — el replay las mergea de
+  // forma no-destructiva via esta misma funcion (mismo contrato que el callsite,
+  // que siempre llama con un solo criterio). Si online, hacemos el write mergeado.
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const entries = Object.entries(criteria) as [RatingCriterionId, number | undefined][];
+    for (const [criterionId, value] of entries) {
+      if (value == null) continue;
+      await gateServiceWrite(
+        'rating_criteria_upsert',
+        { userId, businessId },
+        { criterionId, value },
+        // Online action nunca corre aca (estamos offline); el gate encola.
+        () => upsertCriteriaRatingOnline(userId, businessId, { [criterionId]: value }),
+      );
+    }
+    return;
+  }
+
+  await upsertCriteriaRatingOnline(userId, businessId, criteria);
+}
+
+/** Write real de criterios (merge no-destructivo). Separado para el gate offline (#335). */
+async function upsertCriteriaRatingOnline(
+  userId: string,
+  businessId: string,
+  criteria: RatingCriteria,
+): Promise<void> {
   const docId = `${userId}__${businessId}`;
   const ratingRef = doc(db, COLLECTIONS.RATINGS, docId);
   const existing = await measuredGetDoc('ratings_criteriaExists', ratingRef);

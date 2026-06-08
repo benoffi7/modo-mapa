@@ -1,35 +1,24 @@
 import { useMemo, useCallback, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { useFollowedTags } from './useFollowedTags';
 import { allBusinesses } from './useBusinesses';
 import { updateUserSettings } from '../services/userSettings';
-import { auth } from '../config/firebase';
 import { INTERESTS_MAX_BUSINESSES_PER_TAG } from '../constants/interests';
 import { logger } from '../utils/logger';
+import { createPendingByUserStore } from '../utils/createPendingByUserStore';
 import type { InterestFeedGroup } from '../types';
 
-// #323: pendingState a nivel módulo — sobrevive al unmount del consumer.
-// Per-uid: solo guardamos el último timestamp (last-write-wins).
-const pendingSeenByUser = new Map<string, Date>();
-
-// #323 Cycle 3 BLOCKER: limpiar snapshot del UID anterior al logout / switch de cuenta.
-// Sin esto, un markSeen stale de A se aplicaría cuando A vuelva a loguearse online,
-// adelantando incorrectamente su followedTagsLastSeenAt.
-let _previousUid: string | null = null;
-onAuthStateChanged(auth, (firebaseUser) => {
-  const newUid = firebaseUser?.uid ?? null;
-  if (_previousUid && _previousUid !== newUid) {
-    pendingSeenByUser.delete(_previousUid);
-  }
-  _previousUid = newUid;
-});
+// #323 / #335: pendingState a nivel módulo via factory unificado — sobrevive al
+// unmount del consumer y limpia el snapshot del UID anterior en logout/switch
+// (listener `onAuthStateChanged` compartido). Solo guardamos el último timestamp
+// (last-write-wins). Sin la limpieza, un markSeen stale de A se aplicaría cuando
+// A vuelva a loguearse online, adelantando incorrectamente followedTagsLastSeenAt.
+const pendingSeenByUser = createPendingByUserStore<Date>();
 
 /** Test-only: limpia el estado modular entre tests. No exportar a producción. */
 export function __resetPendingSeenForTests() {
-  pendingSeenByUser.clear();
-  _previousUid = null;
+  pendingSeenByUser.__reset();
 }
 
 /**
@@ -86,9 +75,8 @@ export function useInterestsFeed() {
   useEffect(() => {
     let cancelled = false;
     if (!isOffline && user) {
-      const snapshot = pendingSeenByUser.get(user.uid);
+      const snapshot = pendingSeenByUser.take(user.uid);
       if (!snapshot) return;
-      pendingSeenByUser.delete(user.uid);
       updateUserSettings(user.uid, {
         followedTagsLastSeenAt: snapshot,
       }).catch((err) => {
