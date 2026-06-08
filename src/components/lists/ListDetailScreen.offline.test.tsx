@@ -81,7 +81,9 @@ describe('ListDetailScreen — list CRUD wraps + delete gate (#323)', () => {
   it('online: handleTogglePublic invoca withOfflineSupport(list_toggle_public)', async () => {
     render(<ListDetailScreen list={baseList} onBack={vi.fn()} onDeleted={vi.fn()} />);
 
-    const btn = await screen.findByRole('button', { name: /Hacer lista pública/i });
+    // #339: las acciones secundarias viven en el kebab "Opciones"
+    fireEvent.click(await screen.findByRole('button', { name: 'Opciones' }));
+    const btn = await screen.findByRole('menuitem', { name: /Hacer lista pública/i });
     fireEvent.click(btn);
 
     await waitFor(() => {
