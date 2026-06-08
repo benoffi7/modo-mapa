@@ -54,7 +54,7 @@ export async function withOfflineSupport<T>(
  * Algunos mutators (`editComment`, `deleteComment`, `upsertCriteriaRating`,
  * `addFavorite`, `removeFavorite`) dependen de que el callsite wrapee con
  * {@link withOfflineSupport}. Si un callsite los llama directo estando offline,
- * el write fallaba silenciosamente. Este helper encola la accion cuando
+ * el write fallaba silenciosamente. Este helper encola la acción cuando
  * `navigator.onLine` es `false`, reutilizando `withOfflineSupport` (NO duplica
  * la logica de enqueue/tracking).
  *
@@ -68,10 +68,10 @@ export async function withOfflineSupport<T>(
  * estando offline, su wrapper corta antes y nunca invoca el service, asi que
  * este gate no llega a ejecutarse.
  *
- * @param actionType Tipo de accion offline a encolar si estamos offline.
- * @param actionMeta Metadata de la accion (userId/businessId/etc.).
- * @param payload Payload tipado de la accion (para el replay).
- * @param onlineAction Funcion que ejecuta el write real contra Firestore.
+ * @param actionType Tipo de acción offline a encolar si estamos offline.
+ * @param actionMeta Metadata de la acción (userId/businessId/etc.).
+ * @param payload Payload tipado de la acción (para el replay).
+ * @param onlineAction Función que ejecuta el write real contra Firestore.
  */
 export async function gateServiceWrite<T>(
   actionType: OfflineActionType,

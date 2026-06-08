@@ -8,14 +8,14 @@ import { assertNever } from '../utils/assertNever';
 let syncing = false;
 
 /**
- * Despacha una accion offline al handler registrado para su tipo (#335).
+ * Despacha una acción offline al handler registrado para su tipo (#335).
  *
  * Reemplaza el switch gigante por un lookup en el registry. La exhaustividad
  * COMPILE-TIME sobre `OfflineActionType` la garantiza el `Record` tipado en
  * `registerOfflineHandlers.ts`: agregar un tipo a la union sin handler rompe la
  * compilacion alli.
  *
- * Aca, si el lookup falla, estamos ante una accion con un `type` fuera de la
+ * Acá, si el lookup falla, estamos ante una acción con un `type` fuera de la
  * union conocida — datos corruptos o persistidos por un cliente de version
  * desconocida. `assertNever` lanza en runtime con un mensaje descriptivo. El
  * cast a `never` es deliberado: en este punto el valor NO pertenece al dominio

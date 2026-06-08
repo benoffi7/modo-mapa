@@ -16,7 +16,7 @@ export interface PendingByUserStore<T> {
   /** Elimina el snapshot pendiente del usuario. */
   delete(uid: string): void;
   /**
-   * Lee y elimina el snapshot pendiente del usuario en una sola operacion.
+   * Lee y elimina el snapshot pendiente del usuario en una sola operación.
    * Equivalente a `const v = get(uid); delete(uid); return v;` — patron tipico
    * del flush al reconectar (toma el snapshot y lo consume).
    */
@@ -25,7 +25,7 @@ export interface PendingByUserStore<T> {
   has(uid: string): boolean;
   /**
    * Test-only: limpia todo el estado modular (map + uid previo) y desuscribe
-   * el listener de auth. No usar en codigo de produccion.
+   * el listener de auth. No usar en código de producción.
    */
   __reset(): void;
 }

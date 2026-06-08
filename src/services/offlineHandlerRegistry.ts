@@ -1,23 +1,23 @@
 import type { OfflineAction, OfflineActionType } from '../types/offline';
 
 /**
- * Handler que reproduce (replay) una accion offline al reconectar.
- * Recibe la accion completa y ejecuta el side effect contra el service correspondiente.
+ * Handler que reproduce (replay) una acción offline al reconectar.
+ * Recibe la acción completa y ejecuta el side effect contra el service correspondiente.
  */
 export type OfflineHandler = (action: OfflineAction) => Promise<void>;
 
 /**
- * Registry central de handlers por tipo de accion offline (#335).
+ * Registry central de handlers por tipo de acción offline (#335).
  *
  * Reemplaza el switch gigante de `syncEngine.executeAction`. Cada handler se
- * registra una vez via {@link registerOfflineHandler}; `dispatch` (en syncEngine)
+ * registra una vez vía {@link registerOfflineHandler}; `dispatch` (en syncEngine)
  * hace el lookup. La exhaustividad sobre `OfflineActionType` se garantiza en el
- * modulo de registro (`registerOfflineHandlers.ts`) via un `Record` tipado, y en
- * runtime via `assertNever` en `dispatch`.
+ * modulo de registro (`registerOfflineHandlers.ts`) vía un `Record` tipado, y en
+ * runtime vía `assertNever` en `dispatch`.
  */
 const registry = new Map<OfflineActionType, OfflineHandler>();
 
-/** Registra (o sobreescribe) el handler para un tipo de accion offline. */
+/** Registra (o sobreescribe) el handler para un tipo de acción offline. */
 export function registerOfflineHandler(type: OfflineActionType, handler: OfflineHandler): void {
   registry.set(type, handler);
 }
@@ -32,7 +32,7 @@ export function hasOfflineHandler(type: OfflineActionType): boolean {
   return registry.has(type);
 }
 
-/** Test-only: limpia el registry entre tests. No usar en produccion. */
+/** Test-only: limpia el registry entre tests. No usar en producción. */
 export function __resetOfflineHandlersForTests(): void {
   registry.clear();
 }

@@ -22,7 +22,7 @@ import { registerOfflineHandler } from './offlineHandlerRegistry';
 import type { OfflineHandler } from './offlineHandlerRegistry';
 
 /**
- * Tabla de handlers por tipo de accion offline (#335).
+ * Tabla de handlers por tipo de acción offline (#335).
  *
  * Es un `Record<OfflineActionType, OfflineHandler>`: TypeScript exige que TODOS
  * los miembros de la union `OfflineActionType` esten presentes — si se agrega un

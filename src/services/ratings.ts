@@ -68,8 +68,8 @@ export async function upsertCriteriaRating(
 
   // #335: gate offline a nivel service (defense-in-depth).
   // El payload `rating_criteria_upsert` es por-criterio (single). Si offline,
-  // encolamos una accion por cada criterio presente — el replay las mergea de
-  // forma no-destructiva via esta misma funcion (mismo contrato que el callsite,
+  // encolamos una acción por cada criterio presente — el replay las mergea de
+  // forma no-destructiva vía esta misma función (mismo contrato que el callsite,
   // que siempre llama con un solo criterio). Si online, hacemos el write mergeado.
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const entries = Object.entries(criteria) as [RatingCriterionId, number | undefined][];
@@ -161,7 +161,7 @@ export async function fetchRatingsByBusinessIds(businessIds: string[]): Promise<
   const batches: Promise<QuerySnapshot<Rating>>[] = [];
   for (let i = 0; i < businessIds.length; i += BATCH_SIZE) {
     const batch = businessIds.slice(i, i + BATCH_SIZE);
-    // perf-instrument-ok — measured in aggregate via Promise.all wrapper below
+    // perf-instrument-ok — measured in aggregate vía Promise.all wrapper below
     batches.push(getDocs(query(getRatingsCollection(), where('businessId', 'in', batch))));
   }
   const snapshots = await measureAsync('ratings_byBusinessIds', () => Promise.all(batches));
