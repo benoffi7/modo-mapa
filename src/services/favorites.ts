@@ -12,6 +12,7 @@ import { favoriteConverter } from '../config/converters';
 import { invalidateQueryCache } from './queryCache';
 import { getCountOfflineSafe } from './getCountOfflineSafe';
 import { gateServiceWrite } from './offlineInterceptor';
+import { measureAsync } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import type { Favorite } from '../types';
 
@@ -49,9 +50,9 @@ export async function addFavorite(userId: string, businessId: string): Promise<v
  * Returns the count of favorites for userId.
  */
 export async function fetchUserFavoritesCount(userId: string): Promise<number> {
-  return getCountOfflineSafe(
+  return measureAsync('favorites_count', () => getCountOfflineSafe(
     query(collection(db, COLLECTIONS.FAVORITES), where('userId', '==', userId)),
-  );
+  ));
 }
 
 export async function removeFavorite(userId: string, businessId: string): Promise<void> {

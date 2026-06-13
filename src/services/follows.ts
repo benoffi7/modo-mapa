@@ -17,7 +17,7 @@ import { invalidateQueryCache } from './queryCache';
 /** Opaque cursor type for pagination — components should import this instead of QueryDocumentSnapshot */
 export type FollowCursor = QueryDocumentSnapshot<Follow>;
 import { getCountOfflineSafe } from './getCountOfflineSafe';
-import { measuredGetDoc, measuredGetDocs } from '../utils/perfMetrics';
+import { measuredGetDoc, measuredGetDocs, measureAsync } from '../utils/perfMetrics';
 import { trackEvent } from '../utils/analytics';
 import { EVT_FOLLOW, EVT_UNFOLLOW } from '../constants/analyticsEvents';
 import type { Follow } from '../types';
@@ -38,9 +38,9 @@ export async function followUser(followerId: string, followedId: string): Promis
   if (followerId === followedId) throw new Error('Cannot follow yourself');
 
   // Check max follows limit client-side
-  const followingCount = await getCountOfflineSafe(
+  const followingCount = await measureAsync('follows_followingCount', () => getCountOfflineSafe(
     query(collection(db, COLLECTIONS.FOLLOWS), where('followerId', '==', followerId)),
-  );
+  ));
   if (followingCount >= MAX_FOLLOWS) {
     throw new Error('Has alcanzado el limite de 200 usuarios seguidos');
   }
@@ -95,9 +95,9 @@ export async function fetchFollowing(
  * Returns the count of followers (users following userId).
  */
 export async function fetchFollowersCount(userId: string): Promise<number> {
-  return getCountOfflineSafe(
+  return measureAsync('follows_followersCount', () => getCountOfflineSafe(
     query(collection(db, COLLECTIONS.FOLLOWS), where('followedId', '==', userId)),
-  );
+  ));
 }
 
 // searchUsers moved to src/services/users.ts
