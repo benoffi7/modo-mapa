@@ -32,7 +32,7 @@
     "R1-services-raw-getDocs": 4,
     "R5-scheduled-without-timing": 0,
     "R6-callable-without-timing": 0,
-    "R7-getCount-without-measure": 3
+    "R7-getCount-without-measure": 0
   },
   "304": {
     "R1-mutations-without-offline": 48,
@@ -81,5 +81,5 @@
     "R1-authcontext-loading-finally": 1,
     "R2-updateUserAvatar-no-fallback": 1
   },
-  "_total": 201
+  "_total": 198
 }
