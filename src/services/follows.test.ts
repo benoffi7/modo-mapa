@@ -17,6 +17,15 @@ vi.mock('../constants/analyticsEvents', () => ({
   EVT_UNFOLLOW: 'unfollow',
 }));
 
+const mockMeasureAsync = vi.fn((_name: string, fn: () => Promise<unknown>) => fn());
+vi.mock('../utils/perfMetrics', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../utils/perfMetrics')>();
+  return {
+    ...actual,
+    measureAsync: (...args: Parameters<typeof mockMeasureAsync>) => mockMeasureAsync(...args),
+  };
+});
+
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
 const mockGetDoc = vi.fn();
@@ -39,10 +48,11 @@ vi.mock('firebase/firestore', () => ({
 
 import {
   followUser, unfollowUser, isFollowing,
-  fetchFollowing,
+  fetchFollowing, fetchFollowersCount,
 } from './follows';
 import { invalidateQueryCache } from './queryCache';
 import { trackEvent } from '../utils/analytics';
+import { QUERY_LABELS } from '../components/admin/perf/perfHelpers';
 
 describe('followUser', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -136,5 +146,51 @@ describe('fetchFollowing', () => {
     const result = await fetchFollowing('u1', 2);
     expect(result.docs).toHaveLength(2);
     expect(result.hasMore).toBe(true);
+  });
+});
+
+describe('followUser — measureAsync instrumentation', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('invokes measureAsync with key follows_followingCount', async () => {
+    mockGetCountOfflineSafe.mockResolvedValueOnce(5);
+    await followUser('u1', 'u2');
+    expect(mockMeasureAsync).toHaveBeenCalledWith('follows_followingCount', expect.any(Function));
+  });
+
+  it('side effects (setDoc, invalidateQueryCache, trackEvent) are preserved after wrap', async () => {
+    mockGetCountOfflineSafe.mockResolvedValueOnce(5);
+    await followUser('u1', 'u2');
+    expect(mockSetDoc).toHaveBeenCalled();
+    expect(invalidateQueryCache).toHaveBeenCalledWith('follows', 'u1');
+    expect(trackEvent).toHaveBeenCalledWith('follow', { followed_id: 'u2' });
+  });
+});
+
+describe('fetchFollowersCount', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns the count from getCountOfflineSafe', async () => {
+    mockGetCountOfflineSafe.mockResolvedValueOnce(7);
+    const result = await fetchFollowersCount('u1');
+    expect(result).toBe(7);
+  });
+
+  it('invokes measureAsync with key follows_followersCount', async () => {
+    mockGetCountOfflineSafe.mockResolvedValueOnce(3);
+    await fetchFollowersCount('u1');
+    expect(mockMeasureAsync).toHaveBeenCalledWith('follows_followersCount', expect.any(Function));
+  });
+
+  it('returns 0 when offline (getCountOfflineSafe returns 0)', async () => {
+    mockGetCountOfflineSafe.mockResolvedValueOnce(0);
+    const result = await fetchFollowersCount('u1');
+    expect(result).toBe(0);
+  });
+});
+
+describe('QUERY_LABELS smoke — follows_followingCount', () => {
+  it('follows_followingCount has a non-empty label', () => {
+    expect(QUERY_LABELS['follows_followingCount']).toBeTruthy();
   });
 });
