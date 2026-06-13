@@ -19,7 +19,8 @@ desincronizarse de la realidad del producto (como se detecto en el
 1. **Cobertura 1:1.** `src/components/profile/HelpSection.tsx` (via el
    registry `helpGroups.tsx`) debe reflejar toda seccion listada en
    `docs/reference/features.md`. Si `features.md` lista una capability
-   user-facing, el registry tiene un item que la menciona.
+   user-facing agrupada por tab (Inicio / Social / Buscar / Listas /
+   Perfil / Ajustes), el registry tiene un item que la menciona.
 2. **Checklist de PR.** Cuando una nueva feature user-facing aterriza, el
    PR debe actualizar **o bien** `features.md` + `helpGroups.tsx`, **o
    bien** incluir un comentario explicito
@@ -36,11 +37,23 @@ desincronizarse de la realidad del producto (como se detecto en el
 5. **Ubicacion del toggle de tema.** La referencia a "Configuracion >
    Apariencia" como hogar del toggle de modo oscuro debe coincidir con la
    estructura real de `SettingsPanel`. Si se mueve el toggle, actualizar
-   los items `Configuracion` y `Modo oscuro` en el registry.
+   los items `Configuracion` y `Modo oscuro` (id `modooscuro`) en el
+   registry.
+6. **No drift de navegacion.** `features.md` es la fuente de verdad de la
+   navegacion principal. La app usa `TabBar` (`BottomNavigation`) de 5 tabs
+   orquestada por `TabShell.tsx` (Inicio / Social / Buscar / Listas /
+   Perfil). Si `features.md` describe un componente de navegacion que no
+   existe en `src/` (ej. `SideMenu`), la regla `R2-features-sidemenu-drift`
+   (ver abajo) lo detecta y falla. Implementado en `checks.mjs:511` (#349).
+   **Accion cuando falla:** reescribir la seccion de navegacion de
+   `features.md` para reflejar la estructura real de tabs.
 
 ## Deteccion
 
-### Script CI-friendly
+Las dos reglas del guard estan implementadas en `scripts/guards/checks.mjs`
+(grupo `311 help-docs`).
+
+### R1 — Cobertura de helpGroups (checks.mjs:504)
 
 Por cada `id` en el registry `helpGroups.tsx`, esperar un header
 correspondiente en `docs/reference/features.md`. Pseudocodigo:
@@ -65,6 +78,28 @@ for id in $ids; do
   fi
 done
 ```
+
+### R2 — Anti-drift de navegacion (checks.mjs:511)
+
+Detecta cuando `features.md` describe un componente de navegacion que no
+existe en `src/`. La navegacion real es `TabBar` (`BottomNavigation`) de
+5 tabs, orquestada por `TabShell.tsx` (Inicio / Social / Buscar / Listas /
+Perfil). No existe `SideMenu.tsx` en el proyecto.
+
+```bash
+# Falla si features.md menciona "SideMenu"/"Menu lateral" y no existe
+# src/components/layout/SideMenu.tsx (la app usa TabBar, no un drawer lateral)
+grep -qiE "SideMenu|Menu lateral" docs/reference/features.md \
+  && [ ! -f src/components/layout/SideMenu.tsx ] \
+  && echo "docs/reference/features.md: describe SideMenu inexistente; la navegacion real es TabBar (BottomNavigation)" \
+  || true
+```
+
+Implementado en `scripts/guards/checks.mjs:511-514`. Referencia: #349.
+
+**Accion cuando falla R2:** reescribir la seccion de navegacion de
+`features.md` para describirla con `TabBar`/`TabShell`, agrupando las
+secciones por tab (Inicio / Social / Buscar / Listas / Perfil / Ajustes).
 
 ### Grep puntuales
 
