@@ -69,6 +69,7 @@ export const QUERY_LABELS: Record<string, string> = {
   ratings_byBusinessIds: 'Ratings por businessIds',
 
   // Follows / users (S1)
+  follows_followingCount: 'Seguidos: count',
   follows_followersCount: 'Seguidores: count',
   follows_isFollowing: '¿Estoy siguiendo?',
   follows_fetchFollowing: 'Lista de seguidos',
@@ -117,6 +118,9 @@ export const QUERY_LABELS: Record<string, string> = {
   recommendations_unreadCount: 'Recomendaciones: count no leídas',
   recommendations_sentTodayCount: 'Recomendaciones: enviadas hoy',
   recommendations_unreadList: 'Recomendaciones: listado no leídas',
+
+  // Favorites
+  favorites_count: 'Favoritos: count',
 
   // Misc (S5 follow-up wraps)
   notifications_unreadList: 'Notificaciones: listado no leídas',
