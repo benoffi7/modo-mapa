@@ -31,7 +31,7 @@ VITE_SENTRY_DSN=
 ### Cloud Functions (`functions/.env`)
 
 ```bash
-ADMIN_EMAIL=benoffi11@gmail.com  # Email del admin (usado por defineString en backups.ts)
+ADMIN_EMAIL=benoffi11@gmail.com  # Email del admin (usado por defineString en claims.ts)
 ```
 
 ### Sentry (CI/CD — secrets de GitHub)
@@ -146,6 +146,15 @@ Trigger: push a `staging`
 - Tests que importan modulos que chainan a `firebase.ts` deben mockear la cadena
 
 **Todo se despliega automaticamente** en cada push a main: hosting, Firestore rules/indexes, y Cloud Functions.
+
+### Invariante de `npm audit` (runtime vs dev/CLI) — #342
+
+El step `npm audit --audit-level=high` del job `lint` corre con `continue-on-error: true` (soft-gate): documenta vulnerabilidades sin romper el pipeline. El invariante se interpreta en **dos capas distintas**, no como un umbral unico:
+
+- **Runtime de Cloud Functions (`functions/`):** debe quedar en **0 vulnerabilidades HIGH**. Es codigo que corre en produccion, sin ramas dev. Verificable con `cd functions && npm audit --audit-level=high` → exit 0. La cadena transitiva critica (`protobufjs` via `google-gax` via `firebase-admin`) debe estar parcheada (`protobufjs >= 7.2.5`; hoy resuelve a `7.5.5` con `firebase-admin@^13.10.0`).
+- **Dev/CLI transitivas del root (`package.json`):** el root incluye herramientas de build/CLI (`firebase-tools`, etc.) cuyas dependencias transitivas pueden listar vulns moderate/high que **no llegan al bundle de produccion**. Estas quedan **documentadas con justificacion**; el `continue-on-error: true` se mantiene deliberadamente para no bloquear merges de bajo riesgo detras de vulns de tooling. Convertirlo en gate duro esta fuera de scope (riesgo alto, adyacente a #168).
+
+> #342 redefine este invariante en TEXTO; **no** introduce un gate duro nuevo en `deploy.yml` / `guards.yml`. La distincion runtime-vs-dev es la salida valida del Success Criteria #3.
 
 ### IAM roles requeridos
 
