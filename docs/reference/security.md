@@ -317,6 +317,26 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
   delete: auth != null && auth.uid == userId
 ```
 
+### Validacion client-side de `mediaUrl` (`isValidStorageUrl`, #342)
+
+`src/utils/media.ts` valida en el cliente (render del preview) que la URL sea un objeto canonico de Firebase Storage: host exacto **+** segmento `/v0/b/<bucket>/o/` (regex anclada con `^`). Bucket generico (`[^/]+`) para no romper render de `mediaUrl` legacy que pudiera apuntar a otro bucket; un solo segmento sin `/` impide inyectar sub-paths en la posicion del bucket.
+
+Esta validacion es **independiente** de la rule de Firestore (`firestore.rules:222`), no un espejo:
+
+| Capa | Que valida | Donde |
+|------|-----------|-------|
+| Rule (write, server) | Path canonico **encoded** (`%2F`) + ownership (`uid`/`docId`), con `.*` (NO ancla `/v0/b/`) | `firestore.rules:222,242` |
+| `isValidStorageUrl` (read/render, client) | Host exacto + segmento `/v0/b/<bucket>/o/` decodificado | `src/utils/media.ts` |
+
+Son dos capas de defense-in-depth con responsabilidades separadas; ninguna reemplaza a la otra.
+
+### Dependencias con advisories parchadas (#342)
+
+- `react-router-dom >= 7.14.2` (root): cierra GHSA-49rj-9fvp-4h2h (turbo-stream RCE), GHSA-8646-j5j9-6r62 (RSC XSS) y GHSA-2j2x-hqr9-3h42 (open redirect). No alcanzables con la API declarativa del proyecto, parchados de todas formas.
+- `firebase-admin@^13.10.0` (functions, dentro del major 13 para no romper el peer dep de `firebase-functions`): asegura `protobufjs >= 7.2.5` (resuelve a `7.5.5`) en la cadena runtime via `google-gax`.
+
+> NOTA: el bump de `firebase-admin` se mantiene dentro del major 13 a proposito; subir a 14 rompe el peer dep de `firebase-functions` y agrava #168 (fuera de scope).
+
 ---
 
 ## Límites de validación
@@ -330,7 +350,7 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
 | Feedback message | 1000 chars | Server |
 | Rating score | 1-5 | Server |
 | Feedback rating | 1-5 (int, optional) | Server |
-| Feedback mediaUrl | Firebase Storage URL only | Server + Client |
+| Feedback mediaUrl | Firebase Storage URL only (cliente exige segmento canonico `/v0/b/<bucket>/o/`, #342) | Server + Client |
 | Feedback mediaType | image, pdf | Server |
 | Custom tags por comercio | 10 | Client |
 | Comentarios por usuario/día | 20 | Client |
