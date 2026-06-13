@@ -71,7 +71,7 @@ export const HELP_GROUPS: HelpGroup[] = [
         icon: <HomeOutlinedIcon color="primary" />,
         title: 'Pantalla principal',
         description:
-          'Tu pantalla principal con saludo personalizado y acciones rápidas (buscar por categoría, Sorprendeme). Sección "Especiales" con tarjetas creadas por el equipo (promos del día, listas destacadas, logros). Sección "Tendencia cerca tuyo" con los comercios trending filtrados por tu ubicación (GPS, localidad o zona por defecto) con radio progresivo 1-5 km. Sección "Novedades" que agrupa tus notificaciones no leídas por tipo. Sección "Para ti" con sugerencias personalizadas. Sección "Tus intereses" con comercios filtrados por los tags que seguís. Si tenés un check-in reciente sin calificar, te aparece un banner sugiriendo calificar. Tirá hacia abajo para refrescar las secciones del Inicio.',
+          'Tu pantalla principal con saludo personalizado y acciones rápidas (buscar por categoría, Sorprendeme). Sección "Especiales" con tarjetas creadas por el equipo (promos del día, listas destacadas, logros). Sección "Tendencia cerca tuyo" con los comercios trending filtrados por tu ubicación (GPS, localidad o zona por defecto) con radio progresivo 1-5 km. Sección "Novedades" que agrupa tus notificaciones no leídas por tipo. Sección "Para vos" con sugerencias personalizadas. Sección "Tus intereses" con comercios filtrados por los tags que seguís. Si tenés un check-in reciente sin calificar, te aparece un banner sugiriendo calificar. Tirá hacia abajo para refrescar las secciones del Inicio.',
       },
       {
         id: 'sorprendeme',

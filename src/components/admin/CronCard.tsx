@@ -45,11 +45,11 @@ export default function CronCard({ config, run }: CronCardProps) {
         {run?.lastRunAt ? (
           <>
             <Typography variant="caption" color="text.secondary" display="block">
-              Ultima ejecucion: {formatRelativeTime(run.lastRunAt)}
+              Última ejecución: {formatRelativeTime(run.lastRunAt)}
             </Typography>
             {run.durationMs != null && (
               <Typography variant="caption" color="text.secondary" display="block">
-                Duracion: {formatDuration(run.durationMs)}
+                Duración: {formatDuration(run.durationMs)}
               </Typography>
             )}
             {run.result === 'error' && (
