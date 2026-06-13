@@ -9,7 +9,7 @@
     "R14-bootstrap-admin": 0,
     "R15-secrets-in-functions-env": 2,
     "R16-react-router-vulnerable": 1,
-    "R17-isValidStorageUrl-prefix-only": 1
+    "R17-isValidStorageUrl-prefix-only": 0
   },
   "301": {
     "R2-services-without-test": 3,
@@ -45,7 +45,7 @@
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
     "R5-chip-height-adhoc": 0,
-    "R9-fab-safe-area": 4,
+    "R9-fab-safe-area": 3,
     "R7-box-onclick-without-a11y": 7,
     "R8-chip-small-sx-exists": 0
   },
@@ -81,25 +81,5 @@
     "R1-authcontext-loading-finally": 0,
     "R2-updateUserAvatar-no-fallback": 0
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "_total": 198
-=======
-  "_total": 200
->>>>>>> fix/349-help-docs-tabbar
-=======
-  "_total": 199
->>>>>>> fix/341-loading-infinito-authcontext
-=======
-  "_total": 184
->>>>>>> perf/343-fetchuserlikes-fanout
-=======
-  "_total": 199
->>>>>>> feat/348-admin-ip-rate-limits-inspector
-=======
-  "_total": 195
->>>>>>> fix/345-chips-touch-targets
+  "_total": 165
 }
