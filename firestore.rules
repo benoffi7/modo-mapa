@@ -27,21 +27,32 @@ service cloud.firestore {
             || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.keys().hasOnly(['displayName', 'displayNameLower', 'avatarId', 'createdAt'])
-        && request.resource.data.displayName is string
-        && request.resource.data.displayName.size() > 0
-        && request.resource.data.displayName.size() <= 30
+        // #341 camino (a) de D1: create solo-avatar permitido. displayName y
+        // displayNameLower son AMBOS ausentes (create solo-avatar) XOR AMBOS
+        // presentes-y-sincronizados. Nunca uno sin el otro (cierra hueco B5 #322).
         // #300 R-7 + #322 S3: charset conservador (bloquea RTL/ZWJ/control chars) +
         // anclaje no-whitespace en primer/ultimo char (rechaza " Pedro", "Pedro ",
         // "  ", "L." con punto al final). Acepta single char (ej "J"), `_`/`-` en
         // bordes, espacios solo en interior.
-        && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
-        && request.resource.data.displayNameLower is string
-        // covered by tests/rules/users.rules.test.ts (R12 — bidireccional displayNameLower)
-        // #322 S3 R12: equality bidireccional. displayNameLower obligatorio en create
-        // (ya esta en keys().hasOnly) y debe ser exactamente displayName.lower().
-        // Cierra el vector de mutacion unilateral (B5) y stale-lower (B4).
-        && request.resource.data.displayNameLower == request.resource.data.displayName.lower()
-        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
+        // #322 S3 R12: equality bidireccional displayNameLower == displayName.lower().
+        // covered by tests/rules/users.rules.test.ts (R12 + #341 create solo-avatar)
+        && (
+          (!('displayName' in request.resource.data) && !('displayNameLower' in request.resource.data))
+          || (
+            request.resource.data.displayName is string
+            && request.resource.data.displayName.size() > 0
+            && request.resource.data.displayName.size() <= 30
+            && request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
+            && request.resource.data.displayNameLower is string
+            && request.resource.data.displayNameLower == request.resource.data.displayName.lower()
+          )
+        )
+        // create solo-avatar requiere al menos avatarId (no permitir doc vacio
+        // solo-createdAt sin proposito)
+        && ('avatarId' in request.resource.data || 'displayName' in request.resource.data)
+        && (!('avatarId' in request.resource.data)
+            || (request.resource.data.avatarId is string
+                && request.resource.data.avatarId.size() <= 50))
         && request.resource.data.createdAt == request.time;
       allow update: if request.auth != null && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'displayNameLower', 'avatarId'])
@@ -58,7 +69,9 @@ service cloud.firestore {
           || request.resource.data.displayName.matches('^[A-Za-z0-9À-ÿ_-]([A-Za-z0-9À-ÿ ._-]*[A-Za-z0-9À-ÿ_-])?$')
         )
         && (!('displayNameLower' in request.resource.data) || request.resource.data.displayNameLower is string)
-        && (!('avatarId' in request.resource.data) || request.resource.data.avatarId is string)
+        && (!('avatarId' in request.resource.data)
+            || (request.resource.data.avatarId is string
+                && request.resource.data.avatarId.size() <= 50))
         // covered by tests/rules/users.rules.test.ts (R12 — bidireccional displayNameLower en update)
         // #322 S3 R12: equality bidireccional. Si CUALQUIERA de displayName o
         // displayNameLower esta en affectedKeys(), AMBOS deben matchear

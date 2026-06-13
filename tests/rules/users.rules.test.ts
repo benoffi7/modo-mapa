@@ -232,6 +232,99 @@ describe('firestore.rules — users/{userId}', () => {
   });
 
   // ----------------------------------------------------------------
+  // S2b (#341) — create solo-avatar (camino a de D1)
+  // ----------------------------------------------------------------
+  // displayName/displayNameLower: ambos ausentes (solo-avatar) XOR ambos
+  // presentes-y-sincronizados. Nunca displayNameLower sin displayName (B5 #322).
+  describe('#341 S2b — create solo-avatar (camino a de D1)', () => {
+    it('21. create solo con avatarId + createdAt (sin displayName) -> ALLOW', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = {
+        avatarId: 'avatar_1',
+        createdAt: serverTimestamp(),
+      };
+      await expectAllow(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+
+    it('22. create con displayNameLower sin displayName -> DENY (cierra hueco B5)', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = {
+        displayNameLower: 'pedro',
+        avatarId: 'avatar_1',
+        createdAt: serverTimestamp(),
+      };
+      await expectDeny(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+
+    it('23. create con displayName + displayNameLower sincronizados -> ALLOW', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = validCreatePayload('Pedro_Garcia');
+      await expectAllow(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+
+    it('24. create vacio (solo createdAt, sin avatarId ni displayName) -> DENY', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = {
+        createdAt: serverTimestamp(),
+      };
+      await expectDeny(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+  });
+
+  // ----------------------------------------------------------------
+  // S2a (#341) — avatarId .size() <= 50 (create + update)
+  // ----------------------------------------------------------------
+  describe('#341 S2a — avatarId size cap (<= 50) en create + update', () => {
+    it('17. create con avatarId > 50 chars -> DENY', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = {
+        ...validCreatePayload(),
+        avatarId: 'a'.repeat(51),
+      };
+      await expectDeny(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+
+    it('18. create con avatarId <= 50 chars -> ALLOW', async () => {
+      const ctx = authedContext(env, UID);
+      const payload = {
+        ...validCreatePayload(),
+        avatarId: 'a'.repeat(50),
+      };
+      await expectAllow(setDoc(doc(ctx.firestore(), 'users', UID), payload));
+    });
+
+    it('19. update con avatarId > 50 chars -> DENY', async () => {
+      await seedUser(env, UID, {
+        displayName: 'Pedro',
+        displayNameLower: 'pedro',
+        avatarId: 'avatar_1',
+        createdAt: new Date(),
+      });
+      const ctx = authedContext(env, UID);
+      await expectDeny(
+        updateDoc(doc(ctx.firestore(), 'users', UID), {
+          avatarId: 'a'.repeat(51),
+        })
+      );
+    });
+
+    it('20. update con avatarId <= 50 chars -> ALLOW', async () => {
+      await seedUser(env, UID, {
+        displayName: 'Pedro',
+        displayNameLower: 'pedro',
+        avatarId: 'avatar_1',
+        createdAt: new Date(),
+      });
+      const ctx = authedContext(env, UID);
+      await expectAllow(
+        updateDoc(doc(ctx.firestore(), 'users', UID), {
+          avatarId: 'a'.repeat(50),
+        })
+      );
+    });
+  });
+
+  // ----------------------------------------------------------------
   // hasOnly() field injection en update
   // ----------------------------------------------------------------
   describe('hasOnly() update field injection', () => {

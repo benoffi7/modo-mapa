@@ -532,7 +532,7 @@ Estado al cierre de #332. Cada coleccion lista dos checkboxes (allow path test
 + deny path test). Conforme cada PRD futuro agregue tests para una coleccion,
 marcar `[x] [x]`.
 
-- [x] [x] `users` — cubierto en `tests/rules/users.rules.test.ts` (R6/R7/R12/hasOnly, ver #322 specs L240-247 y #300)
+- [x] [x] `users` — cubierto en `tests/rules/users.rules.test.ts` (R6/R7/R12/hasOnly, ver #322 specs L240-247 y #300; #341 agrega avatarId `.size()<=50` create+update y create solo-avatar camino a — ambos ausentes XOR ambos sincronizados)
 - [ ] [ ] `userSettings` — pendiente. Invariante: hasOnly + type guards. Origen: #251 specs L144 y L204
 - [ ] [ ] `feedback` — pendiente. Invariante: `message.size() <= 500` + type guard. Origen: #289
 - [ ] [ ] `notifications` — pendiente. Invariante: solo update del campo `read`. Origen: #289

@@ -77,11 +77,18 @@ describe('fetchUserProfileDoc', () => {
     expect(result).toBeNull();
   });
 
-  it('propagates errors', async () => {
+  it('returns null (no throw) and logs error when getDoc rejects', async () => {
     mockGetDoc.mockRejectedValueOnce(new Error('Firestore error'));
 
+    const { logger } = await import('../../utils/logger');
     const { fetchUserProfileDoc } = await import('../userProfile');
-    await expect(fetchUserProfileDoc('uid-err')).rejects.toThrow('Firestore error');
+    const result = await fetchUserProfileDoc('uid-err');
+
+    expect(result).toBeNull();
+    expect(logger.error).toHaveBeenCalledWith(
+      '[userProfile] fetchUserProfileDoc getDoc failed:',
+      expect.any(Error),
+    );
   });
 });
 
@@ -134,16 +141,33 @@ describe('updateUserAvatar', () => {
     mockDoc.mockReturnValue({});
   });
 
-  it('calls updateDoc with avatarId', async () => {
+  it('calls updateDoc with avatarId when doc exists', async () => {
+    mockGetDoc.mockResolvedValueOnce({ exists: () => true });
     mockUpdateDoc.mockResolvedValueOnce(undefined);
 
     const { updateUserAvatar } = await import('../userProfile');
     await updateUserAvatar('uid-1', 'avatar-fox');
 
     expect(mockUpdateDoc).toHaveBeenCalledWith({}, { avatarId: 'avatar-fox' });
+    expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('calls setDoc with avatarId + createdAt when doc does not exist (no not-found throw)', async () => {
+    mockGetDoc.mockResolvedValueOnce({ exists: () => false });
+    mockSetDoc.mockResolvedValueOnce(undefined);
+
+    const { updateUserAvatar } = await import('../userProfile');
+    await updateUserAvatar('uid-2', 'avatar-cat');
+
+    expect(mockSetDoc).toHaveBeenCalledWith({}, {
+      avatarId: 'avatar-cat',
+      createdAt: 'SERVER_TIMESTAMP',
+    });
+    expect(mockUpdateDoc).not.toHaveBeenCalled();
   });
 
   it('propagates errors', async () => {
+    mockGetDoc.mockResolvedValueOnce({ exists: () => true });
     mockUpdateDoc.mockRejectedValueOnce(new Error('update failed'));
 
     const { updateUserAvatar } = await import('../userProfile');
