@@ -6,8 +6,8 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 253 (195 React + 57 Functions + 1 Firestore rules) |
-| **Total test cases** | 1829 frontend + 528 functions + 16 rules (post-#332 harness) |
+| **Total test files** | 254 (195 React + 57 Functions + 2 Firestore rules) |
+| **Total test cases** | 1829 frontend + 528 functions + 26 rules (post-#343: +10 commentLikes) |
 | **Cobertura minima requerida** | 80% global (enforced en CI via `deploy.yml`) |
 
 ### Cobertura actual (2026-05-16, post-#338)
@@ -533,6 +533,7 @@ Estado al cierre de #332. Cada coleccion lista dos checkboxes (allow path test
 marcar `[x] [x]`.
 
 - [x] [x] `users` — cubierto en `tests/rules/users.rules.test.ts` (R6/R7/R12/hasOnly, ver #322 specs L240-247 y #300; #341 agrega avatarId `.size()<=50` create+update y create solo-avatar camino a — ambos ausentes XOR ambos sincronizados)
+- [x] [x] `commentLikes` — cubierto en `tests/rules/commentLikes.rules.test.ts` (hasOnly incluye `businessId`, `isValidBusinessId`, owner create/delete, read auth). Origen: #343 specs "Firestore Rules" (guard #302 R3)
 - [ ] [ ] `userSettings` — pendiente. Invariante: hasOnly + type guards. Origen: #251 specs L144 y L204
 - [ ] [ ] `feedback` — pendiente. Invariante: `message.size() <= 500` + type guard. Origen: #289
 - [ ] [ ] `notifications` — pendiente. Invariante: solo update del campo `read`. Origen: #289

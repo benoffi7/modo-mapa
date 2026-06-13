@@ -148,6 +148,14 @@ describe('registerOfflineHandlers (#335 registry pattern)', () => {
     expect(editComment).toHaveBeenCalledWith('c1', 'u1', 'Editado');
   });
 
+  it('dispatches comment_like to likeComment con action.businessId (3er arg)', async () => {
+    registerOfflineHandlers();
+    const handler = getOfflineHandler('comment_like')!;
+    const { likeComment } = await import('./comments');
+    await handler(makeAction({ type: 'comment_like', businessId: 'biz_001', payload: { commentId: 'c1' } }));
+    expect(likeComment).toHaveBeenCalledWith('u1', 'c1', 'biz_001');
+  });
+
   it('list_item_remove handler throws without listId', async () => {
     registerOfflineHandlers();
     const handler = getOfflineHandler('list_item_remove')!;

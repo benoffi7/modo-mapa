@@ -86,6 +86,7 @@ export async function fetchRecentCommentLikes(count: number): Promise<CommentLik
     return {
       userId: String(data.userId ?? ''),
       commentId: String(data.commentId ?? ''),
+      businessId: String(data.businessId ?? ''),
       createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
     };
   });

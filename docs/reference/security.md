@@ -88,7 +88,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
 | `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner, `affectedKeys().hasOnly(['score','updatedAt','criteria'])` | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
-| `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
+| `commentLikes` | auth | owner, `keys().hasOnly(['userId','commentId','businessId','createdAt'])`, `isValidBusinessId(businessId)`, `commentId.size()>0`, createdAt==request.time | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
 | `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |

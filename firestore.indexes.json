@@ -81,6 +81,14 @@
       ]
     },
     {
+      "collectionGroup": "commentLikes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "businessId", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "customTags",
       "queryScope": "COLLECTION",
       "fields": [

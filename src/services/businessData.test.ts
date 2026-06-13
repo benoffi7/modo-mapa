@@ -31,6 +31,7 @@ vi.mock('../config/converters', () => ({
   customTagConverter: {},
   priceLevelConverter: {},
   menuPhotoConverter: {},
+  commentLikeConverter: {},
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -113,65 +114,76 @@ describe('fetchSingleCollection — measureAsync instrumentation per case', () =
     expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain(expected);
   });
 
-  it('comments case uses businessData_comments and fires fetchUserLikes if ids present', async () => {
-    // Return a comment doc so fetchUserLikes has ids to look up
-    mockMeasuredGetDocs.mockResolvedValueOnce({
-      docs: [{ data: () => ({ id: 'c1', flagged: false, createdAt: new Date() }) }],
-      empty: false,
-      size: 1,
+  it('comments case resolves likes via direct businessData_userLikes query', async () => {
+    mockMeasuredGetDocs.mockImplementation(async (name: string) => {
+      if (name === 'businessData_comments') {
+        return {
+          docs: [{ data: () => ({ id: 'c1', flagged: false, createdAt: new Date() }) }],
+          empty: false,
+          size: 1,
+        };
+      }
+      if (name === 'businessData_userLikes') {
+        return {
+          docs: [{ data: () => ({ commentId: 'c1' }) }],
+          empty: false,
+          size: 1,
+        };
+      }
+      return emptyQuerySnap();
     });
-    mockGetDocs.mockResolvedValue(emptyQuerySnap());
     const { fetchSingleCollection } = await import('./businessData');
-    await fetchSingleCollection('biz_001', 'user_001', 'comments');
-    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('businessData_comments');
-    // fetchUserLikes uses measureAsync directly (not measuredGetDocs) because
-    // it wraps a Promise.all of batches; verify that too.
-    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('businessData_userLikes');
+    const result = await fetchSingleCollection('biz_001', 'user_001', 'comments') as {
+      comments: { id: string }[];
+      userCommentLikes: Set<string>;
+    };
+    const names = mockMeasuredGetDocs.mock.calls.map((c) => c[0]);
+    expect(names).toContain('businessData_comments');
+    // query directa por (userId, businessId) — ya no usa fetch fan-out
+    expect(names).toContain('businessData_userLikes');
+    // el Set se deriva de d.data().commentId, no del doc id split
+    expect(result.userCommentLikes.has('c1')).toBe(true);
   });
 });
 
-describe('fetchUserLikes — measureAsync instrumentation', () => {
+describe('direct commentLikes query (cierra guard #302 R3)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMeasuredGetDoc.mockResolvedValue(nonExistentDocSnap());
+    mockMeasuredGetDocs.mockResolvedValue(emptyQuerySnap());
   });
 
-  it('wraps Promise.all of batches with measureAsync name businessData_userLikes', async () => {
-    mockGetDocs.mockResolvedValue(emptyQuerySnap());
-    const { fetchUserLikes } = await import('./businessData');
-    await fetchUserLikes('user_001', ['c1', 'c2']);
-    expect(mockMeasureAsync.mock.calls.map((c) => c[0])).toContain('businessData_userLikes');
+  it('fetchBusinessData incluye businessData_userLikes como octava query del Promise.all', async () => {
+    const { fetchBusinessData } = await import('./businessData');
+    await fetchBusinessData('biz_001', 'user_001');
+    expect(mockMeasuredGetDocs.mock.calls.map((c) => c[0])).toContain('businessData_userLikes');
   });
 
-  it('short-circuits and does not call measureAsync when commentIds is empty', async () => {
-    const { fetchUserLikes } = await import('./businessData');
-    const result = await fetchUserLikes('user_001', []);
-    expect(result.size).toBe(0);
-    expect(mockMeasureAsync).not.toHaveBeenCalled();
+  it('lista de comentarios/likes vacia → Set vacio sin romper', async () => {
+    const { fetchBusinessData } = await import('./businessData');
+    const result = await fetchBusinessData('biz_001', 'user_001');
+    expect(result.userCommentLikes.size).toBe(0);
   });
 
-  it('returns a Set of comment ids that have likes', async () => {
-    mockGetDocs.mockResolvedValue({
-      docs: [
-        { id: 'user_001__c1' },
-        { id: 'user_001__c3' },
-      ],
-      empty: false,
-      size: 2,
+  it('mapea el Set desde d.data().commentId (query directa)', async () => {
+    mockMeasuredGetDocs.mockImplementation(async (name: string) => {
+      if (name === 'businessData_userLikes') {
+        return {
+          docs: [
+            { data: () => ({ commentId: 'c1' }) },
+            { data: () => ({ commentId: 'c3' }) },
+          ],
+          empty: false,
+          size: 2,
+        };
+      }
+      return emptyQuerySnap();
     });
-    const { fetchUserLikes } = await import('./businessData');
-    const result = await fetchUserLikes('user_001', ['c1', 'c2', 'c3']);
-    expect(result.has('c1')).toBe(true);
-    expect(result.has('c3')).toBe(true);
-    expect(result.has('c2')).toBe(false);
-  });
-
-  it('splits 35 ids into 2 batches (30 + 5)', async () => {
-    mockGetDocs.mockResolvedValue(emptyQuerySnap());
-    const ids = Array.from({ length: 35 }, (_, i) => `comment${i}`);
-    const { fetchUserLikes } = await import('./businessData');
-    await fetchUserLikes('user_001', ids);
-    // measureAsync wraps one Promise.all with 2 batch getDocs calls
-    expect(mockGetDocs).toHaveBeenCalledTimes(2);
+    const { fetchBusinessData } = await import('./businessData');
+    const result = await fetchBusinessData('biz_001', 'user_001');
+    expect(result.userCommentLikes.has('c1')).toBe(true);
+    expect(result.userCommentLikes.has('c3')).toBe(true);
+    expect(result.userCommentLikes.has('c2')).toBe(false);
   });
 });
 

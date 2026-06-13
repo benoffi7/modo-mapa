@@ -54,6 +54,7 @@ export async function fetchUsersPanelData(maxPerCollection = 500): Promise<UserC
       return {
         userId: String(data.userId ?? ''),
         commentId: String(data.commentId ?? ''),
+        businessId: String(data.businessId ?? ''),
         createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
       };
     }),

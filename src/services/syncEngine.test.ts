@@ -145,7 +145,7 @@ describe('syncEngine', () => {
 
     it('maps comment_like', async () => {
       await executeAction(makeFullAction({ type: 'comment_like', payload: { commentId: 'c1' } }));
-      expect(likeComment).toHaveBeenCalledWith('u1', 'c1');
+      expect(likeComment).toHaveBeenCalledWith('u1', 'c1', 'b1');
     });
 
     it('maps comment_unlike', async () => {

@@ -22,14 +22,14 @@
   "302": {
     "R4-allBusinesses-find": 1,
     "R-stats-barrel": 0,
-    "R-fetchUserLikes-removed": 15,
+    "R-fetchUserLikes-removed": 0,
     "R-newMap-allBusinesses": 0,
     "R6-img-without-lazy": 3,
     "R7-mui-icons-not-split": 0,
     "R8-firebase-storage-in-critical": 0
   },
   "303": {
-    "R1-services-raw-getDocs": 4,
+    "R1-services-raw-getDocs": 2,
     "R5-scheduled-without-timing": 0,
     "R6-callable-without-timing": 0,
     "R7-getCount-without-measure": 0
@@ -83,6 +83,7 @@
   },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   "_total": 198
 =======
   "_total": 200
@@ -90,4 +91,7 @@
 =======
   "_total": 199
 >>>>>>> fix/341-loading-infinito-authcontext
+=======
+  "_total": 184
+>>>>>>> perf/343-fetchuserlikes-fanout
 }

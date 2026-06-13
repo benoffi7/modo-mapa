@@ -54,6 +54,7 @@ export const QUERY_LABELS: Record<string, string> = {
   businessData_ratings: 'Detalle: ratings',
   businessData_comments: 'Detalle: comentarios',
   businessData_userTags: 'Detalle: tags de usuario',
+  businessData_userLikes: 'Detalle: likes del usuario',
   businessData_menuPhotos: 'Detalle: fotos de menú',
 
   // User profile

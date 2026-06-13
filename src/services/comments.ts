@@ -89,11 +89,12 @@ export async function deleteComment(commentId: string, userId: string): Promise<
   );
 }
 
-export async function likeComment(userId: string, commentId: string): Promise<void> {
+export async function likeComment(userId: string, commentId: string, businessId: string): Promise<void> {
   const docId = `${userId}__${commentId}`;
   await setDoc(doc(db, COLLECTIONS.COMMENT_LIKES, docId), {
     userId,
     commentId,
+    businessId,
     createdAt: serverTimestamp(),
   });
   trackEvent('comment_like', { comment_id: commentId });

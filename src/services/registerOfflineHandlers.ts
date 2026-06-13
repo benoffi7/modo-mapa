@@ -80,10 +80,10 @@ const OFFLINE_HANDLERS: Record<OfflineActionType, OfflineHandler> = {
     const { removeUserTag } = await import('./tags');
     await removeUserTag(userId, businessId, tagId);
   },
-  comment_like: async ({ userId, payload }: OfflineAction) => {
+  comment_like: async ({ userId, businessId, payload }: OfflineAction) => {
     const { commentId } = payload as CommentLikePayload;
     const { likeComment } = await import('./comments');
-    await likeComment(userId, commentId);
+    await likeComment(userId, commentId, businessId);
   },
   comment_unlike: async ({ userId, payload }: OfflineAction) => {
     const { commentId } = payload as CommentLikePayload;
