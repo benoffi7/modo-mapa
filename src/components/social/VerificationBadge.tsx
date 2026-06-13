@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import { trackEvent } from '../../utils/analytics';
 import type { VerificationBadge as VerificationBadgeType } from '../../types';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 
 interface Props {
   badge: VerificationBadgeType;
@@ -35,13 +36,7 @@ export default function VerificationBadge({ badge, compact = false }: Props) {
           label={`${badge.icon} ${badge.name}`}
           size="small"
           variant={badge.earned ? 'filled' : 'outlined'}
-          sx={{
-            fontSize: '0.75rem',
-            height: 24,
-            borderColor: badge.earned ? GOLD_HEX : undefined,
-            bgcolor: badge.earned ? goldBg : undefined,
-            '& .MuiChip-label': { px: 0.75 },
-          }}
+          sx={{ ...CHIP_SMALL_SX, borderColor: badge.earned ? GOLD_HEX : undefined, bgcolor: badge.earned ? goldBg : undefined }}
         />
       </Tooltip>
     );

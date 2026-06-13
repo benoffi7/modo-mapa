@@ -44,7 +44,7 @@
     "R1-typography-props": 0,
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
-    "R5-chip-height-adhoc": 6,
+    "R5-chip-height-adhoc": 0,
     "R9-fab-safe-area": 4,
     "R7-box-onclick-without-a11y": 7,
     "R8-chip-small-sx-exists": 0
@@ -81,5 +81,5 @@
     "R1-authcontext-loading-finally": 1,
     "R2-updateUserAvatar-no-fallback": 1
   },
-  "_total": 201
+  "_total": 195
 }

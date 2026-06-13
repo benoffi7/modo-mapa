@@ -11,6 +11,8 @@ export default function FilterChips() {
     bgcolor: isActive ? undefined : 'background.paper',
     boxShadow: 1,
     flexShrink: 0,
+    minHeight: 44,
+    minWidth: 44,
     '&:hover, &.MuiChip-clickable:hover': {
       boxShadow: 2,
       bgcolor: isActive ? undefined : 'background.paper',

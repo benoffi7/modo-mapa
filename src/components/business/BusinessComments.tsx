@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { withBusyFlag } from '../../utils/busyFlag';
@@ -266,7 +267,7 @@ export default memo(function BusinessComments({ comments: rawComments, userComme
                 variant={sortMode === mode ? 'filled' : 'outlined'}
                 color={sortMode === mode ? 'primary' : 'default'}
                 onClick={() => setSortMode(mode)}
-                sx={{ height: 24, fontSize: '0.7rem' }}
+                sx={CHIP_SMALL_SX}
               />
             ))}
           </Box>

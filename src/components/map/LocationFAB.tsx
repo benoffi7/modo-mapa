@@ -13,7 +13,7 @@ export default function LocationFAB() {
       disabled={isLocating}
       sx={{
         position: 'absolute',
-        bottom: 24,
+        bottom: 'calc(24px + env(safe-area-inset-bottom))',
         right: 16,
         backgroundColor: 'background.paper',
         color: 'text.secondary',
