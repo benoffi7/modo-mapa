@@ -117,7 +117,7 @@ export function useCommentListBase({
           isOffline, 'comment_like',
           { userId: user.uid, businessId, businessName },
           { commentId },
-          () => likeComment(user.uid, commentId),
+          () => likeComment(user.uid, commentId, businessId),
           toast,
         );
       }

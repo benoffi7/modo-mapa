@@ -120,12 +120,12 @@ describe('getCommentsCollection', () => {
 });
 
 describe('likeComment', () => {
-  it('creates a like document with composite key userId__commentId', async () => {
+  it('creates a like document with composite key userId__commentId and businessId', async () => {
     mockSetDoc.mockClear();
-    await likeComment('u1', 'c1');
+    await likeComment('u1', 'c1', 'biz_001');
     expect(mockSetDoc).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ userId: 'u1', commentId: 'c1', createdAt: 'SERVER_TIMESTAMP' }),
+      expect.objectContaining({ userId: 'u1', commentId: 'c1', businessId: 'biz_001', createdAt: 'SERVER_TIMESTAMP' }),
     );
   });
 });

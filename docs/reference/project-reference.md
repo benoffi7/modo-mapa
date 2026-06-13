@@ -88,7 +88,7 @@ Cada seccion esta en un archivo separado en [`docs/reference/`](reference/):
 - **`key={id}` remount**: evita useEffect/refs para reset de estado, compatible con strict lint
 - **`enforceAppCheck: !IS_EMULATOR`**: App Check solo en prod, deshabilitado en emuladores
 - **Lazy Sentry**: `@sentry/react` cargado via dynamic `import()` (no en main chunk)
-- **Batched likes**: `fetchUserLikes` usa `documentId('in')` con batches de 30 (no N+1 getDoc)
+- **Likes por query directa** (#343, guard #302 R3): `commentLikes` se lee con `where('userId','==',uid)` + `where('businessId','==',bId)` dentro del `Promise.all` (índice compuesto `commentLikes(userId, businessId)`). Reemplaza el fan-out `fetchUserLikes` por `documentId('in')` (eliminado)
 - **Price level cache**: `usePriceLevelFilter` con `limit(20K)` safety bound + TTL 5min
 - **`useUndoDelete`**: hook generico para undo-delete con Map de pending, timer cleanup en unmount, snackbar props
 - **`PaginatedListShell`**: wrapper reutilizable para skeleton/error/empty/no-results/pagination en listas del menu

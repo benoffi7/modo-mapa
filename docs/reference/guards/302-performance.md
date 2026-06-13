@@ -65,13 +65,15 @@ const TrendsPanel = lazy(() => import('./TrendsPanel'));
 </Suspense>
 ```
 
-### 3. `fetchUserLikes` debe ser query directa por `businessId`
+### 3. `fetchUserLikes` debe ser query directa por `businessId` — ✅ CUMPLIDO (#343)
 
 **Archivo:** `src/services/businessData.ts`
 
+**Estado:** Cumplido en #343 (2026-06-13). El fan-out `fetchUserLikes` fue **eliminado**; la lectura de `commentLikes` es ahora una query directa por `(userId, businessId)` dentro del `Promise.all`. La regla queda como sentinela: prohibido reintroducir el fan-out.
+
 La lectura de `commentLikes` en `fetchBusinessData` **MUST** ser una query directa filtrada por `(userId, businessId)` ejecutada dentro del `Promise.all` principal. Prohibido hacer fan-out por `commentId` post-facto.
 
-Requisitos asociados:
+Requisitos asociados (todos implementados en #343):
 
 - Campo `businessId` presente en doc `commentLikes` (validado por rule en `firestore.rules`)
 - Indice compuesto `commentLikes(userId, businessId)` en `firestore.indexes.json`

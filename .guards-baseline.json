@@ -22,14 +22,14 @@
   "302": {
     "R4-allBusinesses-find": 1,
     "R-stats-barrel": 0,
-    "R-fetchUserLikes-removed": 15,
+    "R-fetchUserLikes-removed": 0,
     "R-newMap-allBusinesses": 0,
     "R6-img-without-lazy": 3,
     "R7-mui-icons-not-split": 0,
     "R8-firebase-storage-in-critical": 0
   },
   "303": {
-    "R1-services-raw-getDocs": 4,
+    "R1-services-raw-getDocs": 2,
     "R5-scheduled-without-timing": 0,
     "R6-callable-without-timing": 0,
     "R7-getCount-without-measure": 3
@@ -81,5 +81,5 @@
     "R1-authcontext-loading-finally": 1,
     "R2-updateUserAvatar-no-fallback": 1
   },
-  "_total": 201
+  "_total": 184
 }

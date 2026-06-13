@@ -411,6 +411,9 @@
   - [7 - Silent Catch Lint](/feat/infra/tech-debt-new-home/7-silent-catch-lint.md)
     - [Specs](/feat/infra/tech-debt-new-home/7-silent-catch-lint-specs.md)
     - [Plan](/feat/infra/tech-debt-new-home/7-silent-catch-lint-plan.md)
+  - [#343 fetchUserLikes fan-out → businessId](/feat/infra/343-fetchuserlikes-fanout-businessid/prd.md)
+    - [Specs](/feat/infra/343-fetchuserlikes-fanout-businessid/specs.md)
+    - [Plan](/feat/infra/343-fetchuserlikes-fanout-businessid/plan.md)
 
 - **Charlas**
   - [De programador a producto](/charlas/de-programador-a-producto.md)

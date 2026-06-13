@@ -219,17 +219,18 @@ async function seed() {
     const idx = USER_IDS.indexOf(userId);
     const createdAt = daysAgo(randomInt(0, 25));
     const isEdited = i % 10 === 0;
+    const businessId = randomFrom(BUSINESS_IDS);
     const ref = await addDoc(collection(db, 'comments'), {
       userId,
       userName: USER_NAMES[idx],
-      businessId: randomFrom(BUSINESS_IDS),
+      businessId,
       text: randomFrom(COMMENT_TEXTS),
       createdAt,
       likeCount: randomInt(0, 8),
       ...(isEdited ? { updatedAt: daysAgo(randomInt(0, 3)) } : {}),
       ...(i % 15 === 0 ? { flagged: true } : {}),
     });
-    commentIds.push({ id: ref.id, userId });
+    commentIds.push({ id: ref.id, userId, businessId });
   }
 
   // 5b. Reply comments (threads)
@@ -281,6 +282,7 @@ async function seed() {
     await setDoc(doc(db, 'commentLikes', key), {
       userId,
       commentId: comment.id,
+      businessId: comment.businessId,
       createdAt: daysAgo(randomInt(0, 15)),
     });
   }

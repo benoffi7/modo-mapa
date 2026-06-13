@@ -62,11 +62,11 @@ export const commentConverter: FirestoreDataConverter<Comment> = {
 
 export const commentLikeConverter: FirestoreDataConverter<CommentLike> = {
   toFirestore(like: CommentLike) {
-    return { userId: like.userId, commentId: like.commentId, createdAt: like.createdAt };
+    return { userId: like.userId, commentId: like.commentId, businessId: like.businessId, createdAt: like.createdAt };
   },
   fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): CommentLike {
     const d = snapshot.data(options);
-    return { userId: d.userId, commentId: d.commentId, createdAt: toDate(d.createdAt) };
+    return { userId: d.userId, commentId: d.commentId, businessId: d.businessId, createdAt: toDate(d.createdAt) };
   },
 };
 

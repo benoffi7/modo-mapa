@@ -1,8 +1,8 @@
-import { collection, query, where, getDocs, doc, documentId } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
-import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter } from '../config/converters';
-import { measureAsync, measuredGetDocs, measuredGetDoc } from '../utils/perfMetrics';
+import { ratingConverter, commentConverter, userTagConverter, customTagConverter, priceLevelConverter, menuPhotoConverter, commentLikeConverter } from '../config/converters';
+import { measuredGetDocs, measuredGetDoc } from '../utils/perfMetrics';
 import type { Rating, Comment, UserTag, CustomTag, PriceLevel, MenuPhoto } from '../types';
 
 export type BusinessDataCollectionName = 'favorites' | 'ratings' | 'comments' | 'userTags' | 'customTags' | 'priceLevels' | 'menuPhotos';
@@ -16,37 +16,6 @@ interface BusinessDataResult {
   userCommentLikes: Set<string>;
   priceLevels: PriceLevel[];
   menuPhoto: MenuPhoto | null;
-}
-
-/** Fetch user's likes for a set of comment IDs using batched documentId() queries. */
-export async function fetchUserLikes(uid: string, commentIds: string[]): Promise<Set<string>> {
-  if (commentIds.length === 0) return new Set();
-
-  const docIds = commentIds.map((cId) => `${uid}__${cId}`);
-  const BATCH_SIZE = 30;
-  const liked = new Set<string>();
-
-  const batches: string[][] = [];
-  for (let i = 0; i < docIds.length; i += BATCH_SIZE) {
-    batches.push(docIds.slice(i, i + BATCH_SIZE));
-  }
-  const snaps = await measureAsync('businessData_userLikes', () =>
-    // perf-instrument-ok — measured in aggregate via measureAsync wrapper above
-    Promise.all(batches.map((batch) =>
-      getDocs(query(
-        collection(db, COLLECTIONS.COMMENT_LIKES),
-        where(documentId(), 'in', batch),
-      ))
-    )),
-  );
-  for (const snap of snaps) {
-    for (const d of snap.docs) {
-      const commentId = d.id.split('__')[1];
-      liked.add(commentId);
-    }
-  }
-
-  return liked;
 }
 
 export async function fetchSingleCollection(bId: string, uid: string, col: BusinessDataCollectionName) {
@@ -63,13 +32,20 @@ export async function fetchSingleCollection(bId: string, uid: string, col: Busin
       return { ratings: snap.docs.map((d) => d.data()) };
     }
     case 'comments': {
-      const snap = await measuredGetDocs('businessData_comments', query(
-        collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
-        where('businessId', '==', bId),
-      ));
+      const [snap, likesSnap] = await Promise.all([
+        measuredGetDocs('businessData_comments', query(
+          collection(db, COLLECTIONS.COMMENTS).withConverter(commentConverter),
+          where('businessId', '==', bId),
+        )),
+        measuredGetDocs('businessData_userLikes', query(
+          collection(db, COLLECTIONS.COMMENT_LIKES).withConverter(commentLikeConverter),
+          where('userId', '==', uid),
+          where('businessId', '==', bId),
+        )),
+      ]);
       const result = snap.docs.map((d) => d.data()).filter((c) => !c.flagged);
       result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      const userCommentLikes = await fetchUserLikes(uid, result.map((c) => c.id));
+      const userCommentLikes = new Set(likesSnap.docs.map((d) => d.data().commentId));
       return { comments: result, userCommentLikes };
     }
     case 'userTags': {
@@ -110,7 +86,7 @@ export async function fetchSingleCollection(bId: string, uid: string, col: Busin
 export async function fetchBusinessData(bId: string, uid: string): Promise<BusinessDataResult> {
   const favDocId = `${uid}__${bId}`;
 
-  const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap] = await Promise.all([
+  const [favSnap, ratingsSnap, commentsSnap, userTagsSnap, customTagsSnap, priceLevelsSnap, menuPhotoSnap, likesSnap] = await Promise.all([
     measuredGetDoc('businessData_favorite', doc(db, COLLECTIONS.FAVORITES, favDocId)),
     measuredGetDocs('businessData_ratings', query(
       collection(db, COLLECTIONS.RATINGS).withConverter(ratingConverter),
@@ -138,6 +114,11 @@ export async function fetchBusinessData(bId: string, uid: string): Promise<Busin
       where('businessId', '==', bId),
       where('status', '==', 'approved'),
     )),
+    measuredGetDocs('businessData_userLikes', query(
+      collection(db, COLLECTIONS.COMMENT_LIKES).withConverter(commentLikeConverter),
+      where('userId', '==', uid),
+      where('businessId', '==', bId),
+    )),
   ]);
 
   const commentsResult = commentsSnap.docs.map((d) => d.data()).filter((c) => !c.flagged);
@@ -145,7 +126,7 @@ export async function fetchBusinessData(bId: string, uid: string): Promise<Busin
   const customTagsResult = customTagsSnap.docs.map((d) => d.data());
   customTagsResult.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-  const userCommentLikes = await fetchUserLikes(uid, commentsResult.map((c) => c.id));
+  const userCommentLikes = new Set(likesSnap.docs.map((d) => d.data().commentId));
 
   return {
     isFavorite: favSnap.exists(),

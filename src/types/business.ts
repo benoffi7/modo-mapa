@@ -55,6 +55,7 @@ export interface Comment {
 export interface CommentLike {
   userId: string;
   commentId: string;
+  businessId: string;
   createdAt: Date;
 }
 
