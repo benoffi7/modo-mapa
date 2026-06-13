@@ -134,10 +134,11 @@ describe('commentConverter', () => {
 // commentLikeConverter
 // ---------------------------------------------------------------------------
 describe('commentLikeConverter', () => {
-  it('round-trips correctly', () => {
-    const like = { userId: 'u1', commentId: 'c1', createdAt: NOW };
+  it('round-trips correctly (incluye businessId)', () => {
+    const like = { userId: 'u1', commentId: 'c1', businessId: 'biz_001', createdAt: NOW };
     const result = commentLikeConverter.toFirestore(like);
     expect(result).toEqual(like);
+    expect(result).toHaveProperty('businessId', 'biz_001');
 
     const snap = mockSnapshot(like);
     expect(commentLikeConverter.fromFirestore(snap)).toEqual(like);

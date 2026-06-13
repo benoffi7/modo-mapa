@@ -18,7 +18,7 @@ import { MSG_SOCIAL } from '../../constants/messages';
 
 import { trackEvent } from '../../utils/analytics';
 import { EVT_RECOMMENDATION_OPENED, EVT_RECOMMENDATION_LIST_VIEWED } from '../../constants/analyticsEvents';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { CATEGORY_LABELS } from '../../constants/business';
@@ -49,20 +49,27 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
     userId,
   );
 
+  // #340 W5: el evento "viewed" se emite UNA vez por apertura (deps: solo userId),
+  // no en cada toggle de conectividad. Antes el effect dependia de [userId, isOffline]
+  // e inflaba el conteo en cada cambio de `isOffline`.
   useEffect(() => {
     trackEvent(EVT_RECOMMENDATION_LIST_VIEWED);
-    if (userId) {
+  }, [userId]);
+
+  // #323 C5: gated offline (batch write no encolable; badge se reconcilia al volver online).
+  useEffect(() => {
+    if (userId && !isOffline) {
       markAllRecommendationsAsRead(userId).catch((err) => {
         logger.error('markAllRead failed:', err);
       });
     }
-  }, [userId]);
+  }, [userId, isOffline]);
 
   // Reload when social > recomendaciones becomes active
   useSocialSubTabRefresh('recomendaciones', reload);
 
   const handleClick = useCallback((rec: Recommendation) => {
-    const business = allBusinesses.find((b) => b.id === rec.businessId);
+    const business = getBusinessById(rec.businessId);
     if (business) {
       if (!rec.read && userId) {
         withOfflineSupport(
@@ -97,7 +104,7 @@ export default function ReceivedRecommendations({ onSelectBusiness }: Props) {
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {items.map((rec) => {
-              const biz = allBusinesses.find((b) => b.id === rec.businessId);
+              const biz = getBusinessById(rec.businessId);
               const dist = biz ? formatDistance(distanceKm(sortLocation.lat, sortLocation.lng, biz.lat, biz.lng)) : '';
               const cat = biz ? (CATEGORY_LABELS[biz.category as BusinessCategory] ?? biz.category) : '';
               return (

@@ -2,11 +2,10 @@
  * Firestore + Storage service for the `menuPhotos` collection.
  */
 import { collection, doc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import type { CollectionReference, DocumentReference } from 'firebase/firestore';
 import type { UploadTask } from 'firebase/storage';
-import { db, storage, functions } from '../config/firebase';
+import { db, functions, getStorageInstance } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { menuPhotoConverter } from '../config/converters';
 import { invalidateBusinessCache } from './businessDataCache';
@@ -52,7 +51,11 @@ export async function uploadMenuPhoto(
   const docRef: DocumentReference = doc(collection(db, COLLECTIONS.MENU_PHOTOS));
   const storagePath = `menus/${userId}/${businessId}/${docRef.id}_original`;
 
-  // Upload to Storage with explicit content type
+  // Upload to Storage with explicit content type (storage SDK lazy-loaded)
+  const [{ ref, uploadBytesResumable }, storage] = await Promise.all([
+    import('firebase/storage'),
+    getStorageInstance(),
+  ]);
   const storageRef = ref(storage, storagePath);
   const uploadTask: UploadTask = uploadBytesResumable(storageRef, file, {
     contentType: file.type || 'image/jpeg',
@@ -138,5 +141,9 @@ export async function reportMenuPhoto(photoId: string): Promise<void> {
  * Get download URL for a menu photo from Storage.
  */
 export async function getMenuPhotoUrl(path: string): Promise<string> {
+  const [{ ref, getDownloadURL }, storage] = await Promise.all([
+    import('firebase/storage'),
+    getStorageInstance(),
+  ]);
   return getDownloadURL(ref(storage, path));
 }

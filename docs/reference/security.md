@@ -88,9 +88,9 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `favorites` | auth | owner, `keys().hasOnly()` | — | owner |
 | `ratings` | auth | owner, `keys().hasOnly()`, score 1-5, isValidCriteria | owner, `affectedKeys().hasOnly(['score','updatedAt','criteria'])` | owner |
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
-| `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
+| `commentLikes` | auth | owner, `keys().hasOnly(['userId','commentId','businessId','createdAt'])`, `isValidBusinessId(businessId)`, `commentId.size()>0`, createdAt==request.time | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
-| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
+| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner | Rules test cubierto en `tests/rules/customTags.rules.test.ts` (#344). Doc ID client-side (`setDoc`) no abre vector overwrite: el create exige `userId == auth.uid` y update/delete `resource.data.userId == auth.uid` (lo validado son los campos, no el ID) |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
 | `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only, storagePath regex validated (`^menus/{uid}/biz_NNN/...`), thumbnailPath must be empty | Functions only | Functions only | Rate limit 10/día |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner, `affectedKeys().hasOnly(['level','updatedAt'])` | owner |
@@ -114,6 +114,18 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 - **Type validation (#251)**: userSettings validates notifyFollowers/notifyRecommendations as bool, notificationDigest as string<=10, followedTags as list<=20 with timestamp fields. sharedLists validates color (string<=20) and icon (string<=50) on create and update. listItems rate limit now deletes the offending document.
 - **Per-item list validation (#289)**: followedTags validates each item is string<=50 via `isValidFollowedTags()` function (CEL index enumeration for up to 20 items). listItems.businessId uses `isValidBusinessId()`. follows.followedId and listItems.listId capped at 128 chars.
 - **sharedLists rate limit (#289)**: `onSharedListCreated` trigger enforces 10 lists/day per owner with `snap.ref.delete()` + abuse logging.
+- **Type guards explicitos (#322, R12)**: `feedback.message` y `notifications.read` chequean `is string`/`is bool` antes de `.size()` o equality (en CEL, `.size()` aplica a strings/listas/maps — sin guard, un atacante puede enviar listas o maps que pasan el size cap). `userSettings.localityLat/Lng` validan `is number` + range finito (NaN/Infinity rechazados). Ver [guard 300-security R12](guards/300-security.md).
+- **`displayNameLower` equality bidireccional (#322, R12)**: rules de `users` create y update validan `displayNameLower == displayName.lower()`. Cierra hijack de busqueda donde el cliente enviaba `displayNameLower` desincronizado del `displayName` real (la busqueda por prefijo usa `displayNameLower`). El script `scripts/migrate-displayname-lower-sync.mjs` sincroniza docs legacy pre-deploy.
+
+### Tests automatizados de `firestore.rules` (#332)
+
+Infra de unit testing montada con `@firebase/rules-unit-testing` v5 +
+emulador Firestore. Cobertura actual: `users` (R6/R7/R12 — 16 tests).
+Job `rules-test` corre en `deploy.yml` y `deploy-staging.yml` como
+gate del deploy de rules.
+
+Detalles, plantilla para agregar tests por coleccion e inventario de
+invariantes pendientes en [`docs/reference/tests.md`](tests.md#firestore-rules-tests).
 
 ---
 
@@ -200,6 +212,11 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `deleteUserAccount` | 1/min por usuario | `delete_{userId}` |
 | `cleanAnonymousData` | 1/min por usuario | `clean_{userId}` |
 | `writePerfMetrics` | 5/día por usuario | `perf_{userId}` |
+| `adminListRateLimits` (#310/#327) | 30/día por admin | `admin_rate_limits_{uid}` |
+| `adminResetRateLimit` (#310/#327) | 20/día por admin | `admin_rate_limit_reset_{uid}` |
+| `adminDeleteListItem` (#310/#327) | 50/día por admin | `admin_delete_list_item_{uid}` |
+| `adminListIpRateLimits` (#348) | 30/día por admin | `admin_ip_rate_limits_{uid}` |
+| `adminResetIpRateLimit` (#348) | 20/día por admin | `admin_ip_rate_limit_reset_{uid}` |
 
 Los callables de editores usan `checkCallableRateLimit()` de `functions/src/utils/callableRateLimit.ts` con transacción atómica y ventana diaria.
 
@@ -207,6 +224,17 @@ Los callables de editores usan `checkCallableRateLimit()` de `functions/src/util
 
 - `inviteListEditor` response no incluye `targetUid` (solo `{ success: true }`)
 - `EditorsDialog` muestra "Editor" como secondary text en vez de UID parcial
+
+### Email enumeration prevention en callables (#322, R13)
+
+- `inviteListEditor` y `removeListEditor` devuelven respuesta uniforme (`{ success: true }`) sin importar si el `targetEmail` mapea a un usuario registrado, ya era editor, o no existe. La accion real (agregar editor, enviar invitacion) se ejecuta solo cuando el usuario existe; la API no leak la existencia.
+- Errores de validacion previos (input invalido, self-invite, rate limit excedido) si pueden distinguirse del cliente — pero "email no encontrado" / "ya es editor" / "exitoso" son indistinguibles. Ver [guard 300-security R13](guards/300-security.md).
+
+### Bootstrap admin gate (#322, R14)
+
+- `setAdminClaim` (`functions/src/admin/claims.ts`) tiene una rama de bootstrap (`isBootstrap` via `email_verified === true && email === ADMIN_EMAIL`) que permitia auto-asignacion del primer admin sin claim previo.
+- La rama esta gateada por el flag `config/bootstrap.adminAssigned`. Tras el primer admin asignado, el handler setea atomicamente `adminAssigned: true` y rechaza intentos posteriores con `permission-denied`. Cierra el vector donde un compromiso de la cuenta `ADMIN_EMAIL` (phishing, leak) permitia hijack del rol admin.
+- Para recovery operativo (rotacion de admin, migracion de cuenta, post-incidente), seguir [docs/procedures/reset-bootstrap-admin.md](../procedures/reset-bootstrap-admin.md). Ver [guard 300-security R14](guards/300-security.md).
 
 ### IP-based rate limiting
 
@@ -218,6 +246,8 @@ Los callables de editores usan `checkCallableRateLimit()` de `functions/src/util
 - IPs hasheadas con SHA-256 (nunca se almacenan raw)
 - Colección `_ipRateLimits` con reset diario
 - `beforeUserCreated` blocking function para cuentas anónimas
+- Inspector admin (#348): la tab Alertas → subtab "Rate Limits IP" lista `_ipRateLimits` (hash-only) vía el callable `adminListIpRateLimits` y permite resetear una entrada (`adminResetIpRateLimit`, auditado en `abuseLogs`). El acceso es 100% Admin SDK; la colección mantiene `allow read, write: if false`.
+- Tipo de alerta (#348): al bloquear una IP (límite excedido), `beforeUserCreated` emite un `abuseLog` con `type: 'ip_rate_limit'` (`severity: 'high'`, acción tomada), distinto del `anon_flood` del umbral de detección (`severity: 'medium'`).
 
 ### Follow notification dedup
 
@@ -291,6 +321,26 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
   delete: auth != null && auth.uid == userId
 ```
 
+### Validacion client-side de `mediaUrl` (`isValidStorageUrl`, #342)
+
+`src/utils/media.ts` valida en el cliente (render del preview) que la URL sea un objeto canonico de Firebase Storage: host exacto **+** segmento `/v0/b/<bucket>/o/` (regex anclada con `^`). Bucket generico (`[^/]+`) para no romper render de `mediaUrl` legacy que pudiera apuntar a otro bucket; un solo segmento sin `/` impide inyectar sub-paths en la posicion del bucket.
+
+Esta validacion es **independiente** de la rule de Firestore (`firestore.rules:222`), no un espejo:
+
+| Capa | Que valida | Donde |
+|------|-----------|-------|
+| Rule (write, server) | Path canonico **encoded** (`%2F`) + ownership (`uid`/`docId`), con `.*` (NO ancla `/v0/b/`) | `firestore.rules:222,242` |
+| `isValidStorageUrl` (read/render, client) | Host exacto + segmento `/v0/b/<bucket>/o/` decodificado | `src/utils/media.ts` |
+
+Son dos capas de defense-in-depth con responsabilidades separadas; ninguna reemplaza a la otra.
+
+### Dependencias con advisories parchadas (#342)
+
+- `react-router-dom >= 7.14.2` (root): cierra GHSA-49rj-9fvp-4h2h (turbo-stream RCE), GHSA-8646-j5j9-6r62 (RSC XSS) y GHSA-2j2x-hqr9-3h42 (open redirect). No alcanzables con la API declarativa del proyecto, parchados de todas formas.
+- `firebase-admin@^13.10.0` (functions, dentro del major 13 para no romper el peer dep de `firebase-functions`): asegura `protobufjs >= 7.2.5` (resuelve a `7.5.5`) en la cadena runtime via `google-gax`.
+
+> NOTA: el bump de `firebase-admin` se mantiene dentro del major 13 a proposito; subir a 14 rompe el peer dep de `firebase-functions` y agrava #168 (fuera de scope).
+
 ---
 
 ## Límites de validación
@@ -304,7 +354,7 @@ feedback-media/{userId}/{feedbackId}/{fileName}:
 | Feedback message | 1000 chars | Server |
 | Rating score | 1-5 | Server |
 | Feedback rating | 1-5 (int, optional) | Server |
-| Feedback mediaUrl | Firebase Storage URL only | Server + Client |
+| Feedback mediaUrl | Firebase Storage URL only (cliente exige segmento canonico `/v0/b/<bucket>/o/`, #342) | Server + Client |
 | Feedback mediaType | image, pdf | Server |
 | Custom tags por comercio | 10 | Client |
 | Comentarios por usuario/día | 20 | Client |
@@ -348,6 +398,14 @@ Converters disponibles: `userProfileConverter`, `ratingConverter`, `commentConve
 1. **Error Boundary:** Componentes que pueden fallar deben estar dentro del Error Boundary global.
 2. **ARIA labels:** Todo botón de ícono y elemento interactivo sin texto visible debe tener `aria-label`.
 3. **No deshabilitar zoom:** Mantener `user-scalable=yes` en el viewport.
+
+---
+
+## Cache de Firestore como vector de desactualización
+
+`fetchAppVersionConfig` usaba `getDoc()` que puede devolver datos del cache local (IndexedDB), permitiendo que el cliente no detecte una actualización requerida si el cache no fue invalidado.
+
+**Mitigación:** `getDocFromServer()` fuerza fetch desde el servidor. Si el servidor no está disponible (offline/error transiente), se reintenta 2 veces antes de caer al cache local. La telemetría `source: 'cache'` permite detectar sesiones que no pudieron verificar la versión real.
 
 ---
 

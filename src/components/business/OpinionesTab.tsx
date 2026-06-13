@@ -12,7 +12,6 @@ interface Props {
   userCommentLikes: Set<string>;
   isLoading: boolean;
   onCommentsChange: () => void;
-  onDirtyChange: (dirty: boolean) => void;
 }
 
 export default memo(function OpinionesTab({
@@ -21,7 +20,6 @@ export default memo(function OpinionesTab({
   userCommentLikes,
   isLoading,
   onCommentsChange,
-  onDirtyChange,
 }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('comments');
 
@@ -42,7 +40,6 @@ export default memo(function OpinionesTab({
           userCommentLikes={userCommentLikes}
           isLoading={isLoading}
           onCommentsChange={onCommentsChange}
-          onDirtyChange={onDirtyChange}
         />
       </Box>
       <Box sx={{ display: subTab === 'questions' ? 'block' : 'none' }}>

@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConnectivityProvider } from './context/ConnectivityContext';
+import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { useScreenTracking } from './hooks/useScreenTracking';
 import { useForceUpdate } from './hooks/useForceUpdate';
@@ -36,6 +37,8 @@ function App() {
         <ToastProvider>
         <ConnectivityProvider>
         <NotificationsProvider>
+          {/* #323 D2: indicator montado en root para visibilidad en cualquier ruta/dialog full-screen */}
+          <OfflineIndicator />
           <Routes>
             {import.meta.env.DEV && (
               <>

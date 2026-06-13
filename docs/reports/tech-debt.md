@@ -35,7 +35,7 @@ Sin deuda técnica pendiente.
 | `MapAppShell-*.js` | 137 KB | 48 KB | AppShell + map components (lazy-loaded) |
 | `google-maps-*.js` | 21 KB | 8 KB | @vis.gl/react-google-maps (lazy-loaded) |
 | `mui-*.js` | 468 KB | 142 KB | @mui/material (tree-shaken) |
-| `firebase-*.js` | 465 KB | 142 KB | firebase/firestore, firebase/auth, firebase/storage |
+| `firebase-*.js` | 417 KB | 131 KB | firebase/firestore, firebase/auth (storage lazy desde #334) |
 | `recharts-*.js` | 375 KB | 110 KB | recharts (admin + stats only) |
 
 ---

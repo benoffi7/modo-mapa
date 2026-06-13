@@ -8,6 +8,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import { MEDALS } from '../../constants/rankings';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_TRENDING_BUSINESS_CLICKED } from '../../constants/analyticsEvents';
 import type { TrendingBusiness, Business, BusinessCategory } from '../../types';
@@ -60,11 +61,11 @@ export default memo(function TrendingBusinessCard({ business, fullBusiness, rank
             return (
               <Chip
                 key={key}
-                icon={<Icon sx={{ fontSize: 14 }} />}
+                icon={<Icon />}
                 label={`+${count} ${label}`}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={CHIP_SMALL_SX}
               />
             );
           })}

@@ -24,6 +24,31 @@ Del diff que te pasan, buscas:
 6. **Performance footguns** — N+1 queries, subscripciones sin cleanup en useEffect, renders innecesarios en rutas criticas
 7. **Integridad de datos** — writes que pueden dejar Firestore en estado inconsistente si fallan a mitad
 
+## Auditar el patron, no solo el diff
+
+El sesgo natural es revisar las lineas cambiadas. Eso pierde bugs cuando el fix
+introduce un patron que rompe en escenarios que el diff no toca. Antes de
+emitir el Indictment, recorre estos escenarios genericos:
+
+- **Lifecycle completo**: si el fix introduce caches/subscripciones/listeners
+  module-level o en context, ¿hay cleanup en logout / multi-cuenta / cambio de
+  user uid / unmount de provider? `grep -rn "signOut\|logout\|onAuthStateChanged"`
+  para ubicar los puntos donde hay que limpiar.
+- **z-index / overlays**: si se cambian `zIndex` o portales, comparar contra
+  `theme.zIndex.snackbar`, `modal`, `tooltip`. Un fix de "modal+1" no sirve si
+  hay snackbar (1400) por encima.
+- **Exports sin consumer**: si se expone una API publica nueva
+  (`flushXxx`, `resetXxx`, etc), `grep -rn "<nombre>"` el repo. Si nadie la
+  consume → WARNING (placeholder API, contradice `feedback_no_placeholder_props`).
+- **Storage keys / convenciones**: nuevas keys deben pasar por
+  `src/constants/storage.ts` (snake_case).
+- **Call-sites del simbolo cambiado**: si una funcion cambia firma o
+  comportamiento, `grep -rn` cada call-site y verifica que el nuevo contrato se
+  cumple en todos.
+
+Solo despues de pasar estos cinco checks, emitir el Indictment. Documentar en
+el Veredicto bajo "Patron auditado" cuales aplicaron.
+
 ## Lo que NO revisas
 
 - Estilo, formatting, naming (ESLint lo maneja)

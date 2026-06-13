@@ -31,7 +31,7 @@ VITE_SENTRY_DSN=
 ### Cloud Functions (`functions/.env`)
 
 ```bash
-ADMIN_EMAIL=benoffi11@gmail.com  # Email del admin (usado por defineString en backups.ts)
+ADMIN_EMAIL=benoffi11@gmail.com  # Email del admin (usado por defineString en claims.ts)
 ```
 
 ### Sentry (CI/CD — secrets de GitHub)
@@ -98,11 +98,12 @@ Trigger: push a `main`
 1. **lint**: Node 22 + `npm audit --audit-level=high` (continue-on-error) + `npm run lint`
 2. **test**: `npm run test:coverage` (root — solo `src/`, excluye `functions/`)
 3. **functions-test**: `cd functions && npm ci && npm run test:coverage`
-4. **deploy-rules-and-functions** (needs lint, test, functions-test):
+4. **rules-test**: setup-node + setup-java (Temurin 17) + `npm ci` + `npx firebase-tools emulators:exec --only firestore "npm run test:rules:ci"` (16 tests, hard-fail sin retry)
+5. **deploy-rules-and-functions** (needs lint, test, functions-test, rules-test):
    - Auth: `google-github-actions/auth@v2` con service account
    - Deploy Firestore rules + indexes
    - Deploy Cloud Functions (con `--force`)
-5. **build-and-deploy-hosting** (needs lint, test, functions-test):
+6. **build-and-deploy-hosting** (needs lint, test, functions-test):
    - `npm run build` con todos los secrets como env vars (incluyendo Sentry)
    - Deploy hosting canal `production`
    - **Update minVersion**: si `src/` o `functions/` cambiaron, ejecuta `scripts/update-min-version.js` para forzar recarga en clientes desactualizados
@@ -114,10 +115,11 @@ Trigger: push a `staging`
 1. **lint**: Incluye `scripts/pre-staging-check.sh` para detectar patrones problematicos (ej: imports hardcodeados a DB default)
 2. **test**: `npm run test:run` (sin cobertura)
 3. **functions-test**: `npm run test:run`
-4. **deploy-rules-and-functions**:
+4. **rules-test**: setup-java + `emulators:exec --only firestore` (idem prod, gatea deploy de staging DB)
+5. **deploy-rules-and-functions** (needs lint, test, functions-test, rules-test):
    - Deploy reglas con `scripts/deploy-staging-rules.sh` (apunta a database `staging`)
    - **Deploy condicional de funciones**: solo si `functions/src/` o `functions/package.json` cambiaron vs `origin/main`
-5. **build-and-deploy-hosting**:
+6. **build-and-deploy-hosting**:
    - Build con `VITE_FIRESTORE_DATABASE_ID: staging` (hardcodeado, no secret)
    - Deploy hosting canal `staging`
 
@@ -137,12 +139,22 @@ Trigger: push a `staging`
 
 ### Arquitectura de tests en CI
 
-- Root vitest (`vite.config.ts`): entorno jsdom, solo `src/`, excluye `functions/**` y `.claude/**`
+- Root vitest (`vite.config.ts`): entorno jsdom, solo `src/`, excluye `functions/**`, `tests/**` y `.claude/**`
 - Functions vitest (`functions/vitest.config.ts`): entorno node, solo `functions/src/`
+- Rules vitest (`vitest.rules.config.ts`): entorno node, solo `tests/rules/**`, sin coverage thresholds, requiere emulador Firestore en `localhost:8080`. Comando: `npm run test:rules` (local, levanta emulador) / `npm run test:rules:ci` (CI, asume emulador corriendo)
 - VITE_ env vars solo disponibles en el step de build, NO en tests
 - Tests que importan modulos que chainan a `firebase.ts` deben mockear la cadena
 
 **Todo se despliega automaticamente** en cada push a main: hosting, Firestore rules/indexes, y Cloud Functions.
+
+### Invariante de `npm audit` (runtime vs dev/CLI) — #342
+
+El step `npm audit --audit-level=high` del job `lint` corre con `continue-on-error: true` (soft-gate): documenta vulnerabilidades sin romper el pipeline. El invariante se interpreta en **dos capas distintas**, no como un umbral unico:
+
+- **Runtime de Cloud Functions (`functions/`):** debe quedar en **0 vulnerabilidades HIGH**. Es codigo que corre en produccion, sin ramas dev. Verificable con `cd functions && npm audit --audit-level=high` → exit 0. La cadena transitiva critica (`protobufjs` via `google-gax` via `firebase-admin`) debe estar parcheada (`protobufjs >= 7.2.5`; hoy resuelve a `7.5.5` con `firebase-admin@^13.10.0`).
+- **Dev/CLI transitivas del root (`package.json`):** el root incluye herramientas de build/CLI (`firebase-tools`, etc.) cuyas dependencias transitivas pueden listar vulns moderate/high que **no llegan al bundle de produccion**. Estas quedan **documentadas con justificacion**; el `continue-on-error: true` se mantiene deliberadamente para no bloquear merges de bajo riesgo detras de vulns de tooling. Convertirlo en gate duro esta fuera de scope (riesgo alto, adyacente a #168).
+
+> #342 redefine este invariante en TEXTO; **no** introduce un gate duro nuevo en `deploy.yml` / `guards.yml`. La distincion runtime-vs-dev es la salida valida del Success Criteria #3.
 
 ### IAM roles requeridos
 

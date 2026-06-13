@@ -34,4 +34,12 @@ describe('RatingPromptBanner', () => {
     render(<RatingPromptBanner {...defaultProps} />);
     expect(screen.getByTestId('StarIcon')).toBeInTheDocument();
   });
+
+  it('IconButton dismiss respeta touch target ≥44x44', () => {
+    render(<RatingPromptBanner {...defaultProps} />);
+    const btn = screen.getByRole('button', { name: 'Cerrar' }) as HTMLElement;
+    const styles = window.getComputedStyle(btn);
+    expect(styles.minWidth).toBe('44px');
+    expect(styles.minHeight).toBe('44px');
+  });
 });

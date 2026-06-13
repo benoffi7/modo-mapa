@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -18,19 +18,24 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { useOptionalBusinessScope } from '../../context/BusinessScopeContext';
 import { MAX_LISTS } from '../../constants/lists';
 import {
   createList,
+  generateListId,
   addBusinessToList,
   removeBusinessFromList,
   fetchListItems,
   fetchAllAccessibleLists,
   fetchUserLists,
 } from '../../services/sharedLists';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import type { SharedList } from '../../types';
 import { MSG_LIST } from '../../constants/messages';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 
 interface Props {
   open: boolean;
@@ -42,6 +47,7 @@ interface Props {
 export default function AddToListDialog({ open, onClose, businessId: propBusinessId, businessName: propBusinessName }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const scope = useOptionalBusinessScope();
   const businessId = propBusinessId ?? scope?.businessId ?? '';
   const businessName = propBusinessName ?? scope?.businessName ?? '';
@@ -56,6 +62,11 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
+  // #340 W4: listas creadas offline aun no estan en Firestore. El re-fetch del
+  // useEffect las borraria de la UI hasta reconectar. Las guardamos aparte y las
+  // re-mergeamos tras cada fetch para preservar el estado optimista.
+  const optimisticListsRef = useRef<SharedList[]>([]);
+
   useEffect(() => {
     if (!user || !open) return;
     let ignore = false;
@@ -67,7 +78,10 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
       try {
         const allLists = await fetchAllAccessibleLists(user.uid);
         if (ignore) return;
-        setLists(allLists);
+        // Re-merge listas optimistas (creadas offline) que el fetch aun no devuelve.
+        const fetchedIds = new Set(allLists.map((l) => l.id));
+        const pendingOptimistic = optimisticListsRef.current.filter((l) => !fetchedIds.has(l.id));
+        setLists([...pendingOptimistic, ...allLists]);
 
         const checked = new Set<string>();
         for (const list of allLists) {
@@ -76,7 +90,11 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
             checked.add(list.id);
           }
         }
-        if (!ignore) setCheckedIds(checked);
+        if (!ignore) {
+          // Las listas optimistas ya tienen el comercio agregado (creadas con él).
+          for (const l of pendingOptimistic) checked.add(l.id);
+          setCheckedIds(checked);
+        }
       } catch (err) {
         logger.error('[AddToListDialog] load failed:', err);
       }
@@ -87,16 +105,34 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
   }, [user, open, businessId]);
 
   const handleToggle = async (listId: string) => {
+    if (!user) return;
     setActionInProgress(listId);
     const isChecked = checkedIds.has(listId);
     try {
       if (isChecked) {
-        await removeBusinessFromList(listId, businessId);
+        // #323: wrap remove con withOfflineSupport (encolable)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_remove',
+          { userId: user.uid, businessId, listId },
+          {},
+          () => removeBusinessFromList(listId, businessId),
+          toast,
+        );
         setCheckedIds((prev) => { const next = new Set(prev); next.delete(listId); return next; });
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l));
       } else {
         const list = lists.find((l) => l.id === listId);
-        await addBusinessToList(listId, businessId, list && user && list.ownerId !== user.uid ? user.uid : undefined);
+        const addedBy = list && list.ownerId !== user.uid ? user.uid : undefined;
+        // #323: wrap add con withOfflineSupport (encolable)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_add',
+          { userId: user.uid, businessId, listId },
+          { ...(addedBy ? { addedBy } : {}) },
+          () => addBusinessToList(listId, businessId, addedBy),
+          toast,
+        );
         setCheckedIds((prev) => new Set(prev).add(listId));
         setLists((prev) => prev.map((l) => l.id === listId ? { ...l, itemCount: l.itemCount + 1 } : l));
       }
@@ -111,16 +147,59 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
     if (!user || !newName.trim()) return;
     setIsCreating(true);
     try {
-      const listId = await createList(user.uid, newName);
-      // Add business to the new list immediately
-      await addBusinessToList(listId, businessId);
-      setNewName('');
-      setShowCreate(false);
-      toast.success(MSG_LIST.createAndAddSuccess);
-      // Reload lists
-      const refreshed = await fetchUserLists(user.uid);
-      setLists(refreshed);
-      setCheckedIds((prev) => new Set(prev).add(listId));
+      // #323: client-side id permite optimistic UI offline-first
+      const generatedId = generateListId();
+      const trimmedName = newName.trim();
+      await withBusyFlag('list_create', async () => {
+        await withOfflineSupport(
+          isOffline,
+          'list_create',
+          { userId: user.uid, businessId: '', listId: generatedId },
+          { name: trimmedName, description: '' },
+          () => createList(user.uid, trimmedName, '', undefined, generatedId),
+          toast,
+        );
+        // Add business to the new list (encolable separadamente)
+        await withOfflineSupport(
+          isOffline,
+          'list_item_add',
+          { userId: user.uid, businessId, listId: generatedId },
+          {},
+          () => addBusinessToList(generatedId, businessId),
+          toast,
+        );
+        setNewName('');
+        setShowCreate(false);
+        if (!isOffline) toast.success(MSG_LIST.createAndAddSuccess);
+        // Reload lists (online only — offline keeps optimistic state)
+        if (!isOffline) {
+          const refreshed = await fetchUserLists(user.uid);
+          setLists(refreshed);
+        } else {
+          // #340 W4: registramos la lista optimista para que sobreviva a re-fetches
+          // hasta que el replay la persista y el fetch la devuelva.
+          const optimisticList: SharedList = {
+            id: generatedId,
+            ownerId: user.uid,
+            name: trimmedName,
+            description: '',
+            isPublic: false,
+            featured: false,
+            editorIds: [],
+            itemCount: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          optimisticListsRef.current = [
+            optimisticList,
+            ...optimisticListsRef.current.filter((l) => l.id !== generatedId),
+          ];
+          setLists((prev) =>
+            prev.some((l) => l.id === generatedId) ? prev : [optimisticList, ...prev],
+          );
+        }
+        setCheckedIds((prev) => new Set(prev).add(generatedId));
+      });
     } catch (err) {
       logger.error('[AddToListDialog] create failed:', err);
       toast.error(MSG_LIST.createError);
@@ -169,7 +248,7 @@ export default function AddToListDialog({ open, onClose, businessId: propBusines
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         {list.name}
                         {user && list.ownerId !== user.uid && (
-                          <Chip label="Colaborativa" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
+                          <Chip label="Colaborativa" size="small" variant="outlined" sx={CHIP_SMALL_SX} />
                         )}
                       </Box>
                     }

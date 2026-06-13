@@ -8,7 +8,12 @@ vi.mock('../hooks/useBusinesses', () => ({
   ],
 }));
 
-import { getBusinessMap, getBusinessById, __resetBusinessMap } from './businessMap';
+import {
+  getBusinessMap,
+  getBusinessById,
+  getAllBusinessIdsSet,
+  __resetBusinessMap,
+} from './businessMap';
 
 describe('businessMap singleton', () => {
   beforeEach(() => {
@@ -63,6 +68,61 @@ describe('businessMap singleton', () => {
       getBusinessById('biz_002');
       const mapAfterSecond = getBusinessMap();
       expect(mapAfterFirst).toBe(mapAfterSecond);
+    });
+  });
+
+  describe('getAllBusinessIdsSet', () => {
+    it('returns a Set containing every business id', () => {
+      const ids = getAllBusinessIdsSet();
+      expect(ids).toBeInstanceOf(Set);
+      expect(ids.size).toBe(3);
+      expect(ids.has('biz_001')).toBe(true);
+      expect(ids.has('biz_002')).toBe(true);
+      expect(ids.has('biz_003')).toBe(true);
+    });
+
+    it('returns false for ids that are not in the dataset', () => {
+      const ids = getAllBusinessIdsSet();
+      expect(ids.has('biz_999')).toBe(false);
+      expect(ids.has('')).toBe(false);
+    });
+
+    it('returns the same Set reference on successive calls (singleton)', () => {
+      const first = getAllBusinessIdsSet();
+      const second = getAllBusinessIdsSet();
+      const third = getAllBusinessIdsSet();
+      expect(first).toBe(second);
+      expect(second).toBe(third);
+    });
+
+    it('rebuilds the Set after __resetBusinessMap', () => {
+      const first = getAllBusinessIdsSet();
+      __resetBusinessMap();
+      const second = getAllBusinessIdsSet();
+      expect(first).not.toBe(second);
+      expect(second.size).toBe(3);
+    });
+  });
+
+  describe('coordinated reset (Map + Set)', () => {
+    it('resets both Map and Set singletons in a single invocation', () => {
+      const prevMap = getBusinessMap();
+      const prevSet = getAllBusinessIdsSet();
+
+      __resetBusinessMap();
+
+      const newMap = getBusinessMap();
+      const newSet = getAllBusinessIdsSet();
+
+      // Both singletons must be fresh instances after the coordinated reset.
+      expect(newMap).not.toBe(prevMap);
+      expect(newSet).not.toBe(prevSet);
+
+      // Content invariants preserved.
+      expect(newMap.size).toBe(3);
+      expect(newSet.size).toBe(3);
+      expect(newMap.get('biz_001')?.name).toBe('Café Central');
+      expect(newSet.has('biz_001')).toBe(true);
     });
   });
 });

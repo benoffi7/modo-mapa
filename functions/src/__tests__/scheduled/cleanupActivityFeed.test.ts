@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   handlerHolder,
   mockGetDb,
+  mockTrackFunctionTiming,
 } = vi.hoisted(() => ({
   handlerHolder: { fn: null as (() => Promise<void>) | null },
   mockGetDb: vi.fn(),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-functions/v2/scheduler', () => ({
@@ -17,6 +19,10 @@ vi.mock('firebase-functions/v2/scheduler', () => ({
 
 vi.mock('../../helpers/env', () => ({
   get getDb() { return mockGetDb; },
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 function makeDocRef(parentPath: string) {
@@ -122,5 +128,13 @@ describe('cleanupActivityFeed', () => {
     // The limit(500) is in the source -- we verify the mock chain works
     await handlerHolder.fn!();
     // No error means the chain worked correctly
+  });
+
+  it('tracks function timing with cleanupActivityFeed label', async () => {
+    createMockSetup([], true);
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('cleanupActivityFeed', expect.any(Number));
   });
 });

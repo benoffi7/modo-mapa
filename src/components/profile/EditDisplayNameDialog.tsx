@@ -8,7 +8,10 @@ import {
   Button,
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { MAX_DISPLAY_NAME_LENGTH } from '../../constants/validation';
+import { MSG_OFFLINE } from '../../constants/messages/offline';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface EditDisplayNameDialogProps {
   open: boolean;
@@ -17,14 +20,17 @@ interface EditDisplayNameDialogProps {
 
 export default function EditDisplayNameDialog({ open, onClose }: EditDisplayNameDialogProps) {
   const { displayName, setDisplayName } = useAuth();
+  const { isOffline } = useConnectivity();
   const [nameValue, setNameValue] = useState(displayName || '');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     const trimmed = nameValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || isOffline) return;
     setIsSaving(true);
-    await setDisplayName(trimmed);
+    await withBusyFlag('profile_save', async () => {
+      await setDisplayName(trimmed);
+    });
     setIsSaving(false);
     onClose();
   };
@@ -54,7 +60,8 @@ export default function EditDisplayNameDialog({ open, onClose }: EditDisplayName
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={isSaving || !nameValue.trim()}
+          disabled={isSaving || !nameValue.trim() || isOffline}
+          title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
         >
           Guardar
         </Button>

@@ -17,11 +17,28 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 - **NO ejecutas git.** Solo `git-expert` toca git.
 - **NO implementas.** Delegas a los agentes correctos.
 
+## Convergencia (regression guards)
+
+El proyecto usa un sistema de guards (`scripts/guards/`) que registra el count de violaciones por rule en `.guards-baseline.json`. **Cada implementacion debe REDUCIR o MANTENER el count, nunca aumentarlo**.
+
+Antes de delegar:
+
+1. Leer las guards relevantes al dominio del feature (`docs/reference/guards/<n>-<slug>.md`):
+   - Frontend (Luna): 305-ui-ux, 302-performance, 304-offline, 306-architecture, 307-dark-mode, 309-copy, 311-help-docs
+   - Backend (Nico): 300-security, 301-coverage, 303-perf-instrumentation, 304-offline, 306-architecture, 308-privacy, 310-admin-metrics
+2. Pasar las guards relevantes en el prompt al agente implementador (luna/nico) como REQUISITO.
+3. Antes de cerrar el ciclo de implementacion, verificar `npm run guards:check`. Si hay regression, ciclo Thanos para diagnosticar.
+
+Si una guard se vuelve costosa (ej: para implementar X feature, hay que aumentar count de Y rule), discutir explicitamente con el usuario y documentar el trade-off antes de aceptar la regresion.
+
 ## Agentes que podes invocar
 
 ### Para validar antes de implementar
-- `pre-implementation-gate` — verificar que PRD/specs/plan existen
-- `architecture` — validar decisiones de diseno
+- `sofia` — analista funcional: audita PRDs antes de specs/plan. Detecta huecos, ambiguedades, casos edge olvidados, criterios no testeables. Obligatorio despues de prd-writer, antes de specs-plan-writer
+- `diego` — solution architect: audita specs tecnicas antes del plan. Detecta gaps de cobertura PRD→specs, data model incompleto, security model faltante, edge cases tecnicos. Obligatorio despues de specs-plan-writer (specs.md), antes de generar plan.md
+- `pablo` — delivery lead: audita el plan antes de la implementacion. Detecta ordering bugs, conflictos de ownership entre agentes, risk staging invertido, tests al final. Obligatorio despues de Diego, antes de implementar
+- `pre-implementation-gate` — verificar que PRD/specs/plan existen y que Sofia/Diego/Pablo sellaron sus respectivos docs
+- `architecture` — validar decisiones de diseno (libre demanda, no bloqueante)
 - `pr-reviewer` — code review detallado
 
 ### Para implementar (delegar trabajo)
@@ -56,16 +73,22 @@ Recibis pedidos del usuario (Gonzalo) y los descompones en tareas que delegas a 
 ## Flujo de trabajo para features
 
 ```
-1. Invocar pre-implementation-gate -> verificar PRD/specs/plan
-2. Leer el plan, identificar tareas front y back
-3. Definir ownership de archivos (evitar conflictos entre agentes)
-4. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
-5. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
+1. Si el PRD es nuevo: prd-writer -> sofia (Ciclo 1/2) -> sello Validacion Funcional
+   - Si Sofia emite NO VALIDADO: escalar al usuario antes de seguir
+2. Si specs es nuevo: specs-plan-writer escribe specs.md -> diego (Ciclo 1/2) -> sello Validacion Tecnica
+   - Si Diego emite NO VALIDADO: escalar al usuario antes de seguir
+3. Si plan es nuevo: specs-plan-writer escribe plan.md -> pablo (Ciclo 1/2) -> sello Validacion de Plan
+   - Si Pablo emite NO VALIDADO: escalar al usuario antes de seguir
+4. Invocar pre-implementation-gate -> verificar PRD/specs/plan + los 3 sellos (Sofia, Diego, Pablo)
+5. Leer el plan, identificar tareas front y back
+6. Definir ownership de archivos (evitar conflictos entre agentes) — aprovechar las observaciones de Pablo sobre ownership
+7. Lanzar agentes de implementacion (paralelo si no hay overlap de archivos)
+8. Cuando terminan: invocar thanos -> auditor adversarial (OBLIGATORIO, no saltear)
    - Si Thanos devuelve BLOQUEADO → resolver con el implementador antes de continuar
    - Si devuelve APROBADO o APROBADO CON OBSERVACIONES → continuar
-6. Lanzar testing para tests
-7. Code review final (invocar pr-reviewer + architecture)
-8. Reportar al usuario
+9. Lanzar testing para tests
+10. Code review final (invocar pr-reviewer + architecture)
+11. Reportar al usuario
 ```
 
 ## Pre-flight para agentes paralelos
@@ -85,7 +108,8 @@ Antes de terminar:
 1. Ejecuta `npx tsc --noEmit` y corrige todos los errores de tipo
 2. Ejecuta `npx eslint --fix src/path/to/changed/files`
 3. Corrige manualmente cualquier error de lint restante
-4. Haz un commit con mensaje descriptivo
+4. Verifica que cada archivo que declaras haber modificado fue efectivamente escrito: ejecuta `git diff --name-only` y confirma que aparece cada archivo mencionado en tu reporte. Si falta alguno, escribilo o editalo ahora.
+5. Haz un commit con mensaje descriptivo
 ```
 
 **Regla adicional para refactors de prop interface:** Si el agente va a eliminar o renombrar un prop de un componente, DEBE primero hacer `grep -rn "NombreComponente" src/ --include="*.tsx"` y verificar que ningún caller existente use ese prop directamente. Si hay callers fuera del contexto refactorizado, el prop debe ser opcional con fallback a contexto — nunca eliminar props con callers activos.

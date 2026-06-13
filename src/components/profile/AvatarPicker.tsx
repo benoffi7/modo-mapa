@@ -9,14 +9,15 @@ interface Props {
   onClose: () => void;
   onSelect: (avatar: AvatarOption) => void;
   selectedId: string | undefined;
+  isOffline?: boolean;
 }
 
-export default function AvatarPicker({ open, onClose, onSelect, selectedId }: Props) {
+export default function AvatarPicker({ open, onClose, onSelect, selectedId, isOffline = false }: Props) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Elegir avatar
-        <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={onClose}>
+        <IconButton size="small" aria-label={MSG_COMMON.closeAriaLabel} onClick={onClose} sx={{ minWidth: 44, minHeight: 44 }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -27,6 +28,8 @@ export default function AvatarPicker({ open, onClose, onSelect, selectedId }: Pr
               key={avatar.id}
               aria-label={avatar.label}
               aria-pressed={selectedId === avatar.id}
+              disabled={isOffline}
+              aria-disabled={isOffline}
               onClick={() => { onSelect(avatar); onClose(); }}
               sx={{
                 display: 'flex',

@@ -31,6 +31,13 @@ cuando sí haga falta, que el cambio quede registrado en el mismo PR.
    que aterrizan nuevas categorias de datos (nuevos terceros, nuevos dominios
    de analytics, nuevas colecciones de Firestore con datos de usuario, nuevas
    categorias de feedback o nuevos derechos del usuario).
+6. **Categorias y media types declarados en types deben aparecer en la
+   politica.** Toda variante de `FeedbackCategory` (en `src/types/feedback.ts`)
+   y todo `mediaType` aceptado (image, pdf, video, audio, etc.) DEBE
+   mencionarse en `PrivacyPolicy.tsx` con su descripcion correspondiente.
+   Si se agrega un nuevo `mediaType`, el mismo PR debe actualizar la politica
+   y bumpear "Ultima actualizacion". Aplica analogamente a categorias de
+   recomendaciones, niveles de confianza, etc.
 
 ## Detection patterns
 
@@ -43,10 +50,31 @@ grep -n "Sentry\|sentry" src/components/profile/PrivacyPolicy.tsx
 
 # Los proveedores de mapas deben estar mencionados (tile / mapa).
 grep -n "mapa\|tile" src/components/profile/PrivacyPolicy.tsx
+
+# FeedbackCategory: cada variante en types debe estar en la politica
+# (verifica que cada literal del union aparezca como mencion textual)
+grep -oE "'[a-z_]+'" src/types/feedback.ts | sort -u
+# luego cruzar manualmente contra:
+grep -in "bug\|sugerencia\|datos.*usuario\|datos.*comercio\|otro" src/components/profile/PrivacyPolicy.tsx
+
+# mediaType: cada valor aceptado debe mencionarse
+grep -oE "mediaType\?:[^;]+" src/types/feedback.ts
+# luego cruzar contra:
+grep -in "image\|pdf\|imagen\|video\|audio" src/components/profile/PrivacyPolicy.tsx
+
+# Chequeo fijo: PDF debe aparecer textualmente en la politica.
+# Mientras `feedback.ts` declare `'pdf'` en `mediaType`, este grep DEBE
+# devolver al menos un match. Si falla, la politica perdio la mencion
+# y hay que re-agregarla antes de mergear (regla 6).
+grep -i "pdf" src/components/profile/PrivacyPolicy.tsx
 ```
 
-Ambos greps deben devolver al menos un match. Si no hay match, la politica
-perdio la mencion y hay que re-agregarla antes de mergear.
+Todos los greps deben devolver al menos un match. Si alguno no devuelve
+match, la politica perdio la mencion y hay que re-agregarla antes de
+mergear. El chequeo fijo de `pdf` aplica mientras `mediaType` incluya el
+literal `'pdf'` en `src/types/feedback.ts`; si en el futuro se agrega un
+nuevo `mediaType` (video, audio, etc.), agregar un chequeo fijo analogo
+en este bloque para esa variante.
 
 ### Merge checklist
 

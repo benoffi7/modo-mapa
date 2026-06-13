@@ -6,29 +6,50 @@
 |---------|-------|
 | **Framework** | Vitest 4.x |
 | **Testing Library** | @testing-library/react + jest-dom |
-| **Total test files** | 108 (74 React + 34 Functions) |
-| **Total test cases** | ~1200+ (estimado post-#229/#230/#231/#232) |
-| **Cobertura minima requerida** | 80% global (enforced en CI) |
+| **Total test files** | 254 (195 React + 57 Functions + 2 Firestore rules) |
+| **Total test cases** | 1829 frontend + 528 functions + 26 rules (post-#343: +10 commentLikes) |
+| **Cobertura minima requerida** | 80% global (enforced en CI via `deploy.yml`) |
 
-### Cobertura actual (2026-03-27)
+### Cobertura actual (2026-05-16, post-#338)
+
+#### Cobertura global (incluye archivos sin test) — threshold CI 80%
+
+Esta es la metrica que evalua `vitest --coverage` contra los thresholds de
+`vitest.config.ts`. Es la unica que dispara el blocker del workflow `deploy.yml`.
 
 **Frontend (src/):**
 
-| Metrica | % |
-|---------|---|
-| Statements | 96.1% |
-| Branches | 90.7% |
-| Functions | 90.1% |
-| Lines | 97.3% |
+| Metrica | % | Threshold |
+|---------|---|-----------|
+| Statements | 89.04% | 80% |
+| Branches | **81.86%** | 80% |
+| Functions | 80.87% | 77% |
+| Lines | 90.92% | 80% |
 
 **Cloud Functions (functions/):**
 
-| Metrica | % |
-|---------|---|
-| Statements | 98.5% |
-| Branches | 89.4% |
-| Functions | 100% |
-| Lines | 98.4% |
+| Metrica | % | Threshold |
+|---------|---|-----------|
+| Statements | 98.5% | 80% |
+| Branches | 89.4% | 80% |
+| Functions | 100% | 80% |
+| Lines | 98.4% | 80% |
+
+#### Cobertura promedio de archivos con test (informativo)
+
+Indicador de calidad de los tests existentes para los archivos que **si**
+tienen tests. No tiene threshold de CI; sirve solo como senal de la
+profundidad de los tests donde se escribieron. Es el numero historico que
+aparecia en versiones anteriores de este doc.
+
+| Origen | Branches promedio (archivos-con-test) |
+|--------|---------------------------------------|
+| Frontend (`src/`) | ~92% (calculado sobre filas individuales del coverage report) |
+| Functions (`functions/`) | ~91% (idem) |
+
+> Las dos metricas conviven: la "global" detecta huecos de archivos sin tests,
+> la "promedio archivos-con-test" detecta superficialidad. La global es la que
+> gatea CI; la otra es para evaluar calidad de testing por modulo.
 
 ---
 
@@ -92,6 +113,7 @@
 | `businessHelpers.ts` | `businessHelpers.test.ts` | 5 | 100% |
 | `perfMetrics.ts` | `perfMetrics.test.ts` | 27 | 95% stmts, 81% branches |
 | `analytics.ts` | `analytics.test.ts` | 11 | 100% stmts/lines, 95% branches |
+| `media.ts` | `media.test.ts` | 11 | 100% (incl. prefix-bypass + scheme-confusion regression guards) |
 
 ### React App — Config (`src/config/`)
 
@@ -113,7 +135,10 @@
 | `emailAuth.ts` | `emailAuth.test.ts` | 14 | 100% |
 | `comments.ts` | `comments.test.ts` | 16 | 100% |
 | `favorites.ts` | `favorites.test.ts` | 7 | 100% |
-| `tags.ts` | `tags.test.ts` | 8 | 100% |
+| `tags.ts` | `__tests__/tags.test.ts` | 11 | custom tags: `generateCustomTagId`, `createCustomTag(tagId?)` setDoc/addDoc + trim, update/delete (#344) |
+| `registerOfflineHandlers.ts` | `__tests__/registerOfflineHandlers.test.ts` | 6 | handlers `custom_tag_*` (referenceId=tagId, throw si falta referenceId) (#344) |
+| `offlineInterceptor.ts` | `__tests__/offlineInterceptor.test.ts` | 4 | `withOfflineSupport` encola `custom_tag_*` con `referenceId` + dispara `EVT_OFFLINE_ACTION_QUEUED` (#344) |
+| `syncEngine.ts` | `__tests__/syncEngine.test.ts` | 3 | replay FIFO create→update mismo tagId; delete de tag inexistente no reintenta (#344) |
 | `priceLevels.ts` | `priceLevels.test.ts` | 9 | 100% |
 | `rankings.ts` | `rankings.test.ts` | 26 | 98% stmts, 89% branches |
 | `queryCache.ts` | `queryCache.test.ts` | 7 | 100% |
@@ -124,7 +149,8 @@
 | `feedback.ts` | — | — | ⏳ |
 | `notifications.ts` | — | — | ⏳ |
 | `admin.ts` | — | — | ⏳ |
-| `adminFeedback.ts` | — | — | ⏳ |
+| `adminClaims.ts` | `__tests__/adminClaims.test.ts` | 3 | 100% (smoke: callable name + payload + error propagation) |
+| `adminFeedback.ts` | `__tests__/adminFeedback.test.ts` | 5 | 100% (smoke: 3 callables + payloads + error propagation) |
 | `menuPhotos.ts` | `__tests__/menuPhotos.test.ts` | 4 | Parcial (reportMenuPhoto, getMenuPhotoUrl) |
 
 ### React App — Hooks (`src/hooks/`)
@@ -142,19 +168,24 @@
 | `useTrustedReviewerBadge.ts` | `useTrustedReviewerBadge.test.ts` | 7 | 100% (funcion async calcTrustedReviewer) |
 | `useVerificationBadges.ts` | `useVerificationBadges.test.ts` | 6 | 100% (orquestador con mocks de servicios) |
 | `useFollowedTags.ts` | `useFollowedTags.test.ts` | 10 | 100% |
+| `useFollow.ts` | `useFollow.test.ts` | 10 | 100% |
+| `useVisitHistory.ts` | `useVisitHistory.test.ts` | 7 | 100% (incl. cap MAX_VISIT_HISTORY + parse fallback) |
+| `useRankings.ts` | `useRankings.test.ts` | 9 | 100% (delta calc + alltime + refetch) |
+| `useUnsavedChanges.ts` | `useUnsavedChanges.test.ts` | 9 | 100% (dialog state machine + ref cleanup) |
+| `useUserLocation.ts` | `useUserLocation.test.ts` | 6 | 100% (geolocation unsupported / code=1 / generic) |
+| `useUserSearch.ts` | `useUserSearch.test.ts` | 8 | 100% (debounce 300ms + error path) |
+| `useSurpriseMe.ts` | `useSurpriseMe.test.ts` | 4 | 100% (nearby/candidates/all-visited fallback + trackEvent) |
 | `useUndoDelete.ts` | — | — | ⏳ Timer management, ref sync |
 | `useAsyncData.ts` | — | — | ⏳ Race conditions, cleanup |
-| `useUnsavedChanges.ts` | — | — | ⏳ Dialog state machine |
-| `useRankings.ts` | — | — | ⏳ Position delta calc |
 | `useUserSettings.ts` | — | — | ⏳ Optimistic updates |
 | `useColorMode.ts` | — | — | 🔻 Simple wrapper (covered via ColorModeContext tests) |
-| otros (13 hooks) | — | — | ⏳ |
+| otros (8 hooks) | — | — | ⏳ |
 
 ### React App — Contexts (`src/context/`)
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `AuthContext.tsx` | `AuthContext.test.tsx` | 35 | 77% stmts, 81% branches |
+| `AuthContext.tsx` | `AuthContext.test.tsx` | 37 | 77% stmts, 81% branches. +2 guard offline `navigator.onLine` en `setDisplayName`/`setAvatarId` (#344) |
 | `ColorModeContext.tsx` | — | — | ⏳ (planned in #231) |
 | `NotificationsContext.tsx` | — | — | ⏳ |
 | `ToastContext.tsx` | — | — | ⏳ |
@@ -168,6 +199,9 @@
 | `ErrorBoundary.tsx` | `ErrorBoundary.test.tsx` | 3 | 100% |
 | `OfflineIndicator.tsx` | `OfflineIndicator.test.tsx` | 5 | 100% |
 | `EditorsDialog.tsx` | `EditorsDialog.test.tsx` | 2 | 100% (UID leak + secondary text) |
+| `BusinessTags.tsx` | `business/__tests__/BusinessTags.test.tsx` | 4 | custom tag create/update/delete online (service) vs offline (enqueue + toast); tagId estable (#344) |
+| `EditDisplayNameDialog.tsx` | `profile/__tests__/EditDisplayNameDialog.test.tsx` | 2 | botón Guardar disabled + title "Requiere conexión" offline; no llama setDisplayName (#344) |
+| `AvatarPicker.tsx` | `profile/__tests__/AvatarPicker.test.tsx` | 2 | ButtonBase disabled + aria-disabled offline; onSelect no dispara offline (#344) |
 | otros (87 componentes) | — | — | 🔻 Mayoria visual |
 
 ### Cloud Functions — Utils (`functions/src/utils/`)
@@ -181,7 +215,7 @@
 | `callableRateLimit.ts` | `callableRateLimit.test.ts` | 4 | 100% |
 | `aggregates.ts` | `aggregates.test.ts` | 6 | 100% |
 | `abuseLogger.ts` | `abuseLogger.test.ts` | 5 | 100% stmts, 50% branches |
-| `perfTracker.ts` | `perfTracker.test.ts` | 15 | 100% |
+| `perfTracker.ts` | `perfTracker.test.ts` | 16 | 100% (cap=2000, truncate-in-handler) |
 
 ### Cloud Functions — Helpers (`functions/src/helpers/`)
 
@@ -346,12 +380,11 @@ const doc = converter.fromFirestore(mockSnapshot(data, 'id'));
 4. `useUndoDelete.ts` hook — timer safety
 
 ### Media (deuda tecnica)
-5. `rankings.ts` scheduled — ISO week math, score computation
+5. `rankings.ts` scheduled — ISO week math, score computation (Cloud Function side)
 6. `dailyMetrics.ts` — percentile calculation, counter reset
-7. `admin/feedback.ts` — GitHub API integration
-8. `admin/claims.ts` — auth claim management
+7. `admin/feedback.ts` — GitHub API integration (Cloud Function side; client wrapper smoke covered in #330)
+8. `admin/claims.ts` — auth claim management (Cloud Function side; client wrapper smoke covered in #330)
 9. `useAsyncData.ts` — race condition prevention
-10. `useUnsavedChanges.ts` — dialog state
 
 ### Baja (bajo riesgo)
 11. Componentes puramente visuales
@@ -391,3 +424,138 @@ Toda nueva feature debe incluir en su **specs.md**:
 - Todos los paths condicionales cubiertos
 - Tests de validacion para todos los inputs del usuario
 ```
+
+---
+
+## Firestore Rules Tests
+
+Tests automatizados de `firestore.rules` usando `@firebase/rules-unit-testing`
+v5 contra el emulador Firestore. Viven fuera de `src/` (es un suite root-level
+que no testea TS, sino el archivo `firestore.rules` del repo).
+
+### Como correr (local)
+
+```bash
+npm run test:rules
+```
+
+Requiere Java disponible (`java -version` >= 11). El script levanta el
+emulador Firestore via `firebase emulators:exec --only firestore` y corre
+los tests contra `localhost:8080`. Al terminar, baja el emulador.
+
+> **Heads-up:** la primera corrida descarga el JAR del emulator
+> (~50MB) y el `beforeAll` puede tardar ~30s. Corridas posteriores
+> son mas rapidas (JAR cached en `~/.cache/firebase/emulators/`).
+
+### CI
+
+El job `rules-test` corre en `.github/workflows/deploy.yml` (prod) y en
+`.github/workflows/deploy-staging.yml` (staging) como `needs:` de
+`deploy-rules-and-functions`. Hard-fail sin retry — una falla bloquea
+el deploy de rules. Bypass de flakiness: re-trigger manual desde
+GitHub Actions UI (NO comentar `[skip rules-test]` — el gate es por diseno).
+
+### Como agregar un test nuevo
+
+1. Crear `tests/rules/<coleccion>.rules.test.ts` siguiendo el patron de
+   `tests/rules/users.rules.test.ts`.
+2. Importar helpers desde `tests/rules/setup.ts`:
+
+```ts
+import {
+  authedContext,
+  clearFirestore,
+  createRulesTestEnv,
+  expectAllow,
+  expectDeny,
+  withAdminContext,
+} from './setup';
+```
+
+3. Estructura tipica:
+
+```ts
+describe('firestore.rules — <coleccion>/{docId}', () => {
+  let env: RulesTestEnvironment;
+
+  beforeAll(async () => {
+    env = await createRulesTestEnv();
+  });
+
+  afterAll(async () => {
+    await env.cleanup();
+  });
+
+  beforeEach(async () => {
+    await clearFirestore(env);
+  });
+
+  it('caso happy — ALLOW', async () => {
+    const ctx = authedContext(env, 'user_alice');
+    await expectAllow(setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), payload));
+  });
+
+  it('caso adversarial — DENY', async () => {
+    const ctx = authedContext(env, 'user_alice');
+    await expectDeny(setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), badPayload));
+  });
+});
+```
+
+4. Para tests de update donde el doc inicial requiere bypass de rules:
+
+```ts
+await withAdminContext(env, async (ctx) => {
+  await setDoc(doc(ctx.firestore(), '<coleccion>', 'id'), seedDoc);
+});
+```
+
+### Convencion de naming
+
+- Archivo: `tests/rules/<coleccion>.rules.test.ts` (ej. `users.rules.test.ts`,
+  `userSettings.rules.test.ts`).
+- Describe: `'firestore.rules — <coleccion>/{docId}'`.
+- Cada test cubre **al menos** 1 ALLOW + 1 DENY del invariante bajo prueba.
+
+### Politica de cobertura
+
+- Las rules tests NO contribuyen al threshold 80% de coverage TS — `firestore.rules`
+  no es TypeScript. La metrica es: "todos los invariantes documentados en specs
+  tienen al menos 1 test allow + 1 test deny".
+- El config `vitest.rules.config.ts` esta separado de `vitest.config.ts` principal
+  (env Node vs jsdom, sin coverage thresholds, `hookTimeout: 60_000`).
+
+### Aislamiento del projectId del harness
+
+`RULES_TEST_PROJECT_ID = 'modo-mapa-rules-test'` — constante exportada de
+`tests/rules/setup.ts`. NO matchea `modo-mapa-app` (projectId real de prod +
+staging segun `.firebaserc`). Defense-in-depth: aunque colisionara, el harness
+pinea `host: 'localhost'` y `port: 8080` — nunca alcanza Firestore real.
+
+### Inventario de cobertura de rules
+
+Estado al cierre de #332. Cada coleccion lista dos checkboxes (allow path test
++ deny path test). Conforme cada PRD futuro agregue tests para una coleccion,
+marcar `[x] [x]`.
+
+- [x] [x] `users` — cubierto en `tests/rules/users.rules.test.ts` (R6/R7/R12/hasOnly, ver #322 specs L240-247 y #300; #341 agrega avatarId `.size()<=50` create+update y create solo-avatar camino a — ambos ausentes XOR ambos sincronizados)
+- [x] [x] `commentLikes` — cubierto en `tests/rules/commentLikes.rules.test.ts` (hasOnly incluye `businessId`, `isValidBusinessId`, owner create/delete, read auth). Origen: #343 specs "Firestore Rules" (guard #302 R3)
+- [ ] [ ] `userSettings` — pendiente. Invariante: hasOnly + type guards. Origen: #251 specs L144 y L204
+- [ ] [ ] `feedback` — pendiente. Invariante: `message.size() <= 500` + type guard. Origen: #289
+- [ ] [ ] `notifications` — pendiente. Invariante: solo update del campo `read`. Origen: #289
+- [ ] [ ] `favorites` — pendiente. Invariante: `isValidBusinessId` + owner. Origen: rules L79-88
+- [ ] [ ] `ratings` — pendiente. Invariante: score 1-5, criteria opcional, createdAt server-only.
+- [ ] [ ] `comments` — pendiente. Invariante: rate limit (server-side) + ownership.
+- [ ] [ ] `checkins` — pendiente. Invariante: rate limit + dedup + ownership.
+- [ ] [ ] `sharedLists` — pendiente. Invariante: per-item validation `followedTags`. Origen: #289 H-03
+- [ ] [ ] `listItems` — pendiente. Invariante: per-item `businessId` validation. Origen: #289 M-01
+- [ ] [ ] `follows` — pendiente. Invariante: `followedId.size() <= 128`. Origen: #289 M-02
+- [x] [x] `customTags` — cubierto en `tests/rules/customTags.rules.test.ts` (#344): allow create con ID client-side + label válido + owner; deny label > 30 / vacío / campo extra / userId ajeno / businessId inválido; allow+deny update (solo `label`, ownership); allow+deny delete (ownership); delete de doc inexistente DENY por rule (en prod el SDK no lanza → replay resuelve sin reintentar).
+- [ ] [ ] `rateLimits` — pendiente. Invariante: server-only, ningun cliente puede tocarlo.
+- [ ] [ ] `users/{uid}/onboarding` — pendiente. Subcoleccion de onboarding state.
+- [ ] [ ] `featuredLists` — pendiente. Read public, write admin-only.
+
+> Tests parciales o pendientes en la tabla anterior NO son blockers de
+> #332 — la meta de #332 era abrir la puerta. Cada PRD futuro que toque
+> una de estas colecciones debe agregar su test allow+deny y marcar el
+> checkbox correspondiente.

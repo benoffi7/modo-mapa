@@ -49,7 +49,7 @@ describe('CronCard', () => {
     render(<CronCard config={dailyConfig} run={recentRun} />);
     // HealthIndicator OK chip
     expect(screen.getByText('OK')).toBeInTheDocument();
-    expect(screen.getByText('Duracion: 5.0s')).toBeInTheDocument();
+    expect(screen.getByText('Duración: 5.0s')).toBeInTheDocument();
   });
 
   it('shows freshness warning for run between thresholds', () => {
@@ -83,7 +83,7 @@ describe('CronCard', () => {
     };
     render(<CronCard config={dailyConfig} run={errorRun} />);
     expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('Duracion: 150ms')).toBeInTheDocument();
+    expect(screen.getByText('Duración: 150ms')).toBeInTheDocument();
   });
 
   it('formats duration in ms for short durations', () => {
@@ -94,7 +94,7 @@ describe('CronCard', () => {
       durationMs: 250,
     };
     render(<CronCard config={dailyConfig} run={run} />);
-    expect(screen.getByText('Duracion: 250ms')).toBeInTheDocument();
+    expect(screen.getByText('Duración: 250ms')).toBeInTheDocument();
   });
 
   it('formats duration in seconds for longer durations', () => {
@@ -105,7 +105,7 @@ describe('CronCard', () => {
       durationMs: 12500,
     };
     render(<CronCard config={dailyConfig} run={run} />);
-    expect(screen.getByText('Duracion: 12.5s')).toBeInTheDocument();
+    expect(screen.getByText('Duración: 12.5s')).toBeInTheDocument();
   });
 
   it('uses weekly thresholds correctly', () => {

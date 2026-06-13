@@ -41,6 +41,23 @@ import { dashedButtonSx } from '../../theme/cards';
 <Button sx={{ ...dashedButtonSx, mt: 2 }}>+ Crear</Button>
 ```
 
+### `CHIP_SMALL_SX` (#326)
+Estilo canónico para chips chicos (header, rows, dialogs). Distinto de `NAV_CHIP_SX` (chips de navegación tipo tabs).
+
+```typescript
+import { CHIP_SMALL_SX } from '../../theme/cards';
+
+// Drop-in
+<Chip label="Tendencia" size="small" sx={CHIP_SMALL_SX} />
+
+// Con override puntual (spread)
+<Chip label="Destacada" size="small" sx={{ ...CHIP_SMALL_SX, borderRadius: 1, mb: 0.5 }} />
+```
+
+Define: `height: 24, fontSize: '0.75rem', '& .MuiChip-icon': { fontSize: 14, ml: 0.5 }, '& .MuiChip-label': { px: 1 }`.
+
+Consumidores: `BusinessHeader` (categoría + tendencia), `SearchListView` (categoría), `SharedListsView` ("Destacada"), `UserScoreCard` (`#N`), `AddToListDialog` ("Colaborativa").
+
 ## Tokens de chips (`constants/ui.ts`)
 
 ### `NAV_CHIP_SX`

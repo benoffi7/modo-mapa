@@ -2,7 +2,6 @@ import { lazy, Suspense, useMemo } from 'react';
 import { Box } from '@mui/material';
 import TabBar from './TabBar';
 import TabLoader from '../ui/TabLoader';
-import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { useTab } from '../../context/TabContext';
 import { useNavLayout } from '../../hooks/useNavLayout';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -68,7 +67,6 @@ export default function TabShell() {
         overflow: 'hidden',
       }}
     >
-      <OfflineIndicator />
       {ALL_TAB_IDS.map((tab) => (
         <TabContent key={tab} tab={tab} isActive={activeTab === tab} navLayout={navLayout} />
       ))}

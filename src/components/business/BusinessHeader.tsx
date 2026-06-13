@@ -5,6 +5,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import type { Business } from '../../types';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 interface Props {
   business: Business;
   favoriteButton: ReactNode;
@@ -27,7 +28,7 @@ export default function BusinessHeader({ business, favoriteButton, shareButton, 
             <Chip
               label={CATEGORY_LABELS[business.category]}
               size="small"
-              sx={{ fontSize: '0.75rem', height: 24 }}
+              sx={CHIP_SMALL_SX}
             />
             {isTrending && (
               <Chip
@@ -35,12 +36,12 @@ export default function BusinessHeader({ business, favoriteButton, shareButton, 
                 size="small"
                 color="secondary"
                 icon={<TrendingUpIcon />}
-                sx={{ fontSize: '0.75rem', height: 24 }}
+                sx={CHIP_SMALL_SX}
               />
             )}
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 0.5 }}>
           {recommendButton}
           {addToListButton}
           {shareButton}

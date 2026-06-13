@@ -95,36 +95,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        const method = getAuthMethod(firebaseUser);
-        setAuthMethod(method);
-        setEmailVerified(firebaseUser.emailVerified);
-        setUserProperty('auth_type', method);
-        const profile = await fetchUserProfileDoc(firebaseUser.uid);
-        if (profile) {
-          setDisplayNameState(profile.displayName || null);
-          setAvatarIdState(profile.avatarId ?? null);
-        }
-      } else {
-        const isAdminRoute = pathnameRef.current.startsWith('/admin');
-        if (isAdminRoute) {
-          setUser(null);
+      try {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          const method = getAuthMethod(firebaseUser);
+          setAuthMethod(method);
+          setEmailVerified(firebaseUser.emailVerified);
+          setUserProperty('auth_type', method);
+          const profile = await fetchUserProfileDoc(firebaseUser.uid);
+          if (profile) {
+            setDisplayNameState(profile.displayName || null);
+            setAvatarIdState(profile.avatarId ?? null);
+          }
         } else {
-          try {
-            await signInAnonymously(auth);
-          } catch (error) {
-            logger.error('Error signing in anonymously:', error);
+          const isAdminRoute = pathnameRef.current.startsWith('/admin');
+          if (isAdminRoute) {
+            setUser(null);
+          } else {
+            try {
+              await signInAnonymously(auth);
+            } catch (error) {
+              logger.error('Error signing in anonymously:', error);
+            }
           }
         }
+      } catch (error) {
+        // Defensa del camino critico: cualquier fallo (lectura de perfil, etc.)
+        // no debe dejar la app en loading infinito. La app entra igual.
+        logger.error('[AuthContext] fetchUserProfileDoc failed on auth state change:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
     return unsubscribe;
   }, []);
 
   const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
+    // Defense-in-depth (#344): profile mutations are gated in the UI; this guard
+    // covers callers that bypass the gated UI. No enqueue (decision S2 opción a).
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     const trimmed = name.trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
     if (!trimmed) return;
     await updateUserDisplayName(user.uid, trimmed);
@@ -133,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setAvatarId = useCallback(async (id: string) => {
     if (!user) return;
+    // Defense-in-depth (#344): gated in UI; guard direct callers. No enqueue.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     if (!getAvatarById(id)) return;
     const prev = avatarId;
     setAvatarIdState(id);

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Box, Typography, IconButton, Toolbar, Divider,
   CircularProgress, Chip, Dialog, DialogTitle, DialogActions, Button, ButtonBase,
+  Menu, MenuItem, ListItemIcon, ListItemText, Badge,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
@@ -12,7 +13,7 @@ import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import InsertEmoticonOutlinedIcon from '@mui/icons-material/InsertEmoticonOutlined';
-import { Badge } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ColorPicker, { sanitizeListColor } from './ColorPicker';
 
 const IconPicker = lazy(() => import('./IconPicker'));
@@ -20,17 +21,19 @@ const EditorsDialog = lazy(() => import('./EditorsDialog'));
 const InviteEditorDialog = lazy(() => import('./InviteEditorDialog'));
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { fetchListItems, fetchSharedList, removeBusinessFromList, toggleListPublic, deleteList, updateList } from '../../services/sharedLists';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { logger } from '../../utils/logger';
 import { getListIconById } from '../../constants/listIcons';
 import type { ListIconOption } from '../../constants/listIcons';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_LIST_ICON_CHANGED } from '../../constants/analyticsEvents';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { cardSx } from '../../theme/cards';
-import { MSG_LIST } from '../../constants/messages';
+import { MSG_LIST, MSG_OFFLINE } from '../../constants/messages';
 import type { SharedList, ListItem, BusinessCategory } from '../../types';
 
 interface Props {
@@ -43,6 +46,7 @@ interface Props {
 export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { isOffline } = useConnectivity();
   const isOwner = user?.uid === list.ownerId;
   const canEditConfig = isOwner && !readOnly;
   const [editorIds, setEditorIds] = useState(list.editorIds ?? []);
@@ -59,6 +63,9 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [currentIcon, setCurrentIcon] = useState(list.icon);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(menuAnchor);
+  const closeMenu = () => setMenuAnchor(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,21 +79,41 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   useEffect(() => { load(); }, [load]);
 
   const handleColorChange = async (hex: string) => {
+    if (!user) return;
     setCurrentColor(hex);
     try {
-      await updateList(list.id, list.name, list.description, hex);
+      // #323: wrap update con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_update',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { name: list.name, description: list.description, color: hex },
+        () => updateList(list.id, list.name, list.description, hex),
+        toast,
+      );
     } catch {
       toast.error(MSG_LIST.colorError);
     }
   };
 
   const handleTogglePublic = async () => {
+    if (!user) return;
     const prev = isPublic;
     const newValue = !prev;
     setIsPublic(newValue);
     try {
-      await toggleListPublic(list.id, newValue);
-      toast.success(newValue ? MSG_LIST.visibilityPublic : MSG_LIST.visibilityPrivate);
+      // #323: wrap toggle con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_toggle_public',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { isPublic: newValue },
+        () => toggleListPublic(list.id, newValue),
+        toast,
+      );
+      if (!isOffline) {
+        toast.success(newValue ? MSG_LIST.visibilityPublic : MSG_LIST.visibilityPrivate);
+      }
     } catch {
       setIsPublic(prev);
       toast.error(MSG_LIST.visibilityError);
@@ -104,6 +131,12 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleDelete = async () => {
+    // #323 S2.1: deleteList esta gated offline (no encolable — cascade unsafe en replay).
+    if (isOffline) {
+      toast.warning(MSG_OFFLINE.deleteListBlocked);
+      setConfirmDeleteOpen(false);
+      return;
+    }
     try {
       await deleteList(list.id, list.ownerId);
       toast.success(MSG_LIST.deleteSuccess);
@@ -115,11 +148,20 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   };
 
   const handleRemoveItem = async (item: ListItem) => {
+    if (!user) return;
     const prev = items;
     setItems((current) => current.filter((i) => i.id !== item.id));
     try {
-      await removeBusinessFromList(list.id, item.businessId);
-      toast.success(MSG_LIST.itemRemoved);
+      // #323: wrap remove con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_item_remove',
+        { userId: user.uid, businessId: item.businessId, listId: list.id },
+        {},
+        () => removeBusinessFromList(list.id, item.businessId),
+        toast,
+      );
+      if (!isOffline) toast.success(MSG_LIST.itemRemoved);
     } catch {
       setItems(prev);
       toast.error(MSG_LIST.itemRemoveError);
@@ -135,11 +177,25 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
     }
   }, [list.id]);
 
+  const handleEditorInvited = useCallback(async () => {
+    await handleEditorsChanged();
+    setEditorsOpen(true);
+  }, [handleEditorsChanged]);
+
   const handleIconChange = async (icon: ListIconOption) => {
+    if (!user) return;
     const prev = currentIcon;
     setCurrentIcon(icon.id);
     try {
-      await updateList(list.id, list.name, list.description, undefined, icon.id);
+      // #323: wrap update con withOfflineSupport (encolable)
+      await withOfflineSupport(
+        isOffline,
+        'list_update',
+        { userId: user.uid, businessId: '', listId: list.id },
+        { name: list.name, description: list.description, icon: icon.id },
+        () => updateList(list.id, list.name, list.description, undefined, icon.id),
+        toast,
+      );
       trackEvent(EVT_LIST_ICON_CHANGED, { list_id: list.id, icon_id: icon.id });
     } catch {
       setCurrentIcon(prev);
@@ -150,39 +206,83 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar variant="dense" sx={{ gap: 1 }}>
-        <IconButton edge="start" aria-label="Volver a listas" onClick={() => onBack({
+        <IconButton edge="start" aria-label="Volver a listas" sx={{ minWidth: 44, minHeight: 44 }} onClick={() => onBack({
           id: list.id, color: currentColor, itemCount: items.length, isPublic, editorIds, icon: currentIcon,
         })}><ArrowBackIcon /></IconButton>
         <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }} noWrap>{list.name}</Typography>
         {canEditConfig && (
           <>
-            <IconButton size="small" aria-label="Cambiar icono de lista" onClick={() => setIconPickerOpen(true)}>
-              {currentIcon && getListIconById(currentIcon)
-                ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
-                : <InsertEmoticonOutlinedIcon fontSize="small" />}
-            </IconButton>
-            <IconButton size="small" aria-label="Cambiar color de lista" onClick={() => setColorPickerOpen(true)}>
-              <PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} />
-            </IconButton>
-            <IconButton size="small" aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'} onClick={handleTogglePublic}>
-              {isPublic ? <PublicIcon fontSize="small" color="success" /> : <LockIcon fontSize="small" />}
-            </IconButton>
-            {isPublic && (
-              <IconButton size="small" aria-label="Compartir lista" onClick={handleShare}><ShareIcon fontSize="small" /></IconButton>
-            )}
-            <IconButton size="small" aria-label="Ver editores" onClick={() => setEditorsOpen(true)}>
-              <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
-                <GroupIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-            <IconButton size="small" aria-label="Invitar editor" onClick={() => setInviteOpen(true)}>
-              <PersonAddIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" color="error" aria-label="Eliminar lista" onClick={() => setConfirmDeleteOpen(true)}><DeleteOutlineIcon fontSize="small" /></IconButton>
+            <IconButton
+              color="error"
+              aria-label="Eliminar lista"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isOffline}
+              title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            ><DeleteOutlineIcon /></IconButton>
+            <IconButton
+              aria-label="Opciones"
+              aria-controls={menuOpen ? 'list-detail-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={menuOpen ? 'true' : undefined}
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            ><MoreVertIcon /></IconButton>
           </>
         )}
       </Toolbar>
       <Divider />
+
+      {canEditConfig && (
+        <Menu
+          id="list-detail-menu"
+          anchorEl={menuAnchor}
+          open={menuOpen}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem aria-label="Cambiar icono de lista" onClick={() => { closeMenu(); setIconPickerOpen(true); }}>
+            <ListItemIcon>
+              {currentIcon && getListIconById(currentIcon)
+                ? <Typography fontSize={18}>{getListIconById(currentIcon)!.emoji}</Typography>
+                : <InsertEmoticonOutlinedIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>Cambiar icono</ListItemText>
+          </MenuItem>
+          <MenuItem aria-label="Cambiar color de lista" onClick={() => { closeMenu(); setColorPickerOpen(true); }}>
+            <ListItemIcon><PaletteOutlinedIcon fontSize="small" sx={{ color: currentColor }} /></ListItemIcon>
+            <ListItemText>Cambiar color</ListItemText>
+          </MenuItem>
+          <MenuItem
+            aria-label={isPublic ? 'Hacer lista privada' : 'Hacer lista pública'}
+            onClick={() => { closeMenu(); handleTogglePublic(); }}
+          >
+            <ListItemIcon>
+              {isPublic ? <LockIcon fontSize="small" /> : <PublicIcon fontSize="small" color="success" />}
+            </ListItemIcon>
+            <ListItemText>{isPublic ? 'Hacer privada' : 'Hacer pública'}</ListItemText>
+          </MenuItem>
+          {isPublic && (
+            <MenuItem aria-label="Compartir lista" onClick={() => { closeMenu(); handleShare(); }}>
+              <ListItemIcon><ShareIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Compartir</ListItemText>
+            </MenuItem>
+          )}
+          <MenuItem aria-label="Ver editores" onClick={() => { closeMenu(); setEditorsOpen(true); }}>
+            <ListItemIcon>
+              <Badge badgeContent={editorIds.length} color="primary" invisible={editorIds.length === 0}>
+                <GroupIcon fontSize="small" />
+              </Badge>
+            </ListItemIcon>
+            <ListItemText>Ver editores</ListItemText>
+          </MenuItem>
+          <MenuItem aria-label="Invitar editor" onClick={() => { closeMenu(); setInviteOpen(true); }}>
+            <ListItemIcon><PersonAddIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Invitar editor</ListItemText>
+          </MenuItem>
+        </Menu>
+      )}
 
       {list.description && list.description !== list.name && (
         <Box sx={{ px: 2, py: 1 }}>
@@ -210,7 +310,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 2, py: 1 }}>
             {items.map((item) => {
-              const biz = allBusinesses.find((b) => b.id === item.businessId);
+              const biz = getBusinessById(item.businessId);
               if (!biz) return null;
               return (
                 <ButtonBase
@@ -273,7 +373,7 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         <InviteEditorDialog
           listId={inviteOpen ? list.id : null}
           onClose={() => setInviteOpen(false)}
-          onInvited={handleEditorsChanged}
+          onInvited={handleEditorInvited}
         />
       </Suspense>
 
@@ -281,7 +381,13 @@ export default function ListDetailScreen({ list, onBack, onDeleted, readOnly }: 
         <DialogTitle>&iquest;Eliminar lista &ldquo;{list.name}&rdquo;?</DialogTitle>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Eliminar</Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={isOffline}
+            title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+          >Eliminar</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSelection } from '../context/SelectionContext';
 import { useTab } from '../context/TabContext';
-import { allBusinesses } from './useBusinesses';
+import { getBusinessById } from '../utils/businessMap';
 import type { Business } from '../types';
 
 /**
@@ -17,7 +17,7 @@ export function useNavigateToBusiness() {
 
   const navigateToBusiness = useCallback((businessOrId: Business | string) => {
     const biz = typeof businessOrId === 'string'
-      ? allBusinesses.find((b) => b.id === businessOrId) ?? null
+      ? getBusinessById(businessOrId) ?? null
       : businessOrId;
     if (biz) {
       setActiveTab('buscar');

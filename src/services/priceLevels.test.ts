@@ -6,12 +6,19 @@ vi.mock('../config/converters', () => ({ priceLevelConverter: {} }));
 vi.mock('./queryCache', () => ({ invalidateQueryCache: vi.fn() }));
 vi.mock('../utils/analytics', () => ({ trackEvent: vi.fn() }));
 
-const mockGetDoc = vi.fn();
-const mockSetDoc = vi.fn().mockResolvedValue(undefined);
-const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
-const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
-
-const mockGetDocs = vi.fn();
+const { mockGetDoc, mockGetDocs, mockSetDoc, mockUpdateDoc, mockDeleteDoc, mockMeasuredGetDoc, mockMeasuredGetDocs } = vi.hoisted(() => {
+  const getDoc = vi.fn();
+  const getDocs = vi.fn();
+  return {
+    mockGetDoc: getDoc,
+    mockGetDocs: getDocs,
+    mockSetDoc: vi.fn().mockResolvedValue(undefined),
+    mockUpdateDoc: vi.fn().mockResolvedValue(undefined),
+    mockDeleteDoc: vi.fn().mockResolvedValue(undefined),
+    mockMeasuredGetDoc: vi.fn((_name: string, ref: unknown) => getDoc(ref)),
+    mockMeasuredGetDocs: vi.fn((_name: string, q: unknown) => getDocs(q)),
+  };
+});
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
@@ -24,6 +31,12 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TIMESTAMP'),
   query: vi.fn(),
   limit: vi.fn(),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDoc: (name: string, ref: unknown) => mockMeasuredGetDoc(name, ref),
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 import { upsertPriceLevel, deletePriceLevel, fetchPriceLevelMap } from './priceLevels';
@@ -142,5 +155,19 @@ describe('fetchPriceLevelMap', () => {
     const result = await fetchPriceLevelMap();
     expect(result.get('bizA')).toBe(1);
     expect(result.get('bizB')).toBe(2);
+  });
+
+  it('instruments fetch with priceLevels_all label', async () => {
+    mockGetDocs.mockResolvedValueOnce({ docs: [] });
+    await fetchPriceLevelMap();
+    const labels = mockMeasuredGetDocs.mock.calls.map((c) => c[0]);
+    expect(labels).toContain('priceLevels_all');
+  });
+
+  it('instruments upsert existence check with priceLevels_upsertExists label', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => false });
+    await upsertPriceLevel('u1', 'b1', 2);
+    const labels = mockMeasuredGetDoc.mock.calls.map((c) => c[0]);
+    expect(labels).toContain('priceLevels_upsertExists');
   });
 });

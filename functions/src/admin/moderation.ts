@@ -3,7 +3,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { assertAdmin } from '../helpers/assertAdmin';
 import { ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 import { checkCallableRateLimit } from '../utils/callableRateLimit';
-import type { ModerationAction, ModerationTargetCollection } from '../shared/types/admin';
+
+// Inline types — single callsite. Frontend keeps its own copy in
+// `src/types/admin.ts` (deliberate duplication across client/server boundary).
+type ModerationAction = 'delete' | 'hide';
+type ModerationTargetCollection = 'comments' | 'ratings' | 'customTags';
 
 /**
  * Helper to write an audit log for moderation actions

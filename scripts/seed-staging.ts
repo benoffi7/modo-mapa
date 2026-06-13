@@ -241,6 +241,7 @@ async function seed() {
     await db.collection('commentLikes').add({
       userId: USER_IDS[i % USER_IDS.length],
       commentId: `seed_comment_${randomInt(0, 59)}`,
+      businessId: BUSINESS_IDS[i % BUSINESS_IDS.length],
       createdAt: daysAgo(randomInt(0, 14)),
     });
   }

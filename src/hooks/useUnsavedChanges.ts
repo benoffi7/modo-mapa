@@ -10,6 +10,17 @@ interface UseUnsavedChangesReturn {
   };
 }
 
+/**
+ * Tracks unsaved string-form values and gates close with a confirmation dialog.
+ *
+ * @remarks
+ * The current API is variadic (`...values: string[]`). A caller that passes
+ * a non-string (object, null, undefined) crashes the internal `.trim()` call.
+ * This is acceptable while all callsites pass primitive form fields, but the
+ * variadic shape makes it possible to misuse silently. Followup tracked in
+ * the backlog to migrate to an explicit shape (e.g. `Record<string, string>`
+ * or a precomputed `isDirty: boolean`).
+ */
 export function useUnsavedChanges(...values: string[]): UseUnsavedChangesReturn {
   const isDirty = values.some((v) => v.trim().length > 0);
   const [dialogOpen, setDialogOpen] = useState(false);

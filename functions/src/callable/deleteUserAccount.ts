@@ -6,6 +6,7 @@ import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { deleteAllUserData } from '../utils/deleteUserData';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
 import type { DeletionStatus } from '../utils/deleteUserData';
 
@@ -14,6 +15,8 @@ const RATE_LIMIT_SECONDS = 60;
 export const deleteUserAccount = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120 },
   async (request) => {
+    const startMs = performance.now();
+    try {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
@@ -93,6 +96,11 @@ export const deleteUserAccount = onCall(
 
     logger.info('account_deleted', { uidHash, status, timestamp: new Date().toISOString() });
 
+    await trackFunctionTiming('deleteUserAccount', startMs);
     return { success: true };
+    } catch (err) {
+      void trackFunctionTiming('deleteUserAccount', startMs);
+      throw err;
+    }
   },
 );

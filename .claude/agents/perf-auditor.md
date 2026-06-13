@@ -42,6 +42,35 @@ For each trigger function:
 - If it calls `trackFunctionTiming` at the end → OK
 - If NOT → report as **MISSING TIMING**
 
+### 2b. Scheduled Function Timing (#325)
+
+Scan `functions/src/scheduled/` for scheduled functions and verify each uses `trackFunctionTiming`.
+
+```bash
+for f in functions/src/scheduled/*.ts; do
+  if ! grep -q "trackFunctionTiming" "$f"; then
+    echo "MISSING TIMING: $f"
+  fi
+done
+```
+
+These are aggregations and cleanups — typically the most expensive functions in the system. Without timing, the admin dashboard "Function timings" tab is blind to them.
+
+### 2c. Callable Function Timing (#325)
+
+Scan `functions/src/callable/` for callable functions and verify each uses `trackFunctionTiming`.
+
+```bash
+for f in functions/src/callable/*.ts; do
+  case "$f" in *.test.ts) continue ;; esac
+  if ! grep -q "trackFunctionTiming" "$f"; then
+    echo "MISSING TIMING: $f"
+  fi
+done
+```
+
+Callable latency is directly user-visible — first place regressions show up.
+
 ### 3. Daily Metrics Aggregation
 
 Verify `functions/src/scheduled/dailyMetrics.ts`:

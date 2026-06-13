@@ -40,7 +40,7 @@ export default function RatingPromptBanner({ businessName, onRate, onDismiss }: 
           >
             Calificar
           </Button>
-          <IconButton size="small" onClick={onDismiss} aria-label={MSG_COMMON.closeAriaLabel}>
+          <IconButton size="small" onClick={onDismiss} aria-label={MSG_COMMON.closeAriaLabel} sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Stack>

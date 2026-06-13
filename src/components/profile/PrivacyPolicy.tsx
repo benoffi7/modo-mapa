@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 2 }}>
-        Última actualización: abril 2026 (actualizada el 20/04/2026)
+        Última actualización: mayo 2026
       </Typography>
 
       <Section title="Información general">
@@ -69,7 +69,7 @@ export default function PrivacyPolicy() {
             comentarios (incluyendo respuestas en hilos),
             calificaciones (globales y por criterio: comida, atención, precio, ambiente, rapidez),
             favoritos, etiquetas, likes en comentarios, fotos de menú, feedback (incluyendo
-            imágenes adjuntas opcionales), votos de nivel de gasto y recomendaciones de comercios
+            imagen o PDF adjunto opcional), votos de nivel de gasto y recomendaciones de comercios
             a otros usuarios (nombre del comercio, mensaje opcional, estado de lectura).
           </Li>
           <Li>
@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
             administradores en el panel de <em>Features</em> de la app. Estos
             eventos se asocian a tu UID (no a tu email) y no identifican a
             personas individuales. También se registra la propiedad de usuario{' '}
-            <code>auth_type</code> (anónima / email / google para administradores).
+            <code>auth_type</code> (anónima / email / google [para administradores]).
           </Li>
           <Li>
             <strong>Métricas de rendimiento (opcional):</strong> si activás &quot;Enviar
@@ -154,8 +154,8 @@ export default function PrivacyPolicy() {
             abusos o patrones anómalos.
           </Li>
           <Li>
-            <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes adjuntas de
-            feedback subidas por los usuarios.
+            <strong>Firebase Storage:</strong> almacena fotos de menú e imágenes o PDFs adjuntos
+            de feedback subidos por los usuarios.
           </Li>
           <Li>
             <strong>localStorage:</strong> almacena preferencias locales en tu
@@ -215,7 +215,7 @@ export default function PrivacyPolicy() {
 
       <Section title="Compartición con terceros">
         <P>
-          El contenido de tu feedback (mensaje, categoría e imagen adjunta si la hay)
+          El contenido de tu feedback (mensaje, categoría e imagen o PDF adjunto si lo hay)
           puede ser compartido con GitHub para la gestión interna de mejoras y
           corrección de errores. No se comparte tu identidad ni tu UID; solo el
           contenido del mensaje. Ningún otro dato personal se comparte con terceros.
@@ -295,6 +295,10 @@ export default function PrivacyPolicy() {
           Si tenés consultas sobre tus datos personales o los datos de comercios,
           podés enviarnos un mensaje desde <strong>Perfil &gt; Ayuda y soporte &gt; Feedback</strong> usando
           las categorías &quot;Datos de usuario&quot; o &quot;Datos de comercio&quot;.
+        </P>
+        <P>
+          Otras categorías (&quot;Bug&quot;, &quot;Sugerencia&quot; y &quot;Otro&quot;) están
+          disponibles para feedback general sobre la app.
         </P>
       </Section>
     </Box>

@@ -11,6 +11,8 @@ export default function FilterChips() {
     bgcolor: isActive ? undefined : 'background.paper',
     boxShadow: 1,
     flexShrink: 0,
+    minHeight: 44,
+    minWidth: 44,
     '&:hover, &.MuiChip-clickable:hover': {
       boxShadow: 2,
       bgcolor: isActive ? undefined : 'background.paper',
@@ -22,19 +24,13 @@ export default function FilterChips() {
       role="group"
       aria-label="Filtros de etiquetas"
       sx={{
-        position: 'absolute',
-        top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px))',
-        left: 0,
-        right: 0,
-        zIndex: 1100,
+        flex: 1,
+        minWidth: 0,
         display: 'flex',
         gap: 1,
-        px: 2,
         overflowX: 'auto',
-        pointerEvents: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
         scrollbarWidth: 'none',
-        '& > *': { pointerEvents: 'auto' },
       }}
     >
       {PREDEFINED_TAGS.map((tag) => {

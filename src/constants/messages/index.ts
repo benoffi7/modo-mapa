@@ -10,3 +10,4 @@ export { MSG_OFFLINE } from './offline';
 export { MSG_ADMIN } from './admin';
 export { MSG_ONBOARDING } from './onboarding';
 export { MSG_COMMON } from './common';
+export { MSG_BUSINESS_DETAIL } from './businessDetail';

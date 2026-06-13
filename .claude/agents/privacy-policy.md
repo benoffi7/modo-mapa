@@ -35,8 +35,15 @@ Tu trabajo es verificar que la politica de privacidad (`src/components/menu/Priv
 
 ### 5. Categorias de feedback
 
-- Revisar `src/types/index.ts` para `FeedbackCategory` y comparar con lo declarado
+- Revisar `src/types/index.ts` y `src/types/feedback.ts` para `FeedbackCategory` y comparar con lo declarado
 - Verificar que las categorias de contacto en la politica coincidan
+- **R6 (#329)** — Toda variante del union `FeedbackCategory` (`bug | sugerencia | datos_usuario | datos_comercio | otro`) debe estar mencionada en `PrivacyPolicy.tsx`. Si la seccion de "contacto" lista solo un subset, agregar nota explicita declarando que las restantes existen para feedback general.
+- **R6 cont. — `mediaType` (#329)**: cualquier valor del union (`'image' | 'pdf' | ...`) debe mencionarse explicitamente. Si types acepta `pdf` y la politica solo dice "imagen adjunta", es regresion. Una vez agregado el media type al type, el mismo PR DEBE actualizar `PrivacyPolicy.tsx` y bumpear "Ultima actualizacion".
+
+```bash
+grep -oE "'[a-z_]+'" src/types/feedback.ts
+grep -in "bug\|sugerencia\|datos.*usuario\|datos.*comercio\|otro\|imagen\|pdf" src/components/profile/PrivacyPolicy.tsx
+```
 
 ### 6. Derechos del usuario
 

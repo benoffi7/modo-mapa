@@ -10,7 +10,19 @@ interface UseAbuseLogsRealtimeReturn {
   resetNewCount: () => void;
 }
 
-export function useAbuseLogsRealtime(maxDocs = 200): UseAbuseLogsRealtimeReturn {
+/**
+ * Subscribes to realtime `abuseLogs`. When `enabled` is `false` the hook
+ * tears down any active subscription and resets all state — used by
+ * `AbuseAlerts` to pause the listener while the admin is on the
+ * "Rate Limits" subtab so we don't pay for reads we won't render. When
+ * `enabled` flips back to `true` the effect re-runs and `initialIds` is
+ * reseeded from the first snapshot post-resume, so existing docs are not
+ * counted as "new" alerts (the toast is gated on `newCount > 0`).
+ */
+export function useAbuseLogsRealtime(
+  maxDocs = 200,
+  enabled = true,
+): UseAbuseLogsRealtimeReturn {
   const [logs, setLogs] = useState<AbuseLog[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -25,6 +37,22 @@ export function useAbuseLogsRealtime(maxDocs = 200): UseAbuseLogsRealtimeReturn 
   }, [logs]);
 
   useEffect(() => {
+    if (!enabled) {
+      // Pause: clear state and skip the subscription. When enabled flips
+      // back to true the effect re-runs and a fresh subscription is created
+      // (initialIds.current === null forces the next first-snapshot to
+      // re-seed without counting docs as "new").
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pause: external state sync requires reset
+      setLogs(null);
+      setLoading(false);
+      setError(false);
+      setNewCount(0);
+      initialIds.current = null;
+      return;
+    }
+
+    setLoading(true);
+
     const unsubscribe = subscribeToAbuseLogs(
       maxDocs,
       (newLogs, changes) => {
@@ -52,7 +80,7 @@ export function useAbuseLogsRealtime(maxDocs = 200): UseAbuseLogsRealtimeReturn 
     );
 
     return unsubscribe;
-  }, [maxDocs]);
+  }, [maxDocs, enabled]);
 
   return { logs, loading, error, newCount, resetNewCount };
 }

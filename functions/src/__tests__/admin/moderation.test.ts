@@ -53,8 +53,6 @@ vi.mock('../../utils/callableRateLimit', () => ({
   checkCallableRateLimit: (...args: any[]) => mockCheckCallableRateLimit(...args),
 }));
 
-vi.mock('../../shared/types/admin', () => ({}));
-
 function createMockDb(overrides?: {
   commentExists?: boolean;
   commentData?: any;

@@ -10,6 +10,8 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import type { Special } from '../../types';
 import { fetchSpecials, saveAllSpecials } from '../../services/specials';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { MSG_OFFLINE } from '../../constants/messages';
 
 const EMPTY_SPECIAL: Omit<Special, 'id' | 'order'> = {
   title: '',
@@ -26,6 +28,7 @@ const ICON_OPTIONS = [
 ];
 
 export default function SpecialsPanel() {
+  const { isOffline } = useConnectivity();
   const [specials, setSpecials] = useState<Special[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -105,7 +108,13 @@ export default function SpecialsPanel() {
           <Button startIcon={<AddIcon />} onClick={addSpecial} variant="outlined" size="small">
             Agregar
           </Button>
-          <Button onClick={saveAll} variant="contained" size="small" disabled={saving}>
+          <Button
+            onClick={saveAll}
+            variant="contained"
+            size="small"
+            disabled={saving || isOffline}
+            title={isOffline ? MSG_OFFLINE.requiresConnection : undefined}
+          >
             {saving ? 'Guardando...' : 'Guardar todo'}
           </Button>
         </Box>

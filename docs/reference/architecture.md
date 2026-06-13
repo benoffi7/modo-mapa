@@ -79,7 +79,22 @@ SearchScreen
   ├─ ViewToggle (mapa/lista)
   ├─ MapView + FABs + MapHint (vista mapa)
   ├─ SearchListView (vista lista, sorted by distance)
-  └─ BusinessSheet (bottom sheet shell → BusinessSheetContent)
+  └─ BusinessSheet (bottom sheet shell → BusinessSheetCompactContent)
+```
+
+## Ruta: Detalle comercio (/comercio/:id)
+
+```text
+BusinessDetailPage (src/pages/BusinessDetailPage.tsx)
+  └─ BusinessDetailScreen (src/components/business/BusinessDetailScreen.tsx)
+       ├─ BusinessSheetHeader (sticky, ref para medir altura)
+       ├─ Chip tabs sticky: Criterios | Precio | Tags | Foto | Opiniones
+       └─ Secciones (display: none para tabs inactivos):
+            ├─ CriteriaSection
+            ├─ BusinessPriceLevel
+            ├─ BusinessTags
+            ├─ MenuPhotoSection
+            └─ OpinionesTab
 ```
 
 ## Tab: Listas (ListsScreen)

@@ -48,7 +48,7 @@ function MapHint() {
         severity="info"
         variant="filled"
         action={
-          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss}>
+          <IconButton size="small" color="inherit" aria-label={MSG_COMMON.closeNoticeAriaLabel} onClick={dismiss} sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }
@@ -72,10 +72,7 @@ function ViewToggle({ mode, onChange }: { mode: SearchViewMode; onChange: (m: Se
       }}
       size="small"
       sx={{
-        position: 'absolute',
-        top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px) + 52px)',
-        right: 16,
-        zIndex: 1100,
+        flexShrink: 0,
         bgcolor: 'background.paper',
         boxShadow: 2,
         borderRadius: 2,
@@ -138,8 +135,26 @@ export default function SearchScreen() {
         }}
       >
         <SearchBar />
-        <FilterChips />
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 'calc(var(--search-bar-top, 16px) + var(--search-bar-height, 56px))',
+            left: 0,
+            right: 0,
+            zIndex: 1100,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 2,
+            // El wrapper deja pasar clicks en zonas vacías al mapa de abajo;
+            // los hijos (chips y toggle) reciben clicks normalmente.
+            pointerEvents: 'none',
+            '& > *': { pointerEvents: 'auto' },
+          }}
+        >
+          <FilterChips />
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
+        </Box>
         {viewMode === 'map' && GOOGLE_MAPS_API_KEY ? (
           <MapErrorBoundary onFallback={() => setViewMode('list')}>
             <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>

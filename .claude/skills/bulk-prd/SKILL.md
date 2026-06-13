@@ -35,7 +35,26 @@ Create a PRD for GitHub issue #<number>. full
 
 Launch all agents in parallel if there are no dependencies between them.
 
-The prd-writer agent handles: reading reference docs, fetching the issue, determining category, creating the directory, writing the PRD, and updating the sidebar.
+The prd-writer agent handles: reading reference docs, fetching the issue, determining category, creating the directory, writing the PRD, and updating the sidebar. It also invokes `sofia` automatically to validate each PRD — do not skip this step manually, the writer handles it.
+
+### Step 1b: Summarize Sofia's verdicts
+
+After prd-writer finishes each issue, it stamps the PRD with a "Validacion Funcional" section. Collect the states:
+
+- PRDs with state **VALIDADO** or **VALIDADO CON OBSERVACIONES**: ready for specs/plan
+- PRDs with state **NO VALIDADO** or missing seal: flag the specific issues in the final report to the user. Do NOT auto-advance those to specs/plan.
+
+Example summary to the user:
+
+```markdown
+## Bulk PRD result
+
+| Issue | PRD | Sofia |
+|-------|-----|-------|
+| #123 | ✓ created | VALIDADO |
+| #124 | ✓ created | VALIDADO CON OBSERVACIONES (ver seccion) |
+| #125 | ✓ created | NO VALIDADO — requiere decision del usuario |
+```
 
 ### Step 2: Commit and push
 

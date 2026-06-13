@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { Box, IconButton, Chip, Button, Typography } from '@mui/material';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { Box, IconButton, Chip, Button, Typography, useTheme } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -18,34 +18,29 @@ import { trackEvent } from '../../utils/analytics';
 import {
   EVT_BUSINESS_DETAIL_OPENED,
   EVT_BUSINESS_DETAIL_TAB_CHANGED,
+  EVT_SUB_TAB_SWITCHED,
 } from '../../constants/analyticsEvents';
 import { NAV_CHIP_SX } from '../../constants/ui';
+import { MSG_BUSINESS_DETAIL } from '../../constants/messages/businessDetail';
 import BusinessSheetHeader from './BusinessSheetHeader';
 import CheckInButton from './CheckInButton';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import AddToListDialog from './AddToListDialog';
 import BusinessSheetSkeleton from './BusinessSheetSkeleton';
-import BusinessNotFound from './BusinessNotFound';
 import StaleBanner from '../ui/StaleBanner';
 import CriteriaSection from './CriteriaSection';
 import BusinessPriceLevel from './BusinessPriceLevel';
 import BusinessTags from './BusinessTags';
 import MenuPhotoSection from './MenuPhotoSection';
 import OpinionesTab from './OpinionesTab';
-import type { PriceLevelData, TagsData, PhotoData } from './InfoTab';
+import type { PriceLevelData, TagsData, PhotoData } from '../../types/businessDetail';
 import type { Business } from '../../types';
 import type { BusinessDetailTab } from '../../types';
 
 const RecommendDialog = lazy(() => import('./RecommendDialog'));
 
-const CHIP_LABELS: Record<BusinessDetailTab, string> = {
-  criterios: 'Criterios',
-  precio: 'Precio',
-  tags: 'Tags',
-  foto: 'Foto',
-  opiniones: 'Opiniones',
-};
+const CHIP_LABELS: Record<BusinessDetailTab, string> = MSG_BUSINESS_DETAIL.chipLabels;
 
 const CHIP_ORDER: BusinessDetailTab[] = ['criterios', 'precio', 'tags', 'foto', 'opiniones'];
 
@@ -59,16 +54,17 @@ function DetailError({ onRetry }: { onRetry: () => void }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, px: 3, gap: 2 }}>
       <ErrorOutlineIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
       <Typography variant="body2" color="text.secondary" textAlign="center">
-        No se pudo cargar la información del comercio.
+        {MSG_BUSINESS_DETAIL.loadError}
       </Typography>
       <Button variant="outlined" size="small" onClick={onRetry} startIcon={<RefreshIcon />}>
-        Reintentar
+        {MSG_BUSINESS_DETAIL.retry}
       </Button>
     </Box>
   );
 }
 
 export default function BusinessDetailScreen({ business, initialTab }: Props) {
+  const theme = useTheme();
   const { user } = useAuth();
   const { isOffline } = useConnectivity();
   const navigate = useNavigate();
@@ -85,15 +81,37 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const chipBarRef = useRef<HTMLDivElement>(null);
+  const chipRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [chipBarOverflows, setChipBarOverflows] = useState(false);
+  const [chipBarScrolledToEnd, setChipBarScrolledToEnd] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!headerRef.current) return;
+    setHeaderHeight(headerRef.current.getBoundingClientRect().height);
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) setHeaderHeight(entry.contentRect.height);
     });
     observer.observe(headerRef.current);
     return () => observer.disconnect();
   }, [data.isLoading]);
+
+  useLayoutEffect(() => {
+    const bar = chipBarRef.current;
+    if (!bar) return;
+    const checkOverflow = () => {
+      setChipBarOverflows(bar.scrollWidth > bar.clientWidth);
+      setChipBarScrolledToEnd(bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 4);
+    };
+    checkOverflow();
+    bar.addEventListener('scroll', checkOverflow, { passive: true });
+    const ro = new ResizeObserver(checkOverflow);
+    ro.observe(bar);
+    return () => {
+      bar.removeEventListener('scroll', checkOverflow);
+      ro.disconnect();
+    };
+  }, []);
 
   const handleRatingChange = useCallback(() => refetch('ratings'), [refetch]);
   const handleTagsChange = useCallback(() => { refetch('userTags'); refetch('customTags'); }, [refetch]);
@@ -137,12 +155,31 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
     });
   }, [business, recordVisit, initialTab]);
 
-  const handleChipChange = (chip: BusinessDetailTab) => {
+  const handleChipChange = useCallback((chip: BusinessDetailTab) => {
     const previous = activeChip;
     setActiveChip(chip);
+    chipRefs.current[CHIP_ORDER.indexOf(chip)]?.focus();
     setSearchParams({ tab: chip }, { replace: true });
     trackEvent(EVT_BUSINESS_DETAIL_TAB_CHANGED, { business_id: business.id, tab: chip, previous_tab: previous });
-  };
+    trackEvent(EVT_SUB_TAB_SWITCHED, { parent: 'comercio', tab: chip });
+  }, [activeChip, business.id, setSearchParams]);
+
+  const handleChipKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const idx = CHIP_ORDER.indexOf(activeChip);
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      handleChipChange(CHIP_ORDER[(idx + 1) % CHIP_ORDER.length]);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      handleChipChange(CHIP_ORDER[(idx - 1 + CHIP_ORDER.length) % CHIP_ORDER.length]);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      handleChipChange(CHIP_ORDER[0]);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      handleChipChange(CHIP_ORDER[CHIP_ORDER.length - 1]);
+    }
+  }, [activeChip, handleChipChange]);
 
   const handleBack = () => {
     if (location.key === 'default') {
@@ -152,13 +189,10 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
     }
   };
 
-  if (data.error && isOffline) {
-    return <BusinessNotFound reason="offline_no_cache" />;
-  }
-
   return (
     <BusinessScopeProvider scope={scope}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: 'background.paper' }}>
+      <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', bgcolor: 'background.paper', maxWidth: { sm: 640, md: 720 }, mx: 'auto' }}>
         <Box sx={{ px: 1, pt: 1 }}>
           <IconButton onClick={handleBack} aria-label="Volver al mapa">
             <ArrowBackIcon />
@@ -167,7 +201,7 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
 
         {data.isLoading ? (
           <BusinessSheetSkeleton />
-        ) : data.error ? (
+        ) : (data.error && !isOffline) ? (
           <DetailError onRetry={() => data.refetch()} />
         ) : (
           <>
@@ -210,24 +244,49 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
                 top: headerHeight,
                 zIndex: 10,
                 background: 'inherit',
-                display: 'flex',
-                gap: 1,
-                px: 2,
-                py: 1,
-                overflow: 'auto',
-                '&::-webkit-scrollbar': { display: 'none' },
               }}
             >
-              {CHIP_ORDER.map((chip) => (
-                <Chip
-                  key={chip}
-                  label={CHIP_LABELS[chip]}
-                  onClick={() => handleChipChange(chip)}
-                  variant={activeChip === chip ? 'filled' : 'outlined'}
-                  color={activeChip === chip ? 'primary' : 'default'}
-                  sx={{ ...NAV_CHIP_SX, fontWeight: activeChip === chip ? 600 : 400 }}
+              <Box
+                ref={chipBarRef}
+                role="tablist"
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  px: 2,
+                  py: 1,
+                  overflow: 'auto',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                }}
+              >
+                {CHIP_ORDER.map((chip, i) => (
+                  <Chip
+                    key={chip}
+                    ref={(el) => { chipRefs.current[i] = el as HTMLDivElement | null; }}
+                    label={CHIP_LABELS[chip]}
+                    role="tab"
+                    aria-selected={activeChip === chip}
+                    tabIndex={activeChip === chip ? 0 : -1}
+                    onClick={() => handleChipChange(chip)}
+                    onKeyDown={handleChipKeyDown}
+                    variant={activeChip === chip ? 'filled' : 'outlined'}
+                    color={activeChip === chip ? 'primary' : 'default'}
+                    sx={{ ...NAV_CHIP_SX, fontWeight: activeChip === chip ? 600 : 400 }}
+                  />
+                ))}
+              </Box>
+              {chipBarOverflows && !chipBarScrolledToEnd && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 40,
+                    background: `linear-gradient(to right, transparent, ${theme.palette.background.paper})`,
+                    pointerEvents: 'none',
+                  }}
                 />
-              ))}
+              )}
             </Box>
 
             <Box sx={{ pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
@@ -270,12 +329,12 @@ export default function BusinessDetailScreen({ business, initialTab }: Props) {
                   userCommentLikes={data.userCommentLikes}
                   isLoading={data.isLoading}
                   onCommentsChange={() => data.refetch('comments')}
-                  onDirtyChange={() => {}}
                 />
               </Box>
             </Box>
           </>
         )}
+      </Box>
       </Box>
 
       <AddToListDialog open={listDialogOpen} onClose={() => setListDialogOpen(false)} />

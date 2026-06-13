@@ -1,6 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getDb } from '../helpers/env';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 async function run(): Promise<string> {
   const db = getDb();
@@ -36,6 +37,11 @@ async function run(): Promise<string> {
 export const cleanupActivityFeed = onSchedule(
   { schedule: '0 5 * * *', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    await withCronHeartbeat('cleanupActivityFeed', run);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('cleanupActivityFeed', run);
+    } finally {
+      await trackFunctionTiming('cleanupActivityFeed', startMs);
+    }
   },
 );

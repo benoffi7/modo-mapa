@@ -1,10 +1,11 @@
 /**
  * Firestore service for the `dailyMetrics` collection.
  */
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { publicMetricsConverter } from '../config/metricsConverter';
+import { measuredGetDoc } from '../utils/perfMetrics';
 import type { PublicMetrics } from '../types/metrics';
 
 /**
@@ -12,7 +13,8 @@ import type { PublicMetrics } from '../types/metrics';
  * Returns null if the document does not exist.
  */
 export async function fetchDailyMetrics(date: string): Promise<PublicMetrics | null> {
-  const snap = await getDoc(
+  const snap = await measuredGetDoc(
+    'metrics_dailyByDate',
     doc(db, COLLECTIONS.DAILY_METRICS, date).withConverter(publicMetricsConverter),
   );
   if (!snap.exists()) return null;

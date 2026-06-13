@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useAsyncData } from './useAsyncData';
 import { fetchUserSettings, updateUserSettings } from '../services/userSettings';
 import { MAX_FOLLOWED_TAGS } from '../constants/interests';
@@ -7,7 +8,19 @@ import { VALID_TAG_IDS } from '../constants/tags';
 import { trackEvent } from '../utils/analytics';
 import { EVT_TAG_FOLLOWED, EVT_TAG_UNFOLLOWED } from '../constants/analyticsEvents';
 import { logger } from '../utils/logger';
+import { createPendingByUserStore } from '../utils/createPendingByUserStore';
 import type { UserSettings } from '../types';
+
+// #323 / #335: pendingState a nivel módulo via factory unificado — sobrevive al
+// unmount del consumer (HomeScreen mantiene el feed permanente vivo) y limpia el
+// snapshot del UID anterior en logout/switch (listener `onAuthStateChanged`
+// compartido). El snapshot es la lista completa de tags (last-write-wins).
+const pendingTagsByUser = createPendingByUserStore<string[]>();
+
+/** Test-only: limpia el estado modular entre tests. No exportar a producción. */
+export function __resetPendingTagsForTests() {
+  pendingTagsByUser.__reset();
+}
 
 /**
  * Optimistic tags state that auto-resets when the server settings version changes.
@@ -44,6 +57,7 @@ function useOptimisticTags(settings: UserSettings | null) {
  */
 export function useFollowedTags() {
   const { user } = useAuth();
+  const { isOffline } = useConnectivity();
 
   const fetcher = useCallback(async (): Promise<UserSettings | null> => {
     if (!user) return null;
@@ -72,6 +86,12 @@ export function useFollowedTags() {
 
       trackEvent(EVT_TAG_FOLLOWED, { tag, source });
 
+      // #323: offline → snapshot a nivel módulo, flush al reconectar.
+      if (isOffline) {
+        pendingTagsByUser.set(user.uid, next);
+        return;
+      }
+
       updateUserSettings(user.uid, {
         followedTags: next,
         followedTagsUpdatedAt: new Date(),
@@ -80,7 +100,7 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags, setOptimisticTags],
+    [user, isOffline, optimisticTags, serverTags, setOptimisticTags],
   );
 
   const unfollowTag = useCallback(
@@ -94,6 +114,11 @@ export function useFollowedTags() {
 
       trackEvent(EVT_TAG_UNFOLLOWED, { tag, source });
 
+      if (isOffline) {
+        pendingTagsByUser.set(user.uid, next);
+        return;
+      }
+
       updateUserSettings(user.uid, {
         followedTags: next,
         followedTagsUpdatedAt: new Date(),
@@ -102,8 +127,26 @@ export function useFollowedTags() {
         setOptimisticTags(null);
       });
     },
-    [user, optimisticTags, serverTags, setOptimisticTags],
+    [user, isOffline, optimisticTags, serverTags, setOptimisticTags],
   );
+
+  // #323: flush snapshot al reconectar — sobrevive al unmount del consumer
+  // gracias a que pendingTagsByUser vive a nivel módulo.
+  useEffect(() => {
+    let cancelled = false;
+    if (!isOffline && user) {
+      const snapshot = pendingTagsByUser.take(user.uid);
+      if (!snapshot) return;
+      updateUserSettings(user.uid, {
+        followedTags: snapshot,
+        followedTagsUpdatedAt: new Date(),
+      }).catch((err) => {
+        if (cancelled) return;
+        logger.error('[useFollowedTags] flush failed:', err);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [isOffline, user]);
 
   const isFollowed = useCallback(
     (tag: string) => tags.includes(tag),

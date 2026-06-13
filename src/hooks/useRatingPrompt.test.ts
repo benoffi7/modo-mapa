@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useRatingPrompt } from './useRatingPrompt';
+import { __resetBusinessMap } from '../utils/businessMap';
 import type { CheckIn } from '../types';
 
 const mockTrackEvent = vi.fn();
@@ -58,6 +59,7 @@ describe('useRatingPrompt', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetBusinessMap();
     localStorage.clear();
     mockUser = { uid: 'user1' };
     vi.useFakeTimers();

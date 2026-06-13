@@ -23,6 +23,8 @@ vi.mock('./comments', () => ({
   createQuestion: vi.fn().mockResolvedValue('q1'),
   likeComment: vi.fn().mockResolvedValue(undefined),
   unlikeComment: vi.fn().mockResolvedValue(undefined),
+  editComment: vi.fn().mockResolvedValue(undefined),
+  deleteComment: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./favorites', () => ({
   addFavorite: vi.fn().mockResolvedValue(undefined),
@@ -50,7 +52,7 @@ vi.mock('./recommendations', () => ({
 }));
 
 import { upsertRating, deleteRating } from './ratings';
-import { addComment, createQuestion, likeComment, unlikeComment } from './comments';
+import { addComment, createQuestion, likeComment, unlikeComment, editComment, deleteComment } from './comments';
 import { addFavorite, removeFavorite } from './favorites';
 import { upsertPriceLevel, deletePriceLevel } from './priceLevels';
 import { addUserTag, removeUserTag } from './tags';
@@ -143,7 +145,7 @@ describe('syncEngine', () => {
 
     it('maps comment_like', async () => {
       await executeAction(makeFullAction({ type: 'comment_like', payload: { commentId: 'c1' } }));
-      expect(likeComment).toHaveBeenCalledWith('u1', 'c1');
+      expect(likeComment).toHaveBeenCalledWith('u1', 'c1', 'b1');
     });
 
     it('maps comment_unlike', async () => {
@@ -406,6 +408,110 @@ describe('syncEngine', () => {
       // Only one should have actually run (the other returns early)
       expect(onComplete1).toHaveBeenCalledTimes(1);
       expect(onComplete2).not.toHaveBeenCalled();
+    });
+
+    describe('#340 W6: edit-then-delete del mismo comentario', () => {
+      it('pospone comment_delete cuando el comment_edit del mismo commentId falla (deferred)', async () => {
+        const editAction = makeFullAction({
+          type: 'comment_edit',
+          payload: { commentId: 'c1', text: 'editado' },
+          retryCount: 0,
+        });
+        const deleteAction = makeFullAction({
+          type: 'comment_delete',
+          payload: { commentId: 'c1' },
+          retryCount: 0,
+        });
+        vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+        vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([editAction, deleteAction]);
+        const updateStatus = vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+        vi.spyOn(offlineQueue, 'remove').mockResolvedValue(undefined);
+        vi.mocked(editComment).mockRejectedValueOnce(new Error('transient'));
+
+        const onComplete = vi.fn();
+        await processQueue(vi.fn(), vi.fn(), onComplete);
+
+        // El edit fallo y quedo deferred (pending, retry 1).
+        expect(updateStatus).toHaveBeenCalledWith(editAction.id, 'pending', 1);
+        // El delete NO se ejecuto: se pospuso manteniendo su retryCount (no se marca syncing).
+        expect(deleteComment).not.toHaveBeenCalled();
+        expect(updateStatus).toHaveBeenCalledWith(deleteAction.id, 'pending', 0);
+        expect(updateStatus).not.toHaveBeenCalledWith(deleteAction.id, 'syncing');
+        // Nada sincronizado ni fallado permanentemente este ciclo.
+        expect(onComplete).toHaveBeenCalledWith(0, 0);
+      });
+
+      it('pospone comment_delete cuando el comment_edit falla permanentemente (max retries)', async () => {
+        const editAction = makeFullAction({
+          type: 'comment_edit',
+          payload: { commentId: 'c1', text: 'editado' },
+          retryCount: 2,
+        });
+        const deleteAction = makeFullAction({
+          type: 'comment_delete',
+          payload: { commentId: 'c1' },
+          retryCount: 0,
+        });
+        vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+        vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([editAction, deleteAction]);
+        const updateStatus = vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+        vi.spyOn(offlineQueue, 'remove').mockResolvedValue(undefined);
+        vi.mocked(editComment).mockRejectedValueOnce(new Error('permanent'));
+
+        const onFailed = vi.fn();
+        const onComplete = vi.fn();
+        await processQueue(vi.fn(), onFailed, onComplete);
+
+        expect(updateStatus).toHaveBeenCalledWith(editAction.id, 'failed', 3);
+        expect(deleteComment).not.toHaveBeenCalled();
+        expect(updateStatus).toHaveBeenCalledWith(deleteAction.id, 'pending', 0);
+        expect(onComplete).toHaveBeenCalledWith(0, 1);
+      });
+
+      it('ejecuta comment_delete normalmente si el comment_edit del mismo comentario tiene exito', async () => {
+        const editAction = makeFullAction({
+          type: 'comment_edit',
+          payload: { commentId: 'c1', text: 'editado' },
+        });
+        const deleteAction = makeFullAction({
+          type: 'comment_delete',
+          payload: { commentId: 'c1' },
+        });
+        vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+        vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([editAction, deleteAction]);
+        vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+        vi.spyOn(offlineQueue, 'remove').mockResolvedValue(undefined);
+
+        const onComplete = vi.fn();
+        await processQueue(vi.fn(), vi.fn(), onComplete);
+
+        expect(editComment).toHaveBeenCalledWith('c1', 'u1', 'editado');
+        expect(deleteComment).toHaveBeenCalledWith('c1', 'u1');
+        expect(onComplete).toHaveBeenCalledWith(2, 0);
+      });
+
+      it('no posterga el delete de OTRO comentario cuando falla un edit distinto', async () => {
+        const editAction = makeFullAction({
+          type: 'comment_edit',
+          payload: { commentId: 'c1', text: 'editado' },
+        });
+        const deleteOther = makeFullAction({
+          type: 'comment_delete',
+          payload: { commentId: 'c2' },
+        });
+        vi.spyOn(offlineQueue, 'cleanup').mockResolvedValue(0);
+        vi.spyOn(offlineQueue, 'getPending').mockResolvedValue([editAction, deleteOther]);
+        vi.spyOn(offlineQueue, 'updateStatus').mockResolvedValue(undefined);
+        vi.spyOn(offlineQueue, 'remove').mockResolvedValue(undefined);
+        vi.mocked(editComment).mockRejectedValueOnce(new Error('transient'));
+
+        const onComplete = vi.fn();
+        await processQueue(vi.fn(), vi.fn(), onComplete);
+
+        // El delete de c2 procede (edit fallido era de c1).
+        expect(deleteComment).toHaveBeenCalledWith('c2', 'u1');
+        expect(onComplete).toHaveBeenCalledWith(1, 0);
+      });
     });
   });
 });

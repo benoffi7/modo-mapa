@@ -6,6 +6,7 @@ import { useSelection } from '../../context/SelectionContext';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { CATEGORY_LABELS } from '../../constants/business';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { trackEvent } from '../../utils/analytics';
 import type { Business, BusinessCategory } from '../../types';
 
@@ -32,7 +33,7 @@ function BusinessRow({ business, distance, onSelect }: BusinessRowProps) {
               label={CATEGORY_LABELS[business.category as BusinessCategory] ?? business.category}
               size="small"
               variant="outlined"
-              sx={{ height: 20, fontSize: '0.7rem' }}
+              sx={CHIP_SMALL_SX}
             />
             <Typography variant="caption" color="text.secondary">
               {distance}

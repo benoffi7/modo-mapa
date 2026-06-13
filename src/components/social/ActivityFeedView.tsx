@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Box, List } from '@mui/material';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
 import { useAuth } from '../../context/AuthContext';
@@ -9,7 +9,6 @@ import { MSG_SOCIAL } from '../../constants/messages';
 import { ActivityFeedItemRow } from './ActivityFeedItem';
 import { trackEvent } from '../../utils/analytics';
 import { EVT_FEED_VIEWED, EVT_FEED_ITEM_CLICKED } from '../../constants/analyticsEvents';
-import { useEffect } from 'react';
 import { useSocialSubTabRefresh } from '../../hooks/useTabRefresh';
 
 interface ActivityFeedViewProps {
@@ -20,10 +19,15 @@ export function ActivityFeedView({ onBusinessClick }: ActivityFeedViewProps) {
   const { user } = useAuth();
   const { items, isLoading, isLoadingMore, error, hasMore, loadMore, reload } = useActivityFeed(user?.uid);
 
+  // Stable ref pattern: contrato semántico = "reload una sola vez al primer mount,
+  // no reaccionar a cambios futuros de identidad de reload". Evita el eslint-disable
+  // y respeta el contrato literal (Guard #305 R4).
+  const reloadRef = useRef(reload);
+  useEffect(() => { reloadRef.current = reload; }, [reload]);
   useEffect(() => {
     trackEvent(EVT_FEED_VIEWED);
-    reload();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reload on mount only
+    reloadRef.current();
+  }, []);
 
   // Reload when social > actividad becomes active
   useSocialSubTabRefresh('actividad', reload);

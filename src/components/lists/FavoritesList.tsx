@@ -18,13 +18,17 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShareIcon from '@mui/icons-material/Share';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { useTab } from '../../context/TabContext';
 import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { CATEGORY_LABELS } from '../../constants/business';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { removeFavorite, getFavoritesCollection } from '../../services/favorites';
+import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { trackEvent } from '../../utils/analytics';
 import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import ListFilters from '../common/ListFilters';
@@ -45,6 +49,9 @@ interface Props {
 
 export default function FavoritesList({ onSelectBusiness }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
+  const { isOffline } = useConnectivity();
+  const { setActiveTab } = useTab();
   const sortLocation = useSortLocation();
 
   const collectionRef = useMemo(() => getFavoritesCollection(), []);
@@ -52,16 +59,21 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
   const { items: rawItems, isLoading, error, hasMore, isLoadingMore, loadMore, reload } =
     usePaginatedQuery<Favorite>(collectionRef, user?.uid, 'createdAt');
 
+  // #340 W3: favoritos quitados offline siguen en Firestore hasta el replay.
+  // Los ocultamos optimistamente para que `reload()`/refetch no los reviva.
+  const [removedOffline, setRemovedOffline] = useState<Set<string>>(new Set());
+
   const favorites = useMemo(() => {
     const result: FavoriteItem[] = [];
     for (const data of rawItems) {
-      const business = allBusinesses.find((b) => b.id === data.businessId);
+      if (removedOffline.has(data.businessId)) continue;
+      const business = getBusinessById(data.businessId);
       if (business) {
         result.push({ businessId: data.businessId, business, createdAt: data.createdAt });
       }
     }
     return result;
-  }, [rawItems]);
+  }, [rawItems, removedOffline]);
 
   const {
     filtered,
@@ -97,10 +109,25 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
 
   const handleRemoveFavorite = async () => {
     if (!user || !menuTarget) return;
-    await removeFavorite(user.uid, menuTarget.businessId);
-    trackEvent('favorite_toggle', { action: 'remove', business_id: menuTarget.businessId });
+    const businessId = menuTarget.businessId;
+    // #323: wrap removeFavorite con withOfflineSupport (encolable)
+    await withOfflineSupport(
+      isOffline,
+      'favorite_remove',
+      { userId: user.uid, businessId },
+      { action: 'remove' },
+      () => removeFavorite(user.uid, businessId),
+      toast,
+    );
+    trackEvent('favorite_toggle', { action: 'remove', business_id: businessId });
     handleCloseMenu();
-    reload();
+    // #340 W3: offline el doc sigue en Firestore hasta el replay; no recargamos
+    // (volveria a aparecer) y mantenemos el estado optimista de "quitado".
+    if (isOffline) {
+      setRemovedOffline((prev) => new Set(prev).add(businessId));
+    } else {
+      reload();
+    }
   };
 
   const handleShare = async () => {
@@ -156,9 +183,12 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <FavoriteBorderIcon sx={{ fontSize: 48, color: 'action.disabled', mb: 1 }} />
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           No tenés favoritos todavía
         </Typography>
+        <Button size="small" variant="text" onClick={() => setActiveTab('buscar')}>
+          Buscá comercios
+        </Button>
       </Box>
     );
   }
@@ -182,7 +212,17 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
           return (
             <Box
               key={fav.businessId}
+              role="button"
+              tabIndex={0}
+              aria-label={`Abrir comercio: ${fav.business.name}`}
               onClick={() => handleSelectBusiness(fav.business)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectBusiness(fav.business);
+                }
+              }}
               sx={cardSx}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -199,6 +239,7 @@ export default function FavoritesList({ onSelectBusiness }: Props) {
                   size="small"
                   onClick={(e) => handleOpenMenu(e, fav)}
                   aria-label="Opciones"
+                  sx={{ minWidth: 44, minHeight: 44 }}
                 >
                   <MoreVertIcon fontSize="small" />
                 </IconButton>

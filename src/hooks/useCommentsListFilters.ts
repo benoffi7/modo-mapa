@@ -1,5 +1,5 @@
 import { useMemo, useState, useDeferredValue, useEffect, useRef } from 'react';
-import { allBusinesses } from './useBusinesses';
+import { getBusinessById } from '../utils/businessMap';
 import type { Business, Comment } from '../types';
 
 type SortMode = 'recent' | 'oldest' | 'useful';
@@ -45,7 +45,7 @@ export function useCommentsListFilters({ rawItems, isPendingDelete, hasMore, loa
       .map((data) => ({
         id: data.id,
         comment: data,
-        business: allBusinesses.find((b) => b.id === data.businessId) || null,
+        business: getBusinessById(data.businessId) ?? null,
       }));
   }, [rawItems, isPendingDelete]);
 

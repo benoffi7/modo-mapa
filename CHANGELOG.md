@@ -4,7 +4,71 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.40.0] — 2026-04-23
+
+### Added
+
+- Business Detail Screen: compact bottom sheet (50dvh) + full-screen route `/comercio/:id` with sticky chip tab bar (Criterios/Precio/Tags/Foto/Opiniones)
+- Canonical deep-linkeable URL for businesses; backward-compatible with `?business=` query param
+- Analytics events: `business_detail_opened`, `business_detail_tab_changed`, `business_detail_cta_clicked`, `sub_tab_switched`
+- Admin GA4 dashboard: `business_detail` feature section with 3 tracked events
+- Tests: `useDeepLinks.test.ts` (10 cases), `ShareButton.test.tsx` (3 cases)
+
+### Fixed
+
+- Offline UX: show cached content when offline instead of redirecting to NotFound
+- Chip bar jitter: use `useLayoutEffect` + `getBoundingClientRect` for initial measurement
+
+### Changed
+
+- `useBusinessById` memoized with `useMemo`
+- Types `PriceLevelData`, `TagsData`, `PhotoData` moved to `src/types/businessDetail.ts`
+- `MSG_BUSINESS_DETAIL` constants centralized
+- Docs: `features.md`, `architecture.md`, `patterns.md`, `project-reference.md` updated
+
+### Removed
+
+- `InfoTab.tsx` zombie component deleted
+
+## [2.39.0] — 2026-04-22
+
+### Added
+
+- `withBusyFlag(kind, fn)` utility: wraps user-explicit submits (rating, comment, check-in, form saves, photo upload) to block PWA reload during critical operations; ref-counted, heartbeat-aware, AbortSignal-safe
+- `fetchAppVersionConfig`: server-first Firestore read with 2-retry exponential backoff (500ms/1500ms) for transient errors, then local cache fallback; returns `source` tag (`server | server-retry | cache | empty`)
+- `useForceUpdate` now emits `EVT_APP_VERSION_ACTIVE` analytics event once per session with version gap details
+- `useForceUpdate` now polls on `visibilitychange` and `online` events (in addition to interval)
+- `registerPwa.ts`: explicit PWA registration with `registerType: 'prompt'`, checks busy-flag and cooldown before triggering SW reload
+- `update-min-version.js` script: CI-injectable functions for setting `minVersion` in Firestore
+- Storage keys: `STORAGE_KEY_FORCE_UPDATE_LAST_CHECK`, `STORAGE_KEY_FORCE_UPDATE_BUSY`, `STORAGE_KEY_APP_VERSION_EVENT_EMITTED`
+- Timing constants: `FORCE_UPDATE_CHECK_INTERVAL_MS`, `FORCE_UPDATE_FETCH_RETRY_DELAYS_MS`, `BUSY_FLAG_MAX_AGE_MS`, `BUSY_FLAG_HEARTBEAT_MS`, `PWA_FALLBACK_GRACE_MS`
+- Analytics: `EVT_APP_VERSION_ACTIVE` added to `system.ts` barrel and GA4 report
+- Docs: rollback procedure (`docs/procedures/rollback.md`), patterns, Firestore schema, security notes updated
+- Tests: 15 new test files, 1399 total passing; branches 80.25%, functions 79.41%
+
+### Changed
+
+- `vite.config.ts`: `registerType` changed from `'autoUpdate'` to `'prompt'` (explicit control over SW reload timing)
+- `useForceUpdate`: `checkVersion()` now returns `{ status, minVersion, source }` for richer telemetry
+
 ## [Unreleased]
+
+### Security — #322 firestore rules hardening + bootstrap admin
+
+- Type guards explicitos en `firestore.rules` (`feedback.message` `is string`, `notifications.read` `is bool`,
+  `userSettings.localityLat/Lng` range finito, `displayName` regex + reject whitespace-only,
+  `displayNameLower == displayName.lower()` equality bidireccional en create y update).
+- Uniform response (`{ success: true }`) en `inviteListEditor` / `removeListEditor` cierra vector
+  de email enumeration: respuesta indistinguible para "agregado", "ya era editor" y "email no existe".
+- Bootstrap admin path en `setAdminClaim` gateado por `config/bootstrap.adminAssigned` — cerrado
+  atomicamente tras asignar el primer admin. Mitiga hijack via compromiso de cuenta `ADMIN_EMAIL`.
+- `feedback.mediaUrl` ahora requiere segmento `feedbackId` en el path (previene reuso cross-feedback).
+- `getFeaturedLists` rate limit ajustado a un ceiling realista para discovery publica (cierra scraping).
+- `onCheckInDeleted` suspende ventana de creates 24h al exceder limite de deletes (no log-only).
+- `cleanAnonymousData` revoca refresh tokens post-cleanup (cierra ventana de hasta 1h con tokens validos).
+- Script `scripts/migrate-displayname-lower-sync.mjs` para sync idempotente de docs legacy pre-deploy.
+- Procedure `docs/procedures/reset-bootstrap-admin.md` para recovery (rotacion de admin, post-incidente).
+- Guard 300-security R12/R13/R14 marcadas como verified in #322.
 
 ### Added
 

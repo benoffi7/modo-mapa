@@ -101,7 +101,7 @@ export default function EditorsDialog({ open, onClose, listId, editorIds, onEdit
                     onClick={() => handleRemove(editor.uid)}
                     disabled={removing === editor.uid || isOffline}
                     aria-label={`Remover ${editor.displayName}`}
-                    sx={{ color: 'error.main' }}
+                    sx={{ color: 'error.main', minWidth: 44, minHeight: 44 }}
                   >
                     {removing === editor.uid ? <CircularProgress size={16} /> : <RemoveCircleOutlineIcon fontSize="small" />}
                   </IconButton>

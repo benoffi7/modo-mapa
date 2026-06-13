@@ -119,13 +119,15 @@ export function useBusinessData(businessId: string | null): UseBusinessDataRetur
       if (patched.size > 0) {
         setData((prev) => {
           const merged = { ...result };
-          if (patched.has('isFavorite')) merged.isFavorite = prev.isFavorite;
+          // patchedRef tracks BusinessDataCollectionName ('favorites' | 'menuPhotos' | …),
+          // not the field name in the data shape ('isFavorite' | 'menuPhoto' | …).
+          if (patched.has('favorites')) merged.isFavorite = prev.isFavorite;
           if (patched.has('ratings')) merged.ratings = prev.ratings;
           if (patched.has('comments')) { merged.comments = prev.comments; merged.userCommentLikes = prev.userCommentLikes; }
           if (patched.has('userTags')) merged.userTags = prev.userTags;
           if (patched.has('customTags')) merged.customTags = prev.customTags;
           if (patched.has('priceLevels')) merged.priceLevels = prev.priceLevels;
-          if (patched.has('menuPhoto')) merged.menuPhoto = prev.menuPhoto;
+          if (patched.has('menuPhotos')) merged.menuPhoto = prev.menuPhoto;
           return merged;
         });
       } else {

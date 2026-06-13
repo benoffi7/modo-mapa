@@ -6,6 +6,8 @@ Regresiones bloqueadas tras el fix del tech debt UI/UX auditado en el `/health-c
 **Specs:** [docs/feat/ux/305-mui7-slotprops-touch-targets/specs.md](../../feat/ux/305-mui7-slotprops-touch-targets/specs.md)
 **Issue:** #305
 
+**Estado tras #326:** R2/R3/R4/R5/R7/R8 cumplidos en el scope cubierto. R2 acotado a los 6 callsites flagged en el `/health-check` del 2026-04-25 (StaleBanner, RatingPromptBanner, SearchBar, ListsScreen, CommentRow, BusinessRating). El cleanup amplio de los ~24 IconButtons restantes con `size="small"` queda en PRD posterior dedicado.
+
 ---
 
 ## Reglas
@@ -27,6 +29,15 @@ Regresiones bloqueadas tras el fix del tech debt UI/UX auditado en el `/health-c
     - `Typography` al lado de iconos/botones necesita `noWrap` + `overflow: 'hidden'` + `textOverflow: 'ellipsis'`.
     - `ViewToggle` y similares no deben usar `position: absolute` sobre chips scrollables — usar flex row con `gap`.
     - Valores numericos en `StatsCards` y similares truncan con `noWrap` o tooltip, nunca silenciosamente.
+
+7. **Cards/rows interactivas usan componentes accesibles, no `<Box onClick>`.** Cualquier elemento clicable que sea una card, row, list-item o tile DEBE ser:
+    - `<ListItemButton>` para listas verticales con MUI `<List>`.
+    - `<CardActionArea>` para cards de MUI.
+    - `<ButtonBase>` o `<Button>` para casos custom.
+    - **Ultimo recurso:** `<Box onClick={...} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handler(); }}>` — pero esto requiere comentario justificando por que ninguna primitiva MUI sirve.
+    Nunca: `<Box onClick={handler}>` sin a11y triplet (WCAG 2.1.1 — keyboard accessible).
+
+8. **`CHIP_SMALL_SX` existe y se exporta desde `src/theme/cards.ts`.** La constante es la fuente unica de verdad para chips chicos del proyecto. El export DEBE estar disponible y los chips ad-hoc deben migrarse a `<Chip size="small" sx={CHIP_SMALL_SX} ... />`. Si la constante se elimina o renombra, todos los consumers fallan en TS — no se permite mantener chips ad-hoc en paralelo.
 
 ---
 
@@ -83,6 +94,32 @@ grep -rn "height: 1[8-9]" src/components/ --include="*.tsx" | grep -i chip
 ```
 
 Debe retornar **vacio**. Usar `CHIP_SMALL_SX` desde `src/theme/cards.ts`.
+
+### Regla 7 — `<Box onClick>` sin keyboard a11y (multi-line aware desde #331)
+
+El grep single-line original fallaba en JSX multi-line (el caso real más común) — generaba falsos positivos porque `[^>]` cortaba en arrow functions (`onClick={() => ...}`). Se reemplazó por el script Node `scripts/guards/lib/check-box-onclick.mjs`, que escanea cada apertura `<Box` balanceando `{}`/`[]`/`()` y respetando strings para hallar el cierre real del tag, y luego verifica el triplet a11y WCAG 2.1.1.
+
+```bash
+node scripts/guards/lib/check-box-onclick.mjs
+```
+
+Cada violación reporta `archivo:linea: missing [role="button" | tabIndex | onKeyDown] — <snippet>`. Para exceptuar un caso justificado, agregar `guard:exempt` dentro del tag. Cada match debe migrarse a `ListItemButton`/`CardActionArea` o completar el triplet `role="button"` + `tabIndex={0}` + `onKeyDown`.
+
+> **Nota (#331):** al adoptar el detector multi-line, el count bajó de 11 → 7 (los 4 eliminados eran falsos positivos del grep viejo — `MenuPhotoSection`, `MenuPhotoUpload`, `FavoritesList`, `CommentsStats` ya tenían el triplet completo). Baseline re-lockeado.
+
+### Regla 8 — `CHIP_SMALL_SX` existe y se usa
+
+```bash
+grep -n "CHIP_SMALL_SX" src/theme/cards.ts
+```
+
+Esperar al menos 1 match (export). Luego:
+
+```bash
+grep -rn "<Chip" src/components/ --include="*.tsx" | grep "height:"
+```
+
+Output esperado: cero hits. Cualquier chip con `sx={{ height: ... }}` debe migrarse a `CHIP_SMALL_SX`.
 
 ### Regla 6 — 360px overflow
 

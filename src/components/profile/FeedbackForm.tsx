@@ -25,6 +25,7 @@ import { MAX_FEEDBACK_MEDIA_SIZE } from '../../constants/feedback';
 import { MSG_FEEDBACK } from '../../constants/messages';
 import type { FeedbackCategory, Business } from '../../types';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 const MyFeedbackList = lazy(() => import('./MyFeedbackList'));
 
@@ -81,7 +82,9 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
     if (!user || !message.trim()) return;
     setIsSubmitting(true);
     try {
-      await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined, selectedBusiness ?? undefined);
+      await withBusyFlag('feedback_submit', async () => {
+        await sendFeedback(user.uid, message.trim(), category, mediaFile ?? undefined, selectedBusiness ?? undefined);
+      });
       setSent(true);
       setSelectedBusiness(null);
       setBusinessQuery('');
@@ -202,7 +205,7 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
           <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
             {mediaFile.name}
           </Typography>
-          <IconButton size="small" onClick={clearMedia}>
+          <IconButton size="small" onClick={clearMedia} aria-label="Quitar archivo adjunto" sx={{ minWidth: 44, minHeight: 44 }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -217,7 +220,8 @@ function FeedbackSender({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) =>
           <IconButton
             size="small"
             onClick={clearMedia}
-            sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper' }}
+            aria-label="Quitar imagen adjunta"
+            sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', minWidth: 44, minHeight: 44 }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>

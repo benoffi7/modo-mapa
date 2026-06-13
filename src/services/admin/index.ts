@@ -53,3 +53,6 @@ export {
 } from './config';
 export { fetchDeletionAuditLogs } from './audit';
 export { listBackups, createBackup, restoreBackup, deleteBackup } from './backups';
+export { listAdminRateLimits, resetAdminRateLimit } from './rateLimits';
+export { listAdminIpRateLimits, resetAdminIpRateLimit } from './ipRateLimits';
+export { adminDeleteListItem } from './listItems';

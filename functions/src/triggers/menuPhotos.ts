@@ -26,7 +26,7 @@ export const onMenuPhotoCreated = onDocumentCreated(
     // Validate storagePath format (defense in depth — rules also validate)
     if (!storagePath || !STORAGE_PATH_REGEX.test(storagePath)) {
       await snap.ref.update({ status: 'rejected', rejectionReason: 'invalid_storage_path' });
-      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `Invalid storagePath: ${storagePath}` });
+      await logAbuse(db, { userId, type: 'flagged', collection: 'menuPhotos', detail: `Invalid storagePath: ${storagePath}` });
       return;
     }
 
@@ -34,14 +34,14 @@ export const onMenuPhotoCreated = onDocumentCreated(
     const pathSegments = storagePath.split('/');
     if (pathSegments[1] !== userId) {
       await snap.ref.update({ status: 'rejected', rejectionReason: 'storage_path_user_mismatch' });
-      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `storagePath userId mismatch: path=${pathSegments[1]}, doc=${userId}` });
+      await logAbuse(db, { userId, type: 'flagged', collection: 'menuPhotos', detail: `storagePath userId mismatch: path=${pathSegments[1]}, doc=${userId}` });
       return;
     }
 
     // Validate businessId in path matches document businessId
     if (pathSegments[2] !== businessId) {
       await snap.ref.update({ status: 'rejected', rejectionReason: 'storage_path_business_mismatch' });
-      await logAbuse(db, { userId, type: 'invalid_input', collection: 'menuPhotos', detail: `storagePath businessId mismatch: path=${pathSegments[2]}, doc=${businessId}` });
+      await logAbuse(db, { userId, type: 'flagged', collection: 'menuPhotos', detail: `storagePath businessId mismatch: path=${pathSegments[2]}, doc=${businessId}` });
       return;
     }
 

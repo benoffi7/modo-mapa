@@ -1,0 +1,85 @@
+{
+  "300": {
+    "R1": 0,
+    "R6-users-read": 13,
+    "R12-feedback-message": 0,
+    "R12-notifications-read": 0,
+    "R12-locality-range": 2,
+    "R12-displayNameLower": 0,
+    "R14-bootstrap-admin": 0,
+    "R15-secrets-in-functions-env": 2,
+    "R16-react-router-vulnerable": 1,
+    "R17-isValidStorageUrl-prefix-only": 0
+  },
+  "301": {
+    "R2-services-without-test": 3,
+    "R3-triggers-without-test": 0,
+    "R4-admin-callables-without-test": 11,
+    "R5-hooks-without-test": 17,
+    "R6-validators-without-test": 0,
+    "R-threshold-not-reduced": 0
+  },
+  "302": {
+    "R4-allBusinesses-find": 1,
+    "R-stats-barrel": 0,
+    "R-fetchUserLikes-removed": 0,
+    "R-newMap-allBusinesses": 0,
+    "R6-img-without-lazy": 3,
+    "R7-mui-icons-not-split": 0,
+    "R8-firebase-storage-in-critical": 0
+  },
+  "303": {
+    "R1-services-raw-getDocs": 2,
+    "R5-scheduled-without-timing": 0,
+    "R6-callable-without-timing": 0,
+    "R7-getCount-without-measure": 0
+  },
+  "304": {
+    "R1-mutations-without-offline": 48,
+    "R2-httpsCallable-without-guard": 12,
+    "R3-getCountFromServer-without-wrapper": 0,
+    "R5-APIProvider-without-boundary": 0
+  },
+  "305": {
+    "R1-typography-props": 0,
+    "R3-tabbar-mui-selector": 0,
+    "R4-eslint-disable-react-hooks": 8,
+    "R5-chip-height-adhoc": 0,
+    "R9-fab-safe-area": 3,
+    "R7-box-onclick-without-a11y": 7,
+    "R8-chip-small-sx-exists": 0
+  },
+  "306": {
+    "R1-console-bypass": 0,
+    "R2-file-size-400": 0,
+    "R5-firestore-in-components": 0
+  },
+  "307": {
+    "R1-hex-in-sx": 0,
+    "R2-rgba-white-fixed": 0,
+    "R4-mui-fab-mode-aware": 0
+  },
+  "308": {
+    "R-sentry-mention": 0,
+    "R-maps-mention": 0
+  },
+  "309": {
+    "R2-tildes-prohibidas": 24,
+    "R3-tildes-heuristica": 4,
+    "R-cerrar-hardcoded": 0
+  },
+  "310": {
+    "R3-orphan-admin-services": 4,
+    "R4-ipRateLimits-no-admin-inspector": 0,
+    "R5-abuse-type-never-emitted": 0
+  },
+  "311": {
+    "R1-helpgroups-coverage": 0,
+    "R2-features-sidemenu-drift": 0
+  },
+  "312": {
+    "R1-authcontext-loading-finally": 0,
+    "R2-updateUserAvatar-no-fallback": 0
+  },
+  "_total": 165
+}

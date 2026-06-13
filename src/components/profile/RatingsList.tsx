@@ -16,7 +16,7 @@ import { distanceKm, formatDistance } from '../../utils/distance';
 import { useSortLocation } from '../../hooks/useSortLocation';
 import { useListFilters } from '../../hooks/useListFilters';
 import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
-import { allBusinesses } from '../../hooks/useBusinesses';
+import { getBusinessById } from '../../utils/businessMap';
 import { formatDateMedium } from '../../utils/formatDate';
 import ListFilters from '../common/ListFilters';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -38,7 +38,7 @@ export default function RatingsList({ onSelectBusiness }: Props) {
   const ratings = useMemo(() => {
     return rawItems.map((data) => ({
       businessId: data.businessId,
-      business: allBusinesses.find((b) => b.id === data.businessId) || null,
+      business: getBusinessById(data.businessId) ?? null,
       score: data.score,
       updatedAt: data.updatedAt || data.createdAt,
     }));

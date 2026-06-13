@@ -98,14 +98,36 @@ describe('trackFunctionTiming', () => {
     expect(typeof samples[2]).toBe('number');
   });
 
-  it('does not write when samples array is at MAX_SAMPLES_PER_FUNCTION (5000)', async () => {
-    const fullArray = Array.from({ length: 5000 }, (_, i) => i);
+  it('truncates oldest samples when array reaches MAX_SAMPLES_PER_FUNCTION (2000) and writes new sample', async () => {
+    // Simulate cap-reached: array of 2000 sequential values
+    const fullArray = Array.from({ length: 2000 }, (_, i) => i);
     mockTxGet.mockResolvedValue({ data: () => ({ myFunction: fullArray }) });
 
     await trackFunctionTiming('myFunction', performance.now() - 5);
 
-    // Transaction callback should return early without calling set
-    expect(mockTxSet).not.toHaveBeenCalled();
+    expect(mockTxSet).toHaveBeenCalledTimes(1);
+    const data = (mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>])[1];
+    const samples = data['myFunction'] as number[];
+    // Result is still capped at 2000: oldest sample (0) was dropped, newest appended.
+    expect(samples).toHaveLength(2000);
+    // First sample is now what was index 1 (oldest dropped)
+    expect(samples[0]).toBe(1);
+    // Last sample is the new timing (any number, not the original 1999)
+    expect(typeof samples[samples.length - 1]).toBe('number');
+  });
+
+  it('truncates correctly when array exceeds cap (2500 → 2000)', async () => {
+    // Defensive case: array somehow has more than the cap
+    const fullArray = Array.from({ length: 2500 }, (_, i) => i);
+    mockTxGet.mockResolvedValue({ data: () => ({ myFunction: fullArray }) });
+
+    await trackFunctionTiming('myFunction', performance.now() - 5);
+
+    const data = (mockTxSet.mock.calls[0] as [unknown, Record<string, unknown>])[1];
+    const samples = data['myFunction'] as number[];
+    expect(samples).toHaveLength(2000);
+    // First sample is index 501 (kept the last 1999 + appended 1 new)
+    expect(samples[0]).toBe(501);
   });
 
   it('treats non-array field value as empty array and creates a new one', async () => {

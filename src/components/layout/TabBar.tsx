@@ -1,13 +1,13 @@
-import { BottomNavigation, BottomNavigationAction, Paper, Badge, Box } from '@mui/material';
+import { BottomNavigation, BottomNavigationAction, Paper, Badge } from '@mui/material';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
-import SearchIcon from '@mui/icons-material/Search';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useTab } from '../../context/TabContext';
 import { trackEvent } from '../../utils/analytics';
 import { ALL_TAB_IDS } from '../../types';
 import { EVT_TAB_SWITCHED } from '../../constants/analyticsEvents';
+import SearchFab from './SearchFab';
 
 export const TAB_BAR_HEIGHT = 64;
 
@@ -18,6 +18,7 @@ interface TabBarProps {
 
 export default function TabBar({ notificationBadge = 0, recommendationBadge = 0 }: TabBarProps) {
   const { activeTab, setActiveTab } = useTab();
+  const isSearchActive = activeTab === 'buscar';
 
   const handleChange = (_: unknown, newValue: number) => {
     const tab = ALL_TAB_IDS[newValue];
@@ -62,30 +63,7 @@ export default function TabBar({ notificationBadge = 0, recommendationBadge = 0 
         />
         <BottomNavigationAction
           label="Buscar"
-          icon={
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mt: -2.5,
-                boxShadow: 3,
-              }}
-            >
-              <SearchIcon sx={{ color: 'primary.contrastText', fontSize: 28 }} />
-            </Box>
-          }
-          sx={{
-            '&.Mui-selected': {
-              '& .MuiBox-root': {
-                bgcolor: 'primary.dark',
-              },
-            },
-          }}
+          icon={<SearchFab active={isSearchActive} />}
         />
         <BottomNavigationAction label="Listas" icon={<BookmarkBorderIcon />} />
         <BottomNavigationAction

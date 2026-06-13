@@ -47,6 +47,7 @@ export { updateModerationConfig } from './admin/moderationConfig';
 export { getActivityFeedDiag } from './admin/activityFeedDiag';
 export { fetchDeletionAuditLogs } from './admin/deletionAuditLogs';
 export { adminListRateLimits, adminResetRateLimit } from './admin/rateLimits';
+export { adminListIpRateLimits, adminResetIpRateLimit } from './admin/ipRateLimits';
 export { adminDeleteListItem } from './admin/listItems';
 
 // Callable

@@ -1,11 +1,20 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   setSearchParams: vi.fn(),
   trackEvent: vi.fn(),
   recordVisit: vi.fn(),
+  isOffline: false,
+  dataError: false,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -19,7 +28,7 @@ vi.mock('../../../utils/analytics', () => ({ trackEvent: mocks.trackEvent }));
 vi.mock('../../../hooks/useBusinessData', () => ({
   useBusinessData: () => ({
     isLoading: false,
-    error: false,
+    error: mocks.dataError,
     refetch: vi.fn(),
     isFavorite: false,
     ratings: [],
@@ -38,7 +47,7 @@ vi.mock('../../../context/AuthContext', () => ({
 }));
 
 vi.mock('../../../context/ConnectivityContext', () => ({
-  useConnectivity: () => ({ isOffline: false }),
+  useConnectivity: () => ({ isOffline: mocks.isOffline }),
 }));
 
 vi.mock('../../../context/BusinessScopeContext', () => ({
@@ -97,6 +106,8 @@ const business = {
 describe('BusinessDetailScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isOffline = false;
+    mocks.dataError = false;
   });
 
   it('renderiza los chips de navegación', () => {
@@ -148,5 +159,104 @@ describe('BusinessDetailScreen', () => {
       'business_detail_tab_changed',
       expect.objectContaining({ business_id: 'biz_001', tab: 'precio' }),
     );
+  });
+
+  it('dispara sub_tab_switched con parent=comercio al cambiar chip', () => {
+    render(<BusinessDetailScreen business={business as never} />);
+    fireEvent.click(screen.getByText('Opiniones'));
+    expect(mocks.trackEvent).toHaveBeenCalledWith(
+      'sub_tab_switched',
+      expect.objectContaining({ parent: 'comercio', tab: 'opiniones' }),
+    );
+  });
+
+  describe('chip focus', () => {
+    it('al montar sin initialTab, el primer chip NO recibe focus automáticamente', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      // Ningún chip (role=tab) debería haberse focado durante el mount.
+      const tabFocusCalls = focusSpy.mock.instances.filter(
+        (inst) => inst instanceof HTMLElement && inst.getAttribute('role') === 'tab',
+      );
+      expect(tabFocusCalls.length).toBe(0);
+      focusSpy.mockRestore();
+    });
+
+    it('click en un chip dispara focus() sobre ese chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const precioChip = screen.getByText('Precio').closest('[role="tab"]') as HTMLElement;
+      fireEvent.click(precioChip);
+      expect(focusSpy).toHaveBeenCalled();
+      // Al menos una de las invocaciones fue sobre el chip role=tab con label Precio.
+      const focusedOnPrecio = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Precio',
+      );
+      expect(focusedOnPrecio).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('ArrowRight sobre el chip activo dispara focus() sobre el siguiente', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const criteriosChip = screen.getByText('Criterios').closest('[role="tab"]') as HTMLElement;
+      fireEvent.keyDown(criteriosChip, { key: 'ArrowRight' });
+      const focusedOnPrecio = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Precio',
+      );
+      expect(focusedOnPrecio).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('Home lleva el foco al primer chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} initialTab="opiniones" />);
+      const opinionesChip = screen.getByText('Opiniones').closest('[role="tab"]') as HTMLElement;
+      focusSpy.mockClear();
+      fireEvent.keyDown(opinionesChip, { key: 'Home' });
+      const focusedOnCriterios = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Criterios',
+      );
+      expect(focusedOnCriterios).toBe(true);
+      focusSpy.mockRestore();
+    });
+
+    it('End lleva el foco al último chip', () => {
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+      render(<BusinessDetailScreen business={business as never} />);
+      const criteriosChip = screen.getByText('Criterios').closest('[role="tab"]') as HTMLElement;
+      focusSpy.mockClear();
+      fireEvent.keyDown(criteriosChip, { key: 'End' });
+      const focusedOnOpiniones = focusSpy.mock.instances.some(
+        (inst) => inst instanceof HTMLElement
+          && inst.getAttribute('role') === 'tab'
+          && inst.textContent === 'Opiniones',
+      );
+      expect(focusedOnOpiniones).toBe(true);
+      focusSpy.mockRestore();
+    });
+  });
+
+  it('offline con error: muestra el header y los chips (no BusinessNotFound)', () => {
+    mocks.isOffline = true;
+    mocks.dataError = true;
+    render(<BusinessDetailScreen business={business as never} />);
+    expect(screen.getByText('header')).toBeInTheDocument();
+    expect(screen.getByText('Criterios')).toBeInTheDocument();
+    expect(screen.queryByText(/not-found/)).not.toBeInTheDocument();
+  });
+
+  it('online con error: muestra DetailError con botón Reintentar', () => {
+    mocks.isOffline = false;
+    mocks.dataError = true;
+    render(<BusinessDetailScreen business={business as never} />);
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+    expect(screen.queryByText('header')).not.toBeInTheDocument();
   });
 });

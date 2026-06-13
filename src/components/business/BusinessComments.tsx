@@ -10,8 +10,10 @@ import {
 } from '@mui/material';
 import { useToast } from '../../context/ToastContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { addComment, editComment } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
+import { withBusyFlag } from '../../utils/busyFlag';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
 import CommentRow from './CommentRow';
 import CommentInput from './CommentInput';
@@ -33,8 +35,23 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default memo(function BusinessComments({ comments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
+export default memo(function BusinessComments({ comments: rawComments, userCommentLikes, isLoading, onCommentsChange, onDirtyChange }: Props) {
   const { businessId, businessName } = useBusinessScope();
+
+  // #340 W2: edits optimistas offline. El refetch (onCommentsChange) trae el texto
+  // viejo hasta sincronizar, asi que mantenemos el texto editado en un override local
+  // y lo aplicamos sobre `comments`. Un override deja de aplicarse automaticamente
+  // cuando el refetch ya refleja el texto editado (server == optimista): se calcula en
+  // render, sin effect ni setState, asi no acumula entradas obsoletas.
+  const [optimisticEdits, setOptimisticEdits] = useState<Map<string, string>>(new Map());
+
+  const comments = useMemo(() => {
+    if (optimisticEdits.size === 0) return rawComments;
+    return rawComments.map((c) => {
+      const edited = optimisticEdits.get(c.id);
+      return edited !== undefined && edited !== c.text ? { ...c, text: edited } : c;
+    });
+  }, [rawComments, optimisticEdits]);
 
   // Thread state (needed by useCommentListBase for expandThread)
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
@@ -124,13 +141,15 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
     if (!user) return;
     if (userCommentsToday >= MAX_COMMENTS_PER_DAY) return;
     try {
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
-        toast,
-      );
+      await withBusyFlag('comment_submit', async () => {
+        await withOfflineSupport(
+          isOffline, 'comment_create',
+          { userId: user.uid, businessId, businessName },
+          { userName: displayName || 'Anónimo', text },
+          () => addComment(user.uid, displayName || 'Anónimo', businessId, text),
+          toast,
+        );
+      });
       onCommentsChange();
       if (!isOffline) toast.success(MSG_COMMENT.publishSuccess);
       if (localStorage.getItem(STORAGE_KEY_HINT_POST_FIRST_COMMENT) !== 'true') {
@@ -157,11 +176,24 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
     if (!editingId || !user || !editText.trim()) return;
     setIsSavingEdit(true);
     try {
-      await editComment(editingId, user.uid, editText.trim());
+      const trimmed = editText.trim();
+      const editedId = editingId;
+      await withOfflineSupport(
+        isOffline,
+        'comment_edit',
+        { userId: user.uid, businessId, businessName },
+        { commentId: editedId, text: trimmed },
+        () => editComment(editedId, user.uid, trimmed),
+        toast,
+      );
+      // #340 W2: offline el refetch trae el texto viejo — guardamos el override optimista.
+      if (isOffline) {
+        setOptimisticEdits((prev) => new Map(prev).set(editedId, trimmed));
+      }
       setEditingId(null);
       setEditText('');
       onCommentsChange();
-      toast.success(MSG_COMMENT.editSuccess);
+      if (!isOffline) toast.success(MSG_COMMENT.editSuccess);
     } catch (error) {
       logger.error('Error editing comment:', error);
       toast.error(MSG_COMMENT.publishError);
@@ -235,7 +267,7 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
                 variant={sortMode === mode ? 'filled' : 'outlined'}
                 color={sortMode === mode ? 'primary' : 'default'}
                 onClick={() => setSortMode(mode)}
-                sx={{ height: 24, fontSize: '0.7rem' }}
+                sx={CHIP_SMALL_SX}
               />
             ))}
           </Box>
@@ -324,7 +356,7 @@ export default memo(function BusinessComments({ comments, userCommentLikes, isLo
         )}
       </List>
 
-      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} />
+      <CommentListFooter deleteSnackbarProps={deleteSnackbarProps} profileUser={profileUser} onCloseProfile={closeProfile} isOffline={isOffline} />
     </Box>
   );
 });

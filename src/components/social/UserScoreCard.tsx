@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
@@ -16,6 +16,7 @@ import BadgesList from './BadgesList';
 import ScoreSparkline from './ScoreSparkline';
 import type { UserRankingEntry } from '../../types';
 import { logger } from '../../utils/logger';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 
 /** Theme-aware bar colors: [light, dark] */
 const BAR_COLOR_PAIRS: Record<keyof UserRankingEntry['breakdown'], [string, string]> = {
@@ -94,6 +95,15 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
   const [expanded, setExpanded] = useState(false);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
 
+  const toggleExpanded = useCallback(() => setExpanded((v) => !v), []);
+  const handleToggleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setExpanded((v) => !v);
+    }
+  }, []);
+
   const userId = entry?.userId;
   useEffect(() => {
     if (!userId || periodType === 'alltime') return;
@@ -121,7 +131,12 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
     <Card variant="outlined" sx={{ mx: 2, mb: 2, p: 1.5 }}>
       {/* Collapsed: 2-line summary */}
       <Box
-        onClick={() => setExpanded((v) => !v)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Mostrar menos' : 'Mostrar más'}
+        onClick={toggleExpanded}
+        onKeyDown={handleToggleKeyDown}
         sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1 }}
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -136,7 +151,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
               </Typography>
             )}
             {position != null && (
-              <Chip label={`#${position}`} size="small" color="primary" variant="outlined" sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' } }} />
+              <Chip label={`#${position}`} size="small" color="primary" variant="outlined" sx={CHIP_SMALL_SX} />
             )}
           </Box>
 
@@ -164,13 +179,14 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
 
         <IconButton
           size="small"
+          tabIndex={-1}
+          aria-hidden
           sx={{
             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s',
             minWidth: 44,
             minHeight: 44,
           }}
-          aria-label={expanded ? 'Colapsar' : 'Expandir'}
         >
           <ExpandMoreIcon fontSize="small" />
         </IconButton>
@@ -238,7 +254,7 @@ export default function UserScoreCard({ entry, position, isLive, periodLabel = '
           {/* Share + total */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
             <Tooltip title="Compartir tu logro">
-              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(position, entry.score, periodLabel); }} aria-label="Compartir tu logro">
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleShare(position, entry.score, periodLabel); }} aria-label="Compartir tu logro" sx={{ minWidth: 44, minHeight: 44 }}>
                 <ShareIcon fontSize="small" />
               </IconButton>
             </Tooltip>

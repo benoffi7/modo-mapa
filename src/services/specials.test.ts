@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetDocs = vi.fn();
-const mockSetDoc = vi.fn().mockResolvedValue(undefined);
-const mockDeleteDoc = vi.fn().mockResolvedValue(undefined);
+const { mockGetDocs, mockSetDoc, mockDeleteDoc, mockMeasuredGetDocs } = vi.hoisted(() => {
+  const getDocs = vi.fn();
+  return {
+    mockGetDocs: getDocs,
+    mockSetDoc: vi.fn().mockResolvedValue(undefined),
+    mockDeleteDoc: vi.fn().mockResolvedValue(undefined),
+    mockMeasuredGetDocs: vi.fn((_name: string, q: unknown) => getDocs(q)),
+  };
+});
 
 vi.mock('../config/firebase', () => ({ db: {} }));
 vi.mock('../config/collections', () => ({
@@ -18,6 +24,12 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   where: vi.fn(),
   query: vi.fn(() => 'query-ref'),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDocs: (name: string, q: unknown) => mockMeasuredGetDocs(name, q),
+  measuredGetDoc: (_name: string, ref: unknown) => mockGetDocs(ref),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 import { fetchSpecials, fetchActiveSpecials, saveAllSpecials } from './specials';
@@ -103,5 +115,16 @@ describe('saveAllSpecials', () => {
 
     expect(mockDeleteDoc).toHaveBeenCalledTimes(2);
     expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('instruments fetches with specials_all/active/existingForSave labels', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [] });
+    await fetchSpecials();
+    await fetchActiveSpecials();
+    await saveAllSpecials([]);
+    const labels = mockMeasuredGetDocs.mock.calls.map((c) => c[0]);
+    expect(labels).toContain('specials_all');
+    expect(labels).toContain('specials_active');
+    expect(labels).toContain('specials_existingForSave');
   });
 });

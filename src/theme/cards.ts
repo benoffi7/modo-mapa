@@ -52,3 +52,16 @@ export const dashedButtonSx: SxProps<Theme> = {
   color: 'text.secondary',
   borderColor: 'divider',
 };
+
+/**
+ * Small chip — used for category, tendencia, "Destacada", "Colaborativa", score badges.
+ * Distinto de NAV_CHIP_SX (chips de navegación tipo tabs).
+ * Centraliza altura/fontSize/padding para los chips chicos del header de comercio,
+ * filas de búsqueda, dialogs, etc.
+ */
+export const CHIP_SMALL_SX: SxProps<Theme> = {
+  height: 24,
+  fontSize: '0.75rem',
+  '& .MuiChip-icon': { fontSize: 14, ml: 0.5 },
+  '& .MuiChip-label': { px: 1 },
+};

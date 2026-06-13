@@ -13,7 +13,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
       manifest: {
         name: 'Modo Mapa',
@@ -115,8 +115,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          mui: ['@mui/material', '@mui/icons-material'],
+          // firebase/storage is intentionally NOT bundled here — it is lazy-loaded
+          // via getStorageInstance() (src/config/firebase.ts) so it stays out of
+          // the first load. See docs/reference/perf-baselines.md (#334 / F5).
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'mui-core': ['@mui/material', '@mui/system'],
+          'mui-icons': ['@mui/icons-material'],
           recharts: ['recharts'],
           'google-maps': ['@vis.gl/react-google-maps'],
         },

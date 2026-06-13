@@ -4,10 +4,12 @@ const {
   handlerHolder,
   mockGetDb,
   mockCalculatePercentile,
+  mockTrackFunctionTiming,
 } = vi.hoisted(() => ({
   handlerHolder: { fn: null as (() => Promise<void>) | null },
   mockGetDb: vi.fn(),
   mockCalculatePercentile: vi.fn().mockReturnValue(42),
+  mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-functions/v2/scheduler', () => ({
@@ -32,6 +34,7 @@ vi.mock('../../helpers/env', () => ({
 
 vi.mock('../../utils/perfTracker', () => ({
   calculatePercentile: (...args: unknown[]) => mockCalculatePercentile(...args),
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 function createMockSetup(overrides?: {
@@ -257,5 +260,13 @@ describe('dailyMetrics', () => {
     expect(call).toBeDefined();
     const perf = (call![0] as { performance: { sampleCount: number } }).performance;
     expect(perf.sampleCount).toBe(1);
+  });
+
+  it('tracks function timing with dailyMetrics label', async () => {
+    createMockSetup({});
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('dailyMetrics', expect.any(Number));
   });
 });

@@ -13,13 +13,26 @@ vi.mock('../config/metricsConverter', () => ({
   },
 }));
 
-const mockGetDoc = vi.fn();
-const mockWithConverter = vi.fn();
-const mockDoc = vi.fn().mockReturnValue({ withConverter: mockWithConverter });
+const { mockGetDoc, mockWithConverter, mockDoc, mockMeasuredGetDoc } = vi.hoisted(() => {
+  const getDoc = vi.fn();
+  const withConverter = vi.fn();
+  return {
+    mockGetDoc: getDoc,
+    mockWithConverter: withConverter,
+    mockDoc: vi.fn().mockReturnValue({ withConverter }),
+    mockMeasuredGetDoc: vi.fn((_name: string, ref: unknown) => getDoc(ref)),
+  };
+});
 
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => mockDoc(...args),
   getDoc: (...args: unknown[]) => mockGetDoc(...args),
+}));
+
+vi.mock('../utils/perfMetrics', () => ({
+  measuredGetDoc: (name: string, ref: unknown) => mockMeasuredGetDoc(name, ref),
+  measuredGetDocs: (_name: string, q: unknown) => mockGetDoc(q),
+  measureAsync: (_name: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 import { fetchDailyMetrics } from './metrics';
@@ -60,5 +73,12 @@ describe('fetchDailyMetrics', () => {
     mockGetDoc.mockRejectedValue(new Error('network error'));
 
     await expect(fetchDailyMetrics('2026-03-31')).rejects.toThrow('network error');
+  });
+
+  it('instruments fetch with metrics_dailyByDate label', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => false });
+    await fetchDailyMetrics('2026-03-31');
+    const labels = mockMeasuredGetDoc.mock.calls.map((c) => c[0]);
+    expect(labels).toContain('metrics_dailyByDate');
   });
 });

@@ -387,5 +387,139 @@ Before finishing, verify:
 
 ## After creating
 
-1. Update `docs/_sidebar.md` — add Specs and Plan entries
-2. Do NOT commit — let the caller handle commits
+1. **Verify PRD has Sofia's seal before starting.** Check that `prd.md` includes a "Validacion Funcional" section with state `VALIDADO` or `VALIDADO CON OBSERVACIONES`. If the seal is missing or state is `NO VALIDADO`, STOP — report: "PRD is not validated by Sofia yet. Run sofia before generating specs/plan." Do not write specs/plan from an unvalidated PRD.
+2. **After writing `specs.md`, invoke `diego` (Solution Architect) to validate.** See section "Validacion tecnica con Diego" below.
+3. **After writing `plan.md` (and Diego validated specs), invoke `pablo` (Delivery Lead) to validate.** See section "Validacion de plan con Pablo" below.
+4. Update `docs/_sidebar.md` — add Specs and Plan entries
+5. Do NOT commit — let the caller handle commits
+
+## Validacion tecnica con Diego
+
+Todo `specs.md` que salga de este agente debe pasar por `diego` antes de generar el `plan.md`. Diego es el Solution Architect: detecta gaps tecnicos, contradicciones con patrones del proyecto, data models incompletos, edge cases tecnicos olvidados.
+
+### Protocolo
+
+1. **Spawnar `diego`** con el prompt:
+   ```
+   Audita el specs en docs/feat/{category}/{slug}/specs.md. El PRD (con sello de Sofia) esta en docs/feat/{category}/{slug}/prd.md.
+   Aplica tu checklist tecnico completo. Devolveme tu Reporte de Analisis Tecnico inicial (Ciclo 1). No entres en Ciclo 2 automaticamente.
+   ```
+
+2. **Si Diego emite VALIDADO sin hallazgos**: agregar al final del `specs.md`:
+
+   ```markdown
+   ---
+
+   ## Validacion Tecnica
+
+   **Arquitecto**: Diego
+   **Fecha**: {YYYY-MM-DD}
+   **Estado**: VALIDADO
+   **Hallazgos**: Sin hallazgos. Listo para generar el plan.
+   ```
+
+3. **Si Diego reporta BLOQUEANTES o IMPORTANTES**:
+   a. Leer cada hallazgo con su escenario.
+   b. Para hallazgos que se resuelven con edicion acotada al specs (aclarar data model, agregar rule, especificar estrategia de cancelacion): aplicarlos. Reusa el lenguaje del hallazgo de Diego — no inventes solucion tecnica.
+   c. Para hallazgos que requieren decision fuera de scope (cambio de API del SDK, libreria nueva, patron que no existe): NO los resuelvas solo. Escala al usuario.
+   d. Volver a spawnar `diego` con: "Aplique los fixes. Revisa el specs de nuevo y emiti Veredicto (Ciclo 2)."
+   e. Si Diego emite **VALIDADO** o **VALIDADO CON OBSERVACIONES**, agregar la seccion Validacion Tecnica con hallazgos cerrados.
+   f. Si Diego persiste **NO VALIDADO**, no escribir la seccion ni avanzar al plan. Reportar al usuario los BLOQUEANTES abiertos.
+
+4. **Regla**: NO generar `plan.md` sin el sello de Diego. El `pre-implementation-gate` bloquea si falta.
+
+### Formato de la seccion
+
+Para estado VALIDADO CON OBSERVACIONES:
+
+```markdown
+---
+
+## Validacion Tecnica
+
+**Arquitecto**: Diego
+**Fecha**: {YYYY-MM-DD}
+**Estado**: VALIDADO CON OBSERVACIONES
+
+### Hallazgos cerrados en esta iteracion
+
+- BLOQUEANTE: "[titulo]" → resuelto en seccion "[X]" del specs
+- IMPORTANTE: "[titulo]" → justificado: [razon]
+
+### Observaciones tecnicas abiertas para el plan
+
+- [observacion #N] — Pablo debera considerarla al validar el plan
+```
+
+## Validacion de plan con Pablo
+
+Todo `plan.md` que salga de este agente debe pasar por `pablo` antes de considerarse listo para implementacion. Pablo es el Delivery Lead: detecta ordering bugs, conflictos de ownership entre agentes, risk staging invertido, tests al final cuando deberian ir con la feature.
+
+### Protocolo
+
+1. **Spawnar `pablo`** con el prompt:
+   ```
+   Audita el plan en docs/feat/{category}/{slug}/plan.md. El PRD (sello Sofia) y el specs (sello Diego) estan en la misma carpeta.
+   Aplica tu checklist de delivery completo. Devolveme tu Reporte de Analisis de Plan inicial (Ciclo 1). No entres en Ciclo 2 automaticamente.
+   ```
+
+2. **Si Pablo emite VALIDADO sin hallazgos**: agregar al final del `plan.md`:
+
+   ```markdown
+   ---
+
+   ## Validacion de Plan
+
+   **Delivery Lead**: Pablo
+   **Fecha**: {YYYY-MM-DD}
+   **Estado**: VALIDADO
+   **Hallazgos**: Sin hallazgos. Listo para implementacion (manu delega).
+   ```
+
+3. **Si Pablo reporta BLOQUEANTES o IMPORTANTES**:
+   a. Para hallazgos que se resuelven reordenando fases, ajustando granularidad, clarificando ownership, o agregando pasos de docs/tests faltantes: aplicarlos.
+   b. Para hallazgos que requieren cambio de scope o decision de producto: escalar al usuario.
+   c. Volver a spawnar `pablo` con: "Aplique los fixes. Revisa el plan y emiti Veredicto (Ciclo 2)."
+   d. Si Pablo emite **VALIDADO** o **VALIDADO CON OBSERVACIONES**, agregar la seccion Validacion de Plan.
+   e. Si Pablo persiste **NO VALIDADO**, no escribir la seccion. Reportar al usuario.
+
+4. **Regla**: NO iniciar implementacion sin el sello de Pablo. El `pre-implementation-gate` bloquea si falta.
+
+### Formato de la seccion
+
+Para estado VALIDADO CON OBSERVACIONES:
+
+```markdown
+---
+
+## Validacion de Plan
+
+**Delivery Lead**: Pablo
+**Fecha**: {YYYY-MM-DD}
+**Estado**: VALIDADO CON OBSERVACIONES
+
+### Hallazgos cerrados en esta iteracion
+
+- BLOQUEANTE: "[titulo]" → resuelto en fase "[X]" del plan
+- IMPORTANTE: "[titulo]" → justificado: [razon]
+
+### Observaciones abiertas para manu
+
+- [observacion #N] — considerar al delegar a luna/nico
+```
+
+## Orden de sellos (recapitulacion)
+
+```
+PRD generado → sofia valida → sello "Validacion Funcional" en prd.md
+  ↓
+specs generado → diego valida → sello "Validacion Tecnica" en specs.md
+  ↓
+plan generado → pablo valida → sello "Validacion de Plan" en plan.md
+  ↓
+pre-implementation-gate verifica los 3 sellos → OK
+  ↓
+manu delega a luna/nico
+```
+
+Ningun paso se saltea. Si algun sello falta, el pre-implementation-gate BLOCK.

@@ -37,7 +37,7 @@ describe('<HelpSection>', () => {
   it('solo un accordion expandido a la vez', () => {
     render(<HelpSection />);
     const first = screen.getByText('Pantalla principal').closest('button');
-    const second = screen.getByText('Mapa y busqueda').closest('button');
+    const second = screen.getByText('Mapa y búsqueda').closest('button');
     fireEvent.click(first!);
     expect(first).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(second!);

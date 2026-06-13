@@ -130,8 +130,12 @@ export async function fetchUserProfile(userId: string, fallbackName?: string): P
  */
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfile | null> {
   const ref = doc(db, COLLECTIONS.USERS, uid).withConverter(userProfileConverter);
-  const snap = await measuredGetDoc('userProfile_doc', ref);
-  return snap.exists() ? snap.data() : null;
+  const snap = await measuredGetDoc('userProfile_doc', ref)
+    .catch((err) => {
+      logger.error('[userProfile] fetchUserProfileDoc getDoc failed:', err);
+      return null;
+    });
+  return snap?.exists() ? snap.data() : null;
 }
 
 /**
@@ -153,9 +157,16 @@ export async function updateUserDisplayName(uid: string, name: string): Promise<
 }
 
 /**
- * Update user avatar ID.
+ * Update user avatar ID. Creates the doc if it doesn't exist.
+ * Parity with updateUserDisplayName (#341 camino a de D1: un user doc puede
+ * tener avatarId sin displayName).
  */
 export async function updateUserAvatar(uid: string, avatarId: string): Promise<void> {
   const ref = doc(db, COLLECTIONS.USERS, uid);
-  await updateDoc(ref, { avatarId });
+  const snap = await measuredGetDoc('userProfile_existsCheck', ref);
+  if (snap.exists()) {
+    await updateDoc(ref, { avatarId });
+  } else {
+    await setDoc(ref, { avatarId, createdAt: serverTimestamp() }); // guard:exempt — fallback de creacion solo-avatar (#341 camino a); offline guard es scope de #344, no revertir
+  }
 }

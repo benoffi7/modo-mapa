@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSelection } from '../context/SelectionContext';
 import { fetchMyCheckIns } from '../services/checkins';
 import { hasUserRatedBusiness } from '../services/ratings';
-import { allBusinesses } from './useBusinesses';
+import { getAllBusinessIdsSet, getBusinessById } from '../utils/businessMap';
 import { trackEvent } from '../utils/analytics';
 import {
   RATING_PROMPT_MIN_HOURS,
@@ -117,7 +117,7 @@ export function useRatingPrompt(): UseRatingPromptReturn {
       }
 
       const dismissedIds = getDismissedIds();
-      const allBizIds = new Set(allBusinesses.map((b) => b.id));
+      const allBizIds = getAllBusinessIdsSet();
 
       let checkIns;
       try {
@@ -214,7 +214,7 @@ export function useRatingPrompt(): UseRatingPromptReturn {
     trackEvent(EVT_RATING_PROMPT_CLICKED, { business_id: promptData.businessId });
     addDismissedId(promptData.checkInId);
 
-    const biz = allBusinesses.find((b) => b.id === promptData.businessId);
+    const biz = getBusinessById(promptData.businessId);
     if (biz) {
       setSelectedBusiness(biz);
     }

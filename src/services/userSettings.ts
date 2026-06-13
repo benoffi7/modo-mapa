@@ -1,8 +1,8 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { userSettingsConverter } from '../config/converters';
-import { measureAsync } from '../utils/perfMetrics';
+import { measuredGetDoc } from '../utils/perfMetrics';
 import type { UserSettings } from '../types';
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -21,10 +21,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export async function fetchUserSettings(userId: string): Promise<UserSettings> {
-  const snap = await measureAsync('userSettings', () =>
-    getDoc(
-      doc(db, COLLECTIONS.USER_SETTINGS, userId).withConverter(userSettingsConverter),
-    ),
+  const snap = await measuredGetDoc(
+    'userSettings',
+    doc(db, COLLECTIONS.USER_SETTINGS, userId).withConverter(userSettingsConverter),
   );
   return snap.exists() ? snap.data() : { ...DEFAULT_SETTINGS };
 }
@@ -34,7 +33,7 @@ export async function updateUserSettings(
   updates: Partial<Omit<UserSettings, 'updatedAt'>>,
 ): Promise<void> {
   const ref = doc(db, COLLECTIONS.USER_SETTINGS, userId);
-  const snap = await getDoc(ref);
+  const snap = await measuredGetDoc('userSettings_updateExists', ref);
 
   if (snap.exists()) {
     // Document exists — merge only the changed fields

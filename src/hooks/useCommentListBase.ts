@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useConnectivity } from '../context/ConnectivityContext';
 import { addComment, deleteComment, likeComment, unlikeComment } from '../services/comments';
 import { withOfflineSupport } from '../services/offlineInterceptor';
+import { withBusyFlag } from '../utils/busyFlag';
 import { useProfileVisibility } from './useProfileVisibility';
 import { useUndoDelete } from './useUndoDelete';
 import { MAX_COMMENTS_PER_DAY } from '../constants/validation';
@@ -40,13 +41,20 @@ export function useCommentListBase({
   const commentUserIds = useMemo(() => comments.map((c) => c.userId), [comments]);
   const profileVisibility = useProfileVisibility(commentUserIds);
 
-  // Undo delete
+  // Undo delete (#323: wrappeado para encolar offline)
   const onConfirmDeleteComment = useCallback(
     async (comment: Comment) => {
       if (!user) return;
-      await deleteComment(comment.id, user.uid);
+      await withOfflineSupport(
+        isOffline,
+        'comment_delete',
+        { userId: user.uid, businessId, businessName },
+        { commentId: comment.id },
+        () => deleteComment(comment.id, user.uid),
+        toast,
+      );
     },
-    [user],
+    [user, isOffline, businessId, businessName, toast],
   );
   const { isPendingDelete, markForDelete, snackbarProps: deleteSnackbarProps } = useUndoDelete<Comment>({
     onConfirmDelete: onConfirmDeleteComment,
@@ -109,7 +117,7 @@ export function useCommentListBase({
           isOffline, 'comment_like',
           { userId: user.uid, businessId, businessName },
           { commentId },
-          () => likeComment(user.uid, commentId),
+          () => likeComment(user.uid, commentId, businessId),
           toast,
         );
       }
@@ -144,13 +152,15 @@ export function useCommentListBase({
     setIsSubmitting(true);
     try {
       const trimmedReply = replyText.trim();
-      await withOfflineSupport(
-        isOffline, 'comment_create',
-        { userId: user.uid, businessId, businessName },
-        { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
-        () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
-        toast,
-      );
+      await withBusyFlag('comment_submit', async () => {
+        await withOfflineSupport(
+          isOffline, 'comment_create',
+          { userId: user.uid, businessId, businessName },
+          { userName: displayName || 'Anónimo', text: trimmedReply, parentId: replyingTo.id },
+          () => addComment(user.uid, displayName || 'Anónimo', businessId, trimmedReply, replyingTo.id),
+          toast,
+        );
+      });
       setReplyingTo(null);
       setReplyText('');
       onCommentsChange();

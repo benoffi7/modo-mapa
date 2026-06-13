@@ -99,3 +99,10 @@
 - [ ] No lint errors
 - [ ] Build succeeds
 - [ ] Reference docs updated (security.md, firestore.md, tests.md)
+
+---
+
+## Update (post #332 merge)
+
+Infra disponible. `tests/rules/userSettings.rules.test.ts` queda como
+followup separado (no migrado en #332 — out-of-scope).

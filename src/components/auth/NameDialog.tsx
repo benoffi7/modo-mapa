@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { STORAGE_KEY_ONBOARDING_CREATED_AT } from '../../constants/storage';
 import { ANONYMOUS_DISPLAY_NAME } from '../../constants/ui';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 export default function NameDialog() {
   const { user, displayName, setDisplayName, isLoading } = useAuth();
@@ -28,7 +29,9 @@ export default function NameDialog() {
   const handleSubmit = async () => {
     if (!name.trim()) return;
     setIsSubmitting(true);
-    await setDisplayName(name.trim());
+    await withBusyFlag('profile_save', async () => {
+      await setDisplayName(name.trim());
+    });
     markOnboardingStart();
     setIsSubmitting(false);
   };

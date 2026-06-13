@@ -3,7 +3,7 @@ import { useListsSubTabRefresh } from '../../hooks/useTabRefresh';
 import {
   Box, Typography, CircularProgress, CardActionArea, CardContent, Chip,
 } from '@mui/material';
-import { cardSx } from '../../theme/cards';
+import { cardSx, CHIP_SMALL_SX } from '../../theme/cards';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import CreateListDialog from './CreateListDialog';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -54,6 +54,15 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
     });
     return () => onRegisterBackHandler?.(null);
   }, [selectedList, onRegisterBackHandler]);
+
+  const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
+  const handleCreateKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setCreateOpen(true);
+    }
+  }, []);
 
   const loadLists = useCallback(async () => {
     if (!user) return;
@@ -157,7 +166,7 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
               <Box key={fl.id} sx={{ ...cardSx, minWidth: 170, flexShrink: 0, p: 0 }}>
                 <CardActionArea onClick={() => setSelectedList(fl)}>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Chip label="Destacada" size="small" color="primary" sx={{ borderRadius: 1, mb: 0.5, height: 22, fontSize: '0.65rem' }} />
+                    <Chip label="Destacada" size="small" color="primary" sx={{ ...CHIP_SMALL_SX, borderRadius: 1, mb: 0.5 }} />
                     <Typography variant="subtitle2" noWrap>{fl.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {fl.itemCount} comercio{fl.itemCount !== 1 ? 's' : ''}
@@ -188,7 +197,11 @@ export default function SharedListsView({ sharedListId, onRegisterBackHandler }:
       {lists.length === 0 && (
         <Box sx={{ px: 2 }}>
           <Box
-            onClick={() => setCreateOpen(true)}
+            role="button"
+            tabIndex={0}
+            aria-label="Crear nueva lista"
+            onClick={handleOpenCreate}
+            onKeyDown={handleCreateKeyDown}
             sx={{
               border: 1,
               borderStyle: 'dashed',

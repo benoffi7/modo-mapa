@@ -71,7 +71,35 @@ Casos minimos que cualquier test de callable debe cubrir:
 - Rate limit exceeded (si aplica) → `HttpsError('resource-exhausted')`
 - Happy path completo con side effects verificados
 
-### Regla 5 — PR author corre coverage localmente
+### Regla 5 — Hooks con logica deben tener test sibling
+
+Todo archivo en `src/hooks/` que contenga **logica condicional** (al menos uno de: `useMemo` con derivacion, `useEffect` con branches, `useCallback` con condicionales, manejo de errores en async, debouncing, geolocation, deep linking, paginacion, dirty-state, position-diff) DEBE shippar `.test.ts` co-located.
+
+Hooks puramente proxy (re-exportan un context value sin transformar) estan exentos pero deben documentarlo con un comentario `// pure-proxy: no logic, no test required` en la primera linea del archivo.
+
+```text
+src/hooks/
+  useRankings.ts        -> requiere (position-diff)
+  useRankings.test.ts   <- este archivo
+  useUnsavedChanges.ts  -> requiere (dirty-state)
+  useUnsavedChanges.test.ts
+  useUserLocation.ts    -> requiere (geolocation + error branches)
+  useUserLocation.test.ts
+```
+
+Cobertura minima por hook test: **happy path + 2 ramas de error + 1 caso de cleanup/unmount** (>= 4 casos).
+
+### Regla 6 — Validators security-adjacent en utils/ deben tener test
+
+Cualquier archivo en `src/utils/` que contenga validacion de URLs, paths, MIME types, schemes, prefijos de Storage, o construccion de strings que terminan en HTML/redirect DEBE shippar `.test.ts` con cobertura de:
+
+- Happy path (valid input).
+- Bypass attempts (scheme confusion, prefix mismatch, encoded chars).
+- Edge cases (empty, null, undefined, oversized).
+
+Aplica especificamente a `src/utils/media.ts:isValidStorageUrl`, futuros validators de feedback, listas, perfiles, etc.
+
+### Regla 7 — PR author corre coverage localmente
 
 Antes de abrir el PR, el autor **debe** correr `npm run test:coverage` (frontend) y `cd functions && npm run test:coverage` (functions), y pegar el resumen en la descripcion del PR.
 
@@ -144,7 +172,44 @@ done
 
 Esperado: output vacio. Si hay matches, crear el test usando el patron de `moderationConfig.test.ts`.
 
-### D4 — Threshold accidentalmente reducido
+### D4 — Hooks con logica sin test sibling
+
+```bash
+cd /home/walrus/proyectos/modo-mapa
+for f in src/hooks/*.ts; do
+  case "$f" in
+    *.test.ts|*.d.ts) continue ;;
+  esac
+  # Skip pure-proxy hooks
+  if head -1 "$f" | grep -q "// pure-proxy"; then continue; fi
+  test_file="${f%.ts}.test.ts"
+  if [ ! -f "$test_file" ]; then
+    echo "MISSING TEST: $f"
+  fi
+done
+```
+
+Esperado: output vacio. Si hay matches, crear el `.test.ts` antes de mergear (o anotar el hook como `// pure-proxy:` con justificacion).
+
+### D5 — Validators sin test sibling
+
+```bash
+cd /home/walrus/proyectos/modo-mapa
+# Detectar utils que tipicamente contienen validators (heuristica)
+for f in src/utils/*.ts; do
+  case "$f" in
+    *.test.ts|*.d.ts) continue ;;
+  esac
+  if grep -qE "isValid|validate|parseUrl|sanitize|isAllowed" "$f"; then
+    test_file="${f%.ts}.test.ts"
+    if [ ! -f "$test_file" ]; then
+      echo "MISSING TEST: $f (contiene validator)"
+    fi
+  fi
+done
+```
+
+### D6 — Threshold accidentalmente reducido
 
 ```bash
 # Detectar si alguien bajo el threshold en vitest configs

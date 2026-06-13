@@ -3,8 +3,6 @@ import { searchUsers } from '../services/users';
 import type { UserSearchResult } from '../services/users';
 import { logger } from '../utils/logger';
 
-export type { UserSearchResult };
-
 export function useUserSearch() {
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [searching, setSearching] = useState(false);

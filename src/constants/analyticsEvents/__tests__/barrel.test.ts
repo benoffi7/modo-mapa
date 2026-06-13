@@ -42,6 +42,7 @@ describe('analyticsEvents barrel', () => {
     // system
     'EVT_FORCE_UPDATE_TRIGGERED',
     'EVT_FORCE_UPDATE_LIMIT_REACHED',
+    'EVT_APP_VERSION_ACTIVE',
     'EVT_ACCOUNT_DELETED',
     'EVT_MAP_LOAD_FAILED',
     // business
@@ -72,6 +73,11 @@ describe('analyticsEvents barrel', () => {
     'ADMIN_CONFIG_VIEWED',
     'ADMIN_MODERATION_UPDATED',
     'ADMIN_ACTIVITY_FEED_DIAG',
+    // admin metrics tools (#327)
+    'EVT_ADMIN_RATE_LIMIT_VIEWED',
+    'EVT_ADMIN_RATE_LIMIT_RESET',
+    'EVT_ADMIN_LIST_ITEM_DELETED',
+    'EVT_ADMIN_LIST_ITEMS_INSPECTED',
   ] as const;
 
   it.each(expectedExports)('exports %s', (name) => {
@@ -79,8 +85,7 @@ describe('analyticsEvents barrel', () => {
     expect(typeof events[name]).toBe('string');
   });
 
-  it('exports exactly the expected number of events', () => {
-    const exportedKeys = Object.keys(events);
-    expect(exportedKeys).toHaveLength(expectedExports.length);
+  it('snapshot of exported event keys', () => {
+    expect(Object.keys(events).sort()).toMatchSnapshot();
   });
 });

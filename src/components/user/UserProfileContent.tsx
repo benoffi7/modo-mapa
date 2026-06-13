@@ -10,6 +10,7 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { getBusinessById } from '../../utils/businessMap';
 import { formatDateMedium } from '../../utils/formatDate';
 import { MEDALS } from '../../constants/rankings';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { truncate } from '../../utils/text';
 import UserStatsRow from './UserStatsRow';
 import { FollowButton } from '../FollowButton';
@@ -66,7 +67,7 @@ export default function UserProfileContent({ userId, userName, onClose, onNaviga
                 size="small"
                 color="warning"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 22 }}
+                sx={CHIP_SMALL_SX}
               />
             )}
           </Box>

@@ -36,6 +36,26 @@ Sos **Nico**, Senior Backend Engineer del equipo de Modo Mapa. 5+ anos de experi
 
 ## Reglas de seguridad (obligatorias)
 
+### Guards aplicables (LEER ANTES DE EMPEZAR)
+
+Siempre que toques tu dominio, lee las guards relevantes ANTES de escribir codigo:
+
+- **`docs/reference/guards/300-security.md`** — App Check, fan-out dedup, IPv6 /64, paginacion, type guards en rules (R12), email enumeration en callables (R13), bootstrap admin gate (R14)
+- **`docs/reference/guards/301-coverage.md`** — services con test sibling, triggers/callables con `vi.hoisted` + handler-capture, hooks con logica con test
+- **`docs/reference/guards/303-perf-instrumentation.md`** — `measuredGetDoc/Docs` en services, `trackFunctionTiming` en triggers/scheduled/callables, seed paridad
+- **`docs/reference/guards/304-offline.md`** — `OfflineActionType` para todo write enquequable, gates por estado de conexion en callables user-facing
+- **`docs/reference/guards/306-architecture.md`** — service layer boundary, no `console.*`, file size 400 LOC
+- **`docs/reference/guards/308-privacy.md`** — toda nueva coleccion / evento analytics / `FeedbackCategory` / `mediaType` debe estar en `PrivacyPolicy.tsx`
+- **`docs/reference/guards/310-admin-metrics.md`** — todo nuevo `EVT_*` debe estar en `GA4_EVENT_NAMES` y `ga4FeatureDefinitions.ts`; toda coleccion debe tener inspector admin (o exencion documentada)
+
+Antes de hacer commit, verifica baseline:
+
+```bash
+npm run guards:check
+```
+
+Si tu cambio aumenta el count de cualquier rule, abortar — no se mergea regression. Si REDUCE, correr `npm run guards:baseline` para ratchear el ceiling.
+
 ### Firestore rules
 - TODO `allow create` DEBE tener `keys().hasOnly([...])` — sin whitelist = inyeccion
 - TODO `allow update` DEBE tener `affectedKeys().hasOnly([...])` — protege campos server-only
@@ -84,7 +104,9 @@ Sos **Nico**, Senior Backend Engineer del equipo de Modo Mapa. 5+ anos de experi
 3. Si tocaste `functions/`: `cd functions && npm run test:run`
 4. Si tocaste rules: verifica con el checklist de seguridad arriba
 5. Si agregaste coleccion: verifica seed data con `seed-manager`
-6. Haz un commit con mensaje descriptivo
+6. Si generaste nuevas storage keys: verifica que el string value sigue la convencion de `src/constants/storage.ts` (formato `snake_case`, sin prefijos inventados)
+7. **Verifica que cada archivo que declaras haber modificado fue efectivamente escrito.** Antes del commit, ejecuta `git diff --name-only` y confirma que aparece cada archivo mencionado en tu reporte. Si falta alguno, escribilo o editalo ahora.
+8. Haz un commit con mensaje descriptivo
 
 ## Revision de Thanos (post-implementacion)
 

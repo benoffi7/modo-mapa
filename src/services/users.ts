@@ -1,10 +1,11 @@
 /**
  * Firestore service for user-related queries.
  */
-import { collection, getDocs, query, where, limit, documentId } from 'firebase/firestore';
+import { collection, query, where, limit, documentId } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { COLLECTIONS } from '../config/collections';
 import { logger } from '../utils/logger';
+import { measuredGetDocs } from '../utils/perfMetrics';
 
 /**
  * Fetches the profilePublic field for a list of user IDs in batches of 30.
@@ -27,7 +28,8 @@ export async function fetchProfileVisibility(
   try {
     const snapshots = await Promise.all(
       batches.map((batch) =>
-        getDocs(
+        measuredGetDocs(
+          'users_fetchProfileVisibility',
           query(
             collection(db, COLLECTIONS.USERS),
             where(documentId(), 'in', batch),
@@ -72,7 +74,8 @@ export async function searchUsers(
 
   const lower = searchTerm.toLowerCase();
 
-  const snap = await getDocs(
+  const snap = await measuredGetDocs(
+    'users_searchUsers',
     query(
       collection(db, COLLECTIONS.USERS),
       where('displayNameLower', '>=', lower),
@@ -110,7 +113,8 @@ export async function fetchUserDisplayNames(
   for (let i = 0; i < userIds.length; i += 30) {
     const batch = userIds.slice(i, i + 30);
     try {
-      const snap = await getDocs(
+      const snap = await measuredGetDocs(
+        'users_fetchUserDisplayNames',
         query(collection(db, COLLECTIONS.USERS), where('__name__', 'in', batch)),
       );
       for (const d of snap.docs) {

@@ -23,28 +23,42 @@ If no issue number, ask the user for a branch name.
 
 ### Step 2: Create worktree and branch
 
+> **CRITICAL — cwd drift guard**: cwd resets between Bash calls and may still
+> point at a previous worktree from an earlier `/start` in the same session.
+> ALWAYS use absolute paths for worktree creation. Set `MAIN_REPO` first:
+>
+> ```bash
+> MAIN_REPO=/home/walrus/proyectos/modo-mapa
+> WORKTREE_PATH="$MAIN_REPO/.claude/worktrees/<short-name>"
+> ```
+>
+> Verify before creating:
+>
+> ```bash
+> git -C "$MAIN_REPO" rev-parse --show-toplevel  # must equal $MAIN_REPO
+> [ -d "$WORKTREE_PATH" ] && echo "ERROR: path exists" && exit 1
+> ```
+
 ```bash
-# Create worktree in .claude/worktrees/
-git worktree add .claude/worktrees/<short-name> -b <branch-name>
+# Create worktree using absolute paths (run from $MAIN_REPO)
+git -C "$MAIN_REPO" worktree add "$WORKTREE_PATH" -b <branch-name>
 ```
 
 If the branch already exists:
 
 ```bash
-git worktree add .claude/worktrees/<short-name> <branch-name>
+git -C "$MAIN_REPO" worktree add "$WORKTREE_PATH" <branch-name>
 ```
 
 ### Step 3: Setup worktree environment
 
 ```bash
-cd .claude/worktrees/<short-name>
+# Copy .env (not tracked by git) — use absolute paths
+cp "$MAIN_REPO/.env" "$WORKTREE_PATH/.env" 2>/dev/null || echo "WARNING: .env not found in repo root"
 
-# Copy .env (not tracked by git)
-cp ../../.env .env 2>/dev/null || echo "WARNING: .env not found in repo root"
-
-# Install dependencies
-npm install
-cd functions && npm install && cd ..
+# Install dependencies — use --prefix to avoid cwd reliance
+npm --prefix "$WORKTREE_PATH" install
+npm --prefix "$WORKTREE_PATH/functions" install
 ```
 
 ### Step 4: Verify environment

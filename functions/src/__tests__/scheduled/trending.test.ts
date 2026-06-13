@@ -4,7 +4,7 @@ import { computeScores, countByBusiness, getBusinessNames } from '../../schedule
 
 // --- Mock for computeTrendingBusinesses handler test ---
 
-const { handlerHolder, mockGetDb, mockSet, mockDocRef } = vi.hoisted(() => {
+const { handlerHolder, mockGetDb, mockSet, mockDocRef, mockTrackFunctionTiming } = vi.hoisted(() => {
   const mockSet = vi.fn().mockResolvedValue(undefined);
   const mockDocRef = vi.fn().mockReturnValue({ set: mockSet });
   return {
@@ -12,6 +12,7 @@ const { handlerHolder, mockGetDb, mockSet, mockDocRef } = vi.hoisted(() => {
     mockGetDb: vi.fn(),
     mockSet,
     mockDocRef,
+    mockTrackFunctionTiming: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -43,6 +44,10 @@ vi.mock('firebase-functions/v2/scheduler', () => ({
 
 vi.mock('../../helpers/env', () => ({
   get getDb() { return mockGetDb; },
+}));
+
+vi.mock('../../utils/perfTracker', () => ({
+  trackFunctionTiming: (name: string, startMs: number) => mockTrackFunctionTiming(name, startMs),
 }));
 
 // --- Firestore mock helpers ---
@@ -306,5 +311,15 @@ describe('computeTrendingBusinesses handler', () => {
     const written = mockSet.mock.calls[0][0];
     expect(written.businesses[0].name).toBe('Sin nombre');
     expect(written.businesses[0].category).toBe('');
+  });
+
+  it('tracks function timing with computeTrendingBusinesses label', async () => {
+    const db = createFullMockDb({ ratings: [], comments: [], userTags: [], priceLevels: [], listItems: [] });
+    mockGetDb.mockReturnValue(db);
+    mockTrackFunctionTiming.mockClear();
+
+    await handlerHolder.fn!();
+
+    expect(mockTrackFunctionTiming).toHaveBeenCalledWith('computeTrendingBusinesses', expect.any(Number));
   });
 });

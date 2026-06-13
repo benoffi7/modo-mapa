@@ -11,6 +11,7 @@ import { useVisitHistory } from '../../hooks/useVisitHistory';
 import { MSG_CHECKIN } from '../../constants/messages';
 import { useMyCheckIns } from '../../hooks/useMyCheckIns';
 import { useNavigateToBusiness } from '../../hooks/useNavigateToBusiness';
+import { useTab } from '../../context/TabContext';
 import { formatRelativeTime } from '../../utils/formatDate';
 import { CATEGORY_LABELS } from '../../constants/business';
 import PullToRefreshWrapper from '../common/PullToRefreshWrapper';
@@ -28,6 +29,7 @@ export default function RecentsUnifiedTab() {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const { checkIns, isLoading, refresh } = useMyCheckIns();
   const { navigateToBusiness } = useNavigateToBusiness();
+  const { setActiveTab } = useTab();
 
   const handleRefresh = useCallback(async () => { await refresh(); }, [refresh]);
   useListsSubTabRefresh('recientes', handleRefresh);
@@ -77,9 +79,12 @@ export default function RecentsUnifiedTab() {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <HistoryIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-        <Typography color="text.secondary">
+        <Typography color="text.secondary" sx={{ mb: 1 }}>
           {MSG_CHECKIN.emptyVisits}
         </Typography>
+        <Button size="small" variant="text" onClick={() => setActiveTab('buscar')}>
+          Buscá comercios
+        </Button>
       </Box>
     );
   }

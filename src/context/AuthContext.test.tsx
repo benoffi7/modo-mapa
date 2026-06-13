@@ -54,6 +54,11 @@ vi.mock('../config/collections', () => ({
   COLLECTIONS: { USERS: 'users' },
 }));
 
+const mockLoggerError = vi.fn();
+vi.mock('../utils/logger', () => ({
+  logger: { error: (...args: unknown[]) => mockLoggerError(...args), warn: vi.fn(), log: vi.fn() },
+}));
+
 vi.mock('../config/converters', () => ({
   userProfileConverter: {},
 }));
@@ -175,6 +180,67 @@ describe('AuthContext', () => {
       await waitFor(() => {
         expect(result.current.displayName).toBeNull();
       });
+    });
+
+    it('ends isLoading false (no infinite loading) when profile read rejects', async () => {
+      mockGetDoc.mockRejectedValue(new Error('Firestore read failed'));
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+    });
+
+    it('keeps displayName/avatarId null and does not crash when profile read rejects', async () => {
+      mockGetDoc.mockRejectedValue(new Error('Firestore read failed'));
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+      expect(result.current.user).toEqual(mockUser);
+      expect(result.current.displayName).toBeNull();
+      expect(result.current.avatarId).toBeNull();
+    });
+
+    it('logs error (Sentry signal) when profile read rejects', async () => {
+      mockGetDoc.mockRejectedValue(new Error('Firestore read failed'));
+
+      renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(mockUser);
+      });
+
+      await waitFor(() => {
+        expect(mockLoggerError).toHaveBeenCalledWith(
+          '[userProfile] fetchUserProfileDoc getDoc failed:',
+          expect.any(Error),
+        );
+      });
+    });
+
+    it('ends isLoading false on the anonymous branch (finally covers both branches)', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        authStateCallback?.(null);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+      expect(mockSignInAnonymously).toHaveBeenCalled();
     });
   });
 
@@ -635,6 +701,39 @@ describe('AuthContext', () => {
       });
 
       expect(mockSignOutAndReset).toHaveBeenCalled();
+    });
+  });
+
+  describe('profile mutations offline guard (#344)', () => {
+    const setOnline = (value: boolean) => {
+      Object.defineProperty(navigator, 'onLine', { value, configurable: true });
+    };
+
+    afterEach(() => setOnline(true));
+
+    it('setDisplayName does not write when navigator.onLine is false', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { authStateCallback?.(mockUser); });
+
+      setOnline(false);
+      await act(async () => {
+        await result.current.setDisplayName('Maria');
+      });
+
+      expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
+    });
+
+    it('setAvatarId does not write when navigator.onLine is false', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { authStateCallback?.(mockUser); });
+
+      setOnline(false);
+      await act(async () => {
+        await result.current.setAvatarId('avatar_1');
+      });
+
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
     });
   });
 

@@ -24,6 +24,7 @@ import { usePasswordConfirmation } from '../../hooks/usePasswordConfirmation';
 import { useRememberedEmail } from '../../hooks/useRememberedEmail';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
+import { withBusyFlag } from '../../utils/busyFlag';
 
 interface EmailPasswordDialogProps {
   open: boolean;
@@ -89,10 +90,12 @@ export default function EmailPasswordDialog({
     setLocalError(null);
     setLoading(true);
     try {
-      await linkEmailPassword(email, password);
-      if (name.trim() && (!displayName || displayName === ANONYMOUS_DISPLAY_NAME)) {
-        await setDisplayName(name.trim());
-      }
+      await withBusyFlag('profile_save', async () => {
+        await linkEmailPassword(email, password);
+        if (name.trim() && (!displayName || displayName === ANONYMOUS_DISPLAY_NAME)) {
+          await setDisplayName(name.trim());
+        }
+      });
       saveEmail(email);
       handleClose();
     } catch {
@@ -107,7 +110,9 @@ export default function EmailPasswordDialog({
     setLocalError(null);
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
+      await withBusyFlag('profile_save', async () => {
+        await signInWithEmail(email, password);
+      });
       saveEmail(email);
       handleClose();
     } catch {

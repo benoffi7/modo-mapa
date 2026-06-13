@@ -28,9 +28,51 @@ echo "Working directory: $WORKDIR"
 
 Prefix all commands with `cd $WORKDIR &&` to prevent wrong-directory execution.
 
-## Phase 0: Pre-implementation gate (feat/ branches only)
+## Phase 0a: Regression guards script (BLOCKER, all branch types)
 
-For `feat/` branches, verify that PRD, specs, and plan exist and were approved before merging implementation work:
+Fast mechanical check (~2s) — **complement** to Phase 2 audits (which do deep semantic analysis with sub-agents). This phase catches the deterministic regressions early so they don't burn audit cycles. The agent-based audits in Phase 2 remain the primary validation layer.
+
+```bash
+cd $WORKDIR && npm run guards:check
+```
+
+This compares current guard violations vs `.guards-baseline.json`. Behavior:
+
+- **Exit 0 (no drift or all guards reduced)**: continue.
+- **Exit 1 (any rule increased)**: **ABORT MERGE**. Report which rules regressed (e.g. `302/R4-allBusinesses-find: 13 -> 14`). Author must fix the regressions or — if intentional and unavoidable — discuss with team and update the baseline (`npm run guards:baseline`). Do NOT update the baseline unilaterally to bypass.
+- **Exit 0 with reductions**: success, and the report lists which rules shrank. Proceed to the auto-ratchet step below to lock in the lower ceiling.
+- **Detector improvement (counts went UP because the rule got smarter, not because code regressed)**: this is the only legitimate case for raising baseline numbers. Indicators: the detector logic itself was edited in the same diff (e.g., `scripts/guards/check.mjs`, AWK→Node migration, multi-line awareness added) AND the new findings are pre-existing code that the old detector missed. Procedure: re-run with `npm run guards:baseline -- --force` and include explicit justification in the commit message (e.g., `chore(guards): ratchet baseline after R7 detector multi-line upgrade — newly surfaced counts are pre-existing tech debt`). Always commit baseline changes alongside the detector change, never separately.
+
+If the script fails to find baseline (`.guards-baseline.json` missing), abort merge — the baseline is the contract.
+
+### Phase 0a-bis: Auto-ratchet the baseline (when reductions came from this branch)
+
+When Phase 0a exits 0 **and reports reductions**, lock in the lower ceiling automatically so the gains can never silently regress later. Run:
+
+```bash
+cd $WORKDIR && npm run guards:baseline
+git add .guards-baseline.json
+```
+
+Then verify the ratchet is now clean (`npm run guards:check` → "No drift") and **include `.guards-baseline.json` in the merge commit** alongside the code that produced the reductions. This closes the audit→fix→guard loop: every fix landed in a merge tightens the ceiling in the same commit, with no manual follow-up.
+
+Skip this step only when:
+- there were no reductions (nothing to ratchet), or
+- the reductions are NOT attributable to this branch (rare — e.g. a prior branch left the baseline un-ratcheted). In that case still ratchet, but note it in the commit body.
+
+The `--force` detector-improvement case above is the one exception that does **not** go through this auto-ratchet — it requires the explicit justification described in Phase 0a.
+
+For the full report (verbose, helpful when something fails):
+
+```bash
+cd $WORKDIR && npm run guards
+```
+
+**Important:** A green Phase 0a does NOT mean the merge is safe — Phase 2 (sub-agent auditors) still runs and may find issues that grep cannot. Phase 0a is a fast-fail; Phase 2 is the substantive review.
+
+## Phase 0b: Pre-implementation gate (feat/ branches only)
+
+For `feat/` branches, verify that PRD, specs, and plan exist and were reviewed before merging implementation work:
 
 Launch a **pre-implementation-gate** agent with the branch name and issue number. The agent checks:
 1. PRD exists in `docs/feat/{category}/{slug}/prd.md`
@@ -38,6 +80,8 @@ Launch a **pre-implementation-gate** agent with the branch name and issue number
 3. Plan exists in `docs/feat/{category}/{slug}/plan.md`
 
 If any are missing → **WARN** (not blocker, but report prominently). This catches features that bypassed the PRD workflow.
+
+**IMPORTANT — Validacion section over-blocking at merge time:** The gate agent may issue BLOCK for missing `## Validacion Funcional`, `## Validacion Tecnica`, or `## Validacion de Plan` sections. At merge time, **downgrade these to WARN**. The formal stamp sections are required before implementation starts; by merge time, the review may have happened inline (editorial commits, reviewer notes in the doc body) without stamping a dedicated section. The real question at merge is "was the code reviewed?" (answered by Phase 2 audits), not "does the PRD have the exact markdown header?". Only treat missing Validacion sections as a BLOCKER if the docs also lack any evidence of review (no reviewer comments, no inline findings, no Diego/Pablo/Sofia commits).
 
 Skip this phase for `fix/`, `chore/`, and `docs/` branches.
 
@@ -47,10 +91,20 @@ Skip this phase for `fix/`, `chore/`, and `docs/` branches.
 
 Not all guards apply to every branch type. Skip irrelevant checks to reduce friction:
 
-- **`feat/`** — Run ALL guards (1a through 1p)
+- **`feat/`** (code in `src/` or `functions/`) — Run ALL guards (1a through 1p)
 - **`fix/`** — Run ALL guards (1a through 1p)
 - **`chore/`** — Run only: 1a (sync), 1b (lint), 1e (build), 1i2 (conflict markers), 1n (secrets), 1p (sensitive data). Skip: tests, coverage, file size, boundary guards, Firestore rules checks
 - **`docs/`** — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip everything else (docs don't affect code)
+- **`feat/` tooling-only** (changes only under `.claude/`, `docs/`, `scripts/`, or repo config — NO `src/` or `functions/`) — Run only: 1a (sync), 1i2 (conflict markers), 1n (secrets). Skip all code-specific guards. Detect with:
+  ```bash
+  CHANGED=$(git diff --name-only origin/new-home)
+  if echo "$CHANGED" | grep -qvE '^(\.claude/|docs/|scripts/|\.github/|package(-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$|vitest\.config\.ts$)'; then
+    TOOLING_ONLY=false
+  else
+    TOOLING_ONLY=true
+  fi
+  ```
+  If `TOOLING_ONLY=true`, also skip ALL of Phase 2 (audits operate on `src/` and don't apply).
 
 Run these sequentially — any failure aborts the merge:
 
@@ -66,6 +120,19 @@ git merge origin/new-home --no-edit
 Use `merge` instead of `rebase` to avoid conflicts from branches that share commits with previously merged features. If conflicts arise, resolve them and commit.
 
 **IMPORTANT:** The base branch is `new-home` (not `main`, which is deprecated). Always branch from latest `new-home` HEAD. Never reuse branches that merged other feature branches. See `docs/procedures/worktree-workflow.md` for the full branch strategy rationale.
+
+**Drift check — local `new-home` vs `origin/new-home`:** Before merging, verify that the local `new-home` has no unpushed commits. Unpushed commits on `new-home` are a red flag: they indicate a previous merge skipped `/merge` (violation of `feedback_never_skip_merge_skill`). From the main repo (not the worktree):
+
+```bash
+git fetch origin new-home
+LOCAL_AHEAD=$(git rev-list --count origin/new-home..new-home 2>/dev/null || echo 0)
+if [ "$LOCAL_AHEAD" -gt 0 ]; then
+  echo "WARN: local new-home is $LOCAL_AHEAD commit(s) ahead of origin/new-home"
+  git log --oneline origin/new-home..new-home
+fi
+```
+
+If any commits show up: inspect them, confirm with the user whether they passed through `/merge`, and capture any skipped-audit debt as a tech-debt issue before completing this merge.
 
 ### 1b. Lint
 
@@ -115,9 +182,16 @@ If any test files are missing, write them before proceeding. The PRD specifies w
 
 **BLOCKER:** Run full coverage locally. Do NOT rely on `vitest run` alone — it doesn't check thresholds. CI enforces 80% branches and will fail even at 79.97%.
 
+**NEVER run coverage as a background task.** Coverage output piped from a background process frequently produces empty files or truncated output (the process completes before stdout is fully flushed). Always run in the foreground and wait for it to finish before reading results.
+
 ```bash
-npx vitest run --coverage 2>&1 | grep -E "does not meet|All files"
+npx vitest run --coverage 2>&1 | grep -E "does not meet|All files|% Branches|% Stmts"
 ```
+
+This command has three possible outcomes:
+- Shows `does not meet` → threshold violated, **BLOCKER**
+- Shows `% Branches` and `% Stmts` lines (coverage table rows) → coverage ran and passed all thresholds
+- Shows nothing (empty output) → command failed silently — re-run without grep to diagnose
 
 If `does not meet` appears, use a two-step strategy:
 
@@ -603,6 +677,16 @@ Determine branch type from the branch name prefix:
 - **`feat/`** — Full audit (all 8 core agents below + conditional agents 9-11 based on changed files)
 - **`fix/`** — Reduced audit: security + architecture + performance only (3 agents) + conditional agents if triggered
 - **`chore/` or `docs/`** — Minimal audit: security + architecture only (2 agents). These branches refactor existing code or update docs — UI, dark mode, offline, and privacy audits add no value since user-visible behavior doesn't change
+- **`feat/` backend-only** (changes only under `functions/`, `firestore.rules`, `firestore.indexes.json`, `storage.rules`, or related config — ZERO `.tsx` files changed) — Reduced audit: security + architecture + privacy + copy (4 agents) + conditional agents 9 and 11 if triggered. Skip dark-mode-auditor, ui-reviewer, performance (bundle/render), and offline-auditor — they operate on UI code that did not change. Detect with:
+  ```bash
+  CHANGED=$(git diff --name-only origin/new-home)
+  if ! echo "$CHANGED" | grep -qE '\.tsx$'; then
+    if echo "$CHANGED" | grep -qE '^(functions/|firestore\.(rules|indexes\.json)$|storage\.rules$)'; then
+      BACKEND_ONLY=true
+    fi
+  fi
+  ```
+  Document the choice explicitly in the merge report ("backend-only branch — UI/perf/offline audits skipped because 0 .tsx files changed").
 
 ### Full audit agents
 
@@ -698,6 +782,16 @@ If any docs were updated in this phase, commit them now before merging.
 
 ## Phase 4: Merge
 
+**CRITICAL: Confirm branch identity before merging.** Worktree mix-ups (where `git branch --show-current` reports a different branch than expected) have caused commits to land directly on `new-home` instead of the feature branch. Verify with two independent checks:
+
+```bash
+# Both must agree — if they differ, you are in a worktree/checkout confusion state. STOP.
+git branch --show-current
+git rev-parse --abbrev-ref HEAD
+```
+
+If either shows `new-home`, `main`, or `staging` → **abort**. You are not on the feature branch. Investigate with `git worktree list` before proceeding.
+
 ```bash
 # If merging from a worktree, switch to the main repo directory first.
 # Stash any uncommitted WIP on new-home before merging to avoid conflicts:
@@ -755,9 +849,22 @@ If the push fails due to pre-push hooks, check `git stash list` — the WIP may 
 
 ### 5c. Verify CI
 
+`new-home` does NOT trigger any workflow directly (see `.github/workflows/` — only `main` and `staging` are listeners). CI validation happens on the **next `/stage` run** (which opens a PR into `staging` and triggers `deploy-staging.yml`).
+
+Strategy:
+
 ```bash
-gh run watch $(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+# 1. Check if a workflow run exists on new-home (usually none)
+LATEST=$(gh run list --branch new-home --limit 1 --json databaseId -q '.[0].databaseId')
+if [ -n "$LATEST" ]; then
+  gh run watch "$LATEST" --exit-status
+else
+  echo "INFO: no CI workflow runs on new-home (by design — CI runs on staging/main)"
+  echo "INFO: validation will happen on next /stage or /release"
+fi
 ```
+
+Do NOT treat the absence of a run as failure — it is expected. The merge-time guards (Phase 1b build, tests, lint) already covered the bulk of what CI would catch; the remainder is validated at staging/release time.
 
 ### 5d. Clean up branches
 

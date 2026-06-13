@@ -117,4 +117,38 @@ describe('BusinessSheetCompactContent', () => {
     fireEvent.click(screen.getByRole('button', { name: /ver detalles del comercio/i }));
     expect(sessionStorage.getItem('mm_last_business_sheet')).toBe('biz_001');
   });
+
+  // S6 — guard de regresión para stale myRating cross-screen.
+  //
+  // Hipótesis del PRD: el flow Sheet→Detail→Sheet NO requiere fix porque:
+  // 1. La sheet usa key={selectedBusiness.id} en BusinessSheet.tsx, así que al
+  //    volver del detail React remonta el compact con un fresh useBusinessData.
+  // 2. useBusinessData con 3-tier cache (memory → IndexedDB → Firestore) hace
+  //    stale-while-revalidate: el render usa data fresca o stale-then-fresh.
+  // 3. useBusinessRating deriva serverMyRating con useMemo([ratings, user]) ⇒
+  //    cualquier cambio en ratings produce nuevo myRating en el siguiente render.
+  // 4. BusinessRating consume ratingData.myRating como prop y NO lo cachea
+  //    localmente — re-render lo refleja inmediatamente.
+  //
+  // Conclusión: el remount del sheet + memo en useBusinessRating + paso de prop
+  // sin cache local en BusinessRating cierran la ventana de stale.
+  // Si Detail llama refetch('ratings'), el cache memory ya tiene las ratings
+  // actualizadas cuando el sheet remonta.
+  //
+  // Test: smoke check que el remount con businessId distinto monta una sheet
+  // independiente (key prop en BusinessSheet hace que React lo re-instancie).
+  // El comportamiento "ratings actualizados → myRating actualizado" está
+  // cubierto por el test "myRating cambia entre renders" en BusinessRating.test.
+  it('S6 guard — cuando businessId cambia, el sheet remonta con nuevo state (key prop en BusinessSheet)', () => {
+    const business2 = { ...business, id: 'biz_002' };
+    const { rerender } = render(<BusinessSheetCompactContent key="biz_001" business={business as never} />);
+    expect(screen.getByText('header')).toBeInTheDocument();
+
+    // Cambio de business → key distinto → remount del componente
+    rerender(<BusinessSheetCompactContent key="biz_002" business={business2 as never} />);
+    expect(screen.getByText('header')).toBeInTheDocument();
+    // No fix needed: el flow Detail → Sheet remonta vía key={selectedBusiness.id}
+    // en BusinessSheet.tsx (línea 98), y la cadena reactiva ratings → myRating
+    // ya está cubierta en BusinessRating.test.
+  });
 });

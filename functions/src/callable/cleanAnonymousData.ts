@@ -1,10 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { createHash } from 'crypto';
 import { logger } from 'firebase-functions';
 import { ENFORCE_APP_CHECK, getDb } from '../helpers/env';
 import { deleteAllUserData } from '../utils/deleteUserData';
 import { logAbuse } from '../utils/abuseLogger';
+import { trackFunctionTiming } from '../utils/perfTracker';
 import { USER_OWNED_COLLECTIONS } from '../shared/userOwnedCollections';
 import type { DeletionStatus } from '../utils/deleteUserData';
 
@@ -19,6 +21,8 @@ const RATE_LIMIT_SECONDS = 60;
 export const cleanAnonymousData = onCall(
   { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120 },
   async (request) => {
+    const startMs = performance.now();
+    try {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
@@ -51,6 +55,23 @@ export const cleanAnonymousData = onCall(
 
     const uidHash = createHash('sha256').update(uid).digest('hex').slice(0, 12);
 
+    // S4 — Revocar refresh tokens server-side. Cierra ventana de
+    // re-uso del access token previo a la limpieza. Best-effort:
+    // si falla, el flow continua (defense-in-depth — el cliente
+    // hace signOut() tras el callable de todos modos), pero
+    // logueamos para observabilidad.
+    let tokensRevoked = false;
+    let tokensRevokedError: string | null = null;
+    try {
+      await getAuth().revokeRefreshTokens(uid);
+      tokensRevoked = true;
+    } catch (err) {
+      tokensRevokedError = String(err);
+      // Per task instructions Phase 3.4: usar logger.warn (no .error) —
+      // best-effort, no bloquea delete si revoke falla.
+      logger.warn('Failed to revoke refresh tokens', { uidHash, error: tokensRevokedError });
+    }
+
     // Determine status from result
     const status: DeletionStatus =
       result.collectionsFailed.length === 0 && result.aggregatesCorrected
@@ -72,6 +93,8 @@ export const cleanAnonymousData = onCall(
         aggregatesCorrected: result.aggregatesCorrected,
         durationMs: result.durationMs,
         triggeredBy: 'user',
+        tokensRevoked,
+        ...(tokensRevokedError ? { tokensRevokedError } : {}),
         timestamp: FieldValue.serverTimestamp(),
       });
     } catch (err) {
@@ -93,6 +116,12 @@ export const cleanAnonymousData = onCall(
 
     logger.info('anonymous_data_cleaned', { uidHash, status, timestamp: new Date().toISOString() });
 
+    await trackFunctionTiming('cleanAnonymousData', startMs);
     return { success: true };
+    } catch (err) {
+      // Fire-and-forget on error path so we still capture timings.
+      void trackFunctionTiming('cleanAnonymousData', startMs);
+      throw err;
+    }
   },
 );

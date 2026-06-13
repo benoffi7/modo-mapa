@@ -1,30 +1,36 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockCreateCheckIn = vi.fn();
-const mockDeleteCheckIn = vi.fn();
-const mockFetchCheckInsForBusiness = vi.fn();
-const mockWithOfflineSupport = vi.fn();
-const mockTrackEvent = vi.fn();
-const mockDistanceKm = vi.fn();
+const mockCreateCheckIn = vi.hoisted(() => vi.fn());
+const mockDeleteCheckIn = vi.hoisted(() => vi.fn());
+const mockFetchCheckInsForBusiness = vi.hoisted(() => vi.fn());
+const mockWithOfflineSupport = vi.hoisted(() => vi.fn());
+const mockTrackEvent = vi.hoisted(() => vi.fn());
+const mockDistanceKm = vi.hoisted(() => vi.fn());
 const mockToast = { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn() };
 
 vi.mock('../services/checkins', () => ({
-  createCheckIn: (...args: unknown[]) => mockCreateCheckIn(...args),
-  deleteCheckIn: (...args: unknown[]) => mockDeleteCheckIn(...args),
-  fetchCheckInsForBusiness: (...args: unknown[]) => mockFetchCheckInsForBusiness(...args),
+  createCheckIn: mockCreateCheckIn,
+  deleteCheckIn: mockDeleteCheckIn,
+  fetchCheckInsForBusiness: mockFetchCheckInsForBusiness,
 }));
 
 vi.mock('../services/offlineInterceptor', () => ({
-  withOfflineSupport: (...args: unknown[]) => mockWithOfflineSupport(...args),
+  withOfflineSupport: mockWithOfflineSupport,
+}));
+
+const mockWithBusyFlag = vi.hoisted(() => vi.fn((_kind: string, fn: (h: () => void) => Promise<unknown>) => fn(() => {})));
+vi.mock('../utils/busyFlag', () => ({
+  withBusyFlag: mockWithBusyFlag,
+  isBusyFlagActive: vi.fn(() => false),
 }));
 
 vi.mock('../utils/analytics', () => ({
-  trackEvent: (...args: unknown[]) => mockTrackEvent(...args),
+  trackEvent: mockTrackEvent,
 }));
 
 vi.mock('../utils/distance', () => ({
-  distanceKm: (...args: unknown[]) => mockDistanceKm(...args),
+  distanceKm: mockDistanceKm,
 }));
 
 vi.mock('../utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
@@ -297,5 +303,27 @@ describe('useCheckIn', () => {
 
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('No se pudo desmarcar la visita');
+  });
+
+  it('performCheckIn invoca withBusyFlag con kind: checkin_submit', async () => {
+    const { result } = renderHook(() => useCheckIn('biz1', 'Test Biz'));
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+
+    await act(async () => { await result.current.performCheckIn(); });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('checkin_submit', expect.any(Function));
+  });
+
+  it('undoCheckIn invoca withBusyFlag con kind: checkin_submit', async () => {
+    const { result } = renderHook(() => useCheckIn('biz1', 'Test Biz'));
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+
+    // Perform check-in first so recentCheckInId is set
+    await act(async () => { await result.current.performCheckIn(); });
+    mockWithBusyFlag.mockClear();
+
+    await act(async () => { await result.current.undoCheckIn(); });
+
+    expect(mockWithBusyFlag).toHaveBeenCalledWith('checkin_submit', expect.any(Function));
   });
 });

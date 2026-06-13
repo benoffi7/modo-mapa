@@ -2,6 +2,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getDb } from '../helpers/env';
 import { getStorage } from 'firebase-admin/storage';
 import { withCronHeartbeat } from '../utils/cronHeartbeat';
+import { trackFunctionTiming } from '../utils/perfTracker';
 
 async function run(): Promise<string> {
   const db = getDb();
@@ -31,6 +32,11 @@ async function run(): Promise<string> {
 export const cleanupRejectedPhotos = onSchedule(
   { schedule: '0 4 * * *', timeZone: 'America/Argentina/Buenos_Aires' },
   async () => {
-    await withCronHeartbeat('cleanupRejectedPhotos', run);
+    const startMs = performance.now();
+    try {
+      await withCronHeartbeat('cleanupRejectedPhotos', run);
+    } finally {
+      await trackFunctionTiming('cleanupRejectedPhotos', startMs);
+    }
   },
 );

@@ -36,7 +36,7 @@ Si te piden verificar instrumentacion de queries, delega a `perf-auditor`. Si te
 
 Explica el problema detectado y el impacto esperado de la mejora antes de implementar cambios.
 
-## Regression checks (#302)
+## Regression checks (#302/#324)
 
 Ver `docs/reference/guards/302-performance.md`.
 
@@ -45,8 +45,14 @@ Ver `docs/reference/guards/302-performance.md`.
 - `fetchUserLikes` en `businessData.ts` debe ser query-by-businessId con indice compuesto `commentLikes(userId, businessId)`. No fan-out desde commentIds.
 - Lookups "find business by id" usan `getBusinessMap()` singleton en `src/utils/businessMap.ts` — no `allBusinesses.find()`.
 - Non-initial tabs en `TabShell` envueltos en `React.lazy`.
+- **R6 (#324)** — Toda `<img>` remota debe tener `loading="lazy"` y `decoding="async"` + `width`/`height` explicitos. Excepcion: hero above-the-fold con `loading="eager"` + `fetchpriority="high"` documentado.
+- **R7 (#324)** — `vite.config.ts` separa `mui-core` (`@mui/material`) de `mui-icons` (`@mui/icons-material`) en `manualChunks`. Sin split, MUI = ~474 KB monolitico.
+- **R8 (#324)** — `firebase/storage` NO en chunk critico (`firebase`). Se carga lazy desde flujos de upload (avatar, menu photos). Sin esto, paga ~40-60KB extra en LCP.
 
 ```bash
 grep -rn "allBusinesses\.find" src/ --include="*.tsx" --include="*.ts"
 grep -n "export.*PieChartCard\|export.*TopList" src/components/stats/index.ts
+grep -rn "<img" src/components/ --include="*.tsx" | grep -v "loading=\"lazy\"" | grep -v "loading={lazy"
+grep -E "mui-core|mui-icons|@mui/icons-material" vite.config.ts
+grep -A 5 "'firebase':" vite.config.ts | grep "firebase/storage"
 ```

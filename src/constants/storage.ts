@@ -17,6 +17,25 @@ export const STORAGE_KEY_ONBOARDING_EXPANDED = 'onboarding_expanded';
 export const STORAGE_KEY_REMEMBERED_EMAIL = 'remembered_email';
 export const STORAGE_KEY_FORCE_UPDATE_LAST_REFRESH = 'force_update_last_refresh';
 export const STORAGE_KEY_FORCE_UPDATE_RELOAD_COUNT = 'force_update_reload_count';
+/**
+ * localStorage — timestamp (ms, `Date.now()`) del último check exitoso del
+ * hook `useForceUpdate`. Lo lee el fallback PWA para decidir si el hook sigue
+ * vivo antes de disparar el refresh pasivo.
+ */
+export const STORAGE_KEY_FORCE_UPDATE_LAST_CHECK = 'force_update_last_check';
+/**
+ * sessionStorage — flag de operacion in-flight (upload/submit critico).
+ * Envuelto por `withBusyFlag` en `src/utils/busyFlag.ts`; refrescado por
+ * heartbeat mientras la operacion progresa. Expira por `BUSY_FLAG_MAX_AGE_MS`.
+ */
+export const STORAGE_KEY_FORCE_UPDATE_BUSY = 'force_update_busy';
+/**
+ * sessionStorage — flag one-shot per-session que marca que el evento
+ * `EVT_APP_VERSION_ACTIVE` ya fue emitido en esta sesión. Se setea sólo
+ * después de una emisión exitosa; si el hook aún no emitió (p. ej. source
+ * 'cache' o 'unknown'), el próximo tick todavía puede intentar.
+ */
+export const STORAGE_KEY_APP_VERSION_EVENT_EMITTED = 'app_version_event_emitted';
 export const STORAGE_KEY_RATING_PROMPT_DISMISSED = 'rating_prompt_dismissed';
 export const STORAGE_KEY_RATING_PROMPT_SHOWN_TODAY = 'rating_prompt_shown_today';
 export const STORAGE_KEY_QUICK_ACTIONS = 'quick_actions_config';

@@ -44,7 +44,7 @@ export default function StaleBanner({ businessId, onRefresh }: StaleBannerProps)
         size="small"
         onClick={onRefresh}
         aria-label="Actualizar datos"
-        sx={{ color: 'inherit', p: 0.5 }}
+        sx={{ color: 'inherit', minWidth: 44, minHeight: 44 }}
       >
         <RefreshIcon fontSize="small" />
       </IconButton>
@@ -52,7 +52,7 @@ export default function StaleBanner({ businessId, onRefresh }: StaleBannerProps)
         size="small"
         onClick={handleDismiss}
         aria-label={MSG_COMMON.closeNoticeAriaLabel}
-        sx={{ color: 'inherit', p: 0.5 }}
+        sx={{ color: 'inherit', minWidth: 44, minHeight: 44 }}
       >
         <CloseIcon fontSize="small" />
       </IconButton>

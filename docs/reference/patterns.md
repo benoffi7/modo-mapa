@@ -25,6 +25,7 @@
 | **Datos estaticos + dinamicos** | Comercios en JSON local (`src/data/businesses.json`), interacciones en Firestore. Se cruzan por `businessId` client-side. **NUNCA** hacer `getDoc('businesses/{id}')` — usar `allBusinesses` de `hooks/useBusinesses.ts`. |
 | **Service layer** | Componentes llaman `src/services/` para CRUD. Nunca importan `firebase/firestore`, `firebase/functions` ni `firebase/storage` directamente. Solo `src/services/`, `src/config/` y `src/hooks/` pueden importar de Firebase SDK. Contexts (como AuthContext) usan servicios para writes — no importan `firebase/firestore` directamente. Enforced por architecture agent y PR reviewer. |
 | **Doc ID compuesto** | `{userId}__{businessId}` para favoritos, ratings y userTags. `{userId}__{commentId}` para commentLikes. `{followerId}__{followedId}` para follows. Garantiza unicidad sin queries extra. |
+| **Likes por query directa (userId, businessId)** (#343, guard #302 R3) | `commentLikes` se lee con `where('userId','==',uid)` + `where('businessId','==',bId)` dentro del `Promise.all` de `fetchBusinessData` (índice compuesto `commentLikes(userId, businessId)`). El `Set<commentId>` se deriva de `d.data().commentId`. Reemplaza el fan-out por `documentId('in')` (`fetchUserLikes`, eliminado) que agregaba un RTT post-`Promise.all`. |
 | **withConverter\<T\>()** | Todas las lecturas de Firestore usan `withConverter<T>()` con converters centralizados. Escrituras usan refs sin converter (por `serverTimestamp()`). |
 | **Collection names** | Nombres de colecciones centralizados en `src/config/collections.ts` como constantes. Sin strings magicos. |
 | **Timestamps server-side** | Todas las reglas de `create` validan `createdAt == request.time`. Ratings valida `updatedAt == request.time` en create y update. |
@@ -62,8 +63,9 @@
 | **`CommentInput` (memo)** | Formulario de comentario extraido de BusinessComments. Maneja rate limit precheck, contador diario, warning visual. Estado del texto encapsulado. |
 | **Admin panel decomposition** | PerformancePanel → `admin/perf/` (SemaphoreCard, QueryLatencyTable, FunctionTimingTable, StorageCard, perfHelpers). AbuseAlerts → `admin/alerts/` (KpiCard, alertsHelpers). Patron: helpers y subcomponentes en subdirectorio, parent como orquestador. |
 | **Swipe actions (`useSwipeActions`)** | Hook para gestos swipe-to-reveal en mobile. Touch events con threshold 80px, cancela si vertical >10px. Swipe left=delete, right=edit. Solo en `pointer: coarse`. Fallback accesible con botones visibles. |
-| **Deep linking** | `?business={id}` en URL abre el bottom sheet del comercio. Usado por ShareButton. |
-| **Shell/Content pattern (desktop readiness)** | Bottom sheets y navigation se dividen en Shell (SwipeableDrawer, drag handle, safe-area) + Content (logica de negocio, hooks, tabs). BusinessSheet→BusinessSheetContent, UserProfileSheet→UserProfileContent. CommentsListItem es puro; CommentsListItemSwipeable agrega touch. `useNavLayout` abstrae posicion de nav (bottom/left). Permite reusar 100% de logica para desktop sin duplicar codigo. |
+| **Deep linking** | URL canónica de comercio: `/comercio/:id?tab=criterios\|precio\|tags\|foto\|opiniones` (abre `BusinessDetailPage`). Backward compat: `?business={id}` en URL sigue abriendo el sheet sobre el mapa vía `useDeepLinks`. `ShareButton` siempre genera `/comercio/:id`. Restore del sheet al volver: `sessionStorage` key `mm_last_business_sheet` escrita en CTA "Ver detalles", leída y borrada en mount de `MapAppShell`. |
+| **Shell/Content pattern (desktop readiness)** | Bottom sheets y navigation se dividen en Shell (SwipeableDrawer, drag handle, safe-area) + Content (logica de negocio, hooks, tabs). BusinessSheet→BusinessSheetCompactContent (sheet compacto), BusinessDetailScreen (pantalla full en `/comercio/:id`), UserProfileSheet→UserProfileContent. CommentsListItem es puro; CommentsListItemSwipeable agrega touch. `useNavLayout` abstrae posicion de nav (bottom/left). Permite reusar 100% de logica para desktop sin duplicar codigo. |
+| **Pantalla full para entidad detallada** | Cuando el detalle de una entidad supera el espacio del bottom sheet, se usa una pantalla full en ruta dedicada (ej: `/comercio/:id`). Patron: sheet compacto con CTA "Ver detalles" → navegar a pantalla full con chip tabs sticky. La pantalla full es una ruta real (deep-linkeable, SEO-friendly) que preserva el estado del sheet al volver vía sessionStorage. |
 | **Props-driven business components** | BusinessRating, BusinessComments, BusinessTags, BusinessPriceLevel y FavoriteButton reciben datos como props desde BusinessSheetContent (via `useBusinessData`). No hacen queries internas. |
 | **HOME_SECTIONS registry** | Array declarativo en `components/home/homeSections.ts` con interface `HomeSection` (`id`, `component` lazy-loaded via `React.lazy()`, `hasDividerAfter?`). `HomeScreen` itera el array con `Suspense` fallback. Agregar seccion nueva = agregar entrada al array, sin tocar JSX del orquestador. |
 | **HELP_GROUPS registry** (#311) | Patron equivalente a `HOME_SECTIONS` para la seccion de Ayuda. Array `HELP_GROUPS` en `src/components/profile/helpGroups.tsx` con interfaces `HelpGroup` (`label`, `items`) y `HelpItem` (`id`, `icon: ReactElement`, `title`, `description`). `HelpSection.tsx` itera el array con Accordion MUI. Agregar topic nuevo = agregar entrada al array. Mantenido cerca del componente consumidor (dominio `profile/help`) en vez de en `src/constants/` porque es contenido especifico del feature. |
@@ -75,8 +77,10 @@
 | **Debounce con useDeferredValue** | `useBusinesses`, `useListFilters` y `CommentsList` usan `useDeferredValue` de React 19 para debounce de busqueda. |
 | **`usePaginatedQuery` constraints genericos** | El hook acepta `QueryConstraint[]` o `string` (backward compat con userId). `cacheKey` obligatorio para cache compat. Incluye `loadAll(maxItems)` con `hasMoreRef` para loops async seguros. |
 | **ErrorBoundary** | Envuelve `AppShell` y `AdminDashboard`. Fallback UI con opcion de recargar. |
-| **Stable event listeners via refs** | Cuando un event listener necesita acceder a state reactivo, usar `useRef` para mantener valores actualizados sin recrear el callback. El listener se registra una sola vez (`useEffect(fn, [])`). Usado en `AccountBanner` y `useActivityReminder` para el evento `anon-interaction`. |
+| **Stable event listeners via refs** | Cuando un event listener necesita acceder a state reactivo, usar `useRef` para mantener valores actualizados sin recrear el callback. El listener se registra una sola vez (`useEffect(fn, [])`). Usado en `AccountBanner` y `useActivityReminder` para el evento `anon-interaction`. `useForceUpdate` también usa este patrón: `checkingRef` (concurrency guard booleano) y **una ref por tipo de evento** — `lastVisibilityTs` y `lastOnlineTs` (`useRef<number>`) — para debounce independiente de 5s via timestamp en los handlers de `visibilitychange` y `online`. Un evento de un tipo no consume el debounce del otro. El `void run()` del mount y el `setInterval` no tienen debounce. |
 | **Unified account creation flow** | AppShell coordina el flujo register/login via props a SideMenu (`onCreateAccount`, `onLogin`, `emailDialogOpen`, `emailDialogTab`). El estado de onboarding (hint display, flow steps) vive en hooks extraidos: `useOnboardingHint` y `useOnboardingFlow`. El flujo es: CTA → BenefitsDialog (primera vez) → EmailPasswordDialog. |
+| **`CHIP_SMALL_SX`** (#326) | Constante exportada desde `src/theme/cards.ts` para chips chicos en headers, rows, dialogs. Define `height: 24, fontSize: '0.75rem', '& .MuiChip-icon': { fontSize: 14, ml: 0.5 }, '& .MuiChip-label': { px: 1 }`. Cierra Guard #305 R5/R8 al evitar overrides ad-hoc tipo `sx={{ height: 22, fontSize: '0.65rem' }}`. Distinto de `NAV_CHIP_SX` (chips de navegación tipo tabs en `constants/ui.ts`). Si un chip necesita override puntual, hacer spread: `sx={{ ...CHIP_SMALL_SX, mb: 0.5 }}`. |
+| **`SearchFab` extraído** (#326) | El FAB central elevado del `TabBar` vive en `src/components/layout/SearchFab.tsx` como componente dedicado props-driven (`active: boolean`). El parent `TabBar` deriva `active = activeTab === 'buscar'` y lo pasa, evitando el selector frágil `'&.Mui-selected': { '& .MuiBox-root': { bgcolor: '...' } }` que dependía del markup interno de MUI (Guard #305 R3). Patrón reusable para cualquier FAB que necesite estado activo/inactivo sin acoplamiento al context global. |
 | **Auth dialog hooks** | `usePasswordConfirmation(password, confirm)` para validación de confirmación compartida entre EmailPasswordDialog y ChangePasswordDialog. `useRememberedEmail()` aísla lógica de localStorage para "recordar email". `clearAuthError()` en AuthContext limpia errores stale al cerrar/cambiar tab. Timeout cleanup con `useRef` + `useEffect` en ChangePasswordDialog. Focus con `useLayoutEffect` + `requestAnimationFrame`. |
 | **Onboarding hooks** | `useOnboardingHint` encapsula lógica de cuándo/cómo mostrar el hint de onboarding (extraido de AppShell). `useOnboardingFlow` maneja los pasos del flujo de onboarding. `useSurpriseMe` encapsula la lógica de "sorpréndeme" (selección aleatoria de comercio), extraida de SideMenu. |
 
@@ -106,7 +110,7 @@
 | **useFollow (optimistic toggle + offline)** | Hook que expone `following`, `loading`, `toggling`, `toggle`, `isSelf`. Check inicial con `isFollowing()`. Toggle optimista: invierte state local antes de escribir, revierte si falla. Integrado con `withOfflineSupport` para encolar en IndexedDB si offline. No permite seguirse a si mismo (`isSelf` guard). |
 | **useUserSearch (debounced prefix)** | Hook con debounce de 300ms via `setTimeout` + `clearTimeout` en ref. Minimo 2 caracteres. Llama a `searchUsers()` que consulta `displayNameLower` con range query (`>=` lower, `<=` lower + `\uf8ff`). Filtra por `profilePublic` client-side (revisa `userSettings` por candidato). Max 10 resultados. |
 | **displayNameLower search** | Campo `displayNameLower` en docs de `users` (mantenido por `AuthContext` al crear/editar displayName). Permite busqueda por prefijo case-insensitive usando Firestore range queries sin indices custom adicionales. |
-| **Fan-out writes pattern** | `fanOutToFollowers(db, data)` en Cloud Functions: lee todos los seguidores del actor, escribe un `ActivityFeedItem` en `activityFeed/{followerId}/items` para cada uno. Batch writes de 500. Solo ejecuta si el actor tiene perfil publico. Items expiran a 30 dias (`expiresAt`). Invocado desde triggers de ratings, comments y favorites. |
+| **Fan-out writes pattern** | `fanOutToFollowers(db, data)` en Cloud Functions: lee todos los seguidores del actor, escribe un `ActivityFeedItem` en `activityFeed/{followerId}/items` para cada uno. Dos constantes relacionadas: `FANOUT_MAX_RECIPIENTS_PER_ACTION = 500` recipients cap (producto, en `constants/fanOut.ts`) y `BATCH_COMMIT_MAX_OPS = 500` writes cap (SDK, en `utils/fanOut.ts`). 500 recipients × 2 writes (feed + dedup) = 2 batches. Solo ejecuta si el actor tiene perfil publico. Items expiran a 30 dias (`expiresAt`). Invocado desde triggers de ratings, comments y favorites. Las lecturas de dedup se agrupan con `db.getAll()` en chunks de 30 (`FANOUT_GETALL_CHUNK_SIZE`) y los chunks se resuelven en paralelo con `Promise.all` — elimina los N+1 reads secuenciales del loop original (#312). |
 | **Activity feed subcollection** | `activityFeed/{userId}/items` — subcolleccion por usuario para O(1) reads del feed. Cada item tiene `actorId`, `actorName`, `type` (rating/comment/favorite), `businessId`, `businessName`, `referenceId`, `createdAt`, `expiresAt`. Paginado con `usePaginatedQuery` (20 items/pagina). |
 | **Follow counters server-managed** | `followingCount` y `followersCount` en docs de `users` gestionados exclusivamente por Cloud Functions (`FieldValue.increment`). `onFollowCreated` incrementa, `onFollowDeleted` decrementa con floor 0 (lee valor actual antes de decrementar). |
 
@@ -139,6 +143,19 @@
 | **Metricas diarias** | Scheduled function calcula distribucion, tops, active users a las 3AM y guarda en `dailyMetrics/{YYYY-MM-DD}`. |
 | **Force app update (#191)** | CI/CD escribe `config/appVersion.minVersion` tras deploy (solo si cambian `src/` o `functions/`). Cliente usa `useForceUpdate` hook que compara con `__APP_VERSION__` al montar + cada 30 min. Si servidor > cliente: desregistra SW, limpia caches, hard refresh. Cooldown de 5 min en sessionStorage previene loops. Cero dependencias nuevas. |
 | **withCronHeartbeat (#257)** | `functions/src/utils/cronHeartbeat.ts` — wrapper para scheduled functions que escribe heartbeat a `_cronRuns/{cronName}` con `lastRunAt`, `result` (success/error), `detail`, `durationMs`. Try/catch: success path escribe resultado, error path escribe error y re-throws. Las 9 scheduled functions (7 archivos) wrappean su logica interna con este helper. Dashboard admin lee heartbeats via `fetchCronHealthStatus`. |
+| **Uniform response anti-enumeration en callables (#322)** | Callables que aceptan `targetEmail` (`inviteListEditor`, `removeListEditor`, y futuros) DEBEN devolver respuesta indistinguible (`{ success: true }`) para los casos "agregado", "ya era editor" y "email no encontrado". La accion real se ejecuta solo cuando el usuario existe, pero el cliente no puede distinguirlo. Errores de validacion previos al lookup (input invalido, self-invite, rate limit) si pueden distinguirse — la enumeracion vive en la respuesta del lookup, no en validacion estructural. Aplica el mismo principio que "Email enumeration prevention" del flow de auth. Ver [guard 300-security R13](guards/300-security.md) y [security.md](security.md#email-enumeration-prevention-en-callables-322-r13). |
+| **Bootstrap gate atomico (#322)** | Paths de bootstrap (auto-asignacion del primer admin, seed inicial de claims) DEBEN gatearse con un flag persistido en Firestore que el handler setea atomicamente al consumirse. Patron canonico: `config/bootstrap.adminAssigned`. Pre-check: si `flag == true`, rechazar con `permission-denied`. Post-asignacion: set `flag: true` en la misma transaccion que el side effect (claim, write). Cierra el vector donde el path bootstrap queda abierto indefinidamente y un compromiso de credenciales permite hijack. Ver [guard 300-security R14](guards/300-security.md). |
+
+## Performance instrumentation (#325)
+
+| Patron | Descripcion |
+|--------|-------------|
+| **`measureAsync(name, fn)` / `measuredGetDoc(name, ref)` / `measuredGetDocs(name, q)`** | Wrappers en `src/utils/perfMetrics.ts` que miden `performance.now()` antes/despues de la promise y persisten p50/p95 por sessionId al hacer flush. Toda nueva query Firestore en `src/services/` debe usar uno de los tres. `measureAsync` es el wrapper generico (acepta una funcion); los `measuredGetDoc/measuredGetDocs` son helpers tipados para reads simples (aceptan `DocumentReference`/`Query`, NO una funcion). |
+| **Naming convention de claves** | `<feature>_<verb>` en snake_case (ej: `ratings_byUser`, `recommendations_unreadCount`, `sharedLists_itemsByList`). Toda clave nueva debe registrarse en `src/components/admin/perf/perfHelpers.ts:QUERY_LABELS` con label en espanol y, si es relevante para QA, en `scripts/seed-admin-data.mjs` para que aparezca en el dashboard tras el seed. |
+| **Marker `// perf-instrument-ok`** | Cuando un `getDocs(...)`/`getDoc(...)` raw esta dentro de un `Promise.all` ya envuelto por `measureAsync`, agregar el comentario `// perf-instrument-ok` en la misma linea o hasta 5 lineas arriba. El check `pre-staging-check.sh` lo respeta. Documenta la decision deliberada de medir en agregado en vez de por-batch. NO usar el marker para evadir instrumentacion sin justificacion. |
+| **`trackFunctionTiming(name, startMs)`** | `functions/src/utils/perfTracker.ts` — captura el tiempo total de una Cloud Function en `config/perfCounters` (array por funcion). Cap `MAX_SAMPLES_PER_FUNCTION = 2000`: cuando se alcanza, se truncan los samples mas viejos in-handler (`existing.slice(-(cap-1))`) en vez de skipear el nuevo, para no perder datos recientes. La doc `dailyMetrics` calcula p50/p95 sobre estos samples y los expone en el dashboard. |
+| **Patron `try/finally` en scheduled** | Cada `onSchedule((opts), async () => { const startMs = performance.now(); try { await withCronHeartbeat(name, run); } finally { await trackFunctionTiming(name, startMs); } })`. Captura timing aun cuando la funcion falla. Heartbeat y timing son ortogonales: heartbeat = "se ejecuto?", timing = "cuanto tardo?". |
+| **Patron `try/catch` en callables** | `await trackFunctionTiming(name, startMs)` antes de cada `return` happy path. En el catch handler: `void trackFunctionTiming(name, startMs); throw err;` — fire-and-forget para no demorar el error response al cliente y no swallow del error original. |
 
 ## TypeScript y build
 
@@ -157,6 +174,7 @@
 | **Split State/Actions contexts** | AuthContext esta internamente splitado en `AuthStateContext` (7 campos de estado: user, displayName, avatarId, isLoading, authError, authMethod, emailVerified) y `AuthActionsContext` (10 funciones mutadoras). `useAuth()` es un wrapper backward-compatible que consume ambos. `useAuthState()` y `useAuthActions()` disponibles para consumidores que solo necesitan uno u otro (reduce re-renders). Migracion gradual — consumidores existentes pueden seguir usando `useAuth()`. |
 | **Dynamic import for heavy deps** | Dependencias pesadas que solo se usan en flujos especificos se cargan con `await import()` dentro del handler. Ejemplos: `browser-image-compression` en `MenuPhotoUpload.handleSubmit`, servicios de Firestore en `SyncEngine`, Sentry SDK. `import type` para tipos (se elimina en build). El `catch` existente del handler cubre errores de carga offline. |
 | **PieChartCard lazy-loaded** (#302) | `PieChartCard` (de `src/components/stats/`) arrastra `recharts` (~150KB). NO se re-exporta desde `stats/index.ts`. Cada consumer lo importa con `React.lazy(() => import('../stats/PieChartCard'))` + `Suspense`. `stats/index.ts` solo exporta `TopList` (MUI puro) y el tipo `PieChartCardProps`. El mismo patron se aplica a paneles admin con recharts: `TrendsPanel`, `FirebaseUsage`, `PerformancePanel`, `FeaturesPanel` lazy-loaded en `AdminLayout.tsx`. |
+| **No barrel para `src/hooks/`** (#330) | A diferencia de `theme/`, `types/`, `constants/`, `services/admin/`, no existe `src/hooks/index.ts`. Cada hook se importa de su archivo (`from '../hooks/useFollow'`). Justificacion: vitest tree-shake mocks por archivo; un `vi.mock('./useFoo')` no debe forzar la carga del modulo de otro hook que solo entra al barrel. No crear el barrel sin discutirlo previamente. |
 
 ## Dark mode
 
@@ -175,7 +193,8 @@
 | **ConnectivityContext** | Provider debajo de ToastProvider. Escucha online/offline events + verifica conectividad real con fetch HEAD. Auto-sync al reconectar. Expone `useConnectivity()` hook directamente desde `context/ConnectivityContext.tsx` (el wrapper `hooks/useConnectivity.ts` fue eliminado). |
 | **IndexedDB nativa** | `offlineQueue.ts` usa IndexedDB API directamente (sin idb/Dexie). Singleton DB, subscribe/notify pattern, indexes por status y createdAt. |
 | **SyncEngine dynamic imports** | `syncEngine.ts` usa `await import()` para cargar servicios bajo demanda, evitando que el import chain tire de firebase.ts en tests. |
-| **Offline action types** | Union discriminada `OfflineActionType` con 15 tipos (original 9 + 6 de listas: `list_create`, `list_update`, `list_toggle_public`, `list_delete`, `list_item_add`, `list_item_remove`). Payloads tipados por tipo de accion en `types/offline.ts`. `OfflineAction` incluye campo opcional `listId` para operaciones de listas (ademas del `businessId` requerido por backward compat). `list_delete` se bloquea offline (cascade delete inseguro) — boton deshabilitado en UI. |
+| **Offline action types** | Union discriminada `OfflineActionType` con 21 tipos. Original 9 + 6 de listas (`list_create`, `list_update`, `list_toggle_public`, `list_delete`, `list_item_add`, `list_item_remove`) + 3 agregados en #323 (`comment_edit`, `comment_delete`, `rating_criteria_upsert`) + 3 agregados en #344 (`custom_tag_create`, `custom_tag_update`, `custom_tag_delete`). Payloads tipados por tipo de accion en `types/offline.ts`. `OfflineAction` incluye campo opcional `listId` para operaciones de listas (ademas del `businessId` requerido por backward compat); el `tagId` client-side de custom tags viaja en el campo genérico `referenceId` (no se infla el shape). `generateCustomTagId()` en `services/tags.ts` es espejo exacto de `generateListId()` (`doc(collection(db, COLLECTIONS.CUSTOM_TAGS)).id`): genera un ID estable client-side para que un `update`/`delete` offline posterior del mismo tag referencie el mismo doc; `createCustomTag(…, tagId?)` hace `setDoc` con ese ID o `addDoc` como fallback online. `list_delete` y operaciones destructivas (delete account, clean anon data) se bloquean offline (cascade/irreversibles inseguros) — boton deshabilitado en UI con tooltip "Requiere conexión"; profile mutations (displayName/avatar) se gatean igual (gate UI + guard `navigator.onLine` en `AuthContext`, sin encolar). Custom tags NO se bloquean: son no-destructivos y replayables, se encolan con toast "Guardado offline". Replay: `syncEngine.executeAction` despacha a un `Record<OfflineActionType, OfflineHandler>` con dynamic `import('./service')` para cold-start (exhaustividad compile-time). #323 cubrió ~17 superficies UI con `withOfflineSupport` o gate offline. |
+| **pendingByUser store (#323)** | Hooks que acumulan escrituras offline antes de batch-flushear (settings, followed tags, interests feed seen) usan `Map<uid, Snapshot>` a nivel modulo + listener `onAuthStateChanged` que limpia el snapshot del UID anterior en logout. Sobrevive al unmount del consumer (e.g. `SettingsPanel` se desmonta antes del reconnect). Helpers `__resetPendingForTests` para isolation. Patron en `useUserSettings.ts`, `useFollowedTags.ts`, `useInterestsFeed.ts`. Followup: extraer a `createPendingByUserStore<T>()` factory unica con un solo listener compartido (deuda en #335). |
 
 ---
 
@@ -188,6 +207,7 @@
 | **businessMap singleton** (#302) | `src/utils/businessMap.ts` — `getBusinessMap()` construye un `Map<string, Business>` desde `allBusinesses` la primera vez y cachea la referencia a nivel modulo. `getBusinessById(id)` wrappea el lookup para conveniencia. Patron para evitar `allBusinesses.find((b) => b.id === id)` (O(n)) y `new Map(allBusinesses.map((b) => [b.id, b]))` construidos localmente en cada componente. `__resetBusinessMap()` exportado solo para tests (`beforeEach`). No usar en codigo de produccion. |
 | **Progressive radius filtering** | `useLocalTrending` filtra trending businesses por proximidad con expansion progresiva de radio (1km → 2km → 5km) para garantizar minimo de resultados. Patron reutilizable para cualquier filtrado geolocal client-side. |
 | **Contrast utils (WCAG 2.0)** | `src/utils/contrast.ts` — `getLuminance`, `getContrastRatio`, `meetsWCAG_AA`, `meetsWCAG_AAA`. Calcula luminancia relativa y ratio de contraste entre dos colores hex. Usado para validar accesibilidad de combinaciones de color. |
+| **DOM meta helper** (#319) | `src/utils/meta.ts` exporta `setMetaTag(property, content)` para crear/actualizar meta tags `property=` (OpenGraph) en `<head>`. Consumido por `useBusinessPageMeta` (`src/hooks/useBusinessPageMeta.ts`) que setea `document.title` + 4 OG tags en la pagina de detalle de comercio y restaura el title al desmontar. Disponible para futuras paginas con OG tags (perfil publico, lista publica, etc.). No maneja tags `name=` (viewport, description) — genericizar cuando haya caso. `content` se escribe via `setAttribute`, pero callers con user-content deben validar upstream (no sanitiza). |
 
 ## Codigo compartido frontend/functions
 
@@ -196,6 +216,47 @@
 | **shared/ folder** | Directorio `shared/` en la raiz del proyecto para codigo que se importa tanto desde `src/` (frontend) como desde `functions/src/` (Cloud Functions). Cada archivo exporta constantes o tipos puros (sin dependencias de framework). Ejemplo: `shared/userOwnedCollections.ts` define `USER_OWNED_COLLECTIONS` registry usado por `deleteUserAccount` (functions) y `deleteAllUserData` helper. Nota: `shared/userOwnedCollections.ts` es la fuente canonica; `functions/src/shared/` contiene una copia para el build de Cloud Functions. |
 | **userOwnedCollections registry** | `shared/userOwnedCollections.ts` — lista centralizada de las 19 colecciones que contienen datos de usuario. Cada entrada tiene `collection`, `field` (campo que contiene el userId) y `type` ('doc-id' o 'field'). Usado por `deleteUserAccount` para iterar y borrar todos los datos. Cross-validated con test que verifica consistencia con `COLLECTIONS` config. |
 
+## Busy-flag pattern (`withBusyFlag`)
+
+Protege operaciones críticas (upload, submit explícito del usuario) de ser interrumpidas por un force-update. El flag vive en `sessionStorage` por tab.
+
+**Cuándo usarlo:**
+
+- Submits explícitos del usuario con botón ("Guardar", "Enviar", "Confirmar")
+- Uploads de archivos (especialmente resumables — usar heartbeat)
+
+**Cuándo NO usarlo:**
+
+- Reads (`getDoc`, `getDocs`, `fetch*`)
+- Writes fire-and-forget (preferences, tracking, `lastSeen`)
+- Toggles optimistas rápidos (`toggleFavorite`, `toggleFollow`) — el cooldown de 5 min es protección suficiente
+- Auto-sync (`syncEngine.processQueue`) — el flag solo refleja operaciones iniciadas por el usuario en esta tab
+
+**Uso básico:**
+
+```ts
+import { withBusyFlag } from '../utils/busyFlag';
+
+await withBusyFlag('submit_kind', async () => {
+  await myService.doSomething();
+});
+```
+
+**Con heartbeat para uploads largos:**
+
+```ts
+await withBusyFlag('file_upload', async (heartbeat) => {
+  await uploadService.upload(file, {
+    onProgress: (p) => {
+      setProgress(p);
+      heartbeat(); // refresca el flag cada vez que hay progreso
+    },
+  });
+});
+```
+
+**Dónde va (capa correcta):** en el callsite del hook/componente, nunca en el service. Si el wrap estuviera en el service, `syncEngine.processQueue` al drenar la cola online prendería el flag durante auto-sync — violación de la invariante.
+
 ## Accesibilidad
 
 | Patron | Descripcion |
@@ -203,6 +264,9 @@
 | **aria-live en contadores dinamicos** | Contadores que cambian en respuesta a acciones del usuario (ej: "X/20 comentarios hoy", like counts) usan `aria-live="polite"` para que screen readers anuncien los cambios sin interrumpir al usuario. |
 | **role=alertdialog** | Dialogs destructivos (`DeleteAccountDialog`, `DiscardDialog`) usan `role="alertdialog"` en vez del default `role="dialog"` para comunicar urgencia a tecnologias asistivas. |
 | **PasswordField helperText nativo** | `PasswordField` usa la prop `helperText` de MUI TextField que genera automaticamente `aria-describedby` vinculando el campo con su texto de ayuda, en vez de texto externo sin vinculacion semantica. |
+| **Focus on user interaction only** (#319) | Cuando un widget tipo tablist requiere mover el foco al cambiar de tab (ej: roving tabindex en `BusinessDetailScreen` chips), llamar `focus()` **dentro del handler** (`handleChipChange`) inmediatamente despues de `setActiveChip`, no en un `useEffect` que observa el indice activo. Un `useEffect` con deps sobre el activeIdx dispara tambien en el mount inicial — roba el foco al Back button e interrumpe al screen reader con el anuncio del primer tab. Patron declarativo: el foco sigue al usuario, no al montaje. |
+| **Reload-on-mount con stable ref** (#326) | Para `useEffect` que debe correr **una sola vez al primer mount** sin reaccionar a cambios futuros de identidad de la callback (ej: `reload` que se recrea por `useCallback` en cada render del padre), usar el patrón ref estable: `const reloadRef = useRef(reload); useEffect(() => { reloadRef.current = reload; }, [reload]); useEffect(() => { reloadRef.current(); }, []);`. Esto cierra el contrato semántico literal y elimina el `eslint-disable react-hooks/exhaustive-deps` (Guard #305 R4). Caso aplicado: `ActivityFeedView`. La alternativa con `didLoad` flag + deps `[reload]` queda descartada porque re-ejecuta el effect ante cambios de identidad aunque el flag prevenga la doble llamada — viola el contrato. |
+| **Box-as-button cuando ListItemButton no aplica** (#326) | Para una card interactiva que **contiene un IconButton secundario** (ej: kebab menu en `FavoritesList`), no se puede usar `<ListItemButton>` ni `<CardActionArea>` porque anidan `<button>` dentro de `<button>` (HTML inválido, validateDOMNesting warning). En ese caso, mantener `<Box>` y agregar el a11y triplet completo: `role="button"`, `tabIndex={0}`, `aria-label="..."`, `onKeyDown` con Enter/Space → handler. El IconButton interior debe hacer `event.stopPropagation()` en su handler para no propagar el click al wrapper. Cuando NO hay IconButton interior (ej: `FollowedList`), preferir `<ListItemButton>` dentro de `<List>` (semántica MUI nativa). Criterio determinista: presencia/ausencia del IconButton interior decide el patrón. |
 
 ## Component decomposition (#195)
 
@@ -210,6 +274,7 @@
 |--------|-------------|
 | **Hooks extraidos de componentes** | Logica compleja extraida a hooks dedicados para reducir tamano de componentes y mejorar testability. 4 hooks activos: `useCommentEdit` (edit state + handlers), `useVerificationCooldown` (60s cooldown timer), `useCommentsListFilters` (filtros de CommentsList), `useVirtualizedList` (virtualizacion condicional). Nota: `useOptimisticLikes`, `useCommentSort`, `useCommentThreads` y `useQuestionThreads` fueron eliminados en #232 — su logica fue inlined en los componentes consumidores. |
 | **UI components extraidos** | `AccountSection` extraido de SettingsPanel (encapsula logica de cuenta). Nota: `QuestionInput` fue eliminado en #232 — logica integrada directamente en BusinessQuestions. |
+| **No noop props** (#319) | Prop signal (callback) no debe propagarse a traves de wrappers intermedios si nadie arriba la consume. Caso resuelto: `onDirtyChange` se declaraba en `OpinionesTab.Props` y se pasaba `() => {}` desde `BusinessDetailScreen` — se elimino el acoplamiento. `BusinessComments` conserva `onDirtyChange?` opcional para consumidores que si lo usen. Regla: si el callback upstream es `() => {}`, remover la prop en la cadena intermedia. |
 
 ## Integridad de datos
 

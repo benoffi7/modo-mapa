@@ -84,3 +84,16 @@ describe('MenuPhotoViewer – handleReport', () => {
     expect(screen.getByRole('button', { name: /reportar/i })).not.toBeDisabled();
   });
 });
+
+describe('MenuPhotoViewer – img performance attrs', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders <img> with loading="lazy" and decoding="async"', () => {
+    render(<MenuPhotoViewer {...defaultProps} />);
+    const img = screen.getByRole('img', { name: /foto del menú/i });
+    expect(img.getAttribute('loading')).toBe('lazy');
+    expect(img.getAttribute('decoding')).toBe('async');
+  });
+});

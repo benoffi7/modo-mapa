@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import CommentRow from './CommentRow';
 import { BEST_ANSWER_MIN_LIKES } from '../../constants/questions';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_DAY } from '../../constants/validation';
 import type { Comment } from '../../types';
 
@@ -127,7 +128,7 @@ export default memo(function QuestionAnswerThread({
                         size="small"
                         color="success"
                         variant="outlined"
-                        sx={{ height: 20, fontSize: '0.65rem', mb: 0.5 }}
+                        sx={{ ...CHIP_SMALL_SX, mb: 0.5 }}
                       />
                     )}
                     <CommentRow

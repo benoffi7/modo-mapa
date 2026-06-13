@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('../hooks/useBusinesses', () => ({
   allBusinesses: [
@@ -15,6 +15,12 @@ vi.mock('../constants/tags', () => ({
 }));
 
 import { getBusinessName, getTagLabel } from './businessHelpers';
+import { __resetBusinessMap } from './businessMap';
+
+beforeEach(() => {
+  // Reset the singleton so it rebuilds from the mocked allBusinesses
+  __resetBusinessMap();
+});
 
 describe('getBusinessName', () => {
   it('returns name for existing business', () => {

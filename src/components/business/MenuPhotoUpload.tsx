@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, LinearProgress } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, LinearProgress, Alert } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { uploadMenuPhoto } from '../../services/menuPhotos';
 import { logger } from '../../utils/logger';
+import { withBusyFlag } from '../../utils/busyFlag';
+import { MSG_OFFLINE } from '../../constants/messages';
 
 interface Props {
   open: boolean;
@@ -43,14 +45,22 @@ export default function MenuPhotoUpload({ open, onClose, onSuccess }: Props) {
     abortRef.current = abort;
 
     try {
-      const { default: imageCompression } = await import('browser-image-compression');
-      const compressed = await imageCompression(selectedFile, {
-        maxSizeMB: 2,
-        maxWidthOrHeight: 2048,
-        useWebWorker: false,
-      });
+      await withBusyFlag('menu_photo_upload', async (heartbeat) => {
+        const { default: imageCompression } = await import('browser-image-compression');
+        const compressed = await imageCompression(selectedFile, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 2048,
+          useWebWorker: false,
+        });
 
-      await uploadMenuPhoto(user.uid, businessId, compressed, setProgress, abort.signal);
+        await uploadMenuPhoto(
+          user.uid,
+          businessId,
+          compressed,
+          (p) => { setProgress(p); heartbeat(); },
+          abort.signal,
+        );
+      });
       onSuccess();
       handleReset();
     } catch (err) {
@@ -84,6 +94,11 @@ export default function MenuPhotoUpload({ open, onClose, onSuccess }: Props) {
     <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
       <DialogTitle>Subir foto del menú</DialogTitle>
       <DialogContent>
+        {isOffline && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {MSG_OFFLINE.uploadPhotoOffline}
+          </Alert>
+        )}
         {!preview && (
           <Box
             role="button"

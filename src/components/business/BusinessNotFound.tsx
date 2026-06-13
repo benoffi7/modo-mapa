@@ -1,15 +1,16 @@
 import { Box, Typography, Button } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNavigate } from 'react-router-dom';
+import { MSG_BUSINESS_DETAIL } from '../../constants/messages/businessDetail';
 
 interface Props {
   reason: 'invalid_id' | 'not_found' | 'offline_no_cache';
 }
 
 const MESSAGES: Record<Props['reason'], string> = {
-  invalid_id: 'El link parece estar roto.',
-  not_found: 'No encontramos este comercio.',
-  offline_no_cache: 'Necesitás conexión para ver este comercio.',
+  invalid_id: MSG_BUSINESS_DETAIL.invalidId,
+  not_found: MSG_BUSINESS_DETAIL.notFound,
+  offline_no_cache: MSG_BUSINESS_DETAIL.offlineNoCache,
 };
 
 export default function BusinessNotFound({ reason }: Props) {
@@ -32,7 +33,7 @@ export default function BusinessNotFound({ reason }: Props) {
         {MESSAGES[reason]}
       </Typography>
       <Button variant="outlined" onClick={() => navigate('/')}>
-        Volver al mapa
+        {MSG_BUSINESS_DETAIL.backToMap}
       </Button>
     </Box>
   );
