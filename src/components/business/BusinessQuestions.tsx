@@ -17,6 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useToast } from '../../context/ToastContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
+import { CHIP_SMALL_SX } from '../../theme/cards';
 import { createQuestion } from '../../services/comments';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { useCommentListBase } from '../../hooks/useCommentListBase';
@@ -261,7 +262,7 @@ export default memo(function BusinessQuestions({ comments, userCommentLikes, isL
                                 size="small"
                                 color="success"
                                 variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem', mb: 0.5 }}
+                                sx={{ ...CHIP_SMALL_SX, mb: 0.5 }}
                               />
                             )}
                             <CommentRow

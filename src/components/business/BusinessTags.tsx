@@ -220,7 +220,7 @@ export default memo(function BusinessTags({ seedTags, userTags, customTags, isLo
                 disabled={pendingTagId === tag.id}
                 variant={isSeed || userAdded ? 'filled' : 'outlined'}
                 color={userAdded ? 'primary' : 'default'}
-                sx={{ opacity: isVisible ? 1 : 0.6, borderRadius: 1 }}
+                sx={{ opacity: isVisible ? 1 : 0.6, borderRadius: 1, minHeight: 44 }}
               />
               {user && (
                 <Tooltip title={tagFollowed ? 'Dejar de seguir tag' : 'Seguir tag'}>
@@ -249,7 +249,7 @@ export default memo(function BusinessTags({ seedTags, userTags, customTags, isLo
             onClick={(e) => handleCustomTagClick(e, tag)}
             variant="outlined"
             color="secondary"
-            sx={{ borderRadius: 1 }}
+            sx={{ borderRadius: 1, minHeight: 44 }}
           />
         ))}
 
@@ -260,7 +260,7 @@ export default memo(function BusinessTags({ seedTags, userTags, customTags, isLo
             icon={<AddIcon fontSize="small" />}
             onClick={handleOpenCreateDialog}
             variant="outlined"
-            sx={{ borderStyle: 'dashed', borderRadius: 1 }}
+            sx={{ borderStyle: 'dashed', borderRadius: 1, minHeight: 44 }}
           />
         )}
       </Box>

@@ -44,7 +44,7 @@
     "R1-typography-props": 0,
     "R3-tabbar-mui-selector": 0,
     "R4-eslint-disable-react-hooks": 8,
-    "R5-chip-height-adhoc": 6,
+    "R5-chip-height-adhoc": 0,
     "R9-fab-safe-area": 4,
     "R7-box-onclick-without-a11y": 7,
     "R8-chip-small-sx-exists": 0
@@ -85,6 +85,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   "_total": 198
 =======
   "_total": 200
@@ -98,4 +99,7 @@
 =======
   "_total": 199
 >>>>>>> feat/348-admin-ip-rate-limits-inspector
+=======
+  "_total": 195
+>>>>>>> fix/345-chips-touch-targets
 }
