@@ -90,7 +90,7 @@ En desarrollo se usa un debug token automático (`FIREBASE_APPCHECK_DEBUG_TOKEN 
 | `comments` | auth | owner, `keys().hasOnly()`, text 1-500 | owner, `affectedKeys().hasOnly(['text','updatedAt'])` | owner |
 | `commentLikes` | auth | owner, `keys().hasOnly()` | — | owner |
 | `userTags` | auth | owner, `keys().hasOnly()` | — | owner |
-| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner |
+| `customTags` | auth | owner, `keys().hasOnly()`, label 1-30 | owner, `affectedKeys().hasOnly(['label'])` | owner | Rules test cubierto en `tests/rules/customTags.rules.test.ts` (#344). Doc ID client-side (`setDoc`) no abre vector overwrite: el create exige `userId == auth.uid` y update/delete `resource.data.userId == auth.uid` (lo validado son los campos, no el ID) |
 | `feedback` | owner + admin | owner, `keys().hasOnly()`, message 1-1000, rating 1-5 int (optional), mediaUrl Firebase Storage only, mediaType image/pdf | admin (respond: status/adminResponse/respondedAt/respondedBy) + owner (viewedByUser, mediaUrl/mediaType with Storage URL validation) | owner |
 | `menuPhotos` | auth | owner, `keys().hasOnly()`, pending only, storagePath regex validated (`^menus/{uid}/biz_NNN/...`), thumbnailPath must be empty | Functions only | Functions only | Rate limit 10/día |
 | `priceLevels` | auth | owner, `keys().hasOnly()`, level 1-3 | owner, `affectedKeys().hasOnly(['level','updatedAt'])` | owner |

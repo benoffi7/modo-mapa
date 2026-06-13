@@ -49,22 +49,41 @@ export async function removeUserTag(
 
 // ── Custom Tags ────────────────────────────────────────────────────────
 
+/**
+ * Genera un ID de custom tag compatible con Firestore client-side (sin red).
+ * Espejo de `generateListId()` en `sharedLists.ts` (#304/#344). Permite encolar
+ * un `custom_tag_create` offline con un ID estable que un `update`/`delete`
+ * posterior del mismo tag puede referenciar.
+ */
+export function generateCustomTagId(): string {
+  return doc(collection(db, COLLECTIONS.CUSTOM_TAGS)).id;
+}
+
 export async function createCustomTag(
   userId: string,
   businessId: string,
   label: string,
+  tagId?: string,
 ): Promise<void> {
   const trimmed = label.trim();
   if (!trimmed || trimmed.length > MAX_CUSTOM_TAG_LENGTH) {
     throw new Error('Custom tag label must be 1-30 characters');
   }
 
-  await addDoc(collection(db, COLLECTIONS.CUSTOM_TAGS), {
+  const docData = {
     userId,
     businessId,
-    label,
+    label: trimmed,
     createdAt: serverTimestamp(),
-  });
+  };
+  if (tagId) {
+    // Client-generated ID (offline-first flow). guard:exempt — this setDoc IS the
+    // offline-first replay path: callers wrap with withOfflineSupport and the
+    // custom_tag_create handler replays it (#344), mirror of createList(listId?).
+    await setDoc(doc(db, COLLECTIONS.CUSTOM_TAGS, tagId), docData); // guard:exempt
+  } else {
+    await addDoc(collection(db, COLLECTIONS.CUSTOM_TAGS), docData);
+  }
   trackEvent('custom_tag_create', { business_id: businessId });
 }
 

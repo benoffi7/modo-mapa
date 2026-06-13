@@ -18,7 +18,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { useBusinessScope } from '../../context/BusinessScopeContext';
 import { useFollowedTags } from '../../hooks/useFollowedTags';
-import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag } from '../../services/tags';
+import { addUserTag, removeUserTag, createCustomTag, updateCustomTag, deleteCustomTag, generateCustomTagId } from '../../services/tags';
 import { withOfflineSupport } from '../../services/offlineInterceptor';
 import { PREDEFINED_TAGS } from '../../constants/tags';
 import { MAX_CUSTOM_TAGS_PER_BUSINESS } from '../../constants/validation';
@@ -135,14 +135,33 @@ export default memo(function BusinessTags({ seedTags, userTags, customTags, isLo
     if (!label || label.length > 30) return;
     if (!editingTag && customTags.length >= MAX_CUSTOM_TAGS_PER_BUSINESS) return;
 
-    if (editingTag) {
-      await updateCustomTag(editingTag.id, label);
-    } else {
-      await createCustomTag(user.uid, businessId, label);
+    try {
+      if (editingTag) {
+        await withOfflineSupport(
+          isOffline, 'custom_tag_update',
+          { userId: user.uid, businessId, businessName, referenceId: editingTag.id },
+          { label },
+          () => updateCustomTag(editingTag.id, label),
+          toast,
+        );
+      } else {
+        // Generate the client-side id BEFORE enqueueing so a later offline
+        // update/delete of the same tag references the same doc (stable id).
+        const tagId = generateCustomTagId();
+        await withOfflineSupport(
+          isOffline, 'custom_tag_create',
+          { userId: user.uid, businessId, businessName, referenceId: tagId },
+          { label },
+          () => createCustomTag(user.uid, businessId, label, tagId),
+          toast,
+        );
+      }
+      handleCloseDialog();
+      onTagsChange();
+    } catch (err) {
+      logger.error('Error saving custom tag:', err);
     }
-    handleCloseDialog();
-    onTagsChange();
-  }, [user, dialogValue, editingTag, customTags.length, businessId, onTagsChange, handleCloseDialog]);
+  }, [user, dialogValue, editingTag, customTags.length, businessId, businessName, isOffline, toast, onTagsChange, handleCloseDialog]);
 
   const handleOpenDeleteConfirm = () => {
     setMenuAnchor(null);
@@ -150,12 +169,22 @@ export default memo(function BusinessTags({ seedTags, userTags, customTags, isLo
   };
 
   const handleDelete = useCallback(async () => {
-    if (!menuTag) return;
-    await deleteCustomTag(menuTag.id);
-    setConfirmDeleteOpen(false);
-    setMenuTag(null);
-    onTagsChange();
-  }, [menuTag, onTagsChange]);
+    if (!menuTag || !user) return;
+    try {
+      await withOfflineSupport(
+        isOffline, 'custom_tag_delete',
+        { userId: user.uid, businessId, businessName, referenceId: menuTag.id },
+        { _type: 'custom_tag_delete' },
+        () => deleteCustomTag(menuTag.id),
+        toast,
+      );
+      setConfirmDeleteOpen(false);
+      setMenuTag(null);
+      onTagsChange();
+    } catch (err) {
+      logger.error('Error deleting custom tag:', err);
+    }
+  }, [menuTag, user, businessId, businessName, isOffline, toast, onTagsChange]);
 
   const handleCustomTagClick = (event: React.MouseEvent<HTMLElement>, tag: CustomTag) => {
     setMenuAnchor(event.currentTarget);

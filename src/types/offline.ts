@@ -27,7 +27,11 @@ export type OfflineActionType =
   // NEW (#323)
   | 'comment_edit'
   | 'comment_delete'
-  | 'rating_criteria_upsert';
+  | 'rating_criteria_upsert'
+  // Custom tags domain (#344)
+  | 'custom_tag_create'
+  | 'custom_tag_update'
+  | 'custom_tag_delete';
 
 /** Status de una acción en cola */
 export type OfflineActionStatus = 'pending' | 'syncing' | 'failed';
@@ -73,6 +77,10 @@ export type OfflineActionPayload =
   | CommentEditPayload
   | CommentDeletePayload
   | RatingCriteriaUpsertPayload
+  // Custom tags domain (#344)
+  | CustomTagCreatePayload
+  | CustomTagUpdatePayload
+  | CustomTagDeletePayload
   | EmptyPayload;
 
 export interface RatingUpsertPayload {
@@ -175,6 +183,25 @@ export interface CommentDeletePayload {
 export interface RatingCriteriaUpsertPayload {
   criterionId: import('./business').RatingCriterionId;
   value: number;
+}
+
+/** Custom tag domain payloads (#344).
+ * El `tagId` client-side NO va en el payload: viaja en el campo generico
+ * `OfflineAction.referenceId` para los tres tipos (mismo criterio que
+ * `list_*` con `listId`). Esto mantiene el create minimal y deja que
+ * create/update/delete compartan la misma referencia de doc. */
+export interface CustomTagCreatePayload {
+  label: string;
+}
+
+export interface CustomTagUpdatePayload {
+  label: string;
+}
+
+/** Delete de custom tag ya encolado/sincronizado. Replay → deleteCustomTag(referenceId).
+ * Marker payload alineado con `RatingDeletePayload`/`ListDeletePayload`. (#344) */
+export interface CustomTagDeletePayload {
+  _type: 'custom_tag_delete';
 }
 
 /** For action types that need no extra data beyond userId/businessId on the action */

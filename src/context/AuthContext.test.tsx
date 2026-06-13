@@ -638,6 +638,39 @@ describe('AuthContext', () => {
     });
   });
 
+  describe('profile mutations offline guard (#344)', () => {
+    const setOnline = (value: boolean) => {
+      Object.defineProperty(navigator, 'onLine', { value, configurable: true });
+    };
+
+    afterEach(() => setOnline(true));
+
+    it('setDisplayName does not write when navigator.onLine is false', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { authStateCallback?.(mockUser); });
+
+      setOnline(false);
+      await act(async () => {
+        await result.current.setDisplayName('Maria');
+      });
+
+      expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
+    });
+
+    it('setAvatarId does not write when navigator.onLine is false', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { authStateCallback?.(mockUser); });
+
+      setOnline(false);
+      await act(async () => {
+        await result.current.setAvatarId('avatar_1');
+      });
+
+      expect(mockUpdateDoc).not.toHaveBeenCalled();
+    });
+  });
+
   describe('setDisplayName - doc existence branches', () => {
     it('calls updateDoc when user doc exists', async () => {
       mockGetDoc

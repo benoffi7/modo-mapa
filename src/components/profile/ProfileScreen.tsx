@@ -135,6 +135,7 @@ export default function ProfileScreen() {
             onClose={() => setAvatarPickerOpen(false)}
             onSelect={(a) => setAvatarId(a.id)}
             selectedId={avatarId ?? undefined}
+            isOffline={isOffline}
           />
         )}
       </Suspense>

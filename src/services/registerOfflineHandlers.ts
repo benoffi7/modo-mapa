@@ -17,6 +17,8 @@ import type {
   CommentEditPayload,
   CommentDeletePayload,
   RatingCriteriaUpsertPayload,
+  CustomTagCreatePayload,
+  CustomTagUpdatePayload,
 } from '../types/offline';
 import { registerOfflineHandler } from './offlineHandlerRegistry';
 import type { OfflineHandler } from './offlineHandlerRegistry';
@@ -167,6 +169,22 @@ const OFFLINE_HANDLERS: Record<OfflineActionType, OfflineHandler> = {
     const { criterionId, value } = payload as RatingCriteriaUpsertPayload;
     const { upsertCriteriaRating } = await import('./ratings');
     await upsertCriteriaRating(userId, businessId, { [criterionId]: value });
+  },
+  custom_tag_create: async ({ userId, businessId, referenceId, payload }: OfflineAction) => {
+    const { label } = payload as CustomTagCreatePayload;
+    const { createCustomTag } = await import('./tags');
+    await createCustomTag(userId, businessId, label, referenceId);
+  },
+  custom_tag_update: async ({ referenceId, payload }: OfflineAction) => {
+    const { label } = payload as CustomTagUpdatePayload;
+    const { updateCustomTag } = await import('./tags');
+    if (!referenceId) throw new Error('custom_tag_update requires referenceId (tagId)');
+    await updateCustomTag(referenceId, label);
+  },
+  custom_tag_delete: async ({ referenceId }: OfflineAction) => {
+    const { deleteCustomTag } = await import('./tags');
+    if (!referenceId) throw new Error('custom_tag_delete requires referenceId (tagId)');
+    await deleteCustomTag(referenceId);
   },
 };
 

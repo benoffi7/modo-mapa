@@ -125,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setDisplayName = useCallback(async (name: string) => {
     if (!user) return;
+    // Defense-in-depth (#344): profile mutations are gated in the UI; this guard
+    // covers callers that bypass the gated UI. No enqueue (decision S2 opción a).
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     const trimmed = name.trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
     if (!trimmed) return;
     await updateUserDisplayName(user.uid, trimmed);
@@ -133,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setAvatarId = useCallback(async (id: string) => {
     if (!user) return;
+    // Defense-in-depth (#344): gated in UI; guard direct callers. No enqueue.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     if (!getAvatarById(id)) return;
     const prev = avatarId;
     setAvatarIdState(id);
