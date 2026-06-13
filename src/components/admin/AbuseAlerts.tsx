@@ -16,6 +16,7 @@ import AlertsFilters from './alerts/AlertsFilters';
 import AlertsTable from './alerts/AlertsTable';
 import KpiCard from './alerts/KpiCard';
 import RateLimitsSection from './alerts/RateLimitsSection';
+import IpRateLimitsSection from './alerts/IpRateLimitsSection';
 import ReincidentesView from './alerts/ReincidentesView';
 import {
   computeKpis, getDateThreshold, exportToCsv, getSeverity,
@@ -29,8 +30,11 @@ interface AbuseAlertsProps {
 }
 
 export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
-  const [innerTab, setInnerTab] = useState<'alerts' | 'reincidentes' | 'rateLimits'>('alerts');
-  const { logs, loading, error, newCount } = useAbuseLogsRealtime(200, innerTab !== 'rateLimits');
+  const [innerTab, setInnerTab] = useState<'alerts' | 'reincidentes' | 'rateLimits' | 'ipRateLimits'>('alerts');
+  const { logs, loading, error, newCount } = useAbuseLogsRealtime(
+    200,
+    innerTab !== 'rateLimits' && innerTab !== 'ipRateLimits',
+  );
 
   const [typeFilter, setTypeFilter] = useState<AbuseType | 'all'>('all');
   const [collectionFilter, setCollectionFilter] = useState('');
@@ -154,7 +158,9 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
     exportToCsv(filtered, `alertas-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`);
   };
 
-  const isRateLimitsTab = innerTab === 'rateLimits';
+  // Subtabs backed by callables (not the abuseLogs realtime feed): suppress
+  // the abuseLogs loading/error state and the KPI cards.
+  const isRateLimitsTab = innerTab === 'rateLimits' || innerTab === 'ipRateLimits';
 
   return (
     <AdminPanelWrapper
@@ -171,7 +177,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
         </Box>
       )}
 
-      <Tabs value={innerTab} onChange={(_, v: 'alerts' | 'reincidentes' | 'rateLimits') => setInnerTab(v)} sx={{ mb: 2 }}>
+      <Tabs value={innerTab} onChange={(_, v: 'alerts' | 'reincidentes' | 'rateLimits' | 'ipRateLimits') => setInnerTab(v)} sx={{ mb: 2 }}>
         <Tab value="alerts" label="Alertas" />
         <Tab value="reincidentes" label={
           <Badge badgeContent={reincidentesCount} color="error" max={99}>
@@ -179,6 +185,7 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
           </Badge>
         } />
         <Tab value="rateLimits" label="Rate Limits" />
+        <Tab value="ipRateLimits" label="Rate Limits IP" />
       </Tabs>
 
       {innerTab === 'alerts' && (
@@ -245,6 +252,10 @@ export default function AbuseAlerts({ onPendingCount }: AbuseAlertsProps) {
 
       {innerTab === 'rateLimits' && (
         <RateLimitsSection />
+      )}
+
+      {innerTab === 'ipRateLimits' && (
+        <IpRateLimitsSection />
       )}
     </AdminPanelWrapper>
   );

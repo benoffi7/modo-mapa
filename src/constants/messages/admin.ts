@@ -23,4 +23,8 @@ export const MSG_ADMIN = {
   listItemDeleteSuccess: 'Eliminado correctamente',
   listItemDeleteError: 'No se pudo eliminar el item. Verificá tu sesión admin.',
   listItemAlreadyDeleted: 'Item ya eliminado por otro admin. Refrescá la lista.',
+  // #348 — IP rate limits inspector
+  ipRateLimitResetSuccess: 'Reseteado correctamente',
+  ipRateLimitResetError: 'No se pudo resetear. Verificá tu sesión admin.',
+  ipRateLimitAlreadyReset: 'Esta entrada ya fue reseteada por otro admin. Refrescamos la tabla.',
 } as const;

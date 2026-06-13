@@ -224,3 +224,18 @@ export interface AdminRateLimitItem {
   /** `true` when `Date.now() < resetAt` at the moment the callable resolved */
   windowActive: boolean;
 }
+
+/**
+ * Frontend mirror of the backend `AdminIpRateLimitItem` payload returned by the
+ * `adminListIpRateLimits` callable (`functions/src/admin/ipRateLimits.ts`).
+ * Shape MUST stay in sync with the server-side interface.
+ */
+export interface AdminIpRateLimitItem {
+  docId: string;
+  ipHash: string;
+  action: string;
+  date: string; // 'YYYY-MM-DD'
+  count: number;
+  /** `true` when `date === todayUTC` at the moment the callable resolved */
+  windowActive: boolean;
+}

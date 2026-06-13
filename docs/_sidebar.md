@@ -31,6 +31,9 @@
   - [#327 Admin Metrics — orphaned events + _rateLimits/listItems UI gaps](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/prd.md)
     - [Specs](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/specs.md)
     - [Plan](/feat/admin/327-admin-metrics-orphaned-events-rate-limits-list-items/plan.md)
+  - [#348 admin-ip-rate-limits-inspector](/feat/admin/admin-ip-rate-limits-inspector/prd.md)
+    - [Specs](/feat/admin/admin-ip-rate-limits-inspector/specs.md)
+    - [Plan](/feat/admin/admin-ip-rate-limits-inspector/plan.md)
 
 - **Content**
   - [Conectar IconPicker Listas](/feat/content/conectar-iconpicker-listas/prd.md)

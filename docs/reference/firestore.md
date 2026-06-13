@@ -31,7 +31,7 @@
 | `specials` | auto-generated | title, subtitle, icon, type ('featured_list'/'trending'/'custom_link'), referenceId, order, active | Read auth; write admin only |
 | `achievements` | auto-generated | label, description, icon, condition (map: metric+threshold), order, active | Read auth; write admin only |
 | `_cronRuns` | `{cronName}` | lastRunAt (timestamp), result ('success'/'error'), detail? (string), durationMs? (number) | Admin read; write false (Cloud Functions write via admin SDK). Heartbeat de ejecucion de scheduled functions. |
-| `_ipRateLimits` | variable | (interno — rate limits por IP) | No client access; Functions write (admin SDK) |
+| `_ipRateLimits` | `{ipHash}_{action}_{date}` (ej. `a1b2c3d4e5f60718_anon_create_2026-06-10`) | ipHash (16 hex SHA-256, IPv6 bucketeado /64), action, date (`YYYY-MM-DD`), count, createdAt | No client access (rules `allow read, write: if false`); Functions write (admin SDK) vía `ipRateLimiter.ts`. **Lectura admin (#348)**: 100% vía callable `adminListIpRateLimits` (Admin SDK, hash-only); reset vía `adminResetIpRateLimit`. Nunca se almacena ni expone IP raw |
 
 ### `config/appVersion` — campos
 

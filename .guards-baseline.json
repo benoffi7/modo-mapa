@@ -70,8 +70,8 @@
   },
   "310": {
     "R3-orphan-admin-services": 4,
-    "R4-ipRateLimits-no-admin-inspector": 1,
-    "R5-abuse-type-never-emitted": 1
+    "R4-ipRateLimits-no-admin-inspector": 0,
+    "R5-abuse-type-never-emitted": 0
   },
   "311": {
     "R1-helpgroups-coverage": 0,
@@ -81,5 +81,5 @@
     "R1-authcontext-loading-finally": 1,
     "R2-updateUserAvatar-no-fallback": 1
   },
-  "_total": 201
+  "_total": 199
 }
