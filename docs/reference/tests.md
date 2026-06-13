@@ -135,7 +135,10 @@ aparecia en versiones anteriores de este doc.
 | `emailAuth.ts` | `emailAuth.test.ts` | 14 | 100% |
 | `comments.ts` | `comments.test.ts` | 16 | 100% |
 | `favorites.ts` | `favorites.test.ts` | 7 | 100% |
-| `tags.ts` | `tags.test.ts` | 8 | 100% |
+| `tags.ts` | `__tests__/tags.test.ts` | 11 | custom tags: `generateCustomTagId`, `createCustomTag(tagId?)` setDoc/addDoc + trim, update/delete (#344) |
+| `registerOfflineHandlers.ts` | `__tests__/registerOfflineHandlers.test.ts` | 6 | handlers `custom_tag_*` (referenceId=tagId, throw si falta referenceId) (#344) |
+| `offlineInterceptor.ts` | `__tests__/offlineInterceptor.test.ts` | 4 | `withOfflineSupport` encola `custom_tag_*` con `referenceId` + dispara `EVT_OFFLINE_ACTION_QUEUED` (#344) |
+| `syncEngine.ts` | `__tests__/syncEngine.test.ts` | 3 | replay FIFO create→update mismo tagId; delete de tag inexistente no reintenta (#344) |
 | `priceLevels.ts` | `priceLevels.test.ts` | 9 | 100% |
 | `rankings.ts` | `rankings.test.ts` | 26 | 98% stmts, 89% branches |
 | `queryCache.ts` | `queryCache.test.ts` | 7 | 100% |
@@ -182,7 +185,7 @@ aparecia en versiones anteriores de este doc.
 
 | Archivo | Test | Cases | Cobertura |
 |---------|------|-------|-----------|
-| `AuthContext.tsx` | `AuthContext.test.tsx` | 35 | 77% stmts, 81% branches |
+| `AuthContext.tsx` | `AuthContext.test.tsx` | 37 | 77% stmts, 81% branches. +2 guard offline `navigator.onLine` en `setDisplayName`/`setAvatarId` (#344) |
 | `ColorModeContext.tsx` | — | — | ⏳ (planned in #231) |
 | `NotificationsContext.tsx` | — | — | ⏳ |
 | `ToastContext.tsx` | — | — | ⏳ |
@@ -196,6 +199,9 @@ aparecia en versiones anteriores de este doc.
 | `ErrorBoundary.tsx` | `ErrorBoundary.test.tsx` | 3 | 100% |
 | `OfflineIndicator.tsx` | `OfflineIndicator.test.tsx` | 5 | 100% |
 | `EditorsDialog.tsx` | `EditorsDialog.test.tsx` | 2 | 100% (UID leak + secondary text) |
+| `BusinessTags.tsx` | `business/__tests__/BusinessTags.test.tsx` | 4 | custom tag create/update/delete online (service) vs offline (enqueue + toast); tagId estable (#344) |
+| `EditDisplayNameDialog.tsx` | `profile/__tests__/EditDisplayNameDialog.test.tsx` | 2 | botón Guardar disabled + title "Requiere conexión" offline; no llama setDisplayName (#344) |
+| `AvatarPicker.tsx` | `profile/__tests__/AvatarPicker.test.tsx` | 2 | ButtonBase disabled + aria-disabled offline; onSelect no dispara offline (#344) |
 | otros (87 componentes) | — | — | 🔻 Mayoria visual |
 
 ### Cloud Functions — Utils (`functions/src/utils/`)
@@ -544,7 +550,7 @@ marcar `[x] [x]`.
 - [ ] [ ] `sharedLists` — pendiente. Invariante: per-item validation `followedTags`. Origen: #289 H-03
 - [ ] [ ] `listItems` — pendiente. Invariante: per-item `businessId` validation. Origen: #289 M-01
 - [ ] [ ] `follows` — pendiente. Invariante: `followedId.size() <= 128`. Origen: #289 M-02
-- [ ] [ ] `customTags` — pendiente.
+- [x] [x] `customTags` — cubierto en `tests/rules/customTags.rules.test.ts` (#344): allow create con ID client-side + label válido + owner; deny label > 30 / vacío / campo extra / userId ajeno / businessId inválido; allow+deny update (solo `label`, ownership); allow+deny delete (ownership); delete de doc inexistente DENY por rule (en prod el SDK no lanza → replay resuelve sin reintentar).
 - [ ] [ ] `rateLimits` — pendiente. Invariante: server-only, ningun cliente puede tocarlo.
 - [ ] [ ] `users/{uid}/onboarding` — pendiente. Subcoleccion de onboarding state.
 - [ ] [ ] `featuredLists` — pendiente. Read public, write admin-only.
