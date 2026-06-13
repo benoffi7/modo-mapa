@@ -149,6 +149,9 @@ const GA4_EVENT_NAMES = [
   'admin_rate_limit_reset',
   'admin_list_item_deleted',
   'admin_rate_limit_viewed',
+  // #348 — IP rate limits inspector
+  'admin_ip_rate_limit_viewed',
+  'admin_ip_rate_limit_reset',
 ] as const;
 
 const CACHE_TTL_MS = 3_600_000; // 1 hour

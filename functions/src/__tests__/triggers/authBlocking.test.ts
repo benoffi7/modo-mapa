@@ -120,7 +120,7 @@ describe('onBeforeUserCreated', () => {
     expect(mockUserSettingsSet).not.toHaveBeenCalled();
   });
 
-  it('blocks anonymous accounts when IP rate limit exceeded', async () => {
+  it('blocks anonymous accounts when IP rate limit exceeded (#348: emits ip_rate_limit)', async () => {
     setupDb();
     mockCheckIpRateLimit.mockResolvedValueOnce(true);
 
@@ -132,10 +132,37 @@ describe('onBeforeUserCreated', () => {
 
     expect(mockLogAbuse).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ severity: 'high', type: 'anon_flood' }),
+      expect.objectContaining({
+        severity: 'high',
+        type: 'ip_rate_limit',
+        collection: '_ipRateLimits',
+      }),
     );
     // seed should NOT happen when we throw
     expect(mockUserSettingsSet).not.toHaveBeenCalled();
+  });
+
+  it('threshold + block coexist: anon_flood (medium) at threshold, ip_rate_limit (high) on block', async () => {
+    setupDb();
+    mockGetIpActionCount.mockResolvedValueOnce(6); // over threshold (5), under max (10)
+    mockCheckIpRateLimit.mockResolvedValueOnce(true); // and then blocked
+
+    await expect(handler.current?.({
+      ipAddress: '10.0.0.1',
+      data: { uid: 'anon7' },
+      additionalUserInfo: { providerId: 'anonymous' },
+    })).rejects.toThrow('Too many accounts created from this network.');
+
+    // Threshold alert still emits anon_flood / medium
+    expect(mockLogAbuse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: 'anon_flood', severity: 'medium' }),
+    );
+    // Block emits ip_rate_limit / high
+    expect(mockLogAbuse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: 'ip_rate_limit', severity: 'high' }),
+    );
   });
 
   it('logs medium-severity warning at threshold but allows creation', async () => {

@@ -63,9 +63,13 @@ export const onBeforeUserCreated = beforeUserCreated(async (event) => {
     );
 
     if (exceeded) {
+      // #348: an IP block is the action taken (distinct from `anon_flood`,
+      // which is the threshold-detected alert). Keep the explicit
+      // `severity: 'high'` (deliberate override of SEVERITY_MAP.ip_rate_limit).
       await logAbuse(db, {
         userId: hashIp(ip),
-        type: 'anon_flood',
+        type: 'ip_rate_limit',
+        collection: '_ipRateLimits',
         detail: `IP exceeded ${MAX_ANON_CREATES_PER_IP_PER_DAY} anonymous accounts/day — blocked`,
         severity: 'high',
       });

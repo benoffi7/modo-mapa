@@ -215,6 +215,8 @@ invariantes pendientes en [`docs/reference/tests.md`](tests.md#firestore-rules-t
 | `adminListRateLimits` (#310/#327) | 30/día por admin | `admin_rate_limits_{uid}` |
 | `adminResetRateLimit` (#310/#327) | 20/día por admin | `admin_rate_limit_reset_{uid}` |
 | `adminDeleteListItem` (#310/#327) | 50/día por admin | `admin_delete_list_item_{uid}` |
+| `adminListIpRateLimits` (#348) | 30/día por admin | `admin_ip_rate_limits_{uid}` |
+| `adminResetIpRateLimit` (#348) | 20/día por admin | `admin_ip_rate_limit_reset_{uid}` |
 
 Los callables de editores usan `checkCallableRateLimit()` de `functions/src/utils/callableRateLimit.ts` con transacción atómica y ventana diaria.
 
@@ -244,6 +246,8 @@ Los callables de editores usan `checkCallableRateLimit()` de `functions/src/util
 - IPs hasheadas con SHA-256 (nunca se almacenan raw)
 - Colección `_ipRateLimits` con reset diario
 - `beforeUserCreated` blocking function para cuentas anónimas
+- Inspector admin (#348): la tab Alertas → subtab "Rate Limits IP" lista `_ipRateLimits` (hash-only) vía el callable `adminListIpRateLimits` y permite resetear una entrada (`adminResetIpRateLimit`, auditado en `abuseLogs`). El acceso es 100% Admin SDK; la colección mantiene `allow read, write: if false`.
+- Tipo de alerta (#348): al bloquear una IP (límite excedido), `beforeUserCreated` emite un `abuseLog` con `type: 'ip_rate_limit'` (`severity: 'high'`, acción tomada), distinto del `anon_flood` del umbral de detección (`severity: 'medium'`).
 
 ### Follow notification dedup
 

@@ -13,6 +13,8 @@ vi.mock('../../../services/admin', () => ({
   dismissAbuseLog: vi.fn(),
   listAdminRateLimits: vi.fn().mockResolvedValue([]),
   resetAdminRateLimit: vi.fn(),
+  listAdminIpRateLimits: vi.fn().mockResolvedValue([]),
+  resetAdminIpRateLimit: vi.fn(),
 }));
 
 const mockToast = vi.hoisted(() => ({
@@ -96,5 +98,34 @@ describe('AbuseAlerts subtab integration', () => {
   it('Rate Limits tab is reachable via role+name', () => {
     render(<AbuseAlerts />);
     expect(screen.getByRole('tab', { name: 'Rate Limits' })).toBeInTheDocument();
+  });
+
+  it('Rate Limits IP tab renders IpRateLimitsSection and hides KPIs', () => {
+    render(<AbuseAlerts />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Rate Limits IP' }));
+
+    // KPIs no longer visible
+    expect(screen.queryByText('Alertas hoy')).toBeNull();
+    // IpRateLimitsSection filter input visible
+    expect(screen.getByLabelText('Filtrar por IP Hash')).toBeInTheDocument();
+  });
+
+  it('passes enabled=false to useAbuseLogsRealtime when on ipRateLimits subtab', () => {
+    render(<AbuseAlerts />);
+    useAbuseLogsRealtimeMock.mockClear();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Rate Limits IP' }));
+
+    const lastCall = useAbuseLogsRealtimeMock.mock.calls.at(-1);
+    expect(lastCall?.[1]).toBe(false);
+  });
+
+  it('returning to alerts from ipRateLimits re-enables the hook', () => {
+    render(<AbuseAlerts />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Rate Limits IP' }));
+    useAbuseLogsRealtimeMock.mockClear();
+    fireEvent.click(screen.getByRole('tab', { name: 'Alertas' }));
+    const lastCall = useAbuseLogsRealtimeMock.mock.calls.at(-1);
+    expect(lastCall?.[1]).toBe(true);
   });
 });

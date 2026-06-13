@@ -10,3 +10,7 @@ export const EVT_ADMIN_RATE_LIMIT_VIEWED = 'admin_rate_limit_viewed';
 export const EVT_ADMIN_RATE_LIMIT_RESET = 'admin_rate_limit_reset';
 export const EVT_ADMIN_LIST_ITEM_DELETED = 'admin_list_item_deleted';
 export const EVT_ADMIN_LIST_ITEMS_INSPECTED = 'admin_list_items_inspected';
+
+// #348 — IP rate limits inspector
+export const EVT_ADMIN_IP_RATE_LIMIT_VIEWED = 'admin_ip_rate_limit_viewed';
+export const EVT_ADMIN_IP_RATE_LIMIT_RESET = 'admin_ip_rate_limit_reset';
