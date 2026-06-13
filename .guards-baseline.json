@@ -75,11 +75,11 @@
   },
   "311": {
     "R1-helpgroups-coverage": 0,
-    "R2-features-sidemenu-drift": 1
+    "R2-features-sidemenu-drift": 0
   },
   "312": {
     "R1-authcontext-loading-finally": 1,
     "R2-updateUserAvatar-no-fallback": 1
   },
-  "_total": 201
+  "_total": 200
 }
