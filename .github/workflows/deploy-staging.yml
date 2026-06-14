@@ -88,7 +88,9 @@ jobs:
         run: bash scripts/deploy-staging-rules.sh
 
       - name: Deploy Cloud Functions (if changed)
-        continue-on-error: true
+        # Sin continue-on-error: un fallo real de deploy de functions ahora corta
+        # el workflow (antes lo enmascaraba — ocultaba p.ej. el fallo de
+        # onBeforeUserCreated por GCIP, hoy excluido del deploy en functions/src/index.ts).
         run: |
           if git diff origin/main -- functions/src/ functions/package.json | grep -q .; then
             echo "Functions changed — deploying..."
