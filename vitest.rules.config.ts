@@ -18,6 +18,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    // Los archivos de rules comparten un único emulador + projectId
+    // (RULES_TEST_PROJECT_ID). Correrlos en paralelo hace que el
+    // `beforeEach(clearFirestore)` de un archivo borre los datos sembrados por
+    // otro → falsos PERMISSION_DENIED en tests seed-then-mutate. Serializamos.
+    fileParallelism: false,
     include: ['tests/rules/**/*.test.ts'],
     exclude: ['node_modules/**', 'dist/**', 'functions/**', 'src/**'],
     testTimeout: 10_000,
