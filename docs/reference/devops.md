@@ -53,6 +53,28 @@ firebase functions:secrets:set ADMIN_EMAIL --project modo-mapa-app
 > Remover ambas líneas localmente; los valores reales viven en Secret Manager /
 > parameter store y nunca se commitean.
 
+### Identity Platform (GCIP) / blocking functions
+
+La función `onBeforeUserCreated` (`functions/src/triggers/authBlocking.ts`) es un
+**blocking auth function** que hace rate-limit anti-flood de cuentas anónimas por IP
+(único writer de `_ipRateLimits`, la data del inspector admin de #348) y seedea
+`userSettings`. Las blocking functions **solo se pueden deployar en proyectos con
+Identity Platform (GCIP) habilitado**; `modo-mapa-app` hoy NO lo tiene, por lo que
+su deploy falla con:
+
+```
+HTTP 400 OPERATION_NOT_ALLOWED: Blocking Functions may only be configured for GCIP projects.
+```
+
+**Estado actual:** el export está **comentado** en `functions/src/index.ts`, así que la
+función queda excluida del deploy (no lo hace fallar). El código se conserva intacto.
+
+**Para reactivarla:** (1) habilitar Identity Platform en el proyecto (Firebase Console →
+Authentication → Settings, o GCP Identity Platform — tiene implicancias de pricing);
+(2) descomentar el `export { onBeforeUserCreated }` en `index.ts`; (3) re-deployar
+functions. Recién ahí el anti-flood se activa y `_ipRateLimits` empieza a poblarse
+(dándole datos al inspector de #348).
+
 ### Sentry (CI/CD — secrets de GitHub)
 
 ```bash

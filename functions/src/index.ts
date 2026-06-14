@@ -20,7 +20,15 @@ export { onCheckInCreated, onCheckInDeleted } from './triggers/checkins';
 export { onFollowCreated, onFollowDeleted } from './triggers/follows';
 export { onUserSettingsWritten } from './triggers/userSettings';
 export { onRecommendationCreated } from './triggers/recommendations';
-export { onBeforeUserCreated } from './triggers/authBlocking';
+// onBeforeUserCreated (blocking auth fn: rate-limit anti-flood de cuentas anónimas
+// por IP + seed de userSettings) REQUIERE Identity Platform (GCIP) habilitado en el
+// proyecto. Sin GCIP, su deploy falla con `400 OPERATION_NOT_ALLOWED: Blocking
+// Functions may only be configured for GCIP projects` y la función nunca se activa.
+// Por eso queda EXCLUIDO del deploy (export comentado) hasta habilitar GCIP.
+// NOTA: es el ÚNICO writer de `_ipRateLimits` (la colección que lee el inspector
+// admin de #348); al reactivarlo (habilitar GCIP + descomentar) ese inspector pasa
+// a tener datos. Ver docs/reference/devops.md (Identity Platform / blocking functions).
+// export { onBeforeUserCreated } from './triggers/authBlocking';
 export { onUserTagCreated, onUserTagDeleted } from './triggers/userTags';
 
 // Scheduled
