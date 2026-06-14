@@ -3,7 +3,6 @@ import * as offlineQueue from './offlineQueue';
 import { OFFLINE_MAX_RETRIES } from '../constants/offline';
 import { getOfflineHandler } from './offlineHandlerRegistry';
 import { registerOfflineHandlers } from './registerOfflineHandlers';
-import { assertNever } from '../utils/assertNever';
 
 /**
  * Lee el `commentId` de una acción de comentario (edit/delete) (#340 W6).
@@ -31,15 +30,14 @@ let syncing = false;
  *
  * Acá, si el lookup falla, estamos ante una acción con un `type` fuera de la
  * union conocida — datos corruptos o persistidos por un cliente de version
- * desconocida. `assertNever` lanza en runtime con un mensaje descriptivo. El
- * cast a `never` es deliberado: en este punto el valor NO pertenece al dominio
- * estatico de `OfflineActionType`, asi que lo tratamos como el caso imposible.
+ * desconocida. Lanzamos en runtime con un mensaje descriptivo (el `throw`
+ * además narrowea `handler` a definido para el resto de la función).
  */
 export async function dispatch(action: OfflineAction): Promise<void> {
   registerOfflineHandlers();
   const handler = getOfflineHandler(action.type);
   if (!handler) {
-    assertNever(action.type as never, 'offline action type');
+    throw new Error(`dispatch: offline action type desconocido "${action.type}"`);
   }
   await handler(action);
 }
