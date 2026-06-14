@@ -62,7 +62,10 @@ vi.mock('firebase-functions/v2', () => ({
 }));
 
 vi.mock('firebase-functions/params', () => ({
+  // #342 F3: claims.ts ahora usa defineSecret('ADMIN_EMAIL'); el mock expone
+  // ambos para no acoplar el test al mecanismo exacto.
   defineString: vi.fn().mockReturnValue({ value: () => 'admin@test.com' }),
+  defineSecret: vi.fn().mockReturnValue({ value: () => 'admin@test.com' }),
 }));
 
 vi.mock('firebase-admin/auth', () => ({
