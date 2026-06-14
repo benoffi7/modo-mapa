@@ -1,14 +1,15 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { defineString } from 'firebase-functions/params';
+import { defineSecret } from 'firebase-functions/params';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { IS_EMULATOR, ENFORCE_APP_CHECK_ADMIN, getDb } from '../helpers/env';
 import { assertAdmin } from '../helpers/assertAdmin';
 
-const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
-  description: 'Email of the bootstrap admin (used only for initial setup)',
-});
+// #342 F3: `ADMIN_EMAIL` vive en Secret Manager (no en functions/.env). `.value()`
+// se resuelve en runtime DENTRO del handler; la función que lo usa declara
+// `secrets: ['ADMIN_EMAIL']` en su config de onCall.
+const ADMIN_EMAIL_PARAM = defineSecret('ADMIN_EMAIL');
 
 // NO rate limit on setAdminClaim. Threat model (specs #322 S5): el bootstrap es
 // email+flag gated; un rate limit de N/hora no mitiga ADMIN_EMAIL comprometido
@@ -17,7 +18,7 @@ const ADMIN_EMAIL_PARAM = defineString('ADMIN_EMAIL', {
 // del email: rotar secret + reset del flag (`docs/procedures/reset-bootstrap-admin.md`).
 
 export const setAdminClaim = onCall<{ targetUid: string }, Promise<{ success: true }>>(
-  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN },
+  { enforceAppCheck: ENFORCE_APP_CHECK_ADMIN, secrets: ['ADMIN_EMAIL'] },
   async (request) => {
     const { targetUid } = request.data ?? {};
     if (!targetUid || typeof targetUid !== 'string') {

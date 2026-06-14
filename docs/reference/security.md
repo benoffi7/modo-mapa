@@ -41,7 +41,7 @@ Antes de cada commit, verificar:
 ## App Check
 
 - **Admin callables**: usan `ENFORCE_APP_CHECK_ADMIN = !IS_EMULATOR` — habilitado en prod, deshabilitado en emuladores. Incluye: backups, claims, feedback admin, menuPhotos admin, authStats, featuredLists, storageStats, analyticsReport.
-- **User-facing callables**: usan `ENFORCE_APP_CHECK = !IS_EMULATOR && APP_CHECK_ENFORCEMENT === 'enabled'` — controlado por env var en `functions/.env`. Production: `enabled`. Staging: unset. Incluye: inviteListEditor, removeListEditor, reportMenuPhoto, writePerfMetrics.
+- **User-facing callables**: usan `ENFORCE_APP_CHECK = !IS_EMULATOR && APP_CHECK_ENFORCEMENT === 'enabled'`. Desde #342 F3, `APP_CHECK_ENFORCEMENT` es un **parameter de Firebase** (`defineString('APP_CHECK_ENFORCEMENT', { default: 'disabled' })` en `helpers/env.ts`), no una línea en `functions/.env`. Production: `enabled`. Staging: `disabled`/ausente → default. Incluye: inviteListEditor, removeListEditor, reportMenuPhoto, writePerfMetrics.
 - **Frontend**: se inicializa con `ReCaptchaEnterpriseProvider` solo en producción (`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`).
 - **Emuladores**: no requieren App Check (`IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true'`).
 

@@ -28,11 +28,30 @@ VITE_ADMIN_EMAIL=
 VITE_SENTRY_DSN=
 ```
 
-### Cloud Functions (`functions/.env`)
+### Cloud Functions — secrets y parameters (NO en `functions/.env`)
+
+Desde #342 F3, los valores sensibles/configurables de functions **no viven en
+`functions/.env`** sino en Secret Manager / parameter store de Firebase:
+
+| Nombre | Tipo | Mecanismo | Dónde se lee | Valor por entorno |
+|--------|------|-----------|--------------|-------------------|
+| `ADMIN_EMAIL` | Secret | `defineSecret('ADMIN_EMAIL')` en `admin/claims.ts`; `setAdminClaim` declara `secrets: ['ADMIN_EMAIL']` y llama `.value()` **dentro del handler** (los secrets solo resuelven en runtime). | `admin/claims.ts` | mismo email en prod/staging |
+| `APP_CHECK_ENFORCEMENT` | Parameter | `defineString('APP_CHECK_ENFORCEMENT', { default: 'disabled' }).value()` en `helpers/env.ts` (evalúa a top-level). | `helpers/env.ts` (`ENFORCE_APP_CHECK`) | prod: `enabled` · staging: `disabled`/ausente → default |
+| `GA4_PROPERTY_ID` | Secret | `secrets: ['GA4_PROPERTY_ID']` en `getAnalyticsReport`, leído vía `process.env`. | `admin/analyticsReport.ts` | configurado por entorno |
+
+**Provisión (antes del deploy):**
 
 ```bash
-ADMIN_EMAIL=benoffi11@gmail.com  # Email del admin (usado por defineString en claims.ts)
+# Secret ADMIN_EMAIL (interactivo: pega el email cuando lo pida)
+firebase functions:secrets:set ADMIN_EMAIL --project modo-mapa-app
+
+# Parameter APP_CHECK_ENFORCEMENT (parameter store; 'enabled' en prod)
+# Se fija en .env.<projectId> de functions params o vía dashboard; default 'disabled'.
 ```
+
+> `functions/.env` ya **no** debe contener `ADMIN_EMAIL` ni `APP_CHECK_ENFORCEMENT`.
+> Remover ambas líneas localmente; los valores reales viven en Secret Manager /
+> parameter store y nunca se commitean.
 
 ### Sentry (CI/CD — secrets de GitHub)
 
