@@ -37,7 +37,7 @@ export async function dispatch(action: OfflineAction): Promise<void> {
   registerOfflineHandlers();
   const handler = getOfflineHandler(action.type);
   if (!handler) {
-    throw new Error(`dispatch: offline action type desconocido "${action.type}"`);
+    throw new Error(`Unhandled offline action type: ${action.type}`);
   }
   await handler(action);
 }
